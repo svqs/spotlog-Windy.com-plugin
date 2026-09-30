@@ -27,4 +27,34 @@ jobs:
                   jq -s '.[0] * .[1]' /tmp/plugin.json /tmp/plugin-info.json > plugin.json
                   tar cf ../plugin.tar .
                   echo "Publishing plugin..."
-                  curl -s --fail-with-body -XPOST 'https://node.windy.com/plugins/v1.0/upload' -H "x-windy-api-key: ${WINDY_API_KEY}" -F "plugin_archive=@../plugin.tar"
+                  set +e
+                  curl -s --fail-with-body -o /tmp/response.txt -w '%{http_code}' -XPOST 'https://node.windy.com/plugins/v1.0/upload' -H "x-windy-api-key: ${WINDY_API_KEY}" -F "plugin_archive=@../plugin.tar" > /tmp/status.txt
+                  ok=$?
+                  set -e
+                  echo ""
+                  echo "HTTP status: $(cat /tmp/status.txt)"
+                  echo "Windy answered:"
+                  cat /tmp/response.txt; echo ""
+                  url=$(sed 's#\\/#/#g' /tmp/response.txt | grep -oE 'https://windy-plugins\.com/[^" ]+plugin\.min\.js' | head -1 || true)
+                  if [ -n "$url" ]; then
+                    echo ""
+                    echo "=============================================================="
+                    echo "INSTALL URL:  $url"
+                    echo "=============================================================="
+                    {
+                      echo "## Spotlog is published"
+                      echo ""
+                      echo "Install URL (windy.com/plugins > Load plugin directly from URL):"
+                      echo ""
+                      echo "\`$url\`"
+                    } >> "$GITHUB_STEP_SUMMARY"
+                  else
+                    {
+                      echo "## Windy's answer"
+                      echo ""
+                      echo '```'
+                      cat /tmp/response.txt
+                      echo '```'
+                    } >> "$GITHUB_STEP_SUMMARY"
+                  fi
+                  exit $ok
