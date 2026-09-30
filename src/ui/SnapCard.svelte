@@ -24,7 +24,6 @@
                     <div><span>Swell 1</span><b>{ fmtHeight(waves.swell1, u.height, true) } · { waves.swell1Period === null ? '–' : Math.round(waves.swell1Period) + ' s' }</b></div>
                     <div><span>Wave period · power</span><b>{ waves.wavesPeriod === null ? '–' : Math.round(waves.wavesPeriod) + ' s' } · { waves.wavesPower === null ? '–' : waves.wavesPower.toFixed(1) + ' kW/m' }</b></div>
                 {/if}
-                <div><span>Water temp · tide</span><b class="soon">not in Windy's API yet</b></div>
             </div>
             {#if models && models.length > 1}
                 <div class="models-t">Wind at this time in every model</div>

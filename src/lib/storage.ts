@@ -26,6 +26,7 @@ export const defaultSettings = (): Settings => ({
     height: 'm',
     temp: 'C',
     allModels: true,
+    models: ['ecmwf'],
     layers: [...DEFAULT_LAYERS],
 });
 
@@ -86,6 +87,7 @@ export const normalise = (parsed: Any): SpotlogData => {
     if (!['C', 'F'].includes(settings.temp)) settings.temp = 'C';
     settings.layers = ids(settings.layers);
     settings.allModels = settings.allModels !== false;
+    settings.models = ids(settings.models).length ? ids(settings.models) : ['ecmwf'];
     const deleted: Record<string, number> = {};
     if (isObj(parsed?.deleted)) {
         const cut = Date.now() - 90 * 864e5;

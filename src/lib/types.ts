@@ -123,6 +123,8 @@ export interface Settings {
     height: HeightUnit;
     temp: TempUnit;
     allModels: boolean;
+    /** models to save when allModels is off */
+    models: string[];
     /** optional layers saved in a snapshot (wind + gusts + direction are always saved) */
     layers: string[];
 }

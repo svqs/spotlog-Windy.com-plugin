@@ -39,7 +39,7 @@ The same values appear in `src/plugin.svelte` (`@ground`, `@card` … at the top
 | wind colours | `#5b6ec2` → `#a23fa0` | Windy-like wind scale for tiles (`windColor` in `src/lib/wind.ts`, m/s stops 2, 4, 6, 8, 11, 14, 17, 22) |
 
 **Readability rule:** text on orange, green and red is always white.
-**Close:** Windy draws its own ✕ in the pane's top-right corner; the header keeps that corner free.
+**Close:** Windy draws its own ✕ outside the pane on desktop (left of it) and in the sheet header on phones, so the units pill sits in the top-right corner.
 
 **Type:** Instrument Sans (UI, 400/500/600) and Doto 900 (pixel font) only for the big numbers in the snapshot tiles and the SPOTLOG wordmark.
 **Radii:** cards 18 px, buttons 12–14 px, chips 18 px (pill), tiles in the snapshot 12 px.
@@ -52,11 +52,13 @@ The same values appear in `src/plugin.svelte` (`@ground`, `@card` … at the top
 | Choose a place (Save forecast / Add spot / Log session) | `src/plugin.svelte` `.opts` / `.opt` | Every choice is the same rectangular row: Click/Tap on the map, Map centre, Without a place, your spots |
 | Phone layout | `src/plugin.svelte` `.spotlog.m` | Windy's small bottom panel under the timeline (like The Buoy): half the screen high (`50dvh`), scrolls inside; swipes stay with Spotlog while it can still scroll |
 | Login / Premium gate | `src/plugin.svelte` top of the template | |
-| Header card (wordmark, units pill, stats, sync line) | `src/plugin.svelte` (top) | On inner screens: back · title · units pill (Windy's ✕ sits to the right) |
-| Buy me a coffee | `src/plugin.svelte` `.coffee`, link in `src/lib/links.ts` | Bottom of the home screen |
-| Hour strip (whole-day snapshot) | `src/plugin.svelte` `.hours` / `.hr` | On the saved-forecast page |
+| Header card (wordmark, units pill, stats, sync line) | `src/plugin.svelte` (top) | SPOTLOG wordmark + small pixel star (`src/ui/PixelStar.svelte`); on inner screens: back · title · units pill top right |
+| About + Buy me a coffee | `src/plugin.svelte` `.about`, `.sig`, link in `src/lib/links.ts` | About tab only: how-to steps, then pixel star · version · coffee link as a signature |
+| Model switch | `src/plugin.svelte` `.models-pick` | Spot page, under the card: ECMWF by default, only models that cover the spot |
+| Replace prompt | `src/plugin.svelte` `.replace` | One forecast per spot |
+| Map marks | `.spotlog-pin` (+ `.compact` below zoom 7), `.spotlog-sess` (session dots), route `#ff3d8b` 2.5 px | |
 | Gear by sport | `src/plugin.svelte` gear tab, presets in `src/lib/wind.ts` `GEAR_BY_SPORT` | |
-| Action buttons (Save forecast / Add spot / Log session) | `src/plugin.svelte` `.actions` / `.act` | First is orange; small second line shows time or context |
+| Action buttons (Save forecast / Add spot / Log session) | `src/plugin.svelte` `.actions` / `.act` | All three equal grey tiles: line icon, name, short context line |
 | White snapshot card (Windy point-forecast look) | `src/ui/SnapCard.svelte` | Wind, gusts, direction, waves tiles; badge; "Full snapshot" expands |
 | Felt-like ruler | `src/ui/FeltSlider.svelte` | Whole ruler drags under a fixed orange marker; magnetic (`MAGNET`), tick spacing (`PX`) |
 | Time wheel popover | `src/ui/TimeWheel.svelte` | Small popover above the field; 12/24 h from system settings |

@@ -1,4 +1,4 @@
-# Spotlog · developer notes (0.5.0)
+# Spotlog · developer notes (0.6.0)
 
 Spotlog is a client-side Windy plugin (Svelte 4 + TypeScript, built with Windy's official template and
 `@windycom/plugin-devtools`). The diary is kept in the browser's `localStorage` on windy.com and — once the sync server is
@@ -67,12 +67,16 @@ The plugin keeps ~44 px free in the top-right corner for it and no longer draws 
 
 ## Forecast snapshots
 
-A snapshot stores the **whole day** (05:00–22:00 local, hourly grid; 3-hourly models fill the nearest hour) for the
-active model plus ECMWF, GFS, ICON, ICON-EU, AROME (regional models fail quietly outside their area), and waves/swell.
+A snapshot stores **the next 24 hours from the hour it is taken** (hourly grid, 25 points; 3-hourly models fill the nearest hour)
+for ECMWF, GFS, ICON, ICON-EU, AROME, or only the models ticked in settings (`settings.allModels` / `settings.models`;
+regional models fail quietly outside their area), plus waves/swell. The primary model is ECMWF when it is saved.
 
 - `ts` + `models` + `waves` = the focus hour (what the card shows, what the model ranking compares against).
-- `series` = the whole day, so the focus can move without refetching:
-  - standalone "Save forecast" → focus = Windy timeline time; the hour strip on the snapshot page changes it;
+- `series` = the 24 hours, so the focus can move without refetching:
+  - standalone "Save forecast" → focus = now (no hour switching on the snapshot page);
+  - one per spot: a second unused forecast for the same spot asks "Replace?" (`pendingFor`); forecasts linked to sessions stay;
+  - if a session's hours are before the saved window (logged later the same day), the log offers "Use the forecast for your session hours",
+    which captures from the session start (Windy still serves today's earlier hours);
   - logging a session → the card reads the day at the middle of start–end; on save the snapshot's focus moves to that time;
   - if the session date changes to another day, a snapshot the log created itself is replaced by one for that day.
 - Windy only serves forecasts from today on, so past days can't be captured ("No forecast for that day…").
@@ -82,7 +86,7 @@ active model plus ECMWF, GFS, ICON, ICON-EU, AROME (regional models fail quietly
 
 - Browser: `localStorage` of `www.windy.com`, key **`windy-plugin-spotlog:v1:u<windyUserId>`** (one JSON document).
 - Server: table `public.spotlog_diary` (`windy_user_id`, `data jsonb`, `updated_at`), one row per Windy user, see `supabase/setup.sql`.
-- Inspect: DevTools › Application › Local Storage, Home › Data › Export JSON, or the sandbox **Saved data** button.
+- Inspect: DevTools › Application › Local Storage, About › Download a copy, or the sandbox **Saved data** button.
 - Size: `localStorage` is ~5 MB per origin. A whole-day snapshot is ~4–5 KB, a session ~0.5 KB, a track ~10 KB.
   `save()` catches quota errors and logs them (no UI message yet).
 - Every Windy plugin runs on the same origin and could read these keys. Don't store secrets there.

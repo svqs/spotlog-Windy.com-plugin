@@ -50,6 +50,15 @@ with sync_playwright() as p:
     pg.click('text=Save spot')
     pg.wait_for_selector('.snap .cells', timeout=8000)
     ok('add spot via map label, lands on the spot page with a white conditions header')
+    pg.wait_for_selector('.models-pick button:has-text("GFS")', timeout=8000)
+    assert pg.locator('.models-pick button.on').inner_text() == 'ECMWF'
+    assert pg.locator('.models-pick button:has-text("AROME")').count() == 0, 'AROME does not cover Tarifa'
+    pg.click('.models-pick button:has-text("GFS")')
+    pg.wait_for_selector('.snap:has-text("GFS")', timeout=8000)
+    pg.click('.models-pick button:has-text("ECMWF")')
+    ok('spot page: ECMWF by default, switch to any model available there')
+    assert pg.locator('.act.primary').count() == 0
+    assert pg.locator('.act:has-text("Show on map") small').count() == 0
     shot('03-spot')
 
     # --- Save forecast: preview first, nothing stored until "Save forecast"; then undo
@@ -61,7 +70,11 @@ with sync_playwright() as p:
     pg.click('.btn.primary:has-text("Save forecast")')
     pg.wait_for_selector('.toast:has-text("Forecast saved")', timeout=8000)
     assert len(stored(pg)['snapshots']) == 1
-    ok('save forecast: preview, then save; nothing stored before')
+    s0 = stored(pg)['snapshots'][0]
+    import datetime as _dt0
+    now_h = _dt0.datetime.now().replace(minute=0, second=0, microsecond=0).timestamp() * 1000
+    assert s0['series']['ts'][0] == now_h and len(s0['series']['ts']) == 25, (s0['series']['ts'][0], now_h, len(s0['series']['ts']))
+    ok('save forecast: preview, then save; keeps now + the next 24 hours')
     pg.click('.toast .undo')
     pg.wait_for_timeout(200)
     assert len(stored(pg)['snapshots']) == 0
@@ -112,7 +125,8 @@ with sync_playwright() as p:
     pg.wait_for_selector('text=Top speed', timeout=5000)
     pg.wait_for_selector('.mock-line polyline')
     start_txt = pg.locator('.tw .field-btn >> nth=0').inner_text()
-    ok(f'GPX track attached, drawn on map, start time filled ({start_txt})')
+    assert pg.locator('.mock-line [stroke="#ff3d8b"]').count() >= 1, 'route is not the thin pink line'
+    ok(f'GPX track attached, drawn on map as a thin pink line, start time filled ({start_txt})')
     shot('05-log-track')
     # time wheel: open end time and pick a value by clicking an hour
     pg.click('.tw .field-btn >> nth=1')
@@ -125,8 +139,12 @@ with sync_playwright() as p:
     end_txt = pg.locator('.tw .field-btn >> nth=1').inner_text()
     assert end_txt.startswith('17:'), end_txt
     ok(f'time wheel sets end time ({end_txt})')
-    pg.wait_for_selector('.snap:has-text("Forecast for your session time")', timeout=5000)
-    ok('snapshot card follows the session time (whole day saved)')
+    use = pg.locator('.btn:has-text("Use the forecast for your session hours")')
+    pg.wait_for_timeout(700)
+    if use.count():  # the forecast was saved after this session's hours (test runs late in the day)
+        use.click()
+    pg.wait_for_selector('.snap:has-text("Forecast for your session time")', timeout=8000)
+    ok('snapshot card follows the session time')
     # a normal mouse-wheel scroll over the ruler scrolls the panel instead of getting stuck
     pg.locator('.felt').scroll_into_view_if_needed()
     fb = pg.locator('.felt').bounding_box()
@@ -150,7 +168,7 @@ with sync_playwright() as p:
     import datetime as _dt
     hr = _dt.datetime.fromtimestamp(sn['ts'] / 1000).hour
     assert sn.get('series') and hr in (15, 16), (hr, bool(sn.get('series')))
-    ok(f'saved forecast moved to the session time ({hr}:00) and keeps the whole day')
+    ok(f'saved forecast moved to the session time ({hr}:00) and keeps the 24 hours')
 
     # --- open session from list, back, then swipe-left delete + undo
     pg.click('.sw .front >> nth=0')
@@ -195,20 +213,50 @@ with sync_playwright() as p:
     pg.wait_for_selector('.snap:has-text("Not saved yet")', timeout=8000)
     shot('09-snapshot-view')
     # the map is centred on the spot after "Show on map", so the forecast links itself; otherwise link it by hand
-    if pg.locator('text=Unlink').count() == 0:
+    assert pg.locator('.hours .hr').count() == 0, 'no hour switching on a forecast'
+    pg.wait_for_selector('.sl-note:has-text("next 24 hours")')
+    if pg.locator('.btn:has-text("Edit linked spot")').count() == 0:
+        pg.click('.btn:has-text("Link to a spot")')
         pg.click('.chip:has-text("Valdevaqueros")')
-    pg.wait_for_selector('text=Unlink')
-    ok('forecast from home at map centre, linked to the spot')
+    pg.wait_for_selector('.btn:has-text("Edit linked spot")')
+    pg.click('.btn:has-text("Edit linked spot")')
+    pg.wait_for_selector('.chip:has-text("No spot")')
+    pg.click('.btn:has-text("Done")')
+    ok('forecast from home at map centre, linked to the spot; "Edit linked spot" to change it')
     n0 = len(stored(pg)['snapshots'])
-    pg.locator('.hours .hr').nth(3).click()
-    pg.wait_for_timeout(200)
     pg.fill('textarea', 'Maybe after work')
     pg.click('.btn.primary:has-text("Save forecast")')
-    pg.wait_for_selector('.toast:has-text("Forecast saved")')
+    pg.wait_for_timeout(300)
+    if pg.locator('.replace').count():
+        pg.click('.replace .btn:has-text("Replace")')
+        pg.wait_for_selector('.toast:has-text("Forecast replaced")')
+        assert len(stored(pg)['snapshots']) == n0
+    else:
+        pg.wait_for_selector('.toast:has-text("Forecast saved")')
+        assert len(stored(pg)['snapshots']) == n0 + 1
     last = max(stored(pg)['snapshots'], key=lambda x: x['savedAt'])
-    import datetime as _dt2
-    assert len(stored(pg)['snapshots']) == n0 + 1 and _dt2.datetime.fromtimestamp(last['ts'] / 1000).hour == 8 and last['note'] == 'Maybe after work', last
-    ok('hour strip + note, then save: stored at the chosen hour')
+    assert last['note'] == 'Maybe after work', last
+    ok('note, then save')
+    # one forecast per spot: saving another for the same spot asks first
+    pg.click('.tile:has-text("Valdevaqueros")')
+    pg.click('.act:has-text("Save forecast")')
+    pg.wait_for_selector('.btn.primary:has-text("Save forecast")', timeout=8000)
+    pg.click('.btn.primary:has-text("Save forecast")')
+    pg.wait_for_selector('.replace:has-text("You already saved a forecast for Valdevaqueros")')
+    shot('09a-replace')
+    pg.click('.replace .btn:has-text("Keep the old one")')
+    assert pg.locator('.replace').count() == 0
+    n1 = len(stored(pg)['snapshots'])
+    pg.click('.btn.primary:has-text("Save forecast")')
+    pg.click('.replace .btn:has-text("Replace")')
+    pg.wait_for_selector('.toast:has-text("Forecast replaced")')
+    sd = stored(pg)
+    used = {x['snapshotId'] for x in sd['sessions']}
+    pend = [x for x in sd['snapshots'] if x['spotId'] and x['id'] not in used]
+    assert len(sd['snapshots']) == n1 and len(pend) == 1, (n1, len(sd['snapshots']), len(pend))
+    ok('one forecast per spot: asks, then replaces (forecasts used by sessions stay)')
+    top()
+    pg.click('button[aria-label="Back"]')
 
     # --- log a session from the last saved forecast
     top()
@@ -217,7 +265,6 @@ with sync_playwright() as p:
     shot('09b-log-pick')
     pg.click('.opt:has-text("Your last saved forecast")')
     pg.wait_for_selector('.felt')
-    assert pg.locator('.snap').first.inner_text().count('08:00') or pg.locator('.snap').first.inner_text().count('8:00')
     ok('log session: "Your last saved forecast" opens the log with that forecast')
     top()
     pg.click('button[aria-label="Back"]')
@@ -265,14 +312,19 @@ with sync_playwright() as p:
     ok('gear tab: sport first, then sport-specific kinds')
 
     # --- sync: linked to the Windy account automatically (fake server in the harness, keyed by Windy user id)
-    pg.click('.tabs button:has-text("Data")')
-    pg.wait_for_selector('text=linked to your Windy account')
+    assert pg.locator('.tabs button:has-text("Data")').count() == 0
+    pg.wait_for_selector('.sync:has-text("Windy account")')
     assert pg.locator('input[type=email]').count() == 0
     cloud = pg.evaluate("JSON.parse(localStorage.getItem('spotlog-mock-cloud'))")
     row = cloud['rows']['12345']
     assert len(row['data']['sessions']) >= 1, row
-    shot('11b-data')
     ok('diary syncs to the Windy user id, no separate sign-in')
+    assert pg.locator('.coffee').count() == 0, 'coffee link only on About'
+    pg.click('.tabs button:has-text("About")')
+    pg.wait_for_selector('text=How it works')
+    pg.wait_for_selector('.sig .coffee')
+    shot('11b-about')
+    ok('About tab: friendly how-to, coffee link only there')
 
     # --- two Windy tabs open at once must not overwrite each other
     pg2 = ctx.new_page()
@@ -316,6 +368,17 @@ with sync_playwright() as p:
     pg.wait_for_selector('text=Add spot')
     pg.wait_for_selector('.snap .cells', timeout=8000)
     shot('12-place')
+    # a session away from your spots leaves a dot on the map
+    assert pg.locator('.spotlog-sess').count() == 0
+    pg.click('.act:has-text("Log session")')
+    pg.wait_for_selector('.felt')
+    bottom()
+    pg.click('text=Save session')
+    pg.wait_for_selector('.spotlog-sess')
+    ok('sessions away from your spots show as dots on the map')
+    pg.mouse.click(280, 585)
+    pg.wait_for_selector('.act:has-text("Add spot")')
+    pg.wait_for_selector('.snap .cells', timeout=8000)
     pg.click('.act:has-text("Add spot")')
     pg.fill('.field input', 'Secret reef')
     pg.click('.seg button:has-text("I don\'t know yet")')

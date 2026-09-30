@@ -27,19 +27,31 @@
             {#each LAYERS as l}
                 <button type="button" class="chip" class:on={ settings.layers.includes(l.id) } aria-pressed={ settings.layers.includes(l.id) } on:click={ () => toggleLayer(l.id) }>{ l.label }</button>
             {/each}
-            {#each ['Tides', 'Water temp'] as a}<span class="chip soon" title="Windy's plugin API doesn't give these yet">{ a } · soon</span>{/each}
         </div>
     </div>
     <button type="button" class="toggle" aria-pressed={ settings.allModels } on:click={ () => set({ allModels: !settings.allModels }) }>
-        <span class="grow"><b>Save every model</b><small>ECMWF, GFS, ICON… so Spotlog can tell you which one to trust</small></span>
+        <span class="grow"><b>Save every model</b><small>All models available for the place, so Spotlog can tell you which one to trust</small></span>
         <span class="sw" class:on={ settings.allModels }><i></i></span>
     </button>
+    {#if !settings.allModels}
+        <div class="grp">
+            <span class="lbl">Save these models</span>
+            <div class="chips">
+                {#each SNAPSHOT_MODELS as m}
+                    <button type="button" class="chip" class:on={ settings.models.includes(m) } aria-pressed={ settings.models.includes(m) } on:click={ () => toggleModel(m) }>{ modelLabel(m) }</button>
+                {/each}
+            </div>
+            <small class="hint">Regional models (ICON-EU, AROME) only cover part of the world and are skipped where they have no forecast.</small>
+        </div>
+    {/if}
 </div>
 
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
     import type { Settings } from '../lib/types';
     import { WIND_UNITS, HEIGHT_UNITS, TEMP_UNITS } from '../lib/units';
+    import { SNAPSHOT_MODELS } from '../lib/forecast';
+    import { modelLabel } from '../lib/wind';
 
     export let settings: Settings;
     const dispatch = createEventDispatcher();
@@ -55,6 +67,11 @@
     function set(patch: Partial<Settings>) {
         settings = { ...settings, ...patch };
         dispatch('change', settings);
+    }
+    function toggleModel(m: string) {
+        const has = settings.models.includes(m);
+        if (has && settings.models.length === 1) return; // keep at least one
+        set({ models: has ? settings.models.filter(x => x !== m) : [...settings.models, m] });
     }
     function toggleLayer(id: string) {
         set({ layers: settings.layers.includes(id) ? settings.layers.filter(x => x !== id) : [...settings.layers, id] });
@@ -73,7 +90,8 @@
     .chip { height: 30px; padding: 0 12px; border-radius: 15px; border: 1px solid #5a5a5a; background: transparent; color: #f8f8f8; font: inherit; font-size: 12px; display: inline-flex; align-items: center; cursor: pointer; box-sizing: border-box;
         &.on { background: #f8f8f8; color: #1c1c1c; border-color: #f8f8f8; }
         &.fixed { background: #4d4d4d; border-color: #4d4d4d; cursor: default; }
-        &.soon { border-style: dashed; color: #8a8a8a; cursor: default; } }
+    }
+    .hint { color: #8a8a8a; font-size: 11px; line-height: 1.4; }
     .toggle { display: flex; align-items: center; gap: 12px; border: 0; background: none; padding: 0; color: #f8f8f8; font: inherit; text-align: left; cursor: pointer;
         small { display: block; color: #b0b0b0; font-size: 12px; margin-top: 2px; } }
     .grow { flex: 1; }

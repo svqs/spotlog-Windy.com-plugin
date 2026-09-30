@@ -78,9 +78,9 @@ export const waveValueAt = async (lat: number, lon: number, ts: number): Promise
 };
 
 /** Wind + waves right now at a place (ECMWF), for tiles and the spot header */
-export const conditionsNow = async (lat: number, lon: number): Promise<{ wind: ModelValue | null; waves: WaveValue | null }> => {
+export const conditionsNow = async (lat: number, lon: number, model = 'ecmwf'): Promise<{ wind: ModelValue | null; waves: WaveValue | null }> => {
     const now = Date.now();
-    const [wind, waves] = await Promise.all([modelValueAt('ecmwf', lat, lon, now), waveValueAt(lat, lon, now)]);
+    const [wind, waves] = await Promise.all([modelValueAt(model, lat, lon, now), waveValueAt(lat, lon, now)]);
     return { wind, waves };
 };
 
@@ -152,13 +152,11 @@ export const nextMatch = async (spot: Spot, model = 'ecmwf', minHours = 2): Prom
 /* Whole-day snapshots                                                  */
 /* ------------------------------------------------------------------ */
 
-/** The part of a day a snapshot keeps: 05:00–22:00 local time */
+/** What a snapshot keeps: from the hour it is taken, the next 24 hours */
 export const dayWindow = (ts: number): [number, number] => {
     const a = new Date(ts);
-    a.setHours(5, 0, 0, 0);
-    const b = new Date(ts);
-    b.setHours(22, 0, 0, 0);
-    return [a.getTime(), b.getTime()];
+    a.setMinutes(0, 0, 0);
+    return [a.getTime(), a.getTime() + 24 * 3600e3];
 };
 
 const HOUR = 3600e3;
@@ -186,15 +184,15 @@ export const seriesAt = (series: DaySeries, ts: number): { models: ModelValue[];
 };
 
 /**
- * Saves the forecast for the whole day of `focusTs` (05:00–22:00) from every model (or only the
- * active one), on an hourly grid. Models with 3-hourly steps fill the nearest hour.
- * Returns null when Windy has no forecast for that day any more (past days).
+ * Saves the forecast from `focusTs` for the next 24 hours from the chosen models, on an hourly grid.
+ * Models with 3-hourly steps fill the nearest hour. Regional models that don't cover the place are skipped.
+ * Returns null when Windy has no forecast for that time (past days).
  */
 export const captureDay = async (
-    lat: number, lon: number, focusTs: number, primary: string, allModels: boolean, layers: string[],
+    lat: number, lon: number, focusTs: number, primary: string, models: string[], layers: string[],
 ): Promise<{ series: DaySeries; models: ModelValue[]; waves: WaveValue | null; primary: string } | null> => {
     const [from, to] = dayWindow(focusTs);
-    const list = allModels ? Array.from(new Set([primary, ...SNAPSHOT_MODELS])) : [primary];
+    const list = Array.from(new Set([primary, ...(models.length ? models : SNAPSHOT_MODELS)]));
     const datas = await Promise.all(list.map(m => fetchData(m, lat, lon)));
     const grid: number[] = [];
     for (let t = from; t <= to; t += HOUR) grid.push(t);
@@ -205,12 +203,12 @@ export const captureDay = async (
         return num(d[key]?.[i]);
     };
     const keepTemp = layers.includes('temp');
-    const models: DaySeries['models'] = {};
+    const out: DaySeries['models'] = {};
     list.forEach((m, k) => {
         const d = datas[k];
         const wind = grid.map(t => pick(d, 'wind', t));
         if (!wind.some(v => v !== null)) return;
-        models[m] = {
+        out[m] = {
             wind,
             gust: grid.map(t => pick(d, 'windGust', t)),
             dir: grid.map(t => pick(d, 'windDir', t)),
@@ -220,7 +218,7 @@ export const captureDay = async (
             }),
         };
     });
-    if (!Object.keys(models).length) return null;
+    if (!Object.keys(out).length) return null;
 
     let waves: DaySeries['waves'] = null;
     for (const wm of WAVE_MODELS) {
@@ -236,7 +234,14 @@ export const captureDay = async (
         };
         break;
     }
-    const series: DaySeries = { ts: grid, models, waves };
+    const series: DaySeries = { ts: grid, models: out, waves };
     const at = seriesAt(series, focusTs);
-    return { series, ...at, primary: models[primary] ? primary : Object.keys(models)[0] };
+    return { series, ...at, primary: out[primary] ? primary : Object.keys(out)[0] };
+};
+
+/** Which of the snapshot models have a forecast at this place (regional ones don't cover everywhere) */
+export const availableModels = async (lat: number, lon: number): Promise<string[]> => {
+    const now = Date.now();
+    const got = await Promise.all(SNAPSHOT_MODELS.map(m => modelValueAt(m, lat, lon, now)));
+    return SNAPSHOT_MODELS.filter((_, i) => got[i] && got[i]?.wind !== null);
 };

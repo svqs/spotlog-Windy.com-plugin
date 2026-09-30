@@ -135,6 +135,8 @@
     const leafletMap = {
         getCenter: centre,
         getZoom: () => Math.round(11 - Math.log2(view.k)),
+        on: (ev, f) => { if (ev === 'zoomend' || ev === 'moveend') moveSubs.push(f); },
+        off: (ev, f) => { const i = moveSubs.indexOf(f); if (i >= 0) moveSubs.splice(i, 1); },
         fitBounds: (b, o) => {
             console.log('[W.map] fitBounds', b);
             const el = mapEl(), pad = (o && o.padding && o.padding[0]) || 0;
