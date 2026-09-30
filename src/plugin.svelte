@@ -178,13 +178,6 @@
         </div>
     {/if}
 
-    <div class="hint">
-        {#if isMobile}
-            Tap on the map (or long-press › <Brand />) to open any place.
-        {:else}
-            Tip: click anywhere on the map (a town, a label or one of your spots) to open it here.
-        {/if}
-    </div>
 
 <!-- ================= PICK A PLACE ================= -->
 {:else if view === 'pick'}
@@ -2023,7 +2016,6 @@
     .pulse { width: 10px; height: 10px; border-radius: 5px; background: @orange; flex-shrink: 0; &.live { animation: sl-pulse 1.6s ease-out infinite; } }
     @keyframes sl-pulse { 0% { box-shadow: 0 0 0 0 rgba(212, 149, 0, 0.55); } 100% { box-shadow: 0 0 0 12px rgba(212, 149, 0, 0); } }
     @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
-    .hint { margin-top: auto; padding-top: 10px; font-size: 12px; color: #8f8f8f; line-height: 1.45; b { color: @sub; } }
     .toast { position: sticky; bottom: 12px; z-index: 5; display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 16px; border-radius: 14px; background: @text; color: @ink; font-weight: 600; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45); }
     .undo { height: 32px; padding: 0 14px; border-radius: 10px; border: 0; background: @ink; color: @text !important; font-weight: 600; }
 
