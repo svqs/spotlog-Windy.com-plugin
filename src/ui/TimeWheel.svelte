@@ -3,7 +3,7 @@
         { value ? fmtClock(value) : placeholder }
     </button>
     {#if open}
-        <div class="tw-pop" role="dialog" aria-label="Choose time">
+        <div class="tw-pop" class:below role="dialog" aria-label="Choose time">
             <div class="wheels" class:three={ h12 }>
                 <div class="band"></div>
                 <div class="col" bind:this={ hEl } on:scroll={ () => settle('h') } aria-label="Hour">
@@ -35,6 +35,18 @@
 
     const ITEM = 34;
     let rootEl: HTMLDivElement;
+    let below = false;
+    /** open under the field when there isn't room above it inside the scrolling panel */
+    function roomAbove(): number {
+        let el: HTMLElement | null = rootEl?.parentElement || null;
+        while (el && el !== document.body) {
+            const o = getComputedStyle(el).overflowY;
+            if (o === 'auto' || o === 'scroll') break;
+            el = el.parentElement;
+        }
+        const top = el && el !== document.body ? el.getBoundingClientRect().top : 0;
+        return rootEl.getBoundingClientRect().top - top;
+    }
     // close when clicking/tapping anywhere else, or on Escape
     const outside = (e: Event) => { if (open && rootEl && !rootEl.contains(e.target as Node)) open = false; };
     const esc = (e: KeyboardEvent) => { if (open && e.key === 'Escape') open = false; };
@@ -79,6 +91,7 @@
         value = `${String(h).padStart(2, '0')}:${String(minutes[mi]).padStart(2, '0')}`;
     }
     async function toggle() {
+        if (!open) below = roomAbove() < 190;
         open = !open;
         if (!open) return;
         fromValue();
@@ -117,6 +130,8 @@
     .tw-pop { position: absolute; z-index: 30; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); width: max(100%, 196px); box-sizing: border-box;
         padding: 8px; border-radius: 14px; background: #3c3c3c; border: 1px solid #5a5a5a; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
         display: flex; flex-direction: column; gap: 6px; animation: pop 0.16s ease-out; }
+    .tw-pop.below { bottom: auto; top: calc(100% + 10px); }
+    .tw-pop.below::after { bottom: auto; top: -7px; transform: rotate(225deg); }
     .tw-pop::after { content: ''; position: absolute; left: 50%; bottom: -7px; width: 12px; height: 12px; margin-left: -6px; background: #3c3c3c; border-right: 1px solid #5a5a5a; border-bottom: 1px solid #5a5a5a; transform: rotate(45deg); }
     @keyframes pop { from { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.97); } to { opacity: 1; transform: translateX(-50%); } }
     .wheels { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; height: 102px; }

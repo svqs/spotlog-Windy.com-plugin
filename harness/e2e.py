@@ -31,7 +31,7 @@ with sync_playwright() as p:
     pg.reload()
     pg.wait_for_selector('.spotlog')
     shot = lambda n: pg.screenshot(path=f'{OUT}/{n}.png')
-    pane = pg.locator('#pane')
+    pane = pg.locator('#pane .spotlog')  # the plugin scrolls itself (Windy's pane does not)
     bottom = lambda: pane.evaluate('el => el.scrollTo(0, el.scrollHeight)')
     top = lambda: pane.evaluate('el => el.scrollTo(0, 0)')
     shot('01-home-empty')

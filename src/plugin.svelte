@@ -401,7 +401,6 @@
     <SnapCard title={ fmtDayTime(snap.ts) } sub={ 'Saved ' + fmtDayTime(snap.savedAt) } model={ modelLabel(snap.primary) } wind={ primaryOf(snap) } waves={ snap.waves } models={ snap.models } u={ S } />
     {#if snap.series}
         <div class="section">
-            <div class="row"><b class="grow">The whole day is saved</b><small>tap an hour</small></div>
             <div class="hours" role="listbox" aria-label="Hour of the saved forecast">
                 {#each hourCells(snap) as h (h.ts)}
                     <button class="hr" class:on={ h.on } use:reveal={ h.on } role="option" aria-selected={ h.on } on:click={ () => setSnapHour(h.ts) }>
@@ -410,7 +409,7 @@
                     </button>
                 {/each}
             </div>
-            <small class="muted">When you log a session with this forecast, it moves to your session time by itself.</small>
+            <small class="muted sl-note">The whole day is saved: tap an hour to see it. Logging a session moves it to your session time.</small>
         </div>
     {/if}
     <div class="card">
@@ -446,10 +445,8 @@
             models={ logView.models }
             best={ closest?.model || null }
             u={ S }
-            badge={ logView.note }
-            badgeBg="#e9e8e3"
-            badgeFg="#6b6b6b"
         />
+        {#if logView.note}<small class="muted sl-note">{ logView.note }</small>{/if}
         {#if logView.otherDay && f.lat !== undefined && !capturing}
             <button class="btn ghost" on:click={ () => captureForLog(true) }>Save the forecast for { fmtDay(sessionFocus(f) ?? Date.now()) } instead</button>
         {/if}
@@ -760,7 +757,7 @@
         }
         const otherDay = focus !== null && dateStrOf(focus) !== dateStrOf(sn.ts);
         const note = focus === null
-            ? (sn.series ? 'Set your time on the water and this follows it' : '')
+            ? (sn.series ? 'Set your time on the water and the forecast follows it.' : '')
             : otherDay ? `This forecast is for ${fmtDay(sn.ts)}, not your session day` : sn.series ? '' : 'Older snapshot: only this hour was saved';
         return { ts: sn.ts, models: sn.models, waves: sn.waves, matches: false, otherDay, note };
     }
@@ -1646,7 +1643,12 @@
         display: flex;
         flex-direction: column;
         gap: 16px;
-        min-height: 100%;
+        /* the panel scrolls itself: Windy's pane doesn't scroll plugin content for us */
+        height: 100%;
+        max-height: 100vh;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
         box-sizing: border-box;
         position: relative;
 
@@ -1661,6 +1663,7 @@
         input[type='date'] { color-scheme: dark; }
         textarea { resize: vertical; line-height: 1.45; }
     }
+    .spotlog > :global(*) { flex-shrink: 0; }
     .wordmark { font-family: 'Doto', monospace; font-weight: 900; font-size: 24px; letter-spacing: 0.06em; flex: 1; }
     .card { background: @card; border: 1px solid @line; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
     .row { display: flex; align-items: center; gap: 10px; &.start { align-items: flex-start; } }
@@ -1692,6 +1695,7 @@
         small { font-size: 11px; }
         b { width: 30px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; color: @ink; font-size: 13px; }
         &.on { border-color: @orange; background: #4a4a4a; } }
+    .sl-note { margin-top: -8px; padding: 0 4px; line-height: 1.4; }
     .link.inline { display: inline; padding: 0; font-size: 12px; }
 
     .actions { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 8px; }
