@@ -1,4 +1,4 @@
-# Spotlog · Windy plugin (0.3.0)
+# Spotlog · Windy plugin (0.3.1)
 
 A session diary inside [Windy.com](https://www.windy.com) for surfers, windsurfers and kiters.
 Save the forecast for a spot (numbers, not a screenshot), log how the session really felt, attach a GPS track,
@@ -45,7 +45,7 @@ python3 harness/e2e.py /tmp    # clicks through every flow (pip install playwrig
 
 | | |
 |---|---|
-| Do anything from anywhere | Home: **Save forecast**, **Add spot**, **Log session**. Each asks where (click the map, map centre, one of your spots, or no place). Clicking the map opens that place with the same three actions. Forecasts and sessions can be linked to a spot later. |
+| Do anything from anywhere | Home: **Save forecast**, **Add spot**, **Log session**. Each asks where (click on the map, map centre, one of your spots, or no place). Clicking on the map opens that place with the same three actions. Forecasts and sessions can be linked to a spot later. |
 | Units | Pill at the top of every screen: wind m/s · kt · km/h · mph · bft, waves m · ft, °C · °F. Stored in SI, converted on screen. |
 | What a forecast saves | Same pill: wind, gusts, direction always; temperature, waves, swell 1, period, power optional; every model on/off. Tides + water temp: “soon” (not in Windy's plugin API). |
 | Spots | Directions + range, or “I don't know yet” → Spotlog suggests a wind window after two great sessions. Tiles show conditions now + a predicted rating after 3 sessions. |

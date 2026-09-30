@@ -46,7 +46,7 @@
 
     {#if tab === 'spots'}
         {#if data.spots.length === 0}
-            <div class="empty">No spots yet. Press <b>Add spot</b> and click the map where you surf or sail.</div>
+            <div class="empty">No spots yet. Press <b>Add spot</b> and click on the map where you surf or sail.</div>
         {:else}
             <div class="tiles">
                 {#each data.spots as s (s.id)}
@@ -141,6 +141,8 @@
                     <button class="btn ghost" disabled={ syncState === 'saving' } on:click={ () => syncNow(false) }>{ syncState === 'saving' ? 'Syncing…' : 'Sync now' }</button>
                     <button class="btn ghost" on:click={ doSignOut }>Sign out</button>
                 </div>
+                <button class="link danger" on:click={ doDeleteAccountData }>{ armed === 'account' ? 'Tap again: deletes your diary from the account' : 'Delete my data from the account' }</button>
+                <small class="muted">Signed-in details are kept in this browser. Only install Windy plugins you trust: plugins share windy.com's storage.</small>
             {:else}
                 <p class="p muted">Sign in with your email to keep your diary in your account instead of only this browser. We email you a 6-digit code, no password.</p>
                 {#if !codeSent}
@@ -185,7 +187,7 @@
     {/if}
     <div class="pickmap">
         <span class="pulse"></span>
-        <span class="grow"><b>{ isMobile ? 'Use the map centre' : 'Click the map' }</b><small>{ isMobile ? 'Move the map so the spot is in the middle' : 'anywhere, on a town or on one of your spots' }</small></span>
+        <span class="grow"><b>{ isMobile ? 'Use the map centre' : 'Click on the map' }</b><small>{ isMobile ? 'Move the map so the spot is in the middle' : 'anywhere, on a town or on one of your spots' }</small></span>
     </div>
     <div class="list">
         <button class="item" on:click={ useCentre }>
@@ -231,7 +233,7 @@
     <div class="card row">
         <span class="ico o">●</span>
         <span class="grow"><small>Location</small><b>{ sf.place || sf.lat.toFixed(3) + ', ' + sf.lon.toFixed(3) }</b></span>
-        <small class="r">{ isMobile ? '' : 'click the map to move' }</small>
+        <small class="r">{ isMobile ? '' : 'click on the map to move it' }</small>
     </div>
 
     <div class="field"><span class="lbl">Sport</span>
@@ -580,11 +582,12 @@
     import { onDestroy, onMount, tick } from 'svelte';
 
     import config from './pluginConfig';
-    import { load, save, exportJson, importJson, uid, emptyData, normalise, mergeData } from './lib/storage';
+    import { load, save, exportJson, importJson, uid, emptyData, normalise, mergeData, KEY } from './lib/storage';
     import { waveValueAt, modelValueAt, nextMatch, conditionsNow, trimWaves, captureDay, seriesAt, covers, SNAPSHOT_MODELS } from './lib/forecast';
-    import { cloudAvailable, currentUser, sendCode, verifyCode, signOut, pull, push } from './lib/cloud';
+    import { cloudAvailable, currentUser, sendCode, verifyCode, signOut, pull, push, deleteAccountData } from './lib/cloud';
     import type { CloudUser } from './lib/cloud';
     import { COFFEE_URL } from './lib/links';
+    import { FONT_CSS } from './lib/fonts';
     import {
         DIRS, SPORTS, RATINGS, RATING_BG, RATING_FG, GEAR_SPORTS, GEAR_BY_SPORT, ratingBg, ratingFg, dirName, dirsLabel, windColor, modelLabel,
         distanceKm, modelScores, forecastBias, fmtDay, fmtDayTime, fmtTime,
@@ -625,6 +628,10 @@
 
     let root: HTMLElement;
     let data: SpotlogData = load();
+    /** ids present at the last save: anything missing now was deleted (-> tombstone, so sync won't bring it back) */
+    const allIds = (d: SpotlogData) => new Set([...d.spots, ...d.snapshots, ...d.sessions, ...d.gear].map(x => x.id));
+    let knownIds = allIds(data);
+    let storageWarned = false;
     let view: View = 'home';
     let hist: Frame[] = [];
     let tab: 'spots' | 'sessions' | 'gear' | 'data' = 'spots';
@@ -646,7 +653,7 @@
     let matches: Record<string, MatchWindow | null | 'loading'> = {};
     let nowBySpot: Record<string, Now | 'loading'> = {};
     let capturing = false;
-    let armed: '' | 'spot' | 'all' = '';
+    let armed: '' | 'spot' | 'all' | 'account' = '';
     let armTimer: ReturnType<typeof setTimeout> | undefined;
     let gearSport = 'Windsurf';
     let gearKind = 'Board';
@@ -870,7 +877,7 @@
         clearTimeout(toastTimer);
         u?.();
     }
-    function arm(what: 'spot' | 'all'): boolean {
+    function arm(what: 'spot' | 'all' | 'account'): boolean {
         if (armed === what) {
             armed = '';
             return true;
@@ -881,8 +888,18 @@
         return false;
     }
     function persist() {
-        data.updatedAt = Date.now();
-        save(data);
+        const now = Date.now();
+        const cur = allIds(data);
+        const deleted = { ...(data.deleted || {}) };
+        knownIds.forEach(id => { if (!cur.has(id)) deleted[id] = now; });
+        cur.forEach(id => { if (deleted[id]) delete deleted[id]; }); // undo brings an item back
+        knownIds = cur;
+        data.deleted = deleted;
+        data.updatedAt = now;
+        if (!save(data) && !storageWarned) {
+            storageWarned = true;
+            showToast(cloudUser ? 'This browser\'s storage is full. Your account still has everything.' : 'This browser\'s storage is full. Export your data or sign in to your account.');
+        }
         data = data;
         drawSpotMarkers();
         schedulePush();
@@ -905,22 +922,21 @@
             }
         }, 1200);
     }
-    /** first = this browser just signed in: merge both diaries. Otherwise the newer copy wins. */
-    async function syncNow(first: boolean) {
+    /** Merges this browser's diary with the account copy (by id, newer wins, deletions stay deleted) and uploads the result */
+    async function syncNow(_first: boolean) {
         if (!cloudUser) return;
         syncState = 'saving';
         try {
             const remote = await pull();
-            if (first) {
-                data = remote ? mergeData(normalise(remote.data), data) : { ...data, updatedAt: Date.now() };
-                save(data);
-                await push(data);
-            } else if (remote && remote.updatedAt > (data.updatedAt || 0)) {
-                data = normalise(remote.data);
-                save(data);
-            } else {
-                await push(data);
+            if (remote) {
+                const r = normalise(remote.data);
+                r.updatedAt = Math.max(r.updatedAt || 0, remote.updatedAt || 0);
+                data = mergeData(r, data);
             }
+            data.updatedAt = Date.now();
+            knownIds = allIds(data);
+            save(data);
+            await push(data);
             data = data;
             drawSpotMarkers();
             loadAllNow();
@@ -929,6 +945,21 @@
         } catch (e) {
             syncState = 'error';
             syncError = (e as Error).message;
+        }
+    }
+    /** Another Windy tab saved the diary: merge it in, so two open tabs never overwrite each other */
+    const sig = (d: SpotlogData) => JSON.stringify([[...allIds(d)].sort(), Object.keys(d.deleted || {}).sort(), d.settings]);
+    function onStorage(e: StorageEvent) {
+        if (e.key !== KEY || !e.newValue) return;
+        try {
+            const other = normalise(JSON.parse(e.newValue));
+            const merged = mergeData(other, data);
+            data = merged;
+            knownIds = allIds(data);
+            if (sig(merged) !== sig(other)) save(merged);
+            drawSpotMarkers();
+        } catch (err) {
+            console.info('[spotlog] could not read the other tab\'s data', err);
         }
     }
     async function doSendCode() {
@@ -956,6 +987,18 @@
             authError = (e as Error).message || 'That code did not work';
         } finally {
             authBusy = false;
+        }
+    }
+    async function doDeleteAccountData() {
+        if (!arm('account')) return;
+        try {
+            await deleteAccountData();
+            cloudUser = null;
+            syncState = 'idle';
+            syncAt = 0;
+            showToast('Your diary was deleted from the account. This browser keeps its copy');
+        } catch (e) {
+            showToast((e as Error).message);
         }
     }
     function doSignOut() {
@@ -1572,8 +1615,8 @@
             persist();
             loadAllNow();
             showToast('Data imported');
-        } catch {
-            showToast('That file is not a Spotlog export');
+        } catch (err) {
+            showToast((err as Error).message?.includes('larger') ? (err as Error).message : 'That file is not a Spotlog export');
         }
     }
     function clearAll() {
@@ -1592,12 +1635,12 @@
     };
 
     onMount(() => {
+        // fonts are bundled in the plugin: no requests to Google Fonts (privacy, works offline)
         if (!document.getElementById('spotlog-fonts')) {
-            const link = document.createElement('link');
-            link.id = 'spotlog-fonts';
-            link.rel = 'stylesheet';
-            link.href = 'https://fonts.googleapis.com/css2?family=Doto:wght@900&family=Instrument+Sans:wght@400;500;600&display=swap';
-            document.head.appendChild(link);
+            const st = document.createElement('style');
+            st.id = 'spotlog-fonts';
+            st.textContent = FONT_CSS;
+            document.head.appendChild(st);
         }
         try {
             tsListener = store.on('timestamp', (v: number) => (mapTs = v));
@@ -1605,6 +1648,7 @@
             console.info('[spotlog] timeline not observable', e);
         }
         singleclick.on(name, onMapPick);
+        window.addEventListener('storage', onStorage);
         drawSpotMarkers();
         loadAllNow();
         if (cloudUser) syncNow(false);
@@ -1612,6 +1656,7 @@
 
     onDestroy(() => {
         singleclick.off(name, onMapPick);
+        window.removeEventListener('storage', onStorage);
         if (tsListener !== null) store.off(tsListener);
         spotMarkers.forEach(m => m.remove());
         clearTemp();

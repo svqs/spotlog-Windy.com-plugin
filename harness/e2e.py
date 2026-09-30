@@ -25,6 +25,8 @@ with sync_playwright() as p:
     ctx = b.new_context(viewport={'width': 1440, 'height': 900}, locale='en-GB')
     pg = ctx.new_page()
     pg.on('pageerror', lambda e: errors.append(str(e)))
+    requests = []
+    pg.on('request', lambda r: requests.append(r.url))
     pg.on('console', lambda m: errors.append('console.' + m.type + ': ' + m.text) if m.type == 'error' and 'ERR_TUNNEL' not in m.text else None)
     pg.goto(URL)
     pg.evaluate('localStorage.clear()')
@@ -38,7 +40,7 @@ with sync_playwright() as p:
 
     # --- Add spot from home: pick on the map, "I know" the wind
     pg.click('.act:has-text("Add spot")')
-    pg.wait_for_selector('text=Click the map')
+    pg.wait_for_selector('text=Click on the map')
     pg.click('.label:has-text("Valdevaqueros")')
     pg.wait_for_selector('text=Which wind works here?')
     assert pg.input_value('.field input') == 'Valdevaqueros'
@@ -256,6 +258,41 @@ with sync_playwright() as p:
     shot('11b-account')
     ok('sign in with email code, diary uploaded to the account')
 
+    # --- two Windy tabs open at once must not overwrite each other
+    pg2 = ctx.new_page()
+    pg2.goto(URL)
+    pg2.wait_for_selector('.spotlog')
+    pg2.click('.tabs button:has-text("Gear")')
+    pg2.fill('.card input', 'Tab two board')
+    pg2.click('.card .btn:has-text("Add")')
+    pg2.wait_for_timeout(300)
+    pg.click('.tabs button:has-text("Gear")')
+    pg.fill('.card input', 'Tab one sail')
+    pg.click('.card .btn:has-text("Add")')
+    pg.wait_for_timeout(300)
+    names = [g['name'] for g in stored(pg)['gear']]
+    assert 'Tab two board' in names and 'Tab one sail' in names, names
+    pg2.close()
+    ok('two open tabs merge instead of overwriting each other')
+
+    # --- deleting stays deleted after a sync (tombstones)
+    pg.click('.item:has-text("Tab one sail") .link.danger')
+    pg.wait_for_timeout(1600)
+    cloud = pg.evaluate("JSON.parse(localStorage.getItem('spotlog-mock-cloud'))")
+    row = list(cloud['rows'].values())[0]
+    assert 'Tab one sail' not in [g['name'] for g in row['data']['gear']]
+    assert any(v for v in row['data'].get('deleted', {}).values())
+    ok('a delete syncs to the account and is remembered')
+
+    # --- delete my data from the account
+    pg.click('.tabs button:has-text("Data")')
+    pg.click('text=Delete my data from the account')
+    pg.click('text=Tap again: deletes your diary from the account')
+    pg.wait_for_selector('.toast:has-text("deleted from the account")')
+    cloud = pg.evaluate("JSON.parse(localStorage.getItem('spotlog-mock-cloud'))")
+    assert not cloud.get('rows'), cloud.get('rows')
+    ok('delete my data from the account')
+
     # --- a spot where you don't know the wind yet (click on the empty map)
     pg.click('.tabs button:has-text("Spots")')
     pg.mouse.click(260, 560)
@@ -279,6 +316,8 @@ with sync_playwright() as p:
     data = stored(pg)
     b.close()
 
+assert not any('fonts.googleapis' in u or 'fonts.gstatic' in u for u in requests), 'Google Fonts was requested'
+print('✓ no requests to Google Fonts (fonts are bundled)')
 print(json.dumps({
     'steps': len(steps),
     'spots': [(s['name'], s['dirs'], s['min'], s['max'], s.get('windUnknown')) for s in data['spots']],

@@ -260,6 +260,7 @@
         async refresh(rt) { await wait(100); return sessionFor(rt); },
         async pull(s) { await wait(250); const r = (cdb().rows || {})[s.user.id]; return r ? { data: r.data, updatedAt: r.updatedAt } : null; },
         async push(s, data) { await wait(250); const d = cdb(); d.rows = d.rows || {}; d.rows[s.user.id] = { data, updatedAt: data.updatedAt || Date.now() }; cwrite(d); },
+        async remove(s) { await wait(250); const d = cdb(); if (d.rows) delete d.rows[s.user.id]; cwrite(d); },
     };
 
     // ---- Windy's own closing ✕ (Windy draws it on every right-hand pane plugin) ----

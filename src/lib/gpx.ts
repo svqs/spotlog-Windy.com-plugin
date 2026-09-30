@@ -22,6 +22,7 @@ const parseTcx = (doc: Document): Pt[] =>
 /** Reads a GPX or TCX file (what Garmin Connect, Strava & co. export) into a compact track */
 export const readTrack = async (file: File): Promise<Track> => {
     const name = file.name.toLowerCase();
+    if (file.size > 40 * 1024 * 1024) throw new Error('That file is larger than 40 MB. Export a single activity as GPX or TCX.');
     if (name.endsWith('.fit')) {
         throw new Error('FIT files are not supported yet. In Garmin Connect choose “Export to GPX” (or TCX) and add that file.');
     }

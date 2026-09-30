@@ -134,4 +134,6 @@ export interface SpotlogData {
     settings: Settings;
     /** last local change (ms), used by account sync */
     updatedAt?: number;
+    /** ids deleted on this device (id -> ms), so a sync doesn't bring them back; pruned after 90 days */
+    deleted?: Record<string, number>;
 }

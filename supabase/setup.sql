@@ -14,3 +14,7 @@ create policy "spotlog: read own"   on public.spotlog_data for select using (aut
 create policy "spotlog: insert own" on public.spotlog_data for insert with check (auth.uid() = user_id);
 create policy "spotlog: update own" on public.spotlog_data for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "spotlog: delete own" on public.spotlog_data for delete using (auth.uid() = user_id);
+
+-- Keep one diary to a sane size (10 MB of JSON) so nobody can fill the database.
+alter table public.spotlog_data
+    add constraint spotlog_data_size check (octet_length(data::text) < 10485760);

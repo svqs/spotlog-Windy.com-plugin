@@ -20,6 +20,7 @@ interface Backend {
     refresh(refreshToken: string): Promise<AuthSession>;
     pull(s: AuthSession): Promise<Remote | null>;
     push(s: AuthSession, data: SpotlogData): Promise<void>;
+    remove(s: AuthSession): Promise<void>;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,6 +71,12 @@ const supabase: Backend = {
             method: 'POST',
             headers: { ...hdr(s.access_token), Prefer: 'resolution=merge-duplicates,return=minimal' },
             body: JSON.stringify({ user_id: s.user.id, data, updated_at: new Date(data.updatedAt || Date.now()).toISOString() }),
+        });
+    },
+    async remove(s) {
+        await call(`/rest/v1/spotlog_data?user_id=eq.${encodeURIComponent(s.user.id)}`, {
+            method: 'DELETE',
+            headers: { ...hdr(s.access_token), Prefer: 'return=minimal' },
         });
     },
 };
@@ -143,4 +150,13 @@ export async function push(data: SpotlogData): Promise<void> {
     const s = await session();
     if (!b || !s) throw new Error('Not signed in');
     await b.push(s, data);
+}
+
+/** Deletes the diary from the account (this browser keeps its copy) and signs out */
+export async function deleteAccountData(): Promise<void> {
+    const b = backend();
+    const s = await session();
+    if (!b || !s) throw new Error('Not signed in');
+    await b.remove(s);
+    signOut();
 }
