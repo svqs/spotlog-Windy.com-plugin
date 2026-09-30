@@ -9,7 +9,6 @@
         <div class="row">
             <span class="wordmark">SPOTLOG</span>
             <button class="units" aria-expanded={ showUnits } aria-label="Units and saved data" on:click={ () => (showUnits = !showUnits) }>{ unitsLabel } <span class="chev" class:up={ showUnits }>▾</span></button>
-            <button class="close" aria-label="Close Spotlog" on:click={ closePlugin }>×</button>
         </div>
         {#if showUnits}<Settings settings={ data.settings } on:change={ e => setSettings(e.detail) } />{/if}
         <div class="stats">
@@ -17,13 +16,15 @@
             <div><span class="lbl">Sessions</span><span class="big">{ data.sessions.length }</span></div>
             <div><span class="lbl">On the water</span><span class="big">{ hoursOnWater } <small>h</small></span></div>
         </div>
+        {#if cloudUser}
+            <small class="sync" class:err={ syncState === 'error' }>{ syncLabel }</small>
+        {/if}
     </div>
 {:else}
     <div class="topbar">
         <button class="round" aria-label="Back" on:click={ back }>←</button>
         <span class="grow"><b class="title">{ hdr.title }</b>{#if hdr.sub}<small>{ hdr.sub }</small>{/if}</span>
         <button class="units" aria-expanded={ showUnits } aria-label="Units and saved data" on:click={ () => (showUnits = !showUnits) }>{ unitsLabel } <span class="chev" class:up={ showUnits }>▾</span></button>
-        <button class="close" aria-label="Close Spotlog" on:click={ closePlugin }>×</button>
     </div>
     {#if showUnits}<div class="card"><Settings settings={ data.settings } on:change={ e => setSettings(e.detail) } /></div>{/if}
 {/if}
@@ -96,34 +97,69 @@
         {/if}
     {:else if tab === 'gear'}
         <div class="card">
-            <div class="row"><b class="grow">Your gear</b><small>{ data.gear.length } saved</small></div>
-            {#if data.gear.length === 0}
-                <span class="muted">Save your boards, sails, wetsuits… They show up as quick picks when you log a session.</span>
-            {:else}
-                <div class="list">
-                    {#each data.gear as g (g.id)}
-                        <div class="item static">
-                            <span class="kind">{ g.kind }</span>
-                            <span class="grow"><span>{ g.name }</span><small>used in { gearUse(g.id) } session(s)</small></span>
-                            <button class="link danger" on:click={ () => deleteGear(g.id) }>Remove</button>
-                        </div>
-                    {/each}
-                </div>
-            {/if}
-        </div>
-        <div class="card">
             <b>Add gear</b>
+            <small class="muted">First the sport, then what it is.</small>
+            <div class="seg">
+                {#each GEAR_SPORTS as sp}<button class:on={ gearSport === sp } on:click={ () => { gearSport = sp; gearKind = GEAR_BY_SPORT[sp][0].kind; } }>{ sp }</button>{/each}
+            </div>
             <div class="chips">
-                {#each GEAR_KINDS as k}<button class="chip" class:on={ gearKind === k } on:click={ () => (gearKind = k) }>{ k }</button>{/each}
+                {#each GEAR_BY_SPORT[gearSport] as k}<button class="chip" class:on={ gearKind === k.kind } on:click={ () => (gearKind = k.kind) }>{ k.kind }</button>{/each}
             </div>
             <div class="row">
-                <input bind:value={ gearName } placeholder={ gearPlaceholder(gearKind) } on:keydown={ e => e.key === 'Enter' && addGear() } />
+                <input bind:value={ gearName } placeholder={ gearHint(gearSport, gearKind) } on:keydown={ e => e.key === 'Enter' && addGear() } />
                 <button class="btn primary small" disabled={ !gearName.trim() } on:click={ addGear }>Add</button>
             </div>
         </div>
+        {#if data.gear.length === 0}
+            <div class="empty">Save your boards, sails, kites, wings… They show up as quick picks when you log a session.</div>
+        {:else}
+            {#each gearGroups as grp (grp.sport)}
+                <div class="section">
+                    <div class="row"><b class="grow">{ grp.sport }</b><small>{ grp.items.length } saved</small></div>
+                    <div class="list">
+                        {#each grp.items as g (g.id)}
+                            <div class="item static">
+                                <span class="kind">{ g.kind }</span>
+                                <span class="grow"><span>{ g.name }</span><small>used in { gearUse(g.id) } session(s)</small></span>
+                                <button class="link danger" on:click={ () => deleteGear(g.id) }>Remove</button>
+                            </div>
+                        {/each}
+                    </div>
+                </div>
+            {/each}
+        {/if}
     {:else}
         <div class="card">
-            <p class="p">Everything is stored in this browser only. Export it to look at the raw data, back it up or move it to another device.</p>
+            <b>Your account</b>
+            {#if !cloudOn}
+                <p class="p muted">Your diary is saved in this browser. Saving it to an account (so it's on every device) is switched on once the Spotlog server is set up.</p>
+            {:else if cloudUser}
+                <p class="p">Signed in as <b>{ cloudUser.email }</b>. Everything you save goes to your account and shows up on every device where you sign in.</p>
+                <small class:err={ syncState === 'error' }>{ syncLabel }</small>
+                {#if syncState === 'error'}<small class="err">{ syncError }</small>{/if}
+                <div class="btns">
+                    <button class="btn ghost" disabled={ syncState === 'saving' } on:click={ () => syncNow(false) }>{ syncState === 'saving' ? 'Syncing…' : 'Sync now' }</button>
+                    <button class="btn ghost" on:click={ doSignOut }>Sign out</button>
+                </div>
+            {:else}
+                <p class="p muted">Sign in with your email to keep your diary in your account instead of only this browser. We email you a 6-digit code, no password.</p>
+                {#if !codeSent}
+                    <div class="row">
+                        <input type="email" bind:value={ authEmail } placeholder="you@example.com" autocomplete="email" on:keydown={ e => e.key === 'Enter' && doSendCode() } />
+                        <button class="btn primary small" disabled={ !/.+@.+\..+/.test(authEmail) || authBusy } on:click={ doSendCode }>{ authBusy ? 'Sending…' : 'Send code' }</button>
+                    </div>
+                {:else}
+                    <small class="muted">Code sent to { authEmail }. <button class="link inline" on:click={ () => { codeSent = false; authCode = ''; } }>Change email</button></small>
+                    <div class="row">
+                        <input inputmode="numeric" autocomplete="one-time-code" maxlength="8" bind:value={ authCode } placeholder="6-digit code" on:keydown={ e => e.key === 'Enter' && doVerify() } />
+                        <button class="btn primary small" disabled={ authCode.trim().length < 6 || authBusy } on:click={ doVerify }>{ authBusy ? 'Checking…' : 'Sign in' }</button>
+                    </div>
+                {/if}
+                {#if authError}<small class="err">{ authError }</small>{/if}
+            {/if}
+        </div>
+        <div class="card">
+            <p class="p">{ cloudUser ? 'A copy is also kept in this browser.' : 'Everything is stored in this browser only.'} Export it to look at the raw data, back it up or move it to another device.</p>
             <p class="small">{ data.spots.length } spots · { data.snapshots.length } forecast snapshots · { data.sessions.length } sessions · { data.gear.length } gear</p>
             <div class="btns">
                 <button class="btn primary" on:click={ () => exportJson(data) }>Export JSON</button>
@@ -140,6 +176,7 @@
             Tip: click anywhere on the map (a town, a label or one of your spots) to open it here.
         {/if}
     </div>
+    <a class="coffee" href={ COFFEE_URL } target="_blank" rel="noopener noreferrer"><span aria-hidden="true">☕</span> Buy me a coffee</a>
 
 <!-- ================= PICK A PLACE ================= -->
 {:else if view === 'pick'}
@@ -362,6 +399,20 @@
 <!-- ================= SNAPSHOT ================= -->
 {:else if view === 'snap' && snap}
     <SnapCard title={ fmtDayTime(snap.ts) } sub={ 'Saved ' + fmtDayTime(snap.savedAt) } model={ modelLabel(snap.primary) } wind={ primaryOf(snap) } waves={ snap.waves } models={ snap.models } u={ S } />
+    {#if snap.series}
+        <div class="section">
+            <div class="row"><b class="grow">The whole day is saved</b><small>tap an hour</small></div>
+            <div class="hours" role="listbox" aria-label="Hour of the saved forecast">
+                {#each hourCells(snap) as h (h.ts)}
+                    <button class="hr" class:on={ h.on } use:reveal={ h.on } role="option" aria-selected={ h.on } on:click={ () => setSnapHour(h.ts) }>
+                        <small>{ h.label }</small>
+                        <b style="background: { windColor(h.wind) }">{ fmtWind0(h.wind, S.wind) }</b>
+                    </button>
+                {/each}
+            </div>
+            <small class="muted">When you log a session with this forecast, it moves to your session time by itself.</small>
+        </div>
+    {/if}
     <div class="card">
         <div class="row">
             <span class="ico o">●</span>
@@ -385,20 +436,44 @@
 
 <!-- ================= LOG / EDIT SESSION ================= -->
 {:else if view === 'log' && f}
-    {#if logSnap}
-        <SnapCard title={ fmtDayTime(logSnap.ts) } sub={ 'Forecast saved ' + fmtDayTime(logSnap.savedAt) } model={ modelLabel(logSnap.primary) } wind={ logPrimary } waves={ logSnap.waves } models={ logSnap.models } best={ closest?.model || null } u={ S } />
+    {#if logSnap && logView}
+        <SnapCard
+            title={ fmtDayTime(logView.ts) }
+            sub={ logView.matches ? 'Forecast for your session time' : 'Forecast saved ' + fmtDayTime(logSnap.savedAt) }
+            model={ modelLabel(logSnap.primary) }
+            wind={ logPrimary }
+            waves={ logView.waves }
+            models={ logView.models }
+            best={ closest?.model || null }
+            u={ S }
+            badge={ logView.note }
+            badgeBg="#e9e8e3"
+            badgeFg="#6b6b6b"
+        />
+        {#if logView.otherDay && f.lat !== undefined && !capturing}
+            <button class="btn ghost" on:click={ () => captureForLog(true) }>Save the forecast for { fmtDay(sessionFocus(f) ?? Date.now()) } instead</button>
+        {/if}
     {:else}
         <div class="snapless">
             {#if capturing}
                 <span>Saving the forecast…</span>
             {:else if f.lat !== undefined}
-                <span class="grow">No forecast attached</span>
-                <button class="btn primary small" on:click={ () => f && captureForLog() }>Save it now</button>
+                <span class="grow">{ captureError || 'No forecast attached' }</span>
+                <button class="btn primary small" on:click={ () => f && captureForLog(true) }>Save it now</button>
             {:else}
                 <span class="grow">No place yet, so no forecast. Pick a spot below.</span>
             {/if}
         </div>
     {/if}
+
+    <div class="field"><span class="lbl">When</span>
+        <input type="date" bind:value={ f.dateStr } />
+        <div class="row start times">
+            <TimeWheel bind:value={ f.start } placeholder="Start" />
+            <span class="to">→</span>
+            <TimeWheel bind:value={ f.end } placeholder="End" />
+        </div>
+    </div>
 
     <div class="card">
         <div class="row">
@@ -448,27 +523,17 @@
     </div>
 
     <div class="field"><span class="lbl">Gear</span>
-        {#if data.gear.length}
+        {#each logGearGroups as grp (grp.sport)}
+            {#if logGearGroups.length > 1}<small class="muted">{ grp.sport }</small>{/if}
             <div class="chips">
-                {#each data.gear as g (g.id)}
+                {#each grp.items as g (g.id)}
                     <button class="chip" class:on={ f.gearIds.includes(g.id) } on:click={ () => f && (f = { ...f, gearIds: toggle(f.gearIds, g.id) }) }><span class="k">{ g.kind }</span>{ g.name }</button>
                 {/each}
             </div>
-        {/if}
+        {/each}
         <div class="row">
             <input bind:value={ f.gear } placeholder={ data.gear.length ? 'Anything else' : 'e.g. Sail 5.3, board 105 L' } />
             {#if f.gear.trim()}<button class="btn ghost small" on:click={ saveTypedGear }>Save to gear</button>{/if}
-        </div>
-    </div>
-
-    <div class="field"><span class="lbl">Date</span>
-        <input type="date" bind:value={ f.dateStr } />
-    </div>
-    <div class="field"><span class="lbl">On the water</span>
-        <div class="row start times">
-            <TimeWheel bind:value={ f.start } placeholder="Start" />
-            <span class="to">→</span>
-            <TimeWheel bind:value={ f.end } placeholder="End" />
         </div>
     </div>
 
@@ -510,7 +575,6 @@
 </section>
 
 <script lang="ts">
-    import bcast from '@windy/broadcast';
     import { map, markers, centerMap } from '@windy/map';
     import { singleclick } from '@windy/singleclick';
     import store from '@windy/store';
@@ -519,10 +583,13 @@
     import { onDestroy, onMount, tick } from 'svelte';
 
     import config from './pluginConfig';
-    import { load, save, exportJson, importJson, uid, emptyData } from './lib/storage';
-    import { captureModels, waveValueAt, modelValueAt, nextMatch, conditionsNow, trimWaves, SNAPSHOT_MODELS } from './lib/forecast';
+    import { load, save, exportJson, importJson, uid, emptyData, normalise, mergeData } from './lib/storage';
+    import { waveValueAt, modelValueAt, nextMatch, conditionsNow, trimWaves, captureDay, seriesAt, covers, SNAPSHOT_MODELS } from './lib/forecast';
+    import { cloudAvailable, currentUser, sendCode, verifyCode, signOut, pull, push } from './lib/cloud';
+    import type { CloudUser } from './lib/cloud';
+    import { COFFEE_URL } from './lib/links';
     import {
-        DIRS, SPORTS, RATINGS, RATING_BG, RATING_FG, GEAR_KINDS, ratingBg, ratingFg, dirName, dirsLabel, windColor, modelLabel,
+        DIRS, SPORTS, RATINGS, RATING_BG, RATING_FG, GEAR_SPORTS, GEAR_BY_SPORT, ratingBg, ratingFg, dirName, dirsLabel, windColor, modelLabel,
         distanceKm, modelScores, forecastBias, fmtDay, fmtDayTime, fmtTime,
     } from './lib/wind';
     import { fmtWind, fmtWind0, fmtHeight, fmtTemp, fmtDistance, windLabel, fromWind, toWind, windStep } from './lib/units';
@@ -536,7 +603,7 @@
     import Calendar from './ui/Calendar.svelte';
     import Settings from './ui/Settings.svelte';
 
-    import type { Spot, Snapshot, Session, ModelValue, WaveValue, Dir8, Settings as SettingsT, Track, SpotlogData } from './lib/types';
+    import type { Spot, Snapshot, Session, ModelValue, WaveValue, Dir8, Settings as SettingsT, Track, SpotlogData, Gear } from './lib/types';
     import type { MatchWindow } from './lib/forecast';
 
     type View = 'home' | 'pick' | 'place' | 'spotForm' | 'spot' | 'snap' | 'log';
@@ -551,6 +618,8 @@
         id?: string; spotId: string | null; lat?: number; lon?: number; snapshotId: string | null;
         dateStr: string; rating: number; felt: number | null; gusts: string | null; water: string | null;
         gearIds: string[]; gear: string; start: string; end: string; notes: string; track: Track | null;
+        /** snapshot this log created by itself (may be replaced when the date changes) */
+        autoSnap?: string | null;
     }
     interface Frame { view: View; spotId: string | null; snapId: string | null }
 
@@ -582,7 +651,23 @@
     let capturing = false;
     let armed: '' | 'spot' | 'all' = '';
     let armTimer: ReturnType<typeof setTimeout> | undefined;
+    let gearSport = 'Windsurf';
     let gearKind = 'Board';
+    let captureError = '';
+    let captureErrorDay = '';
+    // account sync
+    const cloudOn = cloudAvailable();
+    let cloudUser: CloudUser | null = currentUser();
+    let syncState: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
+    let syncAt = 0;
+    let syncError = '';
+    let pushTimer: ReturnType<typeof setTimeout> | undefined;
+    let authEmail = '';
+    let authCode = '';
+    let codeSent = false;
+    let authBusy = false;
+    let authError = '';
+    let recaptureTimer: ReturnType<typeof setTimeout> | undefined;
     let gearName = '';
     let toast: { msg: string; undo?: () => void } | null = null;
     let toastTimer: ReturnType<typeof setTimeout> | undefined;
@@ -611,11 +696,17 @@
     $: goodCount = spot ? samplesFor(spot, data.sessions, data.snapshots).filter(x => x.rating >= 4).length : 0;
     $: hoursOnWater = Math.round(data.sessions.reduce((a, s) => a + sessionHours(s), 0));
     $: logSnap = f?.snapshotId ? data.snapshots.find(x => x.id === f?.snapshotId) || null : null;
-    $: logPrimary = logSnap ? primaryOf(logSnap) : null;
+    // what the snapshot card shows while logging: the saved day read at the session time
+    $: logView = logSnap && f ? viewFor(logSnap, sessionFocus(f)) : null;
+    $: logPrimary = logView ? logView.models.find(m => m.model === logSnap?.primary) || logView.models[0] || null : null;
+    $: if (view === 'log' && f) scheduleRecapture(f.dateStr, f.start, f.end);
+    $: gearGroups = groupGear(data.gear, GEAR_SPORTS);
+    $: logGearGroups = f ? groupGear(data.gear, [...(spotById(f.spotId)?.sports || []), ...GEAR_SPORTS]) : [];
+    $: syncLabel = syncState === 'saving' ? 'Saving to your account…' : syncState === 'error' ? 'Not synced — will retry' : syncAt ? `Synced ${fmtTime(syncAt)} · ${cloudUser?.email || ''}` : `Account: ${cloudUser?.email || ''}`;
     $: logFc = logPrimary?.wind != null ? roundToStep(toWind(logPrimary.wind, S.wind)) : null;
     $: feltStep = windStep(S.wind);
     $: feltMax = Math.max(baseMax(S.wind), logFc !== null ? Math.ceil((logFc * 1.4) / (feltStep * 5)) * feltStep * 5 : 0);
-    $: closest = logSnap && f && f.felt !== null ? closestModel(logSnap, fromWind(f.felt, S.wind)) : null;
+    $: closest = logView && f && f.felt !== null ? closestModel({ models: logView.models } as Snapshot, fromWind(f.felt, S.wind)) : null;
     $: nearSpot = place ? nearestWithin(place.lat, place.lon, 5) : null;
     $: spotsByCentre = view === 'pick' ? nearestSpots(centre().lat, centre().lon) : [];
     let mapTs = currentTs();
@@ -637,6 +728,48 @@
     const gearUse = (id: string) => data.sessions.filter(s => s.gearIds?.includes(id)).length;
     const gearPlaceholder = (k: string) => ({ Board: 'e.g. Freewave 105 L', Sail: 'e.g. 5.3 wave sail', Fin: 'e.g. 22 cm', Wetsuit: 'e.g. 4/3 steamer', Wing: 'e.g. 5 m', Kite: 'e.g. 9 m' } as Record<string, string>)[k] || 'Name';
 
+    /** scrolls the selected hour of the day strip into view */
+    function reveal(node: HTMLElement, on: boolean) {
+        const go = (v: boolean) => v && node.scrollIntoView?.({ block: 'nearest', inline: 'center' });
+        setTimeout(() => go(on), 0);
+        return { update: go };
+    }
+    const gearHint = (sport: string, kind: string) => GEAR_BY_SPORT[sport]?.find(k => k.kind === kind)?.hint || 'Name';
+    function groupGear(list: Gear[], order: string[]): { sport: string; items: Gear[] }[] {
+        const sports = Array.from(new Set([...order.filter(x => GEAR_SPORTS.includes(x)), ...GEAR_SPORTS, 'Other']));
+        return sports
+            .map(sp => ({ sport: sp, items: list.filter(g => (g.sport || 'Other') === sp) }))
+            .filter(g => g.items.length);
+    }
+    /** The moment a session is about: middle of start–end, or the start, on the chosen date */
+    function sessionFocus(lf: LogForm): number | null {
+        if (!lf.start) return null;
+        const a = new Date(`${lf.dateStr}T${lf.start}`).getTime();
+        if (!isFinite(a)) return null;
+        if (lf.end) {
+            let b = new Date(`${lf.dateStr}T${lf.end}`).getTime();
+            if (b < a) b += 864e5;
+            return a + (b - a) / 2;
+        }
+        return a;
+    }
+    function viewFor(sn: Snapshot, focus: number | null) {
+        if (focus !== null && covers(sn.series, focus) && sn.series) {
+            const at = seriesAt(sn.series, focus);
+            return { ts: at.models[0]?.ts ?? focus, models: at.models, waves: at.waves, matches: true, otherDay: false, note: '' };
+        }
+        const otherDay = focus !== null && dateStrOf(focus) !== dateStrOf(sn.ts);
+        const note = focus === null
+            ? (sn.series ? 'Set your time on the water and this follows it' : '')
+            : otherDay ? `This forecast is for ${fmtDay(sn.ts)}, not your session day` : sn.series ? '' : 'Older snapshot: only this hour was saved';
+        return { ts: sn.ts, models: sn.models, waves: sn.waves, matches: false, otherDay, note };
+    }
+    function hourCells(sn: Snapshot) {
+        if (!sn.series) return [];
+        const m = sn.series.models[sn.primary] || Object.values(sn.series.models)[0];
+        const selected = sn.series.ts.reduce((b, t, i) => (Math.abs(t - sn.ts) < Math.abs(sn.series!.ts[b] - sn.ts) ? i : b), 0);
+        return sn.series.ts.map((t, i) => ({ ts: t, label: new Date(t).getHours().toString().padStart(2, '0'), wind: m?.wind[i] ?? null, on: i === selected }));
+    }
     function nowOf(id: string, _dep = nowBySpot): Now | null {
         const n = _dep[id];
         return n && n !== 'loading' ? n : null;
@@ -751,9 +884,89 @@
         return false;
     }
     function persist() {
+        data.updatedAt = Date.now();
         save(data);
         data = data;
         drawSpotMarkers();
+        schedulePush();
+    }
+
+    /* ---------- account sync ---------- */
+    function schedulePush() {
+        if (!cloudUser) return;
+        clearTimeout(pushTimer);
+        pushTimer = setTimeout(async () => {
+            syncState = 'saving';
+            try {
+                await push(data);
+                syncState = 'saved';
+                syncAt = Date.now();
+            } catch (e) {
+                syncState = 'error';
+                syncError = (e as Error).message;
+                pushTimer = setTimeout(schedulePush, 30e3);
+            }
+        }, 1200);
+    }
+    /** first = this browser just signed in: merge both diaries. Otherwise the newer copy wins. */
+    async function syncNow(first: boolean) {
+        if (!cloudUser) return;
+        syncState = 'saving';
+        try {
+            const remote = await pull();
+            if (first) {
+                data = remote ? mergeData(normalise(remote.data), data) : { ...data, updatedAt: Date.now() };
+                save(data);
+                await push(data);
+            } else if (remote && remote.updatedAt > (data.updatedAt || 0)) {
+                data = normalise(remote.data);
+                save(data);
+            } else {
+                await push(data);
+            }
+            data = data;
+            drawSpotMarkers();
+            loadAllNow();
+            syncState = 'saved';
+            syncAt = Date.now();
+        } catch (e) {
+            syncState = 'error';
+            syncError = (e as Error).message;
+        }
+    }
+    async function doSendCode() {
+        authBusy = true;
+        authError = '';
+        try {
+            await sendCode(authEmail);
+            codeSent = true;
+        } catch (e) {
+            authError = (e as Error).message;
+        } finally {
+            authBusy = false;
+        }
+    }
+    async function doVerify() {
+        authBusy = true;
+        authError = '';
+        try {
+            cloudUser = await verifyCode(authEmail, authCode);
+            codeSent = false;
+            authCode = '';
+            await syncNow(true);
+            showToast('Signed in. Your diary is saved to your account now');
+        } catch (e) {
+            authError = (e as Error).message || 'That code did not work';
+        } finally {
+            authBusy = false;
+        }
+    }
+    function doSignOut() {
+        signOut();
+        cloudUser = null;
+        syncState = 'idle';
+        syncAt = 0;
+        showToast('Signed out. A copy stays in this browser');
     }
     function setSettings(s: SettingsT) {
         data.settings = s;
@@ -932,9 +1145,6 @@
         go('home', false);
         loadAllNow();
     }
-    function closePlugin() {
-        bcast.emit('rqstClose', name);
-    }
     function openSpot(s: Spot, center = false) {
         spot = s;
         go('spot');
@@ -1051,21 +1261,21 @@
     }
 
     /* ---------- forecast snapshots ---------- */
-    async function capture(lat: number, lon: number, spotId: string | null): Promise<Snapshot> {
-        const ts = mapTs || currentTs();
-        const primaryModel = currentModel();
+    /** Saves the whole day around `focus` (default: Windy's timeline time) */
+    async function capture(lat: number, lon: number, spotId: string | null, focus?: number): Promise<Snapshot> {
+        const ts = focus ?? (mapTs || currentTs());
         const st = data.settings;
-        const [models, waves] = await Promise.all([
-            captureModels(lat, lon, ts, primaryModel, st.allModels),
-            waveValueAt(lat, lon, ts),
-        ]);
-        if (!models.length) throw new Error('forecast not available');
+        const day = await captureDay(lat, lon, ts, currentModel(), st.allModels, st.layers);
+        if (!day || !day.models.length) throw new Error('No forecast for that day. Windy only keeps forecasts from today on.');
         return {
-            id: uid(), spotId, lat, lon, ts, savedAt: Date.now(),
-            primary: models.some(m => m.model === primaryModel) ? primaryModel : models[0].model,
-            models: st.layers.includes('temp') ? models : models.map(m => ({ ...m, temp: null })),
-            waves: trimWaves(waves, st.layers),
+            id: uid(), spotId, lat, lon, ts: day.models[0].ts, savedAt: Date.now(), primary: day.primary,
+            models: day.models, waves: day.waves, series: day.series,
         };
+    }
+    function setSnapHour(t: number) {
+        if (!snap?.series) return;
+        const at = seriesAt(snap.series, t);
+        updateSnap({ ts: t, models: at.models, waves: at.waves });
     }
     async function saveForecastAt(t: { lat: number; lon: number; spot?: Spot }, open: boolean) {
         capturing = true;
@@ -1078,8 +1288,8 @@
                 openSnap(sn);
             }
             showToast(`Forecast saved · ${fmtDayTime(sn.ts)}`, () => removeSnap(sn.id));
-        } catch {
-            showToast('No forecast for this place');
+        } catch (e) {
+            showToast((e as Error).message?.startsWith('No forecast') ? (e as Error).message : 'No forecast for this place');
         } finally {
             capturing = false;
         }
@@ -1154,24 +1364,54 @@
         if (view === 'pick') view = 'home';
         go('log');
         if (nf.lat !== undefined && !nf.spotId) setTemp(nf.lat, nf.lon ?? 0);
+        captureError = '';
         if (!nf.snapshotId && nf.lat !== undefined) captureForLog();
     }
-    async function captureForLog() {
+    /**
+     * Saves the forecast for the session's day (at the session time if it is set, otherwise now).
+     * A snapshot this log created itself is replaced; a forecast you saved on purpose is kept and just unlinked.
+     */
+    async function captureForLog(force = false) {
         if (!f || f.lat === undefined) return;
+        const focus = sessionFocus(f) ?? (f.dateStr === dateStrOf(Date.now()) ? Date.now() : new Date(`${f.dateStr}T12:00`).getTime());
         capturing = true;
+        captureError = '';
         try {
-            const sn = await capture(f.lat, f.lon ?? 0, f.spotId);
-            data.snapshots = [...data.snapshots, sn];
+            const sn = await capture(f.lat, f.lon ?? 0, f.spotId, focus);
+            const old = f.autoSnap;
+            data.snapshots = [...data.snapshots.filter(x => !(old && x.id === old)), sn];
             persist();
             if (f) {
-                const p = primaryOf(sn);
-                f = { ...f, snapshotId: sn.id, felt: f.felt ?? (p?.wind != null ? roundToStep(toWind(p.wind, S.wind)) : null) };
+                const p = sn.models.find(m => m.model === sn.primary) || sn.models[0];
+                f = { ...f, snapshotId: sn.id, autoSnap: sn.id, felt: f.felt ?? (p?.wind != null ? roundToStep(toWind(p.wind, S.wind)) : null) };
             }
-        } catch {
-            /* the card offers "Save it now" */
+        } catch (e) {
+            captureError = (e as Error).message;
+            captureErrorDay = f?.dateStr || '';
+            if (f && f.autoSnap) {
+                // the old auto forecast was for another day: drop it rather than show the wrong day
+                const old = f.autoSnap;
+                data.snapshots = data.snapshots.filter(x => x.id !== old);
+                f = { ...f, snapshotId: f.snapshotId === old ? null : f.snapshotId, autoSnap: null };
+                persist();
+            }
         } finally {
             capturing = false;
         }
+    }
+    /** When the session moves to another day, a forecast Spotlog saved by itself follows it */
+    function scheduleRecapture(..._deps: unknown[]) {
+        clearTimeout(recaptureTimer);
+        recaptureTimer = setTimeout(() => {
+            if (view !== 'log' || !f || f.lat === undefined || capturing) return;
+            const sn = data.snapshots.find(x => x.id === f?.snapshotId);
+            const focus = sessionFocus(f);
+            const day = focus ?? new Date(`${f.dateStr}T12:00`).getTime();
+            const auto = !!f.autoSnap && f.autoSnap === f.snapshotId;
+            if (captureError && captureErrorDay !== f.dateStr) captureError = '';
+            if (!sn && !f.id && !captureError) captureForLog();
+            else if (sn && auto && dateStrOf(sn.ts) !== dateStrOf(day)) captureForLog(true);
+        }, 500);
     }
     function openSession(se: Session) {
         trackError = '';
@@ -1214,8 +1454,17 @@
             gusts: f.gusts, water: f.water, gearIds: f.gearIds, gear: f.gear.trim(), start: f.start, end: f.end, notes: f.notes, track: f.track,
         };
         data.sessions = f.id ? data.sessions.map(x => (x.id === se.id ? se : x)) : [...data.sessions, se];
-        // a forecast used for a session belongs to that spot
-        if (sn && !sn.spotId && se.spotId) data.snapshots = data.snapshots.map(x => (x.id === sn.id ? { ...x, spotId: se.spotId } : x));
+        if (sn) {
+            // the forecast follows the session: its main time becomes the session time (when that day was saved),
+            // and a forecast used for a session belongs to that spot
+            const focus = sessionFocus(f);
+            let upd: Snapshot = { ...sn, spotId: sn.spotId || se.spotId };
+            if (focus !== null && sn.series && covers(sn.series, focus)) {
+                const at = seriesAt(sn.series, focus);
+                upd = { ...upd, ts: at.models[0]?.ts ?? focus, models: at.models, waves: at.waves };
+            }
+            data.snapshots = data.snapshots.map(x => (x.id === sn.id ? upd : x));
+        }
         persist();
         showToast(f.id ? 'Session updated' : 'Session saved');
         const sp = spotById(se.spotId);
@@ -1278,13 +1527,14 @@
     /* ---------- gear ---------- */
     function addGear() {
         if (!gearName.trim()) return;
-        data.gear = [...data.gear, { id: uid(), name: gearName.trim(), kind: gearKind }];
+        data.gear = [...data.gear, { id: uid(), name: gearName.trim(), kind: gearKind, sport: gearSport }];
         gearName = '';
         persist();
     }
     function saveTypedGear() {
         if (!f || !f.gear.trim()) return;
-        const g = { id: uid(), name: f.gear.trim(), kind: 'Other' };
+        const sport = (spotById(f.spotId)?.sports || []).find(x => GEAR_SPORTS.includes(x));
+        const g: Gear = { id: uid(), name: f.gear.trim(), kind: 'Other', sport };
         data.gear = [...data.gear, g];
         f = { ...f, gear: '', gearIds: [...f.gearIds, g.id] };
         persist();
@@ -1360,6 +1610,7 @@
         singleclick.on(name, onMapPick);
         drawSpotMarkers();
         loadAllNow();
+        if (cloudUser) syncNow(false);
     });
 
     onDestroy(() => {
@@ -1371,6 +1622,8 @@
         drawTrack(null);
         clearTimeout(toastTimer);
         clearTimeout(armTimer);
+        clearTimeout(recaptureTimer);
+        clearTimeout(pushTimer);
     });
 </script>
 
@@ -1383,7 +1636,6 @@
     @sub: #b0b0b0;
     @ink: #1c1c1c;
     @orange: #d49500;
-    @red: #c42f2f;
 
     .spotlog {
         background: @ground;
@@ -1426,16 +1678,26 @@
     .r { text-align: right; }
     .err { color: #ff9a9a !important; line-height: 1.4; }
     .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); > div { display: flex; flex-direction: column; gap: 4px; } }
-    .close { width: 36px; height: 36px; flex-shrink: 0; border: 0; border-radius: 18px; background: @red; color: #fff !important; font-size: 20px; line-height: 1; }
     .units { height: 30px; padding: 0 10px; border-radius: 15px; border: 1px solid @outline; background: @ground; font-size: 12px !important; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
     .chev { display: inline-block; transition: transform 0.2s; &.up { transform: rotate(180deg); } }
     .round { width: 38px; height: 38px; flex-shrink: 0; border-radius: 19px; background: @card; border: 1px solid @line; font-size: 16px; }
-    .topbar { display: flex; align-items: center; gap: 10px; }
+    /* Windy draws its own closing ✕ in the top-right corner of the pane: keep that corner free */
+    .topbar { display: flex; align-items: center; gap: 10px; padding-right: 44px; }
+    .head > .row { padding-right: 36px; }
+    .sync { display: block; margin-top: -4px; color: @sub; &.err { color: #ff9a9a; } }
+    .coffee { align-self: center; display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 18px; border: 1px solid @outline; color: @text; text-decoration: none; font-weight: 600; font-size: 13px;
+        &:hover { border-color: @orange; } }
+    .hours { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+    .hr { flex: 0 0 auto; width: 40px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0; border-radius: 10px; border: 1px solid transparent; background: @card;
+        small { font-size: 11px; }
+        b { width: 30px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; color: @ink; font-size: 13px; }
+        &.on { border-color: @orange; background: #4a4a4a; } }
+    .link.inline { display: inline; padding: 0; font-size: 12px; }
 
     .actions { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 8px; }
     .act { min-height: 58px; padding: 8px 10px; min-width: 0; border-radius: 14px; border: 1px solid @outline; background: @card; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; text-align: left;
         b { font-size: 13.5px; white-space: nowrap; } small { font-size: 11px; white-space: nowrap; }
-        &.primary { background: @orange; border-color: @orange; color: @ink !important; small { color: rgba(28, 28, 28, 0.7); } }
+        &.primary { background: @orange; border-color: @orange; color: #fff !important; small { color: rgba(255, 255, 255, 0.85); } }
         &:disabled { opacity: 0.6; cursor: default; } }
 
     .tabs, .seg { display: flex; gap: 4px; padding: 3px; background: @card; border-radius: 12px;
@@ -1450,7 +1712,7 @@
     .now { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .now-t { display: flex; flex-direction: column; gap: 1px; min-width: 0; b { font-size: 13px; } small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }
     .tag { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;
-        &.green { background: #5fbf6a; color: @ink; }
+        &.green { background: #34985a; color: #fff; }
         &.ghost { border: 1px solid @outline; color: @sub; font-weight: 400; font-size: 11px; } }
     .empty { padding: 20px; border: 1px dashed @outline; border-radius: 14px; color: @sub; text-align: center; line-height: 1.45; }
     .list { display: flex; flex-direction: column; }
@@ -1467,7 +1729,7 @@
         &.danger { color: #ff9a9a !important; border-color: #6a4444; } }
     .btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .btn { height: 46px; padding: 0 16px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex: 1; box-sizing: border-box; white-space: nowrap;
-        &.primary { background: @orange; color: @ink !important; border: 0; }
+        &.primary { background: @orange; color: #fff !important; border: 0; }
         &.ghost { background: transparent; border: 1px solid @outline; }
         &.wide { width: 100%; flex: none; }
         &.small { height: 36px; flex: none; padding: 0 14px; font-size: 13px; }

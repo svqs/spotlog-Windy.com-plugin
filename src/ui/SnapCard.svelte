@@ -66,7 +66,7 @@
     small { color: #6b6b6b; font-size: 12px; }
     .head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 14px 12px; }
     .col { display: flex; flex-direction: column; gap: 2px; min-width: 0; b { font-size: 15px; } }
-    .model { padding: 4px 10px; border-radius: 6px; background: #d49500; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+    .model { padding: 4px 10px; border-radius: 6px; background: #d49500; color: #fff; font-size: 12px; font-weight: 600; flex-shrink: 0; }
     .loading { padding: 0 14px 16px; color: #6b6b6b; }
     .cells { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 0 12px 12px; }
     .cell { display: flex; flex-direction: column; gap: 6px; padding: 10px 10px 8px; border-radius: 12px; color: #1c1c1c; font-size: 11px; min-width: 0;

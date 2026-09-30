@@ -68,10 +68,34 @@ export const dirsLabel = (dirs: Dir8[]): string => {
 
 export const RATINGS = ['flat', 'meh', 'good', 'great', 'epic'];
 /** Rating colours: very bad red, bad grey, good -> epic in greens */
-export const RATING_BG = ['#c9474f', '#6b6b6b', '#9fcf7f', '#5fbf6a', '#3fa35a'];
-export const RATING_FG = ['#ffffff', '#ffffff', '#1c1c1c', '#1c1c1c', '#1c1c1c'];
+export const RATING_BG = ['#c9474f', '#6b6b6b', '#4fae68', '#34985a', '#1f8249'];
+export const RATING_FG = ['#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff'];
 export const ratingBg = (r: number): string => RATING_BG[Math.max(0, Math.min(4, Math.round(r) - 1))];
 export const ratingFg = (r: number): string => RATING_FG[Math.max(0, Math.min(4, Math.round(r) - 1))];
+export const GEAR_SPORTS = ['Windsurf', 'Surf', 'Kite', 'Wing'];
+/** What you can save per sport, with an example name for the input */
+export const GEAR_BY_SPORT: Record<string, { kind: string; hint: string }[]> = {
+    Windsurf: [
+        { kind: 'Board', hint: 'e.g. Freewave 105 L' }, { kind: 'Sail', hint: 'e.g. 5.3 m² wave' }, { kind: 'Mast', hint: 'e.g. 400 RDM 100%' },
+        { kind: 'Boom', hint: 'e.g. 150–200 carbon' }, { kind: 'Fin', hint: 'e.g. 22 cm wave' }, { kind: 'Harness', hint: 'e.g. waist, 28" lines' },
+        { kind: 'Wetsuit', hint: 'e.g. 4/3 steamer' }, { kind: 'Other', hint: 'e.g. impact vest' },
+    ],
+    Surf: [
+        { kind: 'Board', hint: "e.g. 6'2 shortboard" }, { kind: 'Fins', hint: 'e.g. thruster FCS II M' }, { kind: 'Leash', hint: "e.g. 6' comp" },
+        { kind: 'Wetsuit', hint: 'e.g. 3/2 fullsuit' }, { kind: 'Other', hint: 'e.g. booties, wax' },
+    ],
+    Kite: [
+        { kind: 'Kite', hint: 'e.g. 9 m freeride' }, { kind: 'Board', hint: 'e.g. twintip 138' }, { kind: 'Bar', hint: 'e.g. 24 m lines' },
+        { kind: 'Harness', hint: 'e.g. waist, size M' }, { kind: 'Foil', hint: 'e.g. 1000 cm² front wing' }, { kind: 'Wetsuit', hint: 'e.g. 4/3 steamer' },
+        { kind: 'Other', hint: 'e.g. helmet' },
+    ],
+    Wing: [
+        { kind: 'Wing', hint: 'e.g. 5 m' }, { kind: 'Board', hint: 'e.g. 95 L' }, { kind: 'Foil', hint: 'e.g. 1500 cm² front wing' },
+        { kind: 'Mast', hint: 'e.g. 85 cm aluminium' }, { kind: 'Leash', hint: 'e.g. waist + wrist' }, { kind: 'Wetsuit', hint: 'e.g. 4/3 steamer' },
+        { kind: 'Other', hint: 'e.g. impact vest' },
+    ],
+};
+/** kept for older data */
 export const GEAR_KINDS = ['Board', 'Sail', 'Fin', 'Wetsuit', 'Wing', 'Kite', 'Other'];
 
 export const MODEL_LABEL: Record<string, string> = {

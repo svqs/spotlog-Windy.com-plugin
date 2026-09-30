@@ -32,6 +32,8 @@
   .label::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 3px; background: var(--text); margin-right: 5px; vertical-align: middle; }
   .mock-marker { position: absolute; width: 0; height: 0; }
   .mock-marker.pulse .pulse-dot { position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; border-radius: 9px; background: var(--text); box-shadow: 0 0 0 6px rgba(248,248,248,.35); animation: pulse 1.6s ease-out infinite; }
+  .w-closing-x { position: fixed; top: 12px; right: 12px; z-index: 40; width: 30px; height: 30px; border-radius: 15px; border: 0; background: rgba(0,0,0,.45); color: #f8f8f8; font: 600 14px system-ui, sans-serif; cursor: pointer; }
+  @media (max-width: 760px) { .w-closing-x { display: none; } }
   .mock-line { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
   .mock-flash { position: absolute; width: 0; height: 0; pointer-events: none; }
   .mock-flash::after { content: ''; position: absolute; left: -30px; top: -30px; width: 60px; height: 60px; border-radius: 50%; border: 2px solid #f8f8f8; animation: flash 1.3s ease-out forwards; }
@@ -79,7 +81,7 @@
     </svg></div>
     <div class="sb-top">
       <span class="sb-name">Spotlog sandbox</span>
-      <span class="sb-tip">Fake Windy map and forecast, real plugin code. Click a place or spot · scroll to zoom · drag to pan.</span>
+      <span class="sb-tip">Fake Windy map and forecast, real plugin code. Click a place or spot · scroll to zoom · drag to pan · account sign-in code: 123456</span>
       <span class="sb-grow"></span>
       <button class="sb-tool" id="showData" type="button">Saved data</button>
       <button class="sb-tool" id="resetMap" type="button">Reset map</button>
@@ -111,7 +113,7 @@
 { // sandbox scope: keeps these names apart from the plugin bundle
 
 const SB_KEY = 'windy-plugin-spotlog:v1';
-const SEED = 'spotlog-sandbox-seed-v3';
+const SEED = 'spotlog-sandbox-seed-v4';
 const NAME = 'windy-plugin-spotlog';
 const { project, unproject, singleclick, store, PLACES } = W.__mock;
 const mapEl = document.getElementById('map');
@@ -173,10 +175,11 @@ function exampleData() {
       snap('ex-s6', 'ex-bolonia', 36.089, -5.772, t(12, 10), 8.3, 300),
     ],
     gear: [
-      { id: 'ex-g1', name: 'Freewave 105 L', kind: 'Board' },
-      { id: 'ex-g2', name: '5.3 wave sail', kind: 'Sail' },
-      { id: 'ex-g3', name: '4.7 wave sail', kind: 'Sail' },
-      { id: 'ex-g4', name: '4/3 steamer', kind: 'Wetsuit' },
+      { id: 'ex-g1', name: 'Freewave 105 L', kind: 'Board', sport: 'Windsurf' },
+      { id: 'ex-g2', name: '5.3 m² wave', kind: 'Sail', sport: 'Windsurf' },
+      { id: 'ex-g3', name: '4.7 m² wave', kind: 'Sail', sport: 'Windsurf' },
+      { id: 'ex-g4', name: '4/3 steamer', kind: 'Wetsuit', sport: 'Surf' },
+      { id: 'ex-g5', name: "9'2 longboard", kind: 'Board', sport: 'Surf' },
     ],
     sessions: [
       { id: 'ex-x1', spotId: 'ex-valde', snapshotId: 'ex-s1', date: t(1, 14.5), rating: 4, felt: 9, gusts: 'Gusty', water: 'Chop', gearIds: ['ex-g1', 'ex-g2'], gear: '', start: '14:30', end: '17:05', notes: 'Gusty inside until 3 pm, then clean.', track },

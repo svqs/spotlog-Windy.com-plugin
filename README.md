@@ -1,4 +1,4 @@
-# Spotlog · Windy plugin (0.2.1)
+# Spotlog · Windy plugin (0.3.0)
 
 A session diary inside [Windy.com](https://www.windy.com) for surfers, windsurfers and kiters.
 Save the forecast for a spot (numbers, not a screenshot), log how the session really felt, attach a GPS track,
@@ -50,10 +50,13 @@ python3 harness/e2e.py /tmp    # clicks through every flow (pip install playwrig
 | What a forecast saves | Same pill: wind, gusts, direction always; temperature, waves, swell 1, period, power optional; every model on/off. Tides + water temp: “soon” (not in Windy's plugin API). |
 | Spots | Directions + range, or “I don't know yet” → Spotlog suggests a wind window after two great sessions. Tiles show conditions now + a predicted rating after 3 sessions. |
 | Spot page | White header with conditions now, Log / Save forecast / Show on map (zoom + popup), next good window, model ranking, saved forecasts (edit/delete), sessions (tap to open, swipe to delete). |
-| Log a session | Rating (red flat → greens), draggable magnetic “felt like” ruler, gusts, water, saved gear, date, start/end time wheels (12/24 h from system), GPX/TCX track, notes. Undo on saves and deletes. |
+| Log a session | Date and time first, then rating (red flat → greens), draggable magnetic “felt like” ruler, gusts, water, saved gear (grouped by sport), GPX/TCX track, notes. Undo on saves and deletes. |
+| Forecast snapshots | Save the whole day's forecast (05–22 h, every model). Pick an hour on the snapshot; when you log a session, the forecast follows your session time. |
+| Your account | Home › Data › sign in with your email (6-digit code) and the diary syncs across devices. Needs the one-time Supabase setup in DEVELOPER.md; until then it's saved in the browser. |
 | GPS route | GPX/TCX from Garmin Connect, Strava…: distance, time, top speed; drawn on the Windy map like Windy's distance tool. |
-| Sessions | List or calendar. Gear tab for boards, sails, fins, wetsuits, wings, kites. |
+| Sessions | List or calendar. |
+| Gear | Pick the sport (Windsurf, Surf, Kite, Wing), then what it is (board, sail, mast, boom, fin, harness, kite, bar, wing, foil, leash, wetsuit…). |
 
 ## Not yet
 
-Push alerts · webcams · `.fit` import · tides / water temperature · sync between devices (data lives in one browser; see DEVELOPER.md) · mobile picker-dot flow · clicking Windy's own place labels (`poi-label`, untested).
+Push alerts · webcams · `.fit` import · tides / water temperature · mobile picker-dot flow · clicking Windy's own place labels (`poi-label`, untested).

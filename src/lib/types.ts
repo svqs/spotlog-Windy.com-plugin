@@ -52,6 +52,22 @@ export interface Snapshot {
     models: ModelValue[];
     waves: WaveValue | null;
     note?: string;
+    /**
+     * The whole day around `ts` (hourly-ish, as the models provide it), so the values can be
+     * re-read for any time of that day — e.g. when a session is logged later for 14:00–17:00.
+     */
+    series?: DaySeries;
+}
+
+export interface DaySeries {
+    ts: number[];
+    /** per model: arrays aligned with ts (m/s, degrees, °C) */
+    models: Record<string, { wind: (number | null)[]; gust: (number | null)[]; dir: (number | null)[]; temp: (number | null)[] }>;
+    waves: {
+        model: string;
+        waves: (number | null)[]; wavesPeriod: (number | null)[]; wavesPower: (number | null)[]; wavesDir: (number | null)[];
+        swell1: (number | null)[]; swell1Period: (number | null)[]; swell1Dir: (number | null)[];
+    } | null;
 }
 
 export interface Track {
@@ -92,6 +108,8 @@ export interface Gear {
     id: string;
     name: string;
     kind: string;
+    /** Windsurf, Surf, Kite, Wing (older gear may have none) */
+    sport?: string;
 }
 
 export type WindUnit = 'ms' | 'kt' | 'kmh' | 'mph' | 'bft';
@@ -114,4 +132,6 @@ export interface SpotlogData {
     sessions: Session[];
     gear: Gear[];
     settings: Settings;
+    /** last local change (ms), used by account sync */
+    updatedAt?: number;
 }

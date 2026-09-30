@@ -241,6 +241,43 @@
         },
     };
 
+
+    // ---- fake account backend (stands in for Supabase so the sign-in flow can be tried) ----
+    // Any email works; the code is always 123456. Data lives in this browser under 'spotlog-mock-cloud'.
+    const CLOUD_KEY = 'spotlog-mock-cloud';
+    const cdb = () => { try { return JSON.parse(localStorage.getItem(CLOUD_KEY) || '{}'); } catch { return {}; } };
+    const cwrite = v => { try { localStorage.setItem(CLOUD_KEY, JSON.stringify(v)); } catch { /* ignore */ } };
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+    const sessionFor = email => {
+        const d = cdb(); d.users = d.users || {};
+        d.users[email] = d.users[email] || { id: 'user-' + Math.random().toString(36).slice(2, 10) };
+        cwrite(d);
+        return { access_token: 'mock', refresh_token: email, expires_at: Date.now() + 3600e3, user: { id: d.users[email].id, email } };
+    };
+    window.__spotlogCloudMock = {
+        async sendCode(email) { await wait(350); if (!/.+@.+\..+/.test(email)) throw new Error('Please enter a valid email'); console.log('[mock cloud] code for ' + email + ': 123456'); },
+        async verify(email, code) { await wait(350); if (code !== '123456') throw new Error('Wrong code. In the sandbox the code is 123456'); return sessionFor(email); },
+        async refresh(rt) { await wait(100); return sessionFor(rt); },
+        async pull(s) { await wait(250); const r = (cdb().rows || {})[s.user.id]; return r ? { data: r.data, updatedAt: r.updatedAt } : null; },
+        async push(s, data) { await wait(250); const d = cdb(); d.rows = d.rows || {}; d.rows[s.user.id] = { data, updatedAt: data.updatedAt || Date.now() }; cwrite(d); },
+    };
+
+    // ---- Windy's own closing ✕ (Windy draws it on every right-hand pane plugin) ----
+    const addClosingX = () => {
+        const pane = document.getElementById('pane');
+        if (!pane || document.getElementById('w-closing-x')) return;
+        const b = document.createElement('button');
+        b.id = 'w-closing-x';
+        b.className = 'w-closing-x';
+        b.type = 'button';
+        b.title = 'Windy’s own close button (stand-in)';
+        b.setAttribute('aria-label', 'Close plugin');
+        b.textContent = '✕';
+        b.addEventListener('click', e => { e.stopPropagation(); console.log('[W] rqstClose (Windy closes the plugin)'); b.animate?.([{ transform: 'scale(.85)' }, { transform: 'scale(1)' }], 180); });
+        pane.parentElement.appendChild(b);
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addClosingX); else addClosingX();
+
     window.W = {
         broadcast: { emit: (t, ...a) => { console.log('[W.broadcast]', t, ...a); (listeners[t] || []).forEach(f => f(...a)); }, on: (t, f) => (listeners[t] = listeners[t] || []).push(f) },
         map: { map: leafletMap, markers: { pulsatingIcon: undefined }, centerMap },

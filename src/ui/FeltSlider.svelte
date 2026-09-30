@@ -147,7 +147,11 @@
         settleAnim();
     }
     function wheel(e: WheelEvent) {
-        const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        // only sideways scrolling (trackpad swipe, or shift + wheel) moves the ruler;
+        // a normal up/down scroll must keep scrolling the page
+        const sideways = Math.abs(e.deltaX) > Math.abs(e.deltaY);
+        if (!sideways && !e.shiftKey) return;
+        const d = sideways ? e.deltaX : e.deltaY;
         if (!d) return;
         e.preventDefault();
         wheelAcc += d;

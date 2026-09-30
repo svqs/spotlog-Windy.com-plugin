@@ -1,23 +1,28 @@
-# Spotlog · developer notes (0.2)
+# Spotlog · developer notes (0.3)
 
-Short version: **there is no backend.** Spotlog is a client-side Windy plugin (Svelte 4 + TypeScript, built with
-Windy's official template and `@windycom/plugin-devtools`). All user data is stored in the browser's `localStorage`
-on windy.com. Forecast data comes from Windy's own plugin API. Nothing is sent to any server run by us.
+Spotlog is a client-side Windy plugin (Svelte 4 + TypeScript, built with Windy's official template and
+`@windycom/plugin-devtools`). The diary is always kept in the browser's `localStorage` on windy.com and, when the
+user signs in, also in their **account** (one JSON document per user in a Supabase table). Forecast data comes from
+Windy's own plugin API.
 
 ## Architecture
 
 ```
 src/pluginConfig.ts     plugin manifest (name, rhpane 400 px, fullscreen on mobile, map click + context menu, private)
-src/plugin.svelte       all screens, navigation (view + history stack), Windy map integration, actions
+src/plugin.svelte       all screens, navigation (view + history stack), Windy map integration, actions, sync triggers
 src/lib/types.ts        data model
-src/lib/storage.ts      load / save / export / import (localStorage, JSON)
-src/lib/forecast.ts     Windy point forecast → snapshot values, 20-min cache, "next good window"
+src/lib/storage.ts      load / save / export / import / merge (localStorage, JSON)
+src/lib/cloud.ts        account sync: email-code sign-in + pull/push of the diary (Supabase REST, no SDK)
+src/lib/cloudConfig.ts  Supabase URL + anon key (empty = sync switched off)
+src/lib/forecast.ts     Windy point forecast → whole-day snapshots, 20-min cache, "next good window"
 src/lib/predict.ts      predicted rating (weighted nearest neighbours on wind speed + direction), wind-window suggestion
 src/lib/units.ts        unit conversion + formatting, 12/24 h
-src/lib/wind.ts         directions, colours, model ranking (reality check), dates
+src/lib/wind.ts         directions, colours, rating colours, gear presets per sport, model ranking, dates
 src/lib/gpx.ts          GPX/TCX parser → compact track (≤ 400 points), distance, duration, top speed (10 s window)
+src/lib/links.ts        Buy-me-a-coffee link
 src/ui/*.svelte         SnapCard, FeltSlider, TimeWheel, SwipeRow, Calendar, Settings
-harness/                fake Windy (mock-windy.js), test page, sandbox builder, Playwright e2e test, sample GPX
+supabase/setup.sql      table + row-level security for account sync
+harness/                fake Windy (mock-windy.js, incl. a fake account backend), test page, sandbox builder, e2e test
 .github/workflows/      publish-plugin.yml (official Windy workflow)
 scripts/publish.sh      same as the workflow, from a terminal
 ```
@@ -29,45 +34,81 @@ scripts/publish.sh      same as the workflow, from a terminal
 | `@windy/fetch` → `getPointForecastData(model, {lat, lon})` | wind, gusts, direction, temperature per model; waves/swell from `ecmwfWaves` / `gfsWaves` |
 | `@windy/map` → `map`, `markers`, `centerMap` | Leaflet map: spot labels (`L.divIcon`), route (`L.polyline`), popup (`L.popup`), `fitBounds`, `getCenter` |
 | `@windy/singleclick` | map clicks while the plugin is open (`listenToSingleclick: true`) |
-| `@windy/store` | `timestamp` (timeline time a snapshot is for), `product` (active model) |
+| `@windy/store` | `timestamp` (timeline time a snapshot focuses on), `product` (active model) |
 | `@windy/reverseName` | place names for clicked points |
-| `@windy/broadcast` | `rqstClose` |
 | `@windy/rootScope` | `isMobileOrTablet` |
 
-Models tried for every snapshot: the active one + ECMWF, GFS, ICON, ICON-EU, AROME (regional models fail quietly outside their area).
+The close button is **Windy's own** closing ✕ (Windy's `Window` draws it for every rhpane plugin unless `hideClosingX`).
+The plugin keeps ~44 px free in the top-right corner for it and no longer draws its own.
+
+## Forecast snapshots
+
+A snapshot stores the **whole day** (05:00–22:00 local, hourly grid; 3-hourly models fill the nearest hour) for the
+active model plus ECMWF, GFS, ICON, ICON-EU, AROME (regional models fail quietly outside their area), and waves/swell.
+
+- `ts` + `models` + `waves` = the focus hour (what the card shows, what the model ranking compares against).
+- `series` = the whole day, so the focus can move without refetching:
+  - standalone "Save forecast" → focus = Windy timeline time; the hour strip on the snapshot page changes it;
+  - logging a session → the card reads the day at the middle of start–end; on save the snapshot's focus moves to that time;
+  - if the session date changes to another day, a snapshot the log created itself is replaced by one for that day.
+- Windy only serves forecasts from today on, so past days can't be captured ("No forecast for that day…").
+- Older snapshots (0.2) have no `series` and keep working as single-hour snapshots.
 
 ## Stored data
 
-- Where: `localStorage` of `www.windy.com`, key **`windy-plugin-spotlog:v1`**, one JSON document.
-- Inspect: DevTools › Application › Local Storage › `https://www.windy.com` › that key. Or in the plugin: Home › Data › Export JSON. In the sandbox: **Saved data** button.
-- Lifetime: per browser and per device. Clearing site data for windy.com deletes it. Private windows lose it on close.
-- Size: `localStorage` is ~5 MB per origin. A session without a track is ~0.5 KB, a snapshot ~1 KB, a track (≤ 400 points) ~10 KB → roughly 300–400 sessions with tracks before it gets tight. `save()` catches quota errors and logs them (no UI message yet).
-- Shared origin: every Windy plugin runs on the same origin and could read this key. Don't store secrets here.
+- Browser: `localStorage` of `www.windy.com`, key **`windy-plugin-spotlog:v1`** (one JSON document); sign-in session under
+  `windy-plugin-spotlog:auth`.
+- Account: table `public.spotlog_data` (`user_id`, `data jsonb`, `updated_at`), one row per user, see `supabase/setup.sql`.
+- Inspect: DevTools › Application › Local Storage, Home › Data › Export JSON, or the sandbox **Saved data** button.
+- Size: `localStorage` is ~5 MB per origin. A whole-day snapshot is ~4–5 KB, a session ~0.5 KB, a track ~10 KB.
+  `save()` catches quota errors and logs them (no UI message yet).
+- Every Windy plugin runs on the same origin and could read these keys. Don't store secrets there.
 - Units: always SI (m/s, metres, °C, km); converted only for display. Timestamps are ms since epoch.
 
 ```ts
 {
   version: 1,
+  updatedAt,                                   // last local change, used by sync (newer copy wins)
   spots:     [{ id, name, lat, lon, place?, sports: string[], dirs: ('N'|'NE'|…)[], min, max /* m/s */, windUnknown?, created }],
-  snapshots: [{ id, spotId: string|null, lat, lon, ts /* forecast time */, savedAt, primary /* model */,
-                models: [{ model, ts, wind, gust, dir, temp }], waves: { model, waves, wavesPeriod, wavesPower, wavesDir,
-                swell1, swell1Period, swell1Dir } | null, note? }],
+  snapshots: [{ id, spotId: string|null, lat, lon, ts /* focus time */, savedAt, primary /* model */,
+                models: [{ model, ts, wind, gust, dir, temp }], waves: {…} | null, note?,
+                series?: { ts: number[], models: { [model]: { wind[], gust[], dir[], temp[] } }, waves: { model, waves[], … } | null } }],
   sessions:  [{ id, spotId: string|null, lat?, lon?, snapshotId: string|null, date, rating /* 1–5 */, felt /* m/s|null */,
                 gusts, water, gearIds: string[], gear /* free text */, start /* "HH:MM" */, end, notes,
                 track?: { points: [lat, lon][], start, end, distanceKm, durationMin, maxSpeed /* m/s */, source } }],
-  gear:      [{ id, name, kind }],
+  gear:      [{ id, name, kind, sport? /* Windsurf | Surf | Kite | Wing */ }],
   settings:  { wind: 'ms'|'kt'|'kmh'|'mph'|'bft', height: 'm'|'ft', temp: 'C'|'F', allModels: boolean, layers: string[] }
 }
 ```
 
-`normalise()` in `storage.ts` fills missing arrays/settings, so older exports still load. Import merges by `id`.
-GPS files are parsed in the browser; only the downsampled points are kept, the file itself is not stored.
+## Account sync (switch it on)
+
+Windy's plugin API has no per-user storage for plugins (its `cloudSync` only syncs Windy's own settings, `userFavs` only
+favourite places), and a Windy login can't be verified by an outside server. So Spotlog has its own small account:
+**Supabase** (free tier is plenty), sign-in with a 6-digit code sent by email, no passwords.
+
+1. Create a project at <https://supabase.com> (region: EU, e.g. Frankfurt).
+2. SQL Editor › paste `supabase/setup.sql` › Run.
+3. Authentication › Emails › **Magic Link** template: make sure the body contains `{{ .Token }}` (the 6-digit code), e.g.
+   `Your Spotlog code: {{ .Token }}`. Optional: Authentication › Providers › Email › set OTP length to 6.
+4. For real users, set up custom SMTP (Authentication › Emails › SMTP) — Supabase's built-in mailer is rate-limited and meant for testing.
+5. Project Settings › API: copy the **Project URL** and the **anon public** key into `src/lib/cloudConfig.ts`. Both are
+   public by design; row-level security only lets a signed-in user read/write their own row.
+6. Build + publish. Home › Data now shows **Your account** with email sign-in.
+
+How it syncs: every local save pushes the whole document (debounced 1.2 s). On open, the newer copy (local vs account,
+by `updatedAt`) wins. The first sign-in on a browser merges both copies by id. Conflicts between two devices editing at
+the same moment resolve to the last write (fine for a personal diary; per-item merging would be the next step).
+
+To check: Windy's Content-Security-Policy must allow `fetch` to `*.supabase.co` from a plugin. Other public plugins call
+external APIs, but test this first in developer mode (Network tab).
 
 ## Network requests
 
 - Windy's own forecast and geocoding endpoints (through the plugin API).
-- **Google Fonts** (`fonts.googleapis.com`) for Instrument Sans + Doto, injected once on mount. This sends the user's IP to Google; before a public release, consider bundling the fonts or using Windy's font.
-- Nothing else. No analytics, no own server.
+- Supabase (`<project>.supabase.co`), only when sync is configured and the user signs in.
+- **Google Fonts** (`fonts.googleapis.com`) for Instrument Sans + Doto, injected once on mount (sends the user's IP to Google;
+  consider bundling the fonts before a public release).
 
 ## Testing
 
@@ -75,18 +116,19 @@ GPS files are parsed in the browser; only the downsampled points are kept, the f
 npm install
 npm run build                 # dist/plugin.js (+ .min.js, plugin.json)
 python3 -m http.server 8765   # from the project root
-python3 harness/e2e.py /tmp   # 18 checks, writes screenshots to /tmp (pip install playwright)
+python3 harness/e2e.py /tmp   # 23 checks, screenshots to /tmp (pip install playwright)
 python3 harness/assemble.py   # rebuilds the single-file sandbox harness/sandbox.html
 ```
 
-The fake Windy (`harness/mock-windy.js`) implements just the API surface above with synthetic forecasts
-(slightly different per model, AROME unavailable outside France) so flows can be tested without windy.com.
+The fake Windy (`harness/mock-windy.js`) implements the API surface above with synthetic forecasts (different per model,
+AROME unavailable outside France), a stand-in for Windy's closing ✕, and a fake account backend (any email, code `123456`).
 
 ## Publishing (test link)
 
-1. Windy Plugins API key: <https://api.windy.com/keys>
-2. `WINDY_API_KEY=… npm run publish:windy`, or GitHub › Settings › Secrets › `WINDY_API_KEY`, then Actions › publish-plugin › Run.
-3. Copy the install URL from the output: `https://windy-plugins.com/<user id>/windy-plugin-spotlog/<version>/plugin.min.js`
+1. Windy Plugins API key: <https://api.windy.com/keys> (no domain restriction; project identification = the GitHub repo URL).
+2. GitHub › Settings › Secrets › Actions › `WINDY_API_KEY`, then Actions › publish-plugin › Run workflow
+   (or `WINDY_API_KEY=… npm run publish:windy` locally).
+3. Copy the install URL from the "Publish Plugin" step: `https://windy-plugins.com/<user id>/windy-plugin-spotlog/<version>/plugin.min.js`
 4. Testers: <https://www.windy.com/plugins> › Load plugin directly from URL › Install untrusted plugin.
 5. Bump `version` in `src/pluginConfig.ts` **and** `package.json` for every publish (the URL contains the version).
 
@@ -94,18 +136,11 @@ Docs: <https://docs.windy-plugins.com/getting-started/publishing-plugin.html>
 
 ## Review checklist before a public release
 
-- [ ] Test in real Windy (developer mode and the published URL): map clicks, context menu, `centerMap`, route drawing, popup look inside Windy's Leaflet
-- [ ] Check Windy's global CSS doesn't leak into the panel. Class names like `.card`, `.btn`, `.chip`, `.row`, `.tabs`, `.list` are scoped by Svelte but still generic (the sandbox already hit this once with `.bar`). Prefixing with `sl-` would remove the risk
+- [ ] Real Windy (developer mode + published URL): map clicks, context menu, `centerMap`, route drawing, popup look, Windy's ✕ placement
+- [ ] Windy's global CSS doesn't leak into the panel (generic class names like `.card`, `.btn`, `.chip`, `.row` are Svelte-scoped but could still pick up unset properties). Prefixing with `sl-` would remove the risk
 - [ ] Mobile browser test (fullscreen UI, long-press › Spotlog, touch drag on the ruler and swipe rows)
+- [ ] Account sync: CSP check, custom SMTP, delete-account flow (GDPR), privacy note in the plugin
 - [ ] `poi-label` click events (clicking Windy's own place names) — not wired yet
-- [ ] Storage quota message in the UI; maybe cap the number of stored track points
+- [ ] Storage quota message in the UI
 - [ ] Fonts: bundle or drop Google Fonts
-- [ ] Decide on sync (below)
-
-## If you want a backend later
-
-Today each browser has its own diary (export/import JSON to move it). Cross-device sync needs a small backend with auth,
-e.g. Supabase / Firebase / Cloudflare Workers + D1, storing the same JSON shapes per user. Windy's plugin API doesn't offer
-per-user storage. The code is ready for it: `load()` / `save()` in `src/lib/storage.ts` are the only two places that touch storage.
-Windy plugins must be served from `windy-plugins.com`, but the code can call your own API (Windy's docs describe private
-plugins as a way to show your own data without listing the plugin publicly).
+- [ ] Replace the placeholder Buy-me-a-coffee link in `src/lib/links.ts`

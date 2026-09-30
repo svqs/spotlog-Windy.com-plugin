@@ -129,7 +129,7 @@
     .it.sel { color: #f8f8f8; font-weight: 600; }
     .tw-actions { display: flex; justify-content: flex-end; gap: 6px; }
     .done, .clear { height: 30px; padding: 0 12px; border-radius: 9px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .done { border: 0; background: #d49500; color: #1c1c1c; }
+    .done { border: 0; background: #d49500; color: #fff; }
     .clear { border: 1px solid #5a5a5a; background: transparent; color: #f8f8f8; }
     @media (prefers-reduced-motion: reduce) { .tw-pop { animation: none; } }
 </style>

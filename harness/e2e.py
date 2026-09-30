@@ -116,6 +116,19 @@ with sync_playwright() as p:
     end_txt = pg.locator('.tw .field-btn >> nth=1').inner_text()
     assert end_txt.startswith('17:'), end_txt
     ok(f'time wheel sets end time ({end_txt})')
+    pg.wait_for_selector('.snap:has-text("Forecast for your session time")', timeout=5000)
+    ok('snapshot card follows the session time (whole day saved)')
+    # a normal mouse-wheel scroll over the ruler scrolls the panel instead of getting stuck
+    pg.locator('.felt').scroll_into_view_if_needed()
+    fb = pg.locator('.felt').bounding_box()
+    before_scroll = pane.evaluate('el => el.scrollTop')
+    felt_before = pg.get_attribute('.felt', 'aria-valuenow')
+    pg.mouse.move(fb['x'] + fb['width'] / 2, fb['y'] + 30)
+    pg.mouse.wheel(0, 300)
+    pg.wait_for_timeout(300)
+    assert pane.evaluate('el => el.scrollTop') > before_scroll, 'panel did not scroll over the ruler'
+    assert pg.get_attribute('.felt', 'aria-valuenow') == felt_before
+    ok('scrolling over the ruler scrolls the page')
     pg.fill('textarea', 'Gusty inside until 3 pm, then clean.')
     bottom()
     pg.click('text=Save session')
@@ -123,6 +136,12 @@ with sync_playwright() as p:
     se = stored(pg)['sessions'][0]
     assert se['rating'] == 5 and se['track'] and se['gearIds'], se
     ok('session saved with rating, felt, gear and track')
+    sd = stored(pg)
+    sn = next(x for x in sd['snapshots'] if x['id'] == se['snapshotId'])
+    import datetime as _dt
+    hr = _dt.datetime.fromtimestamp(sn['ts'] / 1000).hour
+    assert sn.get('series') and hr in (15, 16), (hr, bool(sn.get('series')))
+    ok(f'saved forecast moved to the session time ({hr}:00) and keeps the whole day')
 
     # --- open session from list, back, then swipe-left delete + undo
     pg.click('.sw .front >> nth=0')
@@ -172,6 +191,11 @@ with sync_playwright() as p:
         pg.click('.chip:has-text("Valdevaqueros")')
     pg.wait_for_selector('text=Unlink')
     ok('forecast from home at map centre, linked to the spot')
+    ts0 = stored(pg)['snapshots'][-1]['ts']
+    pg.locator('.hours .hr').nth(3).click()
+    pg.wait_for_timeout(200)
+    assert stored(pg)['snapshots'][-1]['ts'] != ts0
+    ok('hour strip changes the saved forecast hour')
     pg.fill('textarea', 'Maybe after work')
     pg.locator('textarea').blur()
     pg.click('.btn.ghost:has-text("Delete")')
@@ -209,12 +233,28 @@ with sync_playwright() as p:
     pg.goto(URL)
     pg.wait_for_selector('.spotlog')
     pg.click('.tabs button:has-text("Gear")')
-    pg.click('.chip:has-text("Board")')
-    pg.fill('.card input', 'Freewave 105 L')
+    pg.click('.seg button >> text="Surf"')
+    pg.click('.chip:has-text("Leash")')
+    pg.fill('.card input', "6' comp")
     pg.click('.card .btn:has-text("Add")')
-    pg.wait_for_selector('.item:has-text("Freewave 105 L")')
+    pg.wait_for_selector('.item:has-text("comp")')
+    g = [x for x in stored(pg)['gear'] if x['name'] == "6' comp"][0]
+    assert g['sport'] == 'Surf' and g['kind'] == 'Leash', g
     shot('11-gear')
-    ok('gear tab adds gear')
+    ok('gear tab: sport first, then sport-specific kinds')
+
+    # --- account sync (fake backend in the harness, code 123456)
+    pg.click('.tabs button:has-text("Data")')
+    pg.fill('input[type=email]', 'sophia@example.com')
+    pg.click('.btn:has-text("Send code")')
+    pg.fill('input[autocomplete=one-time-code]', '123456')
+    pg.click('.btn:has-text("Sign in")')
+    pg.wait_for_selector('.toast:has-text("Signed in")', timeout=5000)
+    cloud = pg.evaluate("JSON.parse(localStorage.getItem('spotlog-mock-cloud'))")
+    row = list(cloud['rows'].values())[0]
+    assert len(row['data']['sessions']) >= 1, row
+    shot('11b-account')
+    ok('sign in with email code, diary uploaded to the account')
 
     # --- a spot where you don't know the wind yet (click on the empty map)
     pg.click('.tabs button:has-text("Spots")')
