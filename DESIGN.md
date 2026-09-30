@@ -4,7 +4,7 @@ The design lives on the design canvas: <https://claude.ai/artifact/VBrdShhquX2se
 
 | Canvas page | What it is |
 |---|---|
-| **v6 · as built (plugin 0.3)** | Snapshots of the real plugin screens, taken from the running code (not a mockup). This is the current truth. |
+| **v6 · as built (plugin 0.4)** | Snapshots of the real plugin screens, taken from the running code (not a mockup). This is the current truth. |
 | v5 · final draft | The design the 0.1/0.2 code was built from. |
 | v1–v4 | Earlier explorations. |
 
@@ -49,6 +49,9 @@ The same values appear in `src/plugin.svelte` (`@ground`, `@card` … at the top
 
 | Component | File | Notes |
 |---|---|---|
+| Choose a place (Save forecast / Add spot / Log session) | `src/plugin.svelte` `.opts` / `.opt` | Every choice is the same rectangular row: Click/Tap on the map, Map centre, Without a place, your spots |
+| Phone layout | `src/plugin.svelte` `.spotlog.m` | Windy's small bottom panel under the timeline (like The Buoy); tighter paddings |
+| Login / Premium gate | `src/plugin.svelte` top of the template | |
 | Header card (wordmark, units pill, stats, sync line) | `src/plugin.svelte` (top) | On inner screens: back · title · units pill (Windy's ✕ sits to the right) |
 | Buy me a coffee | `src/plugin.svelte` `.coffee`, link in `src/lib/links.ts` | Bottom of the home screen |
 | Hour strip (whole-day snapshot) | `src/plugin.svelte` `.hours` / `.hr` | On the saved-forecast page |

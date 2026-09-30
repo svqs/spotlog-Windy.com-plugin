@@ -102,6 +102,8 @@ export interface Session {
     end: string;
     notes: string;
     track?: Track | null;
+    /** time zone the session was logged in (IANA, e.g. Europe/Prague) */
+    tz?: string;
 }
 
 export interface Gear {

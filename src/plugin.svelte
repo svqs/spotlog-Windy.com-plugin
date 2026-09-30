@@ -1,7 +1,26 @@
 <div class="plugin__mobile-header">
     { title }
 </div>
-<section class="plugin__content spotlog" bind:this={ root }>
+<section class="plugin__content spotlog" class:m={ isMobile } bind:this={ root }>
+
+{#if gate}
+<!-- ================= LOGIN / PREMIUM GATE ================= -->
+    <div class="card head">
+        <div class="row"><span class="wordmark">SPOTLOG</span></div>
+        <p class="p">Your session diary for Windy: save forecasts for your spots, log how it really was, and learn which forecast to trust.</p>
+    </div>
+    <div class="card">
+        {#if gate === 'login'}
+            <b>Log in to Windy to use Spotlog</b>
+            <p class="p muted">Spotlog is for Windy Premium members. Your diary is linked to your Windy account.</p>
+            <button class="btn primary wide" on:click={ () => bcast.emit('rqstOpen', 'login') }>Log in to Windy</button>
+        {:else}
+            <b>Spotlog is part of Windy Premium</b>
+            <p class="p muted">You're logged in as { wUser?.username || wUser?.email || 'a Windy user' }. Upgrade to Premium to start your diary.</p>
+            <button class="btn primary wide" on:click={ () => bcast.emit('rqstOpen', 'subscription') }>Get Windy Premium</button>
+        {/if}
+    </div>
+{:else}
 
 <!-- ================= HEADER ================= -->
 {#if view === 'home'}
@@ -144,11 +163,17 @@
                 <button class="link danger" on:click={ doDeleteAccountData }>{ armed === 'account' ? 'Tap again: deletes your diary from the account' : 'Delete my data from the account' }</button>
                 <small class="muted">Signed-in details are kept in this browser. Only install Windy plugins you trust: plugins share windy.com's storage.</small>
             {:else}
-                <p class="p muted">Sign in with your email to keep your diary in your account instead of only this browser. We email you a 6-digit code, no password.</p>
+                {#if wUser?.email}
+                    <p class="p muted">Keep your diary in your account, linked to your Windy login, so it's on every device. We send a 6-digit code to <b class="w">{ wUser.email }</b> to confirm it's you.</p>
+                {:else}
+                    <p class="p muted">Keep your diary in your account so it's on every device. We email you a 6-digit code, no password.</p>
+                {/if}
                 {#if !codeSent}
                     <div class="row">
-                        <input type="email" bind:value={ authEmail } placeholder="you@example.com" autocomplete="email" on:keydown={ e => e.key === 'Enter' && doSendCode() } />
-                        <button class="btn primary small" disabled={ !/.+@.+\..+/.test(authEmail) || authBusy } on:click={ doSendCode }>{ authBusy ? 'Sending…' : 'Send code' }</button>
+                        {#if !wUser?.email}
+                            <input type="email" bind:value={ authEmail } placeholder="you@example.com" autocomplete="email" on:keydown={ e => e.key === 'Enter' && doSendCode() } />
+                        {/if}
+                        <button class="btn primary" class:small={ !wUser?.email } disabled={ !/.+@.+\..+/.test(authEmail) || authBusy } on:click={ doSendCode }>{ authBusy ? 'Sending…' : wUser?.email ? 'Send me a code' : 'Send code' }</button>
                     </div>
                 {:else}
                     <small class="muted">Code sent to { authEmail }. <button class="link inline" on:click={ () => { codeSent = false; authCode = ''; } }>Change email</button></small>
@@ -173,7 +198,7 @@
 
     <div class="hint">
         {#if isMobile}
-            Long-press the map and choose <b>Spotlog</b> to open any place.
+            Tap on the map (or long-press › <b>Spotlog</b>) to open any place.
         {:else}
             Tip: click anywhere on the map (a town, a label or one of your spots) to open it here.
         {/if}
@@ -183,35 +208,43 @@
 <!-- ================= PICK A PLACE ================= -->
 {:else if view === 'pick'}
     {#if pickFor === 'snap'}
-        <p class="p muted">Saves the forecast for <b class="w">{ timelineLabelFull }</b>. Move Windy's timeline first to pick another time.</p>
+        <p class="p muted">Saves the whole day's forecast around <b class="w">{ timelineLabelFull }</b>. Move Windy's timeline to pick another day.</p>
     {/if}
-    <div class="pickmap">
-        <span class="pulse"></span>
-        <span class="grow"><b>{ isMobile ? 'Use the map centre' : 'Click on the map' }</b><small>{ isMobile ? 'Move the map so the spot is in the middle' : 'anywhere, on a town or on one of your spots' }</small></span>
-    </div>
-    <div class="list">
-        <button class="item" on:click={ useCentre }>
+    <div class="opts">
+        <button class="opt" class:on={ waitingForMap } on:click={ () => (waitingForMap = true) }>
+            <span class="ico"><span class="pulse" class:live={ waitingForMap }></span></span>
+            <span class="grow"><span>{ isMobile ? 'Tap on the map' : 'Click on the map' }</span><small>{ waitingForMap ? (isMobile ? 'Tap a place, a town or one of your spots…' : 'Click a place, a town or one of your spots…') : 'any place, town or one of your spots' }</small></span>
+        </button>
+        <button class="opt" on:click={ useCentre }>
             <span class="ico">◎</span>
             <span class="grow"><span>Map centre</span><small>{ centreName || 'where the map is now' }</small></span>
-            <small>›</small>
+            <span class="chev-r" aria-hidden="true">›</span>
         </button>
-        {#if pickFor !== 'spot'}
-            {#each spotsByCentre as s (s.id)}
-                <button class="item" on:click={ () => actOn(pickFor, { lat: s.lat, lon: s.lon, name: s.name }, s) }>
-                    <span class="ico o">●</span>
-                    <span class="grow"><span>{ s.name }</span><small>{ s.place || 'Your spot' }</small></span>
-                    <small>›</small>
-                </button>
-            {/each}
-        {/if}
         {#if pickFor === 'log'}
-            <button class="item" on:click={ () => startLog({}) }>
+            <button class="opt" on:click={ () => startLog({}) }>
                 <span class="ico">+</span>
                 <span class="grow"><span>Without a place</span><small>add the spot later</small></span>
-                <small>›</small>
+                <span class="chev-r" aria-hidden="true">›</span>
             </button>
         {/if}
     </div>
+    {#if pickFor !== 'spot' && spotsByCentre.length}
+        <div class="section">
+            <small class="lbl">Your spots · nearest first</small>
+            <div class="opts">
+                {#each spotsByCentre as s (s.id)}
+                    <button class="opt" on:click={ () => actOn(pickFor, { lat: s.lat, lon: s.lon, name: s.name }, s) }>
+                        <span class="ico o">●</span>
+                        <span class="grow"><span>{ s.name }</span><small>{ s.place || 'Your spot' }</small></span>
+                        <span class="chev-r" aria-hidden="true">›</span>
+                    </button>
+                {/each}
+            </div>
+        </div>
+    {/if}
+    {#if pickFor === 'snap'}
+        <small class="muted sl-note">Tip: save forecasts ahead of your session. Windy doesn't keep past forecasts, so a day that's over can't be saved afterwards.</small>
+    {/if}
 
 <!-- ================= PLACE (clicked on map) ================= -->
 {:else if view === 'place' && place}
@@ -472,6 +505,7 @@
             <span class="to">→</span>
             <TimeWheel bind:value={ f.end } placeholder="End" />
         </div>
+        {#if f.start && f.end && f.end < f.start}<small class="muted">Ends the next day</small>{/if}
     </div>
 
     <div class="card">
@@ -564,6 +598,8 @@
     {/if}
 {/if}
 
+{/if}
+
 {#if toast}
     <div class="toast" role="status">
         <span class="grow">{ toast.msg }</span>
@@ -574,6 +610,7 @@
 </section>
 
 <script lang="ts">
+    import bcast from '@windy/broadcast';
     import { map, markers, centerMap } from '@windy/map';
     import { singleclick } from '@windy/singleclick';
     import store from '@windy/store';
@@ -582,9 +619,9 @@
     import { onDestroy, onMount, tick } from 'svelte';
 
     import config from './pluginConfig';
-    import { load, save, exportJson, importJson, uid, emptyData, normalise, mergeData, KEY } from './lib/storage';
+    import { load, save, exportJson, importJson, uid, emptyData, normalise, mergeData, storageKey, useWindyUser } from './lib/storage';
     import { waveValueAt, modelValueAt, nextMatch, conditionsNow, trimWaves, captureDay, seriesAt, covers, SNAPSHOT_MODELS } from './lib/forecast';
-    import { cloudAvailable, currentUser, sendCode, verifyCode, signOut, pull, push, deleteAccountData } from './lib/cloud';
+    import { cloudAvailable, currentUser, sendCode, verifyCode, signOut, pull, push, deleteAccountData, setCloudWindyUser } from './lib/cloud';
     import type { CloudUser } from './lib/cloud';
     import { COFFEE_URL } from './lib/links';
     import { FONT_CSS } from './lib/fonts';
@@ -627,6 +664,30 @@
     const isMobile = !!rootScope?.isMobileOrTablet;
 
     let root: HTMLElement;
+
+    /* ---------- Windy account: Spotlog is for logged-in Premium users ---------- */
+    interface WindyUser { id: number; username?: string; email?: string }
+    const readWindyUser = (): WindyUser | null => {
+        try {
+            const u = store.get('user') as WindyUser | null;
+            return u && u.id ? u : null;
+        } catch {
+            return null;
+        }
+    };
+    const readPremium = (): boolean => {
+        try {
+            return store.get('subscription') === 'premium';
+        } catch {
+            return false;
+        }
+    };
+    let wUser = readWindyUser();
+    let premium = readPremium();
+    $: gate = !wUser ? 'login' : !premium ? 'premium' : null;
+    useWindyUser(wUser?.id);
+    setCloudWindyUser(wUser?.id);
+
     let data: SpotlogData = load();
     /** ids present at the last save: anything missing now was deleted (-> tombstone, so sync won't bring it back) */
     const allIds = (d: SpotlogData) => new Set([...d.spots, ...d.snapshots, ...d.sessions, ...d.gear].map(x => x.id));
@@ -645,6 +706,7 @@
     let placeWaves: WaveValue | null = null;
     let placeLoading = false;
     let pickFor: PickFor = 'snap';
+    let waitingForMap = false;
     let centreName = '';
     let sf: SpotForm | null = null;
     let sfReturn: 'log' | 'snap' | null = null;
@@ -666,7 +728,7 @@
     let syncAt = 0;
     let syncError = '';
     let pushTimer: ReturnType<typeof setTimeout> | undefined;
-    let authEmail = '';
+    let authEmail = readWindyUser()?.email || '';
     let authCode = '';
     let codeSent = false;
     let authBusy = false;
@@ -718,6 +780,8 @@
     $: timelineLabelFull = fmtDayTime(mapTs);
     $: hdr = headerFor(view, spot, snap, f, sf, place, pickFor);
     let tsListener: number | null = null;
+    let userListener: number | null = null;
+    let subsListener: number | null = null;
 
     /* ---------- helpers ---------- */
     const toggle = <T,>(list: T[], v: T): T[] => (list.includes(v) ? list.filter(x => x !== v) : [...list, v]);
@@ -737,6 +801,28 @@
         const go = (v: boolean) => v && node.scrollIntoView?.({ block: 'nearest', inline: 'center' });
         setTimeout(() => go(on), 0);
         return { update: go };
+    }
+    const deviceTz = (): string | undefined => {
+        try {
+            return Intl.DateTimeFormat().resolvedOptions().timeZone;
+        } catch {
+            return undefined;
+        }
+    };
+    /** another Windy account logged in (or out): switch to that account's diary */
+    function onWindyUser(u: WindyUser | null) {
+        const changed = (u?.id || null) !== (wUser?.id || null);
+        wUser = u && u.id ? u : null;
+        if (!changed) return;
+        useWindyUser(wUser?.id);
+        setCloudWindyUser(wUser?.id);
+        data = load();
+        knownIds = allIds(data);
+        cloudUser = currentUser();
+        authEmail = wUser?.email || '';
+        syncAt = 0;
+        goHome();
+        if (cloudUser) syncNow(false);
     }
     const gearHint = (sport: string, kind: string) => GEAR_BY_SPORT[sport]?.find(k => k.kind === kind)?.hint || 'Name';
     function groupGear(list: Gear[], order: string[]): { sport: string; items: Gear[] }[] {
@@ -950,7 +1036,7 @@
     /** Another Windy tab saved the diary: merge it in, so two open tabs never overwrite each other */
     const sig = (d: SpotlogData) => JSON.stringify([[...allIds(d)].sort(), Object.keys(d.deleted || {}).sort(), d.settings]);
     function onStorage(e: StorageEvent) {
-        if (e.key !== KEY || !e.newValue) return;
+        if (e.key !== storageKey() || !e.newValue) return;
         try {
             const other = normalise(JSON.parse(e.newValue));
             const merged = mergeData(other, data);
@@ -1194,6 +1280,7 @@
     }
     async function startPick(what: PickFor) {
         pickFor = what;
+        waitingForMap = false;
         centreName = '';
         go('pick');
         const c = centre();
@@ -1492,6 +1579,7 @@
             id: f.id || uid(), spotId: f.spotId, lat: f.lat, lon: f.lon, snapshotId: f.snapshotId, date, rating: f.rating,
             felt: f.felt === null ? null : Math.round(fromWind(f.felt, S.wind) * 10) / 10,
             gusts: f.gusts, water: f.water, gearIds: f.gearIds, gear: f.gear.trim(), start: f.start, end: f.end, notes: f.notes, track: f.track,
+            tz: deviceTz(),
         };
         data.sessions = f.id ? data.sessions.map(x => (x.id === se.id ? se : x)) : [...data.sessions, se];
         if (sn) {
@@ -1643,6 +1731,12 @@
             document.head.appendChild(st);
         }
         try {
+            userListener = store.on('user', (v: WindyUser | null) => onWindyUser(v));
+            subsListener = store.on('subscription', (v: string | null) => (premium = v === 'premium'));
+        } catch (e) {
+            console.info('[spotlog] Windy account not observable', e);
+        }
+        try {
             tsListener = store.on('timestamp', (v: number) => (mapTs = v));
         } catch (e) {
             console.info('[spotlog] timeline not observable', e);
@@ -1658,6 +1752,8 @@
         singleclick.off(name, onMapPick);
         window.removeEventListener('storage', onStorage);
         if (tsListener !== null) store.off(tsListener);
+        if (userListener !== null) store.off(userListener);
+        if (subsListener !== null) store.off(subsListener);
         spotMarkers.forEach(m => m.remove());
         clearTemp();
         clearPopup();
@@ -1709,6 +1805,15 @@
         textarea { resize: vertical; line-height: 1.45; }
     }
     .spotlog > :global(*) { flex-shrink: 0; }
+    /* phones: Spotlog sits in Windy's small bottom panel under the timeline, so everything is tighter */
+    .spotlog.m { padding: 10px 12px 16px; gap: 12px;
+        .head { padding: 10px 14px; gap: 8px; }
+        .wordmark { font-size: 20px; }
+        .stats .big { font-size: 18px; }
+        .act { min-height: 50px; padding: 6px 10px; b { font-size: 13px; } }
+        .tile { min-height: 110px; padding: 12px; }
+        .topbar .round { width: 34px; height: 34px; }
+        .title { font-size: 16px; } }
     .wordmark { font-family: 'Doto', monospace; font-weight: 900; font-size: 24px; letter-spacing: 0.06em; flex: 1; }
     .card { background: @card; border: 1px solid @line; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
     .row { display: flex; align-items: center; gap: 10px; &.start { align-items: flex-start; } }
@@ -1810,8 +1915,14 @@
         b { font-size: 19px; } span { font-size: 11px; } }
     .times { gap: 8px; .to { height: 44px; display: flex; align-items: center; color: @sub; } }
     .snapless { display: flex; align-items: center; gap: 10px; min-height: 60px; padding: 12px 14px; border-radius: 18px; background: @text; color: @ink; box-sizing: border-box; }
-    .pickmap { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 16px; background: @text; color: @ink; small { color: #6b6b6b; } }
-    .pulse { width: 14px; height: 14px; border-radius: 7px; background: @orange; margin: 0 6px; flex-shrink: 0; animation: sl-pulse 1.6s ease-out infinite; }
+    /* every way of choosing a place looks the same: one rectangular row each */
+    .opts { display: flex; flex-direction: column; gap: 6px; }
+    .opt { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 14px 8px 10px; border-radius: 14px; border: 1px solid @line; background: @card; text-align: left; width: 100%; box-sizing: border-box;
+        .ico { background: @ground; }
+        &:hover { border-color: @outline; }
+        &.on { border-color: @orange; } }
+    .chev-r { color: @sub; font-size: 18px; }
+    .pulse { width: 10px; height: 10px; border-radius: 5px; background: @orange; flex-shrink: 0; &.live { animation: sl-pulse 1.6s ease-out infinite; } }
     @keyframes sl-pulse { 0% { box-shadow: 0 0 0 0 rgba(212, 149, 0, 0.55); } 100% { box-shadow: 0 0 0 12px rgba(212, 149, 0, 0); } }
     @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
     .hint { margin-top: auto; padding-top: 10px; font-size: 12px; color: #8f8f8f; line-height: 1.45; b { color: @sub; } }

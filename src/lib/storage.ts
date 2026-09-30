@@ -1,6 +1,23 @@
 import type { SpotlogData, Settings } from './types';
 
 export const KEY = 'windy-plugin-spotlog:v1';
+/** Each Windy account gets its own diary in the browser (two people sharing a laptop don't mix) */
+let activeKey = KEY;
+export const storageKey = (): string => activeKey;
+export const useWindyUser = (id: number | string | null | undefined): void => {
+    activeKey = id ? `${KEY}:u${id}` : KEY;
+    if (!id) return;
+    try {
+        // first time for this Windy account: take over a diary made before accounts were linked
+        const legacy = localStorage.getItem(KEY);
+        if (legacy && !localStorage.getItem(activeKey)) {
+            localStorage.setItem(activeKey, legacy);
+            localStorage.removeItem(KEY);
+        }
+    } catch {
+        /* storage unavailable */
+    }
+};
 
 export const DEFAULT_LAYERS = ['temp', 'waves', 'swell1', 'wavesPeriod', 'wavesPower'];
 
@@ -56,7 +73,7 @@ const cleanSession = (s: Any) => ({
     rating: Math.max(1, Math.min(5, Math.round(numOr(s.rating, 3) as number))), felt: numOr(s.felt, null),
     gusts: str(s.gusts, 30) || null, water: str(s.water, 30) || null, gearIds: ids(s.gearIds), gear: str(s.gear, 300),
     start: /^\d\d:\d\d$/.test(s.start) ? s.start : '', end: /^\d\d:\d\d$/.test(s.end) ? s.end : '', notes: str(s.notes, 5000),
-    track: cleanTrack(s.track),
+    track: cleanTrack(s.track), tz: str(s.tz, 60) || undefined,
 });
 const cleanGear = (g: Any) => ({ id: g.id, name: str(g.name, 80) || 'Gear', kind: str(g.kind, 30) || 'Other', sport: str(g.sport, 20) || undefined });
 const list = <T>(x: Any, fn: (v: Any) => T | null, max: number): T[] =>
@@ -114,7 +131,7 @@ export const mergeData = (a: SpotlogData, b: SpotlogData): SpotlogData => {
 
 export const load = (): SpotlogData => {
     try {
-        const raw = localStorage.getItem(KEY);
+        const raw = localStorage.getItem(activeKey);
         return raw ? normalise(JSON.parse(raw)) : emptyData();
     } catch (e) {
         console.warn('[spotlog] could not read saved data', e);
@@ -125,7 +142,7 @@ export const load = (): SpotlogData => {
 /** @returns false when the browser refused (storage full or blocked) */
 export const save = (data: SpotlogData): boolean => {
     try {
-        localStorage.setItem(KEY, JSON.stringify(data));
+        localStorage.setItem(activeKey, JSON.stringify(data));
         return true;
     } catch (e) {
         console.warn('[spotlog] could not save data', e);

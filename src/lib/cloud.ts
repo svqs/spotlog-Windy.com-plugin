@@ -8,7 +8,12 @@
 import { CLOUD } from './cloudConfig';
 import type { SpotlogData } from './types';
 
-const AUTH_KEY = 'windy-plugin-spotlog:auth';
+const AUTH_BASE = 'windy-plugin-spotlog:auth';
+let AUTH_KEY = AUTH_BASE;
+/** The account sign-in belongs to the Windy account that is logged in */
+export const setCloudWindyUser = (id: number | string | null | undefined): void => {
+    AUTH_KEY = id ? `${AUTH_BASE}:u${id}` : AUTH_BASE;
+};
 
 export interface CloudUser { id: string; email: string }
 interface AuthSession { access_token: string; refresh_token: string; expires_at: number; user: CloudUser }

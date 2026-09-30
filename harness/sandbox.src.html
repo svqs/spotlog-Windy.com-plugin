@@ -65,10 +65,11 @@
   .sb-row { display: flex; gap: 8px; flex-wrap: wrap; }
   .sb-copy { height: 40px; padding: 0 16px; border-radius: 12px; border: 0; background: var(--orange); color: var(--ink); font: 600 14px var(--ui); cursor: pointer; }
   .sb-copy.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  /* phones: like Windy's small bottom panel — map (with timeline) on top, Spotlog stacked below it */
   @media (max-width: 760px) {
-    .app { flex-direction: column; height: auto; }
-    #map { flex: none; height: 52vh; min-height: 340px; }
-    #pane { width: 100%; height: auto; overflow: visible; box-shadow: none; }
+    .app { flex-direction: column; height: 100dvh; min-height: 0; }
+    #map { flex: 1; min-height: 0; }
+    #pane { width: 100%; height: 50dvh; flex: none; overflow: hidden; box-shadow: 0 -2px 14px rgba(0,0,0,.35); border-radius: 14px 14px 0 0; }
     .sb-tip { display: none; }
   }
 </style>
@@ -112,8 +113,8 @@
 /*PLUGIN*/
 { // sandbox scope: keeps these names apart from the plugin bundle
 
-const SB_KEY = 'windy-plugin-spotlog:v1';
-const SEED = 'spotlog-sandbox-seed-v4';
+const SB_KEY = 'windy-plugin-spotlog:v1:u12345'; // the mock Windy user's diary
+const SEED = 'spotlog-sandbox-seed-v5';
 const NAME = 'windy-plugin-spotlog';
 const { project, unproject, singleclick, store, PLACES } = W.__mock;
 const mapEl = document.getElementById('map');

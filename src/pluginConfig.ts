@@ -2,13 +2,13 @@ import type { ExternalPluginConfig } from '@windy/interfaces';
 
 const config: ExternalPluginConfig = {
     name: 'windy-plugin-spotlog',
-    version: '0.3.1',
+    version: '0.4.0',
     icon: '🌊',
     title: 'Spotlog session diary',
     description: 'Save forecasts for your spots, log how the session really was, and learn which forecast to trust.',
     author: 'Sophia Stoltz',
     desktopUI: 'rhpane',
-    mobileUI: 'fullscreen',
+    mobileUI: 'small',
     desktopWidth: 400,
     listenToSingleclick: true,
     addToContextmenu: true,

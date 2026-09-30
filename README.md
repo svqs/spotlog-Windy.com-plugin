@@ -1,4 +1,4 @@
-# Spotlog · Windy plugin (0.3.1)
+# Spotlog · Windy plugin (0.4.0)
 
 A session diary inside [Windy.com](https://www.windy.com) for surfers, windsurfers and kiters.
 Save the forecast for a spot (numbers, not a screenshot), log how the session really felt, attach a GPS track,
@@ -28,7 +28,7 @@ npm start            # watch mode, serves https://localhost:9999/plugin.js
 1. Create a **Windy Plugins API** key at <https://api.windy.com/keys>.
 2. Publish: `WINDY_API_KEY=… npm run publish:windy` (or push to GitHub, add the key as the `WINDY_API_KEY` secret and run the **publish-plugin** action).
 3. The response contains the install URL: `https://windy-plugins.com/<your user id>/windy-plugin-spotlog/<version>/plugin.min.js`.
-4. Testers go to <https://www.windy.com/plugins> › **Load plugin directly from URL**, paste it and press **Install untrusted plugin**. Works in desktop and phone browsers; plugins don't run in the Windy mobile app.
+4. Testers go to <https://www.windy.com/plugins> › **Load plugin directly from URL**, paste it and press **Install untrusted plugin**. Works on desktop and on phones (in the phone it sits in Windy's small bottom panel under the timeline). Testers need to be logged in to Windy with Premium.
 
 `private: true` in `src/pluginConfig.ts` keeps it out of the public gallery; only people with the URL can load it.
 Going public later = `private: false` + a review request on the Windy community forum.
@@ -45,6 +45,7 @@ python3 harness/e2e.py /tmp    # clicks through every flow (pip install playwrig
 
 | | |
 |---|---|
+| Who can use it | Logged-in Windy Premium members. Others see a short screen with **Log in to Windy** / **Get Windy Premium**. |
 | Do anything from anywhere | Home: **Save forecast**, **Add spot**, **Log session**. Each asks where (click on the map, map centre, one of your spots, or no place). Clicking on the map opens that place with the same three actions. Forecasts and sessions can be linked to a spot later. |
 | Units | Pill at the top of every screen: wind m/s · kt · km/h · mph · bft, waves m · ft, °C · °F. Stored in SI, converted on screen. |
 | What a forecast saves | Same pill: wind, gusts, direction always; temperature, waves, swell 1, period, power optional; every model on/off. Tides + water temp: “soon” (not in Windy's plugin API). |
@@ -52,7 +53,7 @@ python3 harness/e2e.py /tmp    # clicks through every flow (pip install playwrig
 | Spot page | White header with conditions now, Log / Save forecast / Show on map (zoom + popup), next good window, model ranking, saved forecasts (edit/delete), sessions (tap to open, swipe to delete). |
 | Log a session | Date and time first, then rating (red flat → greens), draggable magnetic “felt like” ruler, gusts, water, saved gear (grouped by sport), GPX/TCX track, notes. Undo on saves and deletes. |
 | Forecast snapshots | Save the whole day's forecast (05–22 h, every model). Pick an hour on the snapshot; when you log a session, the forecast follows your session time. |
-| Your account | Home › Data › sign in with your email (6-digit code) and the diary syncs across devices. Needs the one-time Supabase setup in DEVELOPER.md; until then it's saved in the browser. |
+| Your account | The diary belongs to your Windy account (each Windy login has its own diary in the browser). Home › Data › **Send me a code** goes to your Windy email and turns on sync across devices. Needs the one-time Supabase setup in DEVELOPER.md. |
 | GPS route | GPX/TCX from Garmin Connect, Strava…: distance, time, top speed; drawn on the Windy map like Windy's distance tool. |
 | Sessions | List or calendar. |
 | Gear | Pick the sport (Windsurf, Surf, Kite, Wing), then what it is (board, sail, mast, boom, fin, harness, kite, bar, wing, foil, leash, wetsuit…). |

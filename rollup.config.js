@@ -35,7 +35,11 @@ export default {
         {
             file: `dist/${out}.min.js`,
             format: 'module',
-            plugins: [rollupCleanup({ comments: 'none', extensions: ['ts'] }), terser()],
+            plugins: [
+                rollupCleanup({ comments: 'none', extensions: ['ts'] }),
+                // smaller plugin.min.js: two compress passes, modern syntax, mangle top-level names
+                terser({ module: true, ecma: 2020, compress: { passes: 2, pure_getters: true }, mangle: { toplevel: true }, format: { comments: false } }),
+            ],
         },
     ],
 

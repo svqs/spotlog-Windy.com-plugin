@@ -186,7 +186,11 @@
     const store = evented();
     const now = new Date();
     now.setMinutes(0, 0, 0);
-    const state = { timestamp: +now + 3 * 3600e3, product: 'ecmwf', overlay: 'wind' };
+    // a logged-in Windy Premium user (Spotlog is for Premium members). Try store.set('user', null) or store.set('subscription', null).
+    const state = {
+        timestamp: +now + 3 * 3600e3, product: 'ecmwf', overlay: 'wind',
+        user: { id: 12345, username: 'sophia', email: 'sophia@example.com' }, subscription: 'premium',
+    };
     store.get = k => state[k];
     store.set = (k, v) => { state[k] = v; store.emit(k, v); };
 
@@ -285,7 +289,7 @@
         singleclick: { singleclick },
         store,
         reverseName,
-        rootScope: { isMobileOrTablet: false },
+        rootScope: { isMobileOrTablet: typeof matchMedia !== 'undefined' && matchMedia('(max-width: 760px)').matches },
         fetch: { getPointForecastData },
         __mock: { project, unproject, store, singleclick, PLACES, INIT, onMove: f => moveSubs.push(f), setView, view },
     };

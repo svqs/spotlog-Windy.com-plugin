@@ -17,7 +17,7 @@ def ok(msg):
 
 
 def stored(pg):
-    return pg.evaluate("JSON.parse(localStorage.getItem('windy-plugin-spotlog:v1') || '{}')")
+    return pg.evaluate("JSON.parse(localStorage.getItem('windy-plugin-spotlog:v1:u12345') || localStorage.getItem('windy-plugin-spotlog:v1') || '{}')")
 
 
 with sync_playwright() as p:
@@ -184,7 +184,7 @@ with sync_playwright() as p:
     # --- home: Save forecast at the map centre -> snapshot view, link to spot, delete
     pg.click('.act:has-text("Save forecast")')
     pg.wait_for_selector('text=Map centre')
-    pg.click('.item:has-text("Map centre")')
+    pg.click('.opt:has-text("Map centre")')
     pg.wait_for_selector('text=Saved forecast', timeout=8000)
     pg.wait_for_selector('.toast:has-text("Undo")')
     shot('09-snapshot-view')
@@ -209,7 +209,7 @@ with sync_playwright() as p:
         pg.click('button[aria-label="Back"]')
     pg.wait_for_selector('.act:has-text("Log session")')
     pg.click('.act:has-text("Log session")')
-    pg.click('.item:has-text("Without a place")')
+    pg.click('.opt:has-text("Without a place")')
     pg.wait_for_selector('text=No spot yet')
     pg.click('.rate:has-text("meh")')
     bottom()
@@ -247,8 +247,8 @@ with sync_playwright() as p:
 
     # --- account sync (fake backend in the harness, code 123456)
     pg.click('.tabs button:has-text("Data")')
-    pg.fill('input[type=email]', 'sophia@example.com')
-    pg.click('.btn:has-text("Send code")')
+    pg.wait_for_selector('text=sophia@example.com')
+    pg.click('.btn:has-text("Send me a code")')
     pg.fill('input[autocomplete=one-time-code]', '123456')
     pg.click('.btn:has-text("Sign in")')
     pg.wait_for_selector('.toast:has-text("Signed in")', timeout=5000)
@@ -292,6 +292,16 @@ with sync_playwright() as p:
     cloud = pg.evaluate("JSON.parse(localStorage.getItem('spotlog-mock-cloud'))")
     assert not cloud.get('rows'), cloud.get('rows')
     ok('delete my data from the account')
+
+    # --- Premium gate: logged out / not Premium
+    pg.evaluate("W.store.set('subscription', null)")
+    pg.wait_for_selector('text=Spotlog is part of Windy Premium')
+    pg.evaluate("W.store.set('user', null)")
+    pg.wait_for_selector('text=Log in to Windy to use Spotlog')
+    shot('11c-gate')
+    pg.evaluate("W.store.set('user', { id: 12345, username: 'sophia', email: 'sophia@example.com' }); W.store.set('subscription', 'premium')")
+    pg.wait_for_selector('.act:has-text("Save forecast")')
+    ok('only logged-in Premium users get in; the diary comes back after logging in again')
 
     # --- a spot where you don't know the wind yet (click on the empty map)
     pg.click('.tabs button:has-text("Spots")')
