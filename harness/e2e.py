@@ -354,9 +354,9 @@ with sync_playwright() as p:
 
     # --- Premium gate: logged out / not Premium
     pg.evaluate("W.store.set('subscription', null)")
-    pg.wait_for_selector('text=Spotlog is part of Windy Premium')
+    pg.wait_for_selector('b:has-text("is part of Windy Premium")')
     pg.evaluate("W.store.set('user', null)")
-    pg.wait_for_selector('text=Log in to Windy to use Spotlog')
+    pg.wait_for_selector('b:has-text("Log in to Windy to use")')
     shot('11c-gate')
     pg.evaluate("W.store.set('user', { id: 12345, username: 'sophia', email: 'sophia@example.com' }); W.store.set('subscription', 'premium')")
     pg.wait_for_selector('.act:has-text("Save forecast")')

@@ -30,7 +30,7 @@
         </div>
     </div>
     <button type="button" class="toggle" aria-pressed={ settings.allModels } on:click={ () => set({ allModels: !settings.allModels }) }>
-        <span class="grow"><b>Save every model</b><small>All models available for the place, so Spotlog can tell you which one to trust</small></span>
+        <span class="grow"><b>Save every model</b><small>All models available for the place, so <Brand /> can tell you which one to trust</small></span>
         <span class="sw" class:on={ settings.allModels }><i></i></span>
     </button>
     {#if !settings.allModels}
@@ -51,6 +51,7 @@
     import type { Settings } from '../lib/types';
     import { WIND_UNITS, HEIGHT_UNITS, TEMP_UNITS } from '../lib/units';
     import { SNAPSHOT_MODELS } from '../lib/forecast';
+    import Brand from './Brand.svelte';
     import { modelLabel } from '../lib/wind';
 
     export let settings: Settings;

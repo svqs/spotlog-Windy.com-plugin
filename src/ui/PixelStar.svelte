@@ -4,7 +4,7 @@
 </svg>
 
 <script lang="ts">
-    export let size = 16;
+    export let size: number | string = 16;
     // 7×7 grid:   . . . # . . .
     //             . . . # . . .
     //             . . # # # . .
