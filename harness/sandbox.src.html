@@ -1,0 +1,278 @@
+<title>Spotlog Sandbox</title>
+<meta name="description" content="The real Spotlog Windy plugin running beside a simulated Windy map, timeline and forecast.">
+<style>
+  /* Layout: fake Windy map fills the left, the real plugin panel sits in a 400 px right-hand pane (stacked on phones). */
+  :root {
+    color-scheme: dark;
+    --ground: #2e2e2e;
+    --card: #3c3c3c;
+    --line: #4d4d4d;
+    --text: #f8f8f8;
+    --sub: #b0b0b0;
+    --ink: #1c1c1c;
+    --orange: #d49500;
+    --glass: rgba(40, 40, 40, 0.88);
+    --ui: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body { background: var(--ground); color: var(--text); font-family: var(--ui); }
+  .app { display: flex; height: 100%; min-height: 560px; }
+  #map { position: relative; flex: 1; min-width: 0; overflow: hidden; cursor: crosshair; background: #3fa0a8; }
+  .world { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-origin: 0 0; pointer-events: none; background:
+      radial-gradient(ellipse 40% 20% at 62% 70%, #e0a63a 0%, rgba(224,166,58,0) 100%),
+      radial-gradient(ellipse 55% 30% at 60% 72%, #d4c43a 0%, rgba(212,196,58,0) 100%),
+      radial-gradient(ellipse 45% 45% at 15% 25%, #4dbb5f 0%, rgba(77,187,95,0) 100%),
+      linear-gradient(165deg, #5b6ec2 0%, #3fa0a8 36%, #4dbb5f 62%, #3fa0a8 100%); }
+  .world svg.coast { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #map svg.coast { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #pane { width: 400px; flex-shrink: 0; overflow-y: auto; background: var(--ground); box-shadow: -2px 0 14px rgba(0,0,0,.35); }
+  .plugin__mobile-header { display: none; }
+  .label { position: absolute; transform: translate(-50%, -50%); font: 600 13px var(--ui); color: var(--text); text-shadow: 0 1px 3px rgba(0,0,0,.7); cursor: pointer; white-space: nowrap; }
+  .label::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 3px; background: var(--text); margin-right: 5px; vertical-align: middle; }
+  .mock-marker { position: absolute; width: 0; height: 0; }
+  .mock-marker.pulse .pulse-dot { position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; border-radius: 9px; background: var(--text); box-shadow: 0 0 0 6px rgba(248,248,248,.35); animation: pulse 1.6s ease-out infinite; }
+  .mock-line { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+  .mock-flash { position: absolute; width: 0; height: 0; pointer-events: none; }
+  .mock-flash::after { content: ''; position: absolute; left: -30px; top: -30px; width: 60px; height: 60px; border-radius: 50%; border: 2px solid #f8f8f8; animation: flash 1.3s ease-out forwards; }
+  @keyframes flash { from { transform: scale(.3); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+  .mock-popup { position: absolute; z-index: 20; transform: translate(-50%, calc(-100% - 16px)); filter: drop-shadow(0 6px 18px rgba(0,0,0,.4)); cursor: default; }
+  .mock-popup .leaflet-popup-content-wrapper { background: #f8f8f8; color: #1c1c1c; border-radius: 16px; }
+  .mock-popup .leaflet-popup-content { margin: 0; padding: 12px; }
+  .mock-popup::after { content: ''; position: absolute; left: 50%; bottom: -8px; margin-left: -8px; border: 8px solid transparent; border-bottom: 0; border-top-color: #f8f8f8; }
+  .mock-popup-x { position: absolute; right: 6px; top: 4px; width: 26px; height: 26px; border: 0; background: none; color: #6b6b6b; font-size: 18px; cursor: pointer; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(248,248,248,.5); } 100% { box-shadow: 0 0 0 14px rgba(248,248,248,0); } }
+  @media (prefers-reduced-motion: reduce) { .mock-marker.pulse .pulse-dot { animation: none; } }
+  .sb-top { position: absolute; left: 14px; right: 14px; top: 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; pointer-events: none; }
+  .sb-top > * { pointer-events: auto; }
+  .sb-name { padding: 7px 12px; border-radius: 16px; background: var(--text); color: var(--ink); font-size: 13px; font-weight: 600; }
+  .sb-tip { padding: 7px 12px; border-radius: 16px; background: var(--glass); font-size: 13px; }
+  .sb-grow { flex: 1; }
+  .sb-tool { height: 34px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--glass); color: var(--text); font: 600 13px var(--ui); cursor: pointer; }
+  .sb-tool:focus-visible, .sb-bar button:focus-visible, .sb-copy:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+  .sb-bar { position: absolute; left: 14px; right: 14px; bottom: 14px; display: flex; gap: 2px; padding: 4px; border-radius: 10px; background: var(--glass); font-size: 13px; overflow-x: auto; }
+  .sb-bar button { flex-shrink: 0; border: 0; background: transparent; color: var(--text); padding: 6px 9px; border-radius: 7px; cursor: pointer; font: inherit; font-variant-numeric: tabular-nums; }
+  .sb-bar button.on { background: var(--orange); color: var(--ink); font-weight: 700; }
+  .sb-legend { position: absolute; right: 14px; bottom: 62px; display: flex; justify-content: space-between; gap: 8px; width: 220px; max-width: calc(100% - 28px); padding: 3px 8px; border-radius: 6px; font-size: 11px; color: var(--text); text-shadow: 0 1px 2px rgba(0,0,0,.6);
+    background: linear-gradient(90deg, #5b6ec2, #3fa0a8 12%, #4dbb5f 22%, #8fc446 34%, #d4c43a 46%, #e0a63a 58%, #e0873a 68%, #c9474f 82%, #a23fa0); }
+  .sb-sheet { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,.55); }
+  .sb-sheet-in { width: min(720px, 100%); max-height: 86vh; display: flex; flex-direction: column; gap: 12px; padding: 18px; border-radius: 18px; background: var(--card); border: 1px solid var(--line); }
+  .sb-sheet-in h2 { margin: 0; font-size: 17px; text-wrap: balance; }
+  .sb-sheet-in p { margin: 0; color: var(--sub); font-size: 13px; line-height: 1.45; max-width: 65ch; }
+  .sb-sheet-in pre { margin: 0; min-width: 0; overflow: auto; padding: 12px; border-radius: 12px; background: var(--ground); color: var(--text); font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .sb-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .sb-copy { height: 40px; padding: 0 16px; border-radius: 12px; border: 0; background: var(--orange); color: var(--ink); font: 600 14px var(--ui); cursor: pointer; }
+  .sb-copy.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  @media (max-width: 760px) {
+    .app { flex-direction: column; height: auto; }
+    #map { flex: none; height: 52vh; min-height: 340px; }
+    #pane { width: 100%; overflow: visible; box-shadow: none; }
+    .sb-tip { display: none; }
+  }
+</style>
+
+<div class="app">
+  <div id="map" aria-label="Simulated Windy map of the Strait of Gibraltar. Click to pick a place.">
+    <div class="world" id="world"><svg class="coast" viewBox="0 0 1000 900" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 150 C110 190 200 280 290 370 C340 420 400 470 460 505 C520 540 570 575 612 612 C650 598 700 566 752 548 L772 590 L792 540 C850 480 940 440 1000 420" fill="none" stroke="#1b1b1b" stroke-opacity=".6" stroke-width="1.4" vector-effect="non-scaling-stroke"/>
+      <path d="M380 900 C470 800 560 760 650 752 C720 746 800 762 856 800 C900 792 960 766 1000 780" fill="none" stroke="#1b1b1b" stroke-opacity=".6" stroke-width="1.4" vector-effect="non-scaling-stroke"/>
+    </svg></div>
+    <div class="sb-top">
+      <span class="sb-name">Spotlog sandbox</span>
+      <span class="sb-tip">Fake Windy map and forecast, real plugin code. Click a place or spot · scroll to zoom · drag to pan.</span>
+      <span class="sb-grow"></span>
+      <button class="sb-tool" id="showData" type="button">Saved data</button>
+      <button class="sb-tool" id="resetMap" type="button">Reset map</button>
+      <button class="sb-tool" id="reset" type="button">Reset examples</button>
+    </div>
+    <div class="sb-legend" aria-hidden="true"><span>m/s</span><span>0</span><span>3</span><span>5</span><span>10</span><span>15</span><span>20</span><span>30</span></div>
+    <div class="sb-bar" id="timeline" aria-label="Forecast time"></div>
+  </div>
+  <div id="pane"></div>
+</div>
+
+<div class="sb-sheet" id="dataSheet" hidden>
+  <div class="sb-sheet-in" role="dialog" aria-modal="true" aria-labelledby="dataTitle">
+    <h2 id="dataTitle">What Spotlog has saved</h2>
+    <p>This is exactly what the plugin stores in your browser. In Windy, Home › Data › Export JSON downloads the same thing as a file.</p>
+    <pre id="dataPre"></pre>
+    <div class="sb-row">
+      <button class="sb-copy" id="copyData" type="button">Copy JSON</button>
+      <button class="sb-copy ghost" id="closeData" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/*MOCK*/
+</script>
+<script type="module">
+/*PLUGIN*/
+{ // sandbox scope: keeps these names apart from the plugin bundle
+
+const SB_KEY = 'windy-plugin-spotlog:v1';
+const SEED = 'spotlog-sandbox-seed-v3';
+const NAME = 'windy-plugin-spotlog';
+const { project, unproject, singleclick, store, PLACES } = W.__mock;
+const mapEl = document.getElementById('map');
+window.confirm = () => true; // the viewer blocks dialogs; the sandbox just goes ahead
+
+// ---- example data, so the sandbox opens in a working state ----
+function exampleData() {
+  const day = 864e5, today = new Date(); today.setHours(0, 0, 0, 0);
+  const t = (d, h) => +today - d * day + h * 3600e3;
+  const snap = (id, spotId, lat, lon, ts, w, dir = 104) => ({
+    id, spotId, lat, lon, ts, savedAt: ts - 7 * 3600e3, primary: 'ecmwf',
+    models: [
+      { model: 'ecmwf', ts, wind: w, gust: +(w * 1.35).toFixed(1), dir, temp: 23 },
+      { model: 'gfs', ts, wind: +(w - 1.6).toFixed(1), gust: +((w - 1.6) * 1.3).toFixed(1), dir: dir - 6, temp: 22 },
+      { model: 'icon', ts, wind: +(w + 0.9).toFixed(1), gust: +((w + 0.9) * 1.35).toFixed(1), dir: dir + 4, temp: 23 },
+      { model: 'iconEu', ts, wind: +(w + 0.4).toFixed(1), gust: +((w + 0.4) * 1.35).toFixed(1), dir: dir - 2, temp: 23 },
+    ],
+    waves: { model: 'ecmwfWaves', waves: 0.7, wavesPeriod: 6, wavesPower: 1.3, wavesDir: 95, swell1: 0.4, swell1Period: 8, swell1Dir: 250 },
+  });
+  // a GPS track for one session: organic reaches off Valdevaqueros in a levante (easterly),
+  // with jibes at both ends, slowly drifting downwind — roughly what a real windsurf GPX looks like
+  const track = (() => {
+    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const M_LAT = 1 / 111320, M_LON = 1 / (111320 * Math.cos(36.06 * Math.PI / 180));
+    let lat = 36.0655, lon = -5.6935, heading = 205, pts = [[lat, lon]];
+    for (let leg = 0; leg < 16; leg++) {
+      const len = 1300 + rnd() * 900, bend = (rnd() - 0.5) * 0.02, steps = Math.round(len / 55);
+      for (let i = 0; i < steps; i++) {
+        heading += bend * 55 + (rnd() - 0.5) * 2.2;
+        const h = heading * Math.PI / 180;
+        lat += Math.cos(h) * 55 * M_LAT; lon += Math.sin(h) * 55 * M_LON - 3 * M_LON; // drift west
+        pts.push([+lat.toFixed(5), +lon.toFixed(5)]);
+      }
+      const turn = leg % 2 ? 1 : -1; // jibe: a tight arc
+      for (let j = 0; j < 8; j++) {
+        heading += turn * 180 / 8;
+        const h = heading * Math.PI / 180;
+        lat += Math.cos(h) * 14 * M_LAT; lon += Math.sin(h) * 14 * M_LON;
+        pts.push([+lat.toFixed(5), +lon.toFixed(5)]);
+      }
+      heading += (rnd() - 0.5) * 20;
+    }
+    let km = 0;
+    for (let i = 1; i < pts.length; i++) km += Math.hypot((pts[i][0] - pts[i - 1][0]) / M_LAT, (pts[i][1] - pts[i - 1][1]) / M_LON) / 1000;
+    return { points: pts, start: t(1, 14.5), end: t(1, 17.1), distanceKm: +km.toFixed(1), durationMin: 156, maxSpeed: 11.6, source: 'valdevaqueros.gpx' };
+  })();
+  return {
+    version: 1,
+    spots: [
+      { id: 'ex-valde', name: 'Valdevaqueros', place: 'Tarifa', lat: 36.068, lon: -5.697, sports: ['Windsurf'], dirs: ['E', 'SE'], min: 8, max: 13, created: t(40, 9) },
+      { id: 'ex-bolonia', name: 'Bolonia', place: 'Tarifa', lat: 36.089, lon: -5.772, sports: ['Surf', 'Windsurf'], dirs: [], min: 6, max: 12, windUnknown: true, created: t(30, 9) },
+    ],
+    snapshots: [
+      snap('ex-s1', 'ex-valde', 36.068, -5.697, t(1, 16), 10.4),
+      snap('ex-s2', 'ex-valde', 36.068, -5.697, t(4, 15), 11.8),
+      snap('ex-s3', 'ex-valde', 36.068, -5.697, t(9, 14), 13.1),
+      snap('ex-s4', 'ex-valde', 36.068, -5.697, t(15, 15), 9.2),
+      snap('ex-s5', 'ex-bolonia', 36.089, -5.772, t(6, 11), 7.1, 285),
+      snap('ex-s6', 'ex-bolonia', 36.089, -5.772, t(12, 10), 8.3, 300),
+    ],
+    gear: [
+      { id: 'ex-g1', name: 'Freewave 105 L', kind: 'Board' },
+      { id: 'ex-g2', name: '5.3 wave sail', kind: 'Sail' },
+      { id: 'ex-g3', name: '4.7 wave sail', kind: 'Sail' },
+      { id: 'ex-g4', name: '4/3 steamer', kind: 'Wetsuit' },
+    ],
+    sessions: [
+      { id: 'ex-x1', spotId: 'ex-valde', snapshotId: 'ex-s1', date: t(1, 14.5), rating: 4, felt: 9, gusts: 'Gusty', water: 'Chop', gearIds: ['ex-g1', 'ex-g2'], gear: '', start: '14:30', end: '17:05', notes: 'Gusty inside until 3 pm, then clean.', track },
+      { id: 'ex-x2', spotId: 'ex-valde', snapshotId: 'ex-s2', date: t(4, 13), rating: 5, felt: 10, gusts: 'Steady', water: 'Chop', gearIds: ['ex-g1', 'ex-g3'], gear: '', start: '13:00', end: '16:00', notes: 'Clean and steady, mid tide.' },
+      { id: 'ex-x3', spotId: 'ex-valde', snapshotId: 'ex-s3', date: t(9, 14), rating: 2, felt: 10, gusts: 'Very gusty', water: 'Waves', gearIds: ['ex-g3'], gear: '', start: '14:00', end: '15:00', notes: 'Too gusty, went in early.' },
+      { id: 'ex-x4', spotId: 'ex-valde', snapshotId: 'ex-s4', date: t(15, 15), rating: 3, felt: 8, gusts: 'Steady', water: 'Flat', gearIds: ['ex-g2'], gear: '', start: '15:00', end: '17:30', notes: 'A bit light but fun.' },
+      { id: 'ex-x5', spotId: 'ex-bolonia', snapshotId: 'ex-s5', date: t(6, 10), rating: 4, felt: 6, gusts: null, water: 'Waves', gearIds: ['ex-g4'], gear: 'Longboard 9\'2', start: '10:00', end: '12:00', notes: 'Clean waist-high sets.' },
+      { id: 'ex-x7', spotId: 'ex-bolonia', snapshotId: 'ex-s6', date: t(12, 9), rating: 5, felt: 8, gusts: 'Steady', water: 'Waves', gearIds: ['ex-g4'], gear: '', start: '09:00', end: '11:30', notes: 'Best surf this month, offshore breeze.' },
+      { id: 'ex-x6', spotId: null, snapshotId: null, date: t(22, 12), rating: 1, felt: null, gusts: null, water: 'Flat', gearIds: [], gear: '', start: '', end: '', notes: 'Drove to the coast, nothing. Add the spot later.' },
+    ],
+    settings: { wind: 'ms', height: 'm', temp: 'C', allModels: true, layers: ['temp', 'waves', 'swell1', 'wavesPeriod', 'wavesPower'] },
+  };
+}
+const read = () => { try { return localStorage.getItem(SB_KEY); } catch { return null; } };
+const write = v => { try { localStorage.setItem(SB_KEY, v); } catch { /* storage unavailable */ } };
+// fresh example data for v0.2 (older sandbox data is replaced once)
+let seeded = null; try { seeded = localStorage.getItem(SEED); } catch { /* storage unavailable */ }
+if (!read() || !seeded) { write(JSON.stringify(exampleData())); try { localStorage.setItem(SEED, '1'); } catch { /* ignore */ } }
+
+// ---- place names on the map ----
+function drawLabels() {
+  mapEl.querySelectorAll('.label').forEach(n => n.remove());
+  PLACES.filter(p => !p.hidden).forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'label';
+    el.textContent = p.name;
+    const pos = project(p.lat, p.lon);
+    el.style.left = pos.x + 'px'; el.style.top = (pos.y - 18) + 'px';
+    el.addEventListener('click', e => { e.stopPropagation(); singleclick.emit(NAME, { lat: p.lat, lon: p.lon, source: 'singleclick' }); });
+    mapEl.appendChild(el);
+  });
+}
+drawLabels();
+window.addEventListener('resize', drawLabels);
+
+// the fake map can pan and zoom: keep background, coast and labels in step
+const worldEl = document.getElementById('world');
+const syncWorld = () => { const { INIT, view } = W.__mock; const q = project(INIT.north, INIT.west); worldEl.style.transform = `translate(${q.x}px, ${q.y}px) scale(${1 / view.k})`; };
+W.__mock.onMove(() => { syncWorld(); drawLabels(); });
+
+
+mapEl.addEventListener('click', e => {
+  if (e.target.closest('.sb-top, .sb-bar, .mock-popup')) return;
+  const r = mapEl.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  const { lat, lon } = unproject(x, y);
+  singleclick.emit(NAME, { lat, lon, x, y, source: 'singleclick' });
+});
+
+// ---- timeline ----
+const tl = document.getElementById('timeline');
+const start = new Date(); start.setHours(0, 0, 0, 0);
+const slots = [];
+for (let d = 0; d < 5; d++) for (const h of [10, 13, 16]) slots.push(+start + d * 864e5 + h * 3600e3);
+function renderTimeline() {
+  tl.innerHTML = '';
+  slots.forEach(ts => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    const dt = new Date(ts);
+    b.textContent = dt.toLocaleDateString(undefined, { weekday: 'short' }) + ' ' + String(dt.getHours()).padStart(2, '0') + ':00';
+    if (ts === store.get('timestamp')) b.className = 'on';
+    b.addEventListener('click', e => { e.stopPropagation(); store.set('timestamp', ts); renderTimeline(); });
+    tl.appendChild(b);
+  });
+}
+store.set('timestamp', slots.find(s => s > Date.now()) || slots[0]);
+renderTimeline();
+
+// ---- plugin ----
+let app = new Plugin({ target: document.getElementById('pane') });
+function remount() {
+  app.$destroy();
+  document.getElementById('pane').innerHTML = '';
+  app = new Plugin({ target: document.getElementById('pane') });
+}
+document.getElementById('resetMap').addEventListener('click', e => { e.stopPropagation(); const I = W.__mock.INIT; W.__mock.setView((I.north + I.south) / 2, (I.west + I.east) / 2, 1); });
+document.getElementById('reset').addEventListener('click', e => { e.stopPropagation(); write(JSON.stringify(exampleData())); remount(); });
+
+// ---- saved data sheet ----
+const sheet = document.getElementById('dataSheet'); // the Saved data dialog
+document.getElementById('showData').addEventListener('click', e => {
+  e.stopPropagation();
+  const raw = read();
+  document.getElementById('dataPre').textContent = raw ? JSON.stringify(JSON.parse(raw), null, 2) : 'Nothing saved yet.';
+  sheet.hidden = false;
+  document.getElementById('closeData').focus();
+});
+document.getElementById('closeData').addEventListener('click', () => { sheet.hidden = true; });
+sheet.addEventListener('click', e => { if (e.target === sheet) sheet.hidden = true; });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') sheet.hidden = true; });
+document.getElementById('copyData').addEventListener('click', async ev => {
+  const btn = ev.currentTarget, text = document.getElementById('dataPre').textContent;
+  try { await navigator.clipboard.writeText(text); btn.textContent = 'Copied'; }
+  catch { const r = document.createRange(); r.selectNodeContents(document.getElementById('dataPre')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = 'Selected, press Ctrl/Cmd+C'; }
+  setTimeout(() => (btn.textContent = 'Copy JSON'), 2200);
+});
+} // end sandbox scope
+</script>
