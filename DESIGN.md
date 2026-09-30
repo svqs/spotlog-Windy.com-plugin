@@ -50,7 +50,7 @@ The same values appear in `src/plugin.svelte` (`@ground`, `@card` … at the top
 | Component | File | Notes |
 |---|---|---|
 | Choose a place (Save forecast / Add spot / Log session) | `src/plugin.svelte` `.opts` / `.opt` | Every choice is the same rectangular row: Click/Tap on the map, Map centre, Without a place, your spots |
-| Phone layout | `src/plugin.svelte` `.spotlog.m` | Windy's small bottom panel under the timeline (like The Buoy); tighter paddings |
+| Phone layout | `src/plugin.svelte` `.spotlog.m` | Windy's small bottom panel under the timeline (like The Buoy): half the screen high (`50dvh`), scrolls inside; swipes stay with Spotlog while it can still scroll |
 | Login / Premium gate | `src/plugin.svelte` top of the template | |
 | Header card (wordmark, units pill, stats, sync line) | `src/plugin.svelte` (top) | On inner screens: back · title · units pill (Windy's ✕ sits to the right) |
 | Buy me a coffee | `src/plugin.svelte` `.coffee`, link in `src/lib/links.ts` | Bottom of the home screen |

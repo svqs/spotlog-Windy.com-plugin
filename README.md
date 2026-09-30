@@ -1,4 +1,4 @@
-# Spotlog · Windy plugin (0.5.1)
+# Spotlog · Windy plugin (0.5.2)
 
 A session diary inside [Windy.com](https://www.windy.com) for surfers, windsurfers and kiters.
 Save the forecast for a spot (numbers, not a screenshot), log how the session really felt, attach a GPS track,

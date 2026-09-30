@@ -1,7 +1,7 @@
 <div class="plugin__mobile-header">
     { title }
 </div>
-<section class="plugin__content spotlog" class:m={ isMobile } bind:this={ root }>
+<section class="plugin__content spotlog" class:m={ isMobile } bind:this={ root } on:touchstart={ touchStart } on:touchmove={ touchMove }>
 
 {#if gate}
 <!-- ================= LOGIN / PREMIUM GATE ================= -->
@@ -774,6 +774,24 @@
     const gearUse = (id: string) => data.sessions.filter(s => s.gearIds?.includes(id)).length;
     const gearPlaceholder = (k: string) => ({ Board: 'e.g. Freewave 105 L', Sail: 'e.g. 5.3 wave sail', Fin: 'e.g. 22 cm', Wetsuit: 'e.g. 4/3 steamer', Wing: 'e.g. 5 m', Kite: 'e.g. 9 m' } as Record<string, string>)[k] || 'Name';
 
+    /**
+     * Phones: Windy's bottom panel listens for swipes (to close or resize it). While Spotlog's content can still
+     * scroll in the swipe direction, keep the swipe for scrolling and don't let it bubble up to Windy.
+     */
+    let touchY = 0;
+    function touchStart(e: TouchEvent) {
+        touchY = e.touches[0]?.clientY ?? 0;
+    }
+    function touchMove(e: TouchEvent) {
+        const y = e.touches[0]?.clientY ?? 0;
+        const dy = touchY - y; // > 0: finger moves up = scroll down
+        let el = e.target as HTMLElement | null;
+        // the nearest scrollable box between the finger and the panel (usually the panel itself)
+        while (el && el !== root && !(el.scrollHeight > el.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(el).overflowY))) el = el.parentElement;
+        const box = el || root;
+        const canScroll = dy > 0 ? box.scrollTop + box.clientHeight < box.scrollHeight - 1 : box.scrollTop > 0;
+        if (canScroll) e.stopPropagation();
+    }
     /** scrolls the selected hour of the day strip into view */
     function reveal(node: HTMLElement, on: boolean) {
         const go = (v: boolean) => v && node.scrollIntoView?.({ block: 'nearest', inline: 'center' });
@@ -1762,7 +1780,9 @@
     }
     .spotlog > :global(*) { flex-shrink: 0; }
     /* phones: Spotlog sits in Windy's small bottom panel under the timeline, so everything is tighter */
-    .spotlog.m { padding: 10px 12px 16px; gap: 12px;
+    /* Windy's small bottom panel sizes itself to its content, so on phones Spotlog sets its own height
+       (about half the screen, like The Buoy) and scrolls inside it */
+    .spotlog.m { padding: 10px 12px 16px; gap: 12px; height: 50vh; height: 50dvh; max-height: 50dvh; touch-action: pan-y;
         .head { padding: 10px 14px; gap: 8px; }
         .wordmark { font-size: 20px; }
         .stats .big { font-size: 18px; }
