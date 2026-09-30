@@ -182,23 +182,23 @@
     <div class="opts">
         {#if pickFor === 'log' && lastSnap}
             <button class="opt" on:click={ () => lastSnap && startLog({ snap: lastSnap }) }>
-                <span class="ico o">◷</span>
+                <span class="ico"><Icon name="weather" /></span>
                 <span class="grow"><span>Your last saved forecast</span><small>{ spotById(lastSnap.spotId)?.name || 'Saved place' } · { fmtDayTime(lastSnap.ts) }</small></span>
                 <span class="chev-r" aria-hidden="true">›</span>
             </button>
         {/if}
         <button class="opt" class:on={ waitingForMap } on:click={ () => (waitingForMap = true) }>
-            <span class="ico"><span class="pulse" class:live={ waitingForMap }></span></span>
+            <span class="ico" class:live={ waitingForMap }><Icon name="pointer" /></span>
             <span class="grow"><span>{ isMobile ? 'Tap on the map' : 'Click on the map' }</span><small>{ waitingForMap ? (isMobile ? 'Tap a place, a town or one of your spots…' : 'Click a place, a town or one of your spots…') : 'any place, town or one of your spots' }</small></span>
         </button>
         <button class="opt" on:click={ useCentre }>
-            <span class="ico">◎</span>
+            <span class="ico"><Icon name="crosshair" /></span>
             <span class="grow"><span>Map centre</span><small>{ centreName || 'where the map is now' }</small></span>
             <span class="chev-r" aria-hidden="true">›</span>
         </button>
         {#if pickFor === 'log'}
             <button class="opt" on:click={ () => startLog({}) }>
-                <span class="ico">+</span>
+                <span class="ico"><Icon name="plus" /></span>
                 <span class="grow"><span>Without a place</span><small>add the spot later</small></span>
                 <span class="chev-r" aria-hidden="true">›</span>
             </button>
@@ -210,7 +210,7 @@
             <div class="opts">
                 {#each spotsByCentre as s (s.id)}
                     <button class="opt" on:click={ () => actOn(pickFor, { lat: s.lat, lon: s.lon, name: s.name }, s) }>
-                        <span class="ico o">●</span>
+                        <span class="ico"><i class="dot-s"></i></span>
                         <span class="grow"><span>{ s.name }</span><small>{ s.place || 'Your spot' }</small></span>
                         <span class="chev-r" aria-hidden="true">›</span>
                     </button>
@@ -227,7 +227,7 @@
     <SnapCard title={ place.name } sub={ 'Forecast · ' + timelineLabelFull } model={ modelLabel(currentModel()) } wind={ placeNow } waves={ placeWaves } loading={ placeLoading } u={ S } empty="No forecast for this place" />
     {#if nearSpot}
         <button class="card row link-card" on:click={ () => nearSpot && openSpot(nearSpot.s) }>
-            <span class="ico o">●</span><span class="grow"><small>Close to your spot</small><b>{ nearSpot.s.name } · { fmtDistance(nearSpot.d, S.height) }</b></span><span>›</span>
+            <span class="ico"><i class="dot-s"></i></span><span class="grow"><small>Close to your spot</small><b>{ nearSpot.s.name } · { fmtDistance(nearSpot.d, S.height) }</b></span><span>›</span>
         </button>
     {/if}
     <div class="actions">
@@ -240,7 +240,7 @@
 {:else if view === 'spotForm' && sf}
     <label class="field"><span class="lbl">Name</span><input bind:value={ sf.name } placeholder="Spot name" /></label>
     <div class="card row">
-        <span class="ico o">●</span>
+        <span class="ico"><i class="dot-s"></i></span>
         <span class="grow"><small>Location</small><b>{ sf.place || sf.lat.toFixed(3) + ', ' + sf.lon.toFixed(3) }</b></span>
         <small class="r">{ isMobile ? '' : 'click on the map to move it' }</small>
     </div>
@@ -425,7 +425,7 @@
     {/if}
     <div class="card">
         <div class="row">
-            <span class="ico o">●</span>
+            <span class="ico"><i class="dot-s"></i></span>
             <span class="grow"><small>Spot</small><b>{ spotById(snap.spotId)?.name || 'Not linked to a spot' }</b></span>
             {#if snap.spotId}<button class="link" on:click={ () => snap && linkSnap(null) }>Unlink</button>{/if}
         </div>
@@ -491,7 +491,7 @@
 
     <div class="card">
         <div class="row">
-            <span class="ico o">●</span>
+            <span class="ico"><i class="dot-s"></i></span>
             <span class="grow"><small>Spot</small><b>{ spotById(f.spotId)?.name || 'No spot yet' }</b></span>
             {#if f.spotId}<button class="link" on:click={ () => f && (f = { ...f, spotId: null }) }>Change</button>{/if}
         </div>
@@ -620,6 +620,7 @@
     import SwipeRow from './ui/SwipeRow.svelte';
     import Calendar from './ui/Calendar.svelte';
     import Settings from './ui/Settings.svelte';
+    import Icon from './ui/Icon.svelte';
 
     import type { Spot, Snapshot, Session, ModelValue, WaveValue, Dir8, Settings as SettingsT, Track, SpotlogData, Gear } from './lib/types';
     import type { MatchWindow } from './lib/forecast';
@@ -1828,9 +1829,11 @@
     .item { display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 6px 2px; border: 0; border-bottom: 1px solid @line; background: transparent; text-align: left;
         &:last-child { border-bottom: 0; } }
     .plain { border: 0; background: none; padding: 0; text-align: left; }
-    .ico { width: 32px; height: 32px; border-radius: 16px; background: @card; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;
+    /* row icons: simple line icons and plain dots, no filled circle behind them */
+    .ico { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: @sub;
+        &.live { color: @orange; }
         &.o { color: @orange; font-size: 11px; } }
-    .card .ico { background: @ground; }
+    .dot-s { display: block; width: 8px; height: 8px; border-radius: 4px; background: @orange; }
     .kind { min-width: 58px; height: 26px; padding: 0 8px; border-radius: 8px; background: @ground; font-size: 11px; color: @sub; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
     .dot { width: 30px; height: 30px; flex-shrink: 0; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; }
     .sw { width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: @ink; font-weight: 600; }
@@ -1873,7 +1876,6 @@
     /* every way of choosing a place looks the same: one rectangular row each */
     .opts { display: flex; flex-direction: column; gap: 6px; }
     .opt { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 14px 8px 10px; border-radius: 14px; border: 1px solid @line; background: @card; text-align: left; width: 100%; box-sizing: border-box;
-        .ico { background: @ground; }
         &:hover { border-color: @outline; }
         &.on { border-color: @orange; } }
     .chev-r { color: @sub; font-size: 18px; }
