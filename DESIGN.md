@@ -4,7 +4,7 @@ The design lives on the design canvas: <https://claude.ai/artifact/VBrdShhquX2se
 
 | Canvas page | What it is |
 |---|---|
-| **v6 · as built (plugin 0.4)** | Snapshots of the real plugin screens, taken from the running code (not a mockup). This is the current truth. |
+| **v6 · as built (plugin 0.5)** | Snapshots of the real plugin screens, taken from the running code (not a mockup). This is the current truth. |
 | v5 · final draft | The design the 0.1/0.2 code was built from. |
 | v1–v4 | Earlier explorations. |
 

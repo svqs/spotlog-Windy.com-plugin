@@ -52,16 +52,23 @@ with sync_playwright() as p:
     ok('add spot via map label, lands on the spot page with a white conditions header')
     shot('03-spot')
 
-    # --- Save forecast + undo
+    # --- Save forecast: preview first, nothing stored until "Save forecast"; then undo
     pg.click('.act:has-text("Save forecast")')
+    pg.wait_for_selector('.snap:has-text("Not saved yet")', timeout=8000)
+    assert len(stored(pg).get('snapshots', [])) == 0
+    assert pg.locator('text=Log a session with this').count() == 0
+    shot('03b-forecast-preview')
+    pg.click('.btn.primary:has-text("Save forecast")')
     pg.wait_for_selector('.toast:has-text("Forecast saved")', timeout=8000)
     assert len(stored(pg)['snapshots']) == 1
+    ok('save forecast: preview, then save; nothing stored before')
     pg.click('.toast .undo')
     pg.wait_for_timeout(200)
     assert len(stored(pg)['snapshots']) == 0
-    ok('save forecast then undo removes it')
+    ok('undo removes a just-saved forecast')
     pg.click('.act:has-text("Save forecast")')
-    pg.wait_for_selector('.toast:has-text("Forecast saved")', timeout=8000)
+    pg.wait_for_selector('.btn.primary:has-text("Save forecast")', timeout=8000)
+    pg.click('.btn.primary:has-text("Save forecast")')
     pg.wait_for_selector('.mini:has-text("Edit")')
     ok('saved forecast row has Edit + Delete')
 
@@ -185,23 +192,35 @@ with sync_playwright() as p:
     pg.click('.act:has-text("Save forecast")')
     pg.wait_for_selector('text=Map centre')
     pg.click('.opt:has-text("Map centre")')
-    pg.wait_for_selector('text=Saved forecast', timeout=8000)
-    pg.wait_for_selector('.toast:has-text("Undo")')
+    pg.wait_for_selector('.snap:has-text("Not saved yet")', timeout=8000)
     shot('09-snapshot-view')
     # the map is centred on the spot after "Show on map", so the forecast links itself; otherwise link it by hand
     if pg.locator('text=Unlink').count() == 0:
         pg.click('.chip:has-text("Valdevaqueros")')
     pg.wait_for_selector('text=Unlink')
     ok('forecast from home at map centre, linked to the spot')
-    ts0 = stored(pg)['snapshots'][-1]['ts']
+    n0 = len(stored(pg)['snapshots'])
     pg.locator('.hours .hr').nth(3).click()
     pg.wait_for_timeout(200)
-    assert stored(pg)['snapshots'][-1]['ts'] != ts0
-    ok('hour strip changes the saved forecast hour')
     pg.fill('textarea', 'Maybe after work')
-    pg.locator('textarea').blur()
-    pg.click('.btn.ghost:has-text("Delete")')
-    pg.wait_for_selector('.toast:has-text("Forecast deleted")')
+    pg.click('.btn.primary:has-text("Save forecast")')
+    pg.wait_for_selector('.toast:has-text("Forecast saved")')
+    last = max(stored(pg)['snapshots'], key=lambda x: x['savedAt'])
+    import datetime as _dt2
+    assert len(stored(pg)['snapshots']) == n0 + 1 and _dt2.datetime.fromtimestamp(last['ts'] / 1000).hour == 8 and last['note'] == 'Maybe after work', last
+    ok('hour strip + note, then save: stored at the chosen hour')
+
+    # --- log a session from the last saved forecast
+    top()
+    pg.click('.act:has-text("Log session")')
+    pg.wait_for_selector('.opt:has-text("Your last saved forecast")')
+    shot('09b-log-pick')
+    pg.click('.opt:has-text("Your last saved forecast")')
+    pg.wait_for_selector('.felt')
+    assert pg.locator('.snap').first.inner_text().count('08:00') or pg.locator('.snap').first.inner_text().count('8:00')
+    ok('log session: "Your last saved forecast" opens the log with that forecast')
+    top()
+    pg.click('button[aria-label="Back"]')
 
     # --- log a session without a place, add the spot later
     top()
@@ -245,18 +264,15 @@ with sync_playwright() as p:
     shot('11-gear')
     ok('gear tab: sport first, then sport-specific kinds')
 
-    # --- account sync (fake backend in the harness, code 123456)
+    # --- sync: linked to the Windy account automatically (fake server in the harness, keyed by Windy user id)
     pg.click('.tabs button:has-text("Data")')
-    pg.wait_for_selector('text=sophia@example.com')
-    pg.click('.btn:has-text("Send me a code")')
-    pg.fill('input[autocomplete=one-time-code]', '123456')
-    pg.click('.btn:has-text("Sign in")')
-    pg.wait_for_selector('.toast:has-text("Signed in")', timeout=5000)
+    pg.wait_for_selector('text=linked to your Windy account')
+    assert pg.locator('input[type=email]').count() == 0
     cloud = pg.evaluate("JSON.parse(localStorage.getItem('spotlog-mock-cloud'))")
-    row = list(cloud['rows'].values())[0]
+    row = cloud['rows']['12345']
     assert len(row['data']['sessions']) >= 1, row
-    shot('11b-account')
-    ok('sign in with email code, diary uploaded to the account')
+    shot('11b-data')
+    ok('diary syncs to the Windy user id, no separate sign-in')
 
     # --- two Windy tabs open at once must not overwrite each other
     pg2 = ctx.new_page()
@@ -279,19 +295,10 @@ with sync_playwright() as p:
     pg.click('.item:has-text("Tab one sail") .link.danger')
     pg.wait_for_timeout(1600)
     cloud = pg.evaluate("JSON.parse(localStorage.getItem('spotlog-mock-cloud'))")
-    row = list(cloud['rows'].values())[0]
+    row = cloud['rows']['12345']
     assert 'Tab one sail' not in [g['name'] for g in row['data']['gear']]
     assert any(v for v in row['data'].get('deleted', {}).values())
-    ok('a delete syncs to the account and is remembered')
-
-    # --- delete my data from the account
-    pg.click('.tabs button:has-text("Data")')
-    pg.click('text=Delete my data from the account')
-    pg.click('text=Tap again: deletes your diary from the account')
-    pg.wait_for_selector('.toast:has-text("deleted from the account")')
-    cloud = pg.evaluate("JSON.parse(localStorage.getItem('spotlog-mock-cloud'))")
-    assert not cloud.get('rows'), cloud.get('rows')
-    ok('delete my data from the account')
+    ok('a delete syncs and is remembered')
 
     # --- Premium gate: logged out / not Premium
     pg.evaluate("W.store.set('subscription', null)")

@@ -1,8 +1,9 @@
-# Spotlog · developer notes (0.4.0)
+# Spotlog · developer notes (0.5.0)
 
 Spotlog is a client-side Windy plugin (Svelte 4 + TypeScript, built with Windy's official template and
-`@windycom/plugin-devtools`). The diary is always kept in the browser's `localStorage` on windy.com and, when the
-user signs in, also in their **account** (one JSON document per user in a Supabase table). Forecast data comes from
+`@windycom/plugin-devtools`). The diary is kept in the browser's `localStorage` on windy.com and — once the sync server is
+set up — stored per **Windy user id**, so logging in to Windy on another device shows the same diary. There is no separate
+Spotlog login. Forecast data comes from
 Windy's own plugin API.
 
 ## Architecture
@@ -12,8 +13,9 @@ src/pluginConfig.ts     plugin manifest (name, rhpane 400 px on desktop, Windy's
 src/plugin.svelte       all screens, navigation (view + history stack), Windy map integration, actions, sync triggers
 src/lib/types.ts        data model
 src/lib/storage.ts      load / save / export / import / merge (localStorage, JSON)
-src/lib/cloud.ts        account sync: email-code sign-in + pull/push of the diary (Supabase REST, no SDK)
-src/lib/cloudConfig.ts  Supabase URL + anon key (empty = sync switched off)
+src/lib/cloud.ts        sync: pull/push of the diary for the logged-in Windy user (sends Windy user id + Windy token)
+src/lib/cloudConfig.ts  URL of the sync function (empty = browser only)
+supabase/functions/spotlog  the sync server (Supabase Edge Function): checks the Windy login, reads/writes the diary
 src/lib/forecast.ts     Windy point forecast → whole-day snapshots, 20-min cache, "next good window"
 src/lib/predict.ts      predicted rating (weighted nearest neighbours on wind speed + direction), wind-window suggestion
 src/lib/units.ts        unit conversion + formatting, 12/24 h
@@ -43,18 +45,18 @@ scripts/publish.sh      same as the workflow, from a terminal
 The close button is **Windy's own** closing ✕ (Windy's `Window` draws it for every rhpane plugin unless `hideClosingX`).
 The plugin keeps ~44 px free in the top-right corner for it and no longer draws its own.
 
-## Windy account, Premium and the Spotlog account
+## Windy account, Premium and sync
 
 - **Gate:** Spotlog only opens for logged-in Premium users (`store.get('user')`, `store.get('subscription') === 'premium'`).
-  This is a client-side check (good for UX, not a security boundary — the account backend can't see Windy's Premium status).
-- **One diary per Windy login:** browser storage key `windy-plugin-spotlog:v1:u<windyUserId>` (a diary made before 0.4 is
-  moved into the first Windy account that opens Spotlog). Logging out/in switches the diary live.
-- **Account sync is linked to the Windy login:** the sign-in code goes to the Windy account's email and the sign-in is stored
-  per Windy user. It is still a separate Supabase user under the hood, because Windy offers plugins no way to prove who is
-  logged in to an outside server.
-- **Fully automatic (no code) would need Windy's help:** Windy keeps a signed user token (`store.get('userToken')`, a JWT).
-  If Windy confirms plugins may use it and publishes how to verify it (JWKS / public key or a verify endpoint), a Supabase
-  Edge Function can check that token and sign the user in silently — same account, no email code. Ask the Windy plugin team.
+  Client-side check (good for UX, not a security boundary).
+- **One diary per Windy login:** browser key `windy-plugin-spotlog:v1:u<windyUserId>`; logging out/in switches the diary live.
+- **Sync = the Windy account, no Spotlog login:** every request sends the Windy user id (`x-windy-user`) and Windy's own login
+  token (`x-windy-token`, from `store.get('userToken')`). The server stores one row per Windy user id.
+- **The one thing to settle with Windy:** the server must be able to confirm that the token really belongs to that user id —
+  otherwise anyone could read or overwrite someone else's diary just by sending their (sequential) user id. Ask the Windy
+  plugin team (a) whether plugins may send `userToken` to their own server, and (b) which endpoint/public key verifies it.
+  Put that endpoint in the function secret `WINDY_VERIFY_URL`. Until then, only ids listed in `ALLOW_UNVERIFIED_TEST_IDS`
+  (you + testers) are accepted — fine for private testing, never for the public release.
 
 ## Time zones and midnight
 
@@ -78,9 +80,8 @@ active model plus ECMWF, GFS, ICON, ICON-EU, AROME (regional models fail quietly
 
 ## Stored data
 
-- Browser: `localStorage` of `www.windy.com`, key **`windy-plugin-spotlog:v1`** (one JSON document); sign-in session under
-  `windy-plugin-spotlog:auth`.
-- Account: table `public.spotlog_data` (`user_id`, `data jsonb`, `updated_at`), one row per user, see `supabase/setup.sql`.
+- Browser: `localStorage` of `www.windy.com`, key **`windy-plugin-spotlog:v1:u<windyUserId>`** (one JSON document).
+- Server: table `public.spotlog_diary` (`windy_user_id`, `data jsonb`, `updated_at`), one row per Windy user, see `supabase/setup.sql`.
 - Inspect: DevTools › Application › Local Storage, Home › Data › Export JSON, or the sandbox **Saved data** button.
 - Size: `localStorage` is ~5 MB per origin. A whole-day snapshot is ~4–5 KB, a session ~0.5 KB, a track ~10 KB.
   `save()` catches quota errors and logs them (no UI message yet).
@@ -103,27 +104,25 @@ active model plus ECMWF, GFS, ICON, ICON-EU, AROME (regional models fail quietly
 }
 ```
 
-## Account sync (switch it on)
+## Sync server (switch it on)
 
-Windy's plugin API has no per-user storage for plugins (its `cloudSync` only syncs Windy's own settings, `userFavs` only
-favourite places), and a Windy login can't be verified by an outside server. So Spotlog has its own small account:
-**Supabase** (free tier is plenty), sign-in with a 6-digit code sent by email, no passwords.
+Windy's plugin API has no per-user storage for plugins, so the diary lives in a small Supabase project (free tier is plenty).
 
 1. Create a project at <https://supabase.com> (region: EU, e.g. Frankfurt).
-2. SQL Editor › paste `supabase/setup.sql` › Run.
-3. Authentication › Emails › **Magic Link** template: make sure the body contains `{{ .Token }}` (the 6-digit code), e.g.
-   `Your Spotlog code: {{ .Token }}`. Optional: Authentication › Providers › Email › set OTP length to 6.
-4. For real users, set up custom SMTP (Authentication › Emails › SMTP) — Supabase's built-in mailer is rate-limited and meant for testing.
-5. Project Settings › API: copy the **Project URL** and the **anon public** key into `src/lib/cloudConfig.ts`. Both are
-   public by design; row-level security only lets a signed-in user read/write their own row.
-6. Build + publish. Home › Data now shows **Your account** with email sign-in.
+2. SQL Editor › paste `supabase/setup.sql` › Run (table `spotlog_diary`, row-level security on, no public access).
+3. Deploy the function: `supabase functions deploy spotlog --no-verify-jwt`
+   (the function does its own check of the Windy login, so Supabase's own JWT check is off).
+4. Secrets: `supabase secrets set ALLOW_UNVERIFIED_TEST_IDS=<your Windy user id>,<tester id>` for private testing, and
+   `WINDY_VERIFY_URL=…` once Windy tells you how to verify their token.
+   (Your Windy user id: open Spotlog, then in the browser console `W.store.get('user').id`, or ask Windy.)
+5. Put the function URL (`https://<project>.supabase.co/functions/v1/spotlog`) into `src/lib/cloudConfig.ts`, build, publish.
 
-How it syncs: every local save pushes the whole document (debounced 1.2 s). On open, the newer copy (local vs account,
-by `updatedAt`) wins. The first sign-in on a browser merges both copies by id. Conflicts between two devices editing at
-the same moment resolve to the last write (fine for a personal diary; per-item merging would be the next step).
+How it syncs: every local save pushes the whole document (debounced 1.2 s). On open, both copies are merged by id (newer
+document wins for the same item, deletions are kept as tombstones for 90 days).
 
-To check: Windy's Content-Security-Policy must allow `fetch` to `*.supabase.co` from a plugin. Other public plugins call
-external APIs, but test this first in developer mode (Network tab).
+**Later: shared spot tips.** Because every diary is stored per user, the server can compute anonymous per-spot summaries
+(e.g. "most users rate this spot great with W–NW 6–10 m/s") and serve them to everyone. That needs an opt-in in the plugin
+and a privacy note; the data model already has what's needed (spots with coordinates, sessions with ratings and forecasts).
 
 ## Security, privacy and risks
 
@@ -131,27 +130,28 @@ external APIs, but test this first in developer mode (Network tab).
 - No `{@html}`/`innerHTML` with user text: Svelte escapes everything; map labels and popups go through `escapeHtml`.
 - Everything read from storage, an import file or the account is validated (`normalise()` in `storage.ts`): types,
   coordinates, lengths, list sizes. Import files are capped at 25 MB, GPS files at 40 MB / 2 000 stored points.
-- No secrets in the plugin. The Windy publish key lives only in GitHub Secrets. The Supabase anon key is public by design;
-  row-level security (`supabase/setup.sql`) limits every user to their own row, plus a 10 MB size check.
-- Sign-in is a one-time email code (no passwords stored anywhere). Users can delete their account data in the plugin.
+- No secrets in the plugin. The Windy publish key lives only in GitHub Secrets. The database is only reachable through the
+  sync function (service role on the server); the table has row-level security with no public policies, plus a 10 MB check.
+- No Spotlog passwords or logins at all: identity comes from the Windy login (see "Windy account, Premium and sync").
 - External links open with `rel="noopener noreferrer"`. No trackers, no ads, no third-party fonts.
 
 **Known limits (by design of Windy plugins)**
 - Plugins run inside windy.com with full page access and share its `localStorage`. Another *untrusted* plugin the user
-  installs could read Spotlog's diary and its sign-in token. Mitigation: short-lived Supabase access tokens (1 h) with
-  refresh-token rotation (Supabase default); tell users to only install plugins they trust.
+  installs could read Spotlog's diary in the browser. Tell users to only install plugins they trust.
+- The Windy login token is sent to our sync function, which only uses it to ask Windy who the user is and never stores it.
+  Needs Windy's OK before a public release.
 - Browser-only mode: clearing site data deletes the diary. Two open tabs are merged (storage event), not overwritten.
 - Sync is per document: for the same item edited on two devices, the newer copy wins. Deletions are kept as tombstones
   for 90 days so they don't come back.
 - GPS tracks can reveal where someone starts (home, car park). They're only shown to the user themselves; if sharing ever
   comes, trim the first/last few hundred metres.
-- GDPR once there are accounts: privacy note (what's stored, where: Supabase region EU), a way to delete the account
-  entirely (the plugin deletes the data row; deleting the auth user needs the Supabase dashboard or an edge function).
+- GDPR: privacy note (what's stored, where: Supabase region EU, keyed by Windy user id). "Delete all Spotlog data" in
+  the plugin empties the diary everywhere; the function also supports `DELETE` for removing the row completely.
 
 ## Network requests
 
 - Windy's own forecast and geocoding endpoints (through the plugin API).
-- Supabase (`<project>.supabase.co`), only when sync is configured and the user signs in.
+- The sync function (`<project>.supabase.co/functions/v1/spotlog`), only when it's configured and the user is logged in to Windy.
 - No font or analytics requests: Instrument Sans + Doto are embedded (`src/lib/fonts.ts`, generated by
   `scripts/build-fonts.py` from `assets/fonts`, SIL OFL). The fonts are subsets: Instrument Sans variable 400–600
   (Latin + Latin Extended-A) and Doto (A–Z, 0–9, a few signs), ~36 KB instead of ~110 KB.
@@ -168,12 +168,12 @@ instead of Instrument Sans (−35 KB), or split rarely used screens (calendar, G
 npm install
 npm run build                 # dist/plugin.js (+ .min.js, plugin.json)
 python3 -m http.server 8765   # from the project root
-python3 harness/e2e.py /tmp   # 28 checks, screenshots to /tmp (pip install playwright)
+python3 harness/e2e.py /tmp   # 29 checks, screenshots to /tmp (pip install playwright)
 python3 harness/assemble.py   # rebuilds the single-file sandbox harness/sandbox.html
 ```
 
 The fake Windy (`harness/mock-windy.js`) implements the API surface above with synthetic forecasts (different per model,
-AROME unavailable outside France), a stand-in for Windy's closing ✕, and a fake account backend (any email, code `123456`).
+AROME unavailable outside France), a stand-in for Windy's closing ✕, and a fake sync server that checks a mock Windy token.
 
 ## Publishing (test link)
 
@@ -191,7 +191,7 @@ Docs: <https://docs.windy-plugins.com/getting-started/publishing-plugin.html>
 - [ ] Real Windy (developer mode + published URL): map clicks, context menu, `centerMap`, route drawing, popup look, Windy's ✕ placement
 - [ ] Windy's global CSS doesn't leak into the panel (generic class names like `.card`, `.btn`, `.chip`, `.row` are Svelte-scoped but could still pick up unset properties). Prefixing with `sl-` would remove the risk
 - [ ] Mobile browser test (fullscreen UI, long-press › Spotlog, touch drag on the ruler and swipe rows)
-- [ ] Account sync: CSP check, custom SMTP, delete-account flow (GDPR), privacy note in the plugin
+- [ ] Sync: Windy's OK + token verification (`WINDY_VERIFY_URL`), CSP check for `*.supabase.co`, privacy note in the plugin
 - [ ] `poi-label` click events (clicking Windy's own place names) — not wired yet
 - [ ] Storage quota message in the UI
 - [ ] Replace the placeholder Buy-me-a-coffee link in `src/lib/links.ts`

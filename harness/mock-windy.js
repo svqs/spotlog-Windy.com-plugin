@@ -189,7 +189,7 @@
     // a logged-in Windy Premium user (Spotlog is for Premium members). Try store.set('user', null) or store.set('subscription', null).
     const state = {
         timestamp: +now + 3 * 3600e3, product: 'ecmwf', overlay: 'wind',
-        user: { id: 12345, username: 'sophia', email: 'sophia@example.com' }, subscription: 'premium',
+        user: { id: 12345, username: 'sophia', email: 'sophia@example.com' }, subscription: 'premium', userToken: 'mock-token-12345',
     };
     store.get = k => state[k];
     store.set = (k, v) => { state[k] = v; store.emit(k, v); };
@@ -246,25 +246,17 @@
     };
 
 
-    // ---- fake account backend (stands in for Supabase so the sign-in flow can be tried) ----
-    // Any email works; the code is always 123456. Data lives in this browser under 'spotlog-mock-cloud'.
+    // ---- fake sync server (stands in for supabase/functions/spotlog) ----
+    // It "verifies" Windy's login token like the real function does: token 'mock-token-<id>' belongs to user <id>.
     const CLOUD_KEY = 'spotlog-mock-cloud';
     const cdb = () => { try { return JSON.parse(localStorage.getItem(CLOUD_KEY) || '{}'); } catch { return {}; } };
     const cwrite = v => { try { localStorage.setItem(CLOUD_KEY, JSON.stringify(v)); } catch { /* ignore */ } };
     const wait = ms => new Promise(r => setTimeout(r, ms));
-    const sessionFor = email => {
-        const d = cdb(); d.users = d.users || {};
-        d.users[email] = d.users[email] || { id: 'user-' + Math.random().toString(36).slice(2, 10) };
-        cwrite(d);
-        return { access_token: 'mock', refresh_token: email, expires_at: Date.now() + 3600e3, user: { id: d.users[email].id, email } };
-    };
+    const verify = a => { if (!a || a.token !== 'mock-token-' + a.id) throw new Error('Could not confirm your Windy login'); return String(a.id); };
     window.__spotlogCloudMock = {
-        async sendCode(email) { await wait(350); if (!/.+@.+\..+/.test(email)) throw new Error('Please enter a valid email'); console.log('[mock cloud] code for ' + email + ': 123456'); },
-        async verify(email, code) { await wait(350); if (code !== '123456') throw new Error('Wrong code. In the sandbox the code is 123456'); return sessionFor(email); },
-        async refresh(rt) { await wait(100); return sessionFor(rt); },
-        async pull(s) { await wait(250); const r = (cdb().rows || {})[s.user.id]; return r ? { data: r.data, updatedAt: r.updatedAt } : null; },
-        async push(s, data) { await wait(250); const d = cdb(); d.rows = d.rows || {}; d.rows[s.user.id] = { data, updatedAt: data.updatedAt || Date.now() }; cwrite(d); },
-        async remove(s) { await wait(250); const d = cdb(); if (d.rows) delete d.rows[s.user.id]; cwrite(d); },
+        async pull(a) { await wait(200); const id = verify(a); const r = (cdb().rows || {})[id]; return r ? { data: r.data, updatedAt: r.updatedAt } : null; },
+        async push(a, data) { await wait(200); const id = verify(a); const d = cdb(); d.rows = d.rows || {}; d.rows[id] = { data, updatedAt: data.updatedAt || Date.now() }; cwrite(d); },
+        async remove(a) { await wait(200); const id = verify(a); const d = cdb(); if (d.rows) delete d.rows[id]; cwrite(d); },
     };
 
     // ---- Windy's own closing ✕ (Windy draws it on every right-hand pane plugin) ----

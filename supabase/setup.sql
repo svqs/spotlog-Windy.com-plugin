@@ -1,20 +1,13 @@
--- Spotlog account sync: run once in Supabase › SQL Editor.
--- One row per user holding their whole diary as JSON. Row-level security makes sure
--- a signed-in user can only ever read or write their own row.
+-- Spotlog sync: run once in Supabase › SQL Editor.
+-- One row per Windy user holding their whole diary as JSON. Only the Edge Function (service role)
+-- can read or write it: row-level security is on and there are no public policies.
 
-create table if not exists public.spotlog_data (
-    user_id    uuid primary key references auth.users (id) on delete cascade,
-    data       jsonb       not null,
-    updated_at timestamptz not null default now()
+create table if not exists public.spotlog_diary (
+    windy_user_id bigint primary key,
+    data          jsonb       not null,
+    updated_at    timestamptz not null default now(),
+    constraint spotlog_diary_size check (octet_length(data::text) < 10485760)
 );
 
-alter table public.spotlog_data enable row level security;
-
-create policy "spotlog: read own"   on public.spotlog_data for select using (auth.uid() = user_id);
-create policy "spotlog: insert own" on public.spotlog_data for insert with check (auth.uid() = user_id);
-create policy "spotlog: update own" on public.spotlog_data for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy "spotlog: delete own" on public.spotlog_data for delete using (auth.uid() = user_id);
-
--- Keep one diary to a sane size (10 MB of JSON) so nobody can fill the database.
-alter table public.spotlog_data
-    add constraint spotlog_data_size check (octet_length(data::text) < 10485760);
+alter table public.spotlog_diary enable row level security;
+-- (no policies on purpose: the anon/public key can't touch this table)

@@ -1,4 +1,4 @@
-# Spotlog · Windy plugin (0.4.0)
+# Spotlog · Windy plugin (0.5.0)
 
 A session diary inside [Windy.com](https://www.windy.com) for surfers, windsurfers and kiters.
 Save the forecast for a spot (numbers, not a screenshot), log how the session really felt, attach a GPS track,
@@ -52,8 +52,9 @@ python3 harness/e2e.py /tmp    # clicks through every flow (pip install playwrig
 | Spots | Directions + range, or “I don't know yet” → Spotlog suggests a wind window after two great sessions. Tiles show conditions now + a predicted rating after 3 sessions. |
 | Spot page | White header with conditions now, Log / Save forecast / Show on map (zoom + popup), next good window, model ranking, saved forecasts (edit/delete), sessions (tap to open, swipe to delete). |
 | Log a session | Date and time first, then rating (red flat → greens), draggable magnetic “felt like” ruler, gusts, water, saved gear (grouped by sport), GPX/TCX track, notes. Undo on saves and deletes. |
-| Forecast snapshots | Save the whole day's forecast (05–22 h, every model). Pick an hour on the snapshot; when you log a session, the forecast follows your session time. |
-| Your account | The diary belongs to your Windy account (each Windy login has its own diary in the browser). Home › Data › **Send me a code** goes to your Windy email and turns on sync across devices. Needs the one-time Supabase setup in DEVELOPER.md. |
+| Save forecast | Pick a place → check the forecast (whole day, every model; pick the hour, link the spot, add a note) → **Save forecast**. Tip: save before your session — Windy keeps no past forecasts. |
+| Log session | Its own flow after the session: pick **Your last saved forecast**, click on the map, the map centre, one of your spots or no place → fill in → **Save session**. The forecast follows your session time. |
+| Your data | Linked to your Windy account, no separate login: log in to Windy on another device and your diary is there (once the sync server from DEVELOPER.md is set up; until then it's kept in the browser). |
 | GPS route | GPX/TCX from Garmin Connect, Strava…: distance, time, top speed; drawn on the Windy map like Windy's distance tool. |
 | Sessions | List or calendar. |
 | Gear | Pick the sport (Windsurf, Surf, Kite, Wing), then what it is (board, sail, mast, boom, fin, harness, kite, bar, wing, foil, leash, wetsuit…). |

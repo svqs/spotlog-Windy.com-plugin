@@ -35,7 +35,7 @@
             <div><span class="lbl">Sessions</span><span class="big">{ data.sessions.length }</span></div>
             <div><span class="lbl">On the water</span><span class="big">{ hoursOnWater } <small>h</small></span></div>
         </div>
-        {#if cloudUser}
+        {#if synced}
             <small class="sync" class:err={ syncState === 'error' }>{ syncLabel }</small>
         {/if}
     </div>
@@ -149,44 +149,13 @@
         {/if}
     {:else}
         <div class="card">
-            <b>Your account</b>
-            {#if !cloudOn}
-                <p class="p muted">Your diary is saved in this browser. Saving it to an account (so it's on every device) is switched on once the Spotlog server is set up.</p>
-            {:else if cloudUser}
-                <p class="p">Signed in as <b>{ cloudUser.email }</b>. Everything you save goes to your account and shows up on every device where you sign in.</p>
-                <small class:err={ syncState === 'error' }>{ syncLabel }</small>
-                {#if syncState === 'error'}<small class="err">{ syncError }</small>{/if}
-                <div class="btns">
-                    <button class="btn ghost" disabled={ syncState === 'saving' } on:click={ () => syncNow(false) }>{ syncState === 'saving' ? 'Syncing…' : 'Sync now' }</button>
-                    <button class="btn ghost" on:click={ doSignOut }>Sign out</button>
-                </div>
-                <button class="link danger" on:click={ doDeleteAccountData }>{ armed === 'account' ? 'Tap again: deletes your diary from the account' : 'Delete my data from the account' }</button>
-                <small class="muted">Signed-in details are kept in this browser. Only install Windy plugins you trust: plugins share windy.com's storage.</small>
+            {#if synced}
+                <p class="p">Your diary is linked to your Windy account{ wUser?.username ? ' (' + wUser.username + ')' : '' }: log in to Windy on any device and it's there. A copy is kept in this browser too.</p>
+                <small class:err={ syncState === 'error' }>{ syncLabel }{ syncState === 'error' && syncError ? ' · ' + syncError : '' }</small>
             {:else}
-                {#if wUser?.email}
-                    <p class="p muted">Keep your diary in your account, linked to your Windy login, so it's on every device. We send a 6-digit code to <b class="w">{ wUser.email }</b> to confirm it's you.</p>
-                {:else}
-                    <p class="p muted">Keep your diary in your account so it's on every device. We email you a 6-digit code, no password.</p>
-                {/if}
-                {#if !codeSent}
-                    <div class="row">
-                        {#if !wUser?.email}
-                            <input type="email" bind:value={ authEmail } placeholder="you@example.com" autocomplete="email" on:keydown={ e => e.key === 'Enter' && doSendCode() } />
-                        {/if}
-                        <button class="btn primary" class:small={ !wUser?.email } disabled={ !/.+@.+\..+/.test(authEmail) || authBusy } on:click={ doSendCode }>{ authBusy ? 'Sending…' : wUser?.email ? 'Send me a code' : 'Send code' }</button>
-                    </div>
-                {:else}
-                    <small class="muted">Code sent to { authEmail }. <button class="link inline" on:click={ () => { codeSent = false; authCode = ''; } }>Change email</button></small>
-                    <div class="row">
-                        <input inputmode="numeric" autocomplete="one-time-code" maxlength="8" bind:value={ authCode } placeholder="6-digit code" on:keydown={ e => e.key === 'Enter' && doVerify() } />
-                        <button class="btn primary small" disabled={ authCode.trim().length < 6 || authBusy } on:click={ doVerify }>{ authBusy ? 'Checking…' : 'Sign in' }</button>
-                    </div>
-                {/if}
-                {#if authError}<small class="err">{ authError }</small>{/if}
+                <p class="p">Your diary is saved in this browser for your Windy login. Syncing it across your devices switches on once the Spotlog server is set up.</p>
             {/if}
-        </div>
-        <div class="card">
-            <p class="p">{ cloudUser ? 'A copy is also kept in this browser.' : 'Everything is stored in this browser only.'} Export it to look at the raw data, back it up or move it to another device.</p>
+            <p class="p muted">Export it to look at the raw data or keep a backup.</p>
             <p class="small">{ data.spots.length } spots · { data.snapshots.length } forecast snapshots · { data.sessions.length } sessions · { data.gear.length } gear</p>
             <div class="btns">
                 <button class="btn primary" on:click={ () => exportJson(data) }>Export JSON</button>
@@ -211,6 +180,13 @@
         <p class="p muted">Saves the whole day's forecast around <b class="w">{ timelineLabelFull }</b>. Move Windy's timeline to pick another day.</p>
     {/if}
     <div class="opts">
+        {#if pickFor === 'log' && lastSnap}
+            <button class="opt" on:click={ () => lastSnap && startLog({ snap: lastSnap }) }>
+                <span class="ico o">◷</span>
+                <span class="grow"><span>Your last saved forecast</span><small>{ spotById(lastSnap.spotId)?.name || 'Saved place' } · { fmtDayTime(lastSnap.ts) }</small></span>
+                <span class="chev-r" aria-hidden="true">›</span>
+            </button>
+        {/if}
         <button class="opt" class:on={ waitingForMap } on:click={ () => (waitingForMap = true) }>
             <span class="ico"><span class="pulse" class:live={ waitingForMap }></span></span>
             <span class="grow"><span>{ isMobile ? 'Tap on the map' : 'Click on the map' }</span><small>{ waitingForMap ? (isMobile ? 'Tap a place, a town or one of your spots…' : 'Click a place, a town or one of your spots…') : 'any place, town or one of your spots' }</small></span>
@@ -329,7 +305,7 @@
 
     <div class="actions">
         <button class="act primary" on:click={ () => spot && startLog({ spot }) }><b>Log session</b><small>how was it?</small></button>
-        <button class="act" disabled={ capturing } on:click={ () => spot && saveForecastAt({ lat: spot.lat, lon: spot.lon, spot }, false) }><b>{ capturing ? 'Saving…' : 'Save forecast' }</b><small>{ timelineLabel }</small></button>
+        <button class="act" disabled={ capturing } on:click={ () => spot && saveForecastAt({ lat: spot.lat, lon: spot.lon, spot }) }><b>{ capturing ? 'Loading…' : 'Save forecast' }</b><small>{ timelineLabel }</small></button>
         <button class="act" on:click={ () => spot && showOnMap(spot) }><b>Show on map</b><small>zoom + now</small></button>
     </div>
 
@@ -433,7 +409,7 @@
 
 <!-- ================= SNAPSHOT ================= -->
 {:else if view === 'snap' && snap}
-    <SnapCard title={ fmtDayTime(snap.ts) } sub={ 'Saved ' + fmtDayTime(snap.savedAt) } model={ modelLabel(snap.primary) } wind={ primaryOf(snap) } waves={ snap.waves } models={ snap.models } u={ S } />
+    <SnapCard title={ fmtDayTime(snap.ts) } sub={ snapDraft ? 'Not saved yet · check it and save' : 'Saved ' + fmtDayTime(snap.savedAt) } model={ modelLabel(snap.primary) } wind={ primaryOf(snap) } waves={ snap.waves } models={ snap.models } u={ S } />
     {#if snap.series}
         <div class="section">
             <div class="hours" role="listbox" aria-label="Hour of the saved forecast">
@@ -444,7 +420,7 @@
                     </button>
                 {/each}
             </div>
-            <small class="muted sl-note">The whole day is saved: tap an hour to see it. Logging a session moves it to your session time.</small>
+            <small class="muted sl-note">{ snapDraft ? 'The whole day is saved with it' : 'The whole day is saved' }: tap an hour to see it. When you log a session later, it moves to your session time.</small>
         </div>
     {/if}
     <div class="card">
@@ -464,8 +440,13 @@
     </div>
     <label class="field"><span class="lbl">Note</span><textarea rows="3" bind:value={ snapNote } on:change={ saveSnapNote } placeholder="e.g. Planning to go after work"></textarea></label>
     <div class="btns">
-        <button class="btn primary" on:click={ () => snap && startLog({ snap }) }>Log a session with this</button>
-        <button class="btn ghost" on:click={ () => snap && deleteSnap(snap) }>Delete</button>
+        {#if snapDraft}
+            <button class="btn primary" on:click={ confirmSnap }>Save forecast</button>
+            <button class="btn ghost" on:click={ back }>Cancel</button>
+        {:else}
+            <button class="btn primary" on:click={ back }>Done</button>
+            <button class="btn ghost" on:click={ () => snap && deleteSnap(snap) }>Delete</button>
+        {/if}
     </div>
 
 <!-- ================= LOG / EDIT SESSION ================= -->
@@ -621,8 +602,8 @@
     import config from './pluginConfig';
     import { load, save, exportJson, importJson, uid, emptyData, normalise, mergeData, storageKey, useWindyUser } from './lib/storage';
     import { waveValueAt, modelValueAt, nextMatch, conditionsNow, trimWaves, captureDay, seriesAt, covers, SNAPSHOT_MODELS } from './lib/forecast';
-    import { cloudAvailable, currentUser, sendCode, verifyCode, signOut, pull, push, deleteAccountData, setCloudWindyUser } from './lib/cloud';
-    import type { CloudUser } from './lib/cloud';
+    import { cloudAvailable, pull, push } from './lib/cloud';
+    import type { WindyAuth } from './lib/cloud';
     import { COFFEE_URL } from './lib/links';
     import { FONT_CSS } from './lib/fonts';
     import {
@@ -686,7 +667,6 @@
     let premium = readPremium();
     $: gate = !wUser ? 'login' : !premium ? 'premium' : null;
     useWindyUser(wUser?.id);
-    setCloudWindyUser(wUser?.id);
 
     let data: SpotlogData = load();
     /** ids present at the last save: anything missing now was deleted (-> tombstone, so sync won't bring it back) */
@@ -701,6 +681,7 @@
     let spot: Spot | null = null;
     let snap: Snapshot | null = null;
     let snapNote = '';
+    let snapDraft = false;
     let place: Loc | null = null;
     let placeNow: ModelValue | null = null;
     let placeWaves: WaveValue | null = null;
@@ -715,7 +696,7 @@
     let matches: Record<string, MatchWindow | null | 'loading'> = {};
     let nowBySpot: Record<string, Now | 'loading'> = {};
     let capturing = false;
-    let armed: '' | 'spot' | 'all' | 'account' = '';
+    let armed: '' | 'spot' | 'all' = '';
     let armTimer: ReturnType<typeof setTimeout> | undefined;
     let gearSport = 'Windsurf';
     let gearKind = 'Board';
@@ -723,16 +704,10 @@
     let captureErrorDay = '';
     // account sync
     const cloudOn = cloudAvailable();
-    let cloudUser: CloudUser | null = currentUser();
     let syncState: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
     let syncAt = 0;
     let syncError = '';
     let pushTimer: ReturnType<typeof setTimeout> | undefined;
-    let authEmail = readWindyUser()?.email || '';
-    let authCode = '';
-    let codeSent = false;
-    let authBusy = false;
-    let authError = '';
     let recaptureTimer: ReturnType<typeof setTimeout> | undefined;
     let gearName = '';
     let toast: { msg: string; undo?: () => void } | null = null;
@@ -751,6 +726,7 @@
     $: S = data.settings;
     $: unitsLabel = `${windLabel(S.wind)} · ${S.height} · °${S.temp}`;
     $: allSessions = [...data.sessions].sort((a, b) => b.date - a.date);
+    $: lastSnap = [...data.snapshots].sort((a, b) => b.savedAt - a.savedAt)[0] || null;
     $: spotSessions = spot ? data.sessions.filter(s => s.spotId === spot?.id).sort((a, b) => b.date - a.date) : [];
     $: spotSnapshots = spot ? data.snapshots.filter(s => s.spotId === spot?.id).sort((a, b) => b.ts - a.ts) : [];
     $: avgRating = spotSessions.length ? (spotSessions.reduce((a, s) => a + s.rating, 0) / spotSessions.length).toFixed(1) : '–';
@@ -768,7 +744,8 @@
     $: if (view === 'log' && f) scheduleRecapture(f.dateStr, f.start, f.end);
     $: gearGroups = groupGear(data.gear, GEAR_SPORTS);
     $: logGearGroups = f ? groupGear(data.gear, [...(spotById(f.spotId)?.sports || []), ...GEAR_SPORTS]) : [];
-    $: syncLabel = syncState === 'saving' ? 'Saving to your account…' : syncState === 'error' ? 'Not synced — will retry' : syncAt ? `Synced ${fmtTime(syncAt)} · ${cloudUser?.email || ''}` : `Account: ${cloudUser?.email || ''}`;
+    $: synced = cloudOn && !!wUser;
+    $: syncLabel = syncState === 'saving' ? 'Syncing with your Windy account…' : syncState === 'error' ? 'Not synced yet — will retry' : syncAt ? `Synced with your Windy account · ${fmtTime(syncAt)}` : 'Linked to your Windy account';
     $: logFc = logPrimary?.wind != null ? roundToStep(toWind(logPrimary.wind, S.wind)) : null;
     $: feltStep = windStep(S.wind);
     $: feltMax = Math.max(baseMax(S.wind), logFc !== null ? Math.ceil((logFc * 1.4) / (feltStep * 5)) * feltStep * 5 : 0);
@@ -778,7 +755,7 @@
     let mapTs = currentTs();
     $: timelineLabel = sameDay(mapTs) ? fmtTime(mapTs) : `${new Date(mapTs).toLocaleDateString(undefined, { weekday: 'short' })} ${fmtTime(mapTs)}`;
     $: timelineLabelFull = fmtDayTime(mapTs);
-    $: hdr = headerFor(view, spot, snap, f, sf, place, pickFor);
+    $: hdr = headerFor(view, spot, snap, f, sf, place, pickFor, snapDraft);
     let tsListener: number | null = null;
     let userListener: number | null = null;
     let subsListener: number | null = null;
@@ -815,14 +792,11 @@
         wUser = u && u.id ? u : null;
         if (!changed) return;
         useWindyUser(wUser?.id);
-        setCloudWindyUser(wUser?.id);
         data = load();
         knownIds = allIds(data);
-        cloudUser = currentUser();
-        authEmail = wUser?.email || '';
         syncAt = 0;
         goHome();
-        if (cloudUser) syncNow(false);
+        if (wUser) syncNow();
     }
     const gearHint = (sport: string, kind: string) => GEAR_BY_SPORT[sport]?.find(k => k.kind === kind)?.hint || 'Name';
     function groupGear(list: Gear[], order: string[]): { sport: string; items: Gear[] }[] {
@@ -941,13 +915,13 @@
             return '';
         }
     }
-    function headerFor(v: View, sp: Spot | null, sn: Snapshot | null, lf: LogForm | null, sform: SpotForm | null, pl: Loc | null, pf: PickFor) {
+    function headerFor(v: View, sp: Spot | null, sn: Snapshot | null, lf: LogForm | null, sform: SpotForm | null, pl: Loc | null, pf: PickFor, draft = false) {
         switch (v) {
             case 'pick': return { title: pf === 'snap' ? 'Save forecast for…' : pf === 'log' ? 'Log a session at…' : 'Add a spot', sub: pf === 'spot' ? 'Pick the place on the map' : 'Choose a place' };
             case 'place': return { title: pl?.name || 'Place', sub: pl ? `${pl.lat.toFixed(3)}, ${pl.lon.toFixed(3)}` : '' };
             case 'spotForm': return { title: sform?.id ? 'Edit spot' : 'New spot', sub: sform?.place || 'Dropped pin' };
             case 'spot': return { title: 'Your spot', sub: `${spotSessions.length} session(s)${sp?.place ? ' · ' + sp.place : ''}` };
-            case 'snap': return { title: 'Saved forecast', sub: spotById(sn?.spotId ?? null)?.name || 'No spot' };
+            case 'snap': return { title: draft ? 'New forecast' : 'Saved forecast', sub: spotById(sn?.spotId ?? null)?.name || 'No spot' };
             case 'log': return { title: lf?.id ? 'Session' : 'New session', sub: spotById(lf?.spotId ?? null)?.name || 'No spot yet' };
             default: return { title: '', sub: '' };
         }
@@ -963,7 +937,7 @@
         clearTimeout(toastTimer);
         u?.();
     }
-    function arm(what: 'spot' | 'all' | 'account'): boolean {
+    function arm(what: 'spot' | 'all'): boolean {
         if (armed === what) {
             armed = '';
             return true;
@@ -984,21 +958,33 @@
         data.updatedAt = now;
         if (!save(data) && !storageWarned) {
             storageWarned = true;
-            showToast(cloudUser ? 'This browser\'s storage is full. Your account still has everything.' : 'This browser\'s storage is full. Export your data or sign in to your account.');
+            showToast(synced ? 'This browser\'s storage is full. Your Windy account still has everything.' : 'This browser\'s storage is full. Export your data to keep it safe.');
         }
         data = data;
         drawSpotMarkers();
         schedulePush();
     }
 
-    /* ---------- account sync ---------- */
+    /* ---------- sync with the Windy account (no separate login) ---------- */
+    const windyAuth = (): WindyAuth | null => {
+        if (!wUser) return null;
+        let token: string | null = null;
+        try {
+            token = (store.get('userToken') as string | null) || null;
+        } catch {
+            /* no token */
+        }
+        return { id: wUser.id, token };
+    };
     function schedulePush() {
-        if (!cloudUser) return;
+        if (!synced) return;
         clearTimeout(pushTimer);
         pushTimer = setTimeout(async () => {
+            const a = windyAuth();
+            if (!a) return;
             syncState = 'saving';
             try {
-                await push(data);
+                await push(a, data);
                 syncState = 'saved';
                 syncAt = Date.now();
             } catch (e) {
@@ -1008,12 +994,13 @@
             }
         }, 1200);
     }
-    /** Merges this browser's diary with the account copy (by id, newer wins, deletions stay deleted) and uploads the result */
-    async function syncNow(_first: boolean) {
-        if (!cloudUser) return;
+    /** Merges this browser's diary with the one stored for this Windy user (by id, newer wins, deletions stay deleted) */
+    async function syncNow() {
+        const a = windyAuth();
+        if (!cloudOn || !a) return;
         syncState = 'saving';
         try {
-            const remote = await pull();
+            const remote = await pull(a);
             if (remote) {
                 const r = normalise(remote.data);
                 r.updatedAt = Math.max(r.updatedAt || 0, remote.updatedAt || 0);
@@ -1022,7 +1009,7 @@
             data.updatedAt = Date.now();
             knownIds = allIds(data);
             save(data);
-            await push(data);
+            await push(a, data);
             data = data;
             drawSpotMarkers();
             loadAllNow();
@@ -1047,52 +1034,6 @@
         } catch (err) {
             console.info('[spotlog] could not read the other tab\'s data', err);
         }
-    }
-    async function doSendCode() {
-        authBusy = true;
-        authError = '';
-        try {
-            await sendCode(authEmail);
-            codeSent = true;
-        } catch (e) {
-            authError = (e as Error).message;
-        } finally {
-            authBusy = false;
-        }
-    }
-    async function doVerify() {
-        authBusy = true;
-        authError = '';
-        try {
-            cloudUser = await verifyCode(authEmail, authCode);
-            codeSent = false;
-            authCode = '';
-            await syncNow(true);
-            showToast('Signed in. Your diary is saved to your account now');
-        } catch (e) {
-            authError = (e as Error).message || 'That code did not work';
-        } finally {
-            authBusy = false;
-        }
-    }
-    async function doDeleteAccountData() {
-        if (!arm('account')) return;
-        try {
-            await deleteAccountData();
-            cloudUser = null;
-            syncState = 'idle';
-            syncAt = 0;
-            showToast('Your diary was deleted from the account. This browser keeps its copy');
-        } catch (e) {
-            showToast((e as Error).message);
-        }
-    }
-    function doSignOut() {
-        signOut();
-        cloudUser = null;
-        syncState = 'idle';
-        syncAt = 0;
-        showToast('Signed out. A copy stays in this browser');
     }
     function setSettings(s: SettingsT) {
         data.settings = s;
@@ -1257,7 +1198,7 @@
             return;
         }
         spot = spotById(fr.spotId) || null;
-        snap = data.snapshots.find(x => x.id === fr.snapId) || null;
+        snap = data.snapshots.find(x => x.id === fr.snapId) || (snap && snap.id === fr.snapId ? snap : null);
         if (fr.view === 'spot' && !spot) return goHome();
         if (fr.view === 'snap' && !snap) return back();
         if (fr.view === 'place' && place) setTemp(place.lat, place.lon);
@@ -1293,7 +1234,7 @@
         actOn(pickFor, loc, near?.s);
     }
     function actOn(what: PickFor, loc: Loc, s?: Spot) {
-        if (what === 'snap') saveForecastAt({ lat: loc.lat, lon: loc.lon, spot: s || nearestWithin(loc.lat, loc.lon, 1)?.s }, true);
+        if (what === 'snap') saveForecastAt({ lat: loc.lat, lon: loc.lon, spot: s || nearestWithin(loc.lat, loc.lon, 1)?.s });
         else if (what === 'log') startLog(s ? { spot: s } : { lat: loc.lat, lon: loc.lon });
         else startSpotForm(loc, null);
     }
@@ -1404,17 +1345,17 @@
         const at = seriesAt(snap.series, t);
         updateSnap({ ts: t, models: at.models, waves: at.waves });
     }
-    async function saveForecastAt(t: { lat: number; lon: number; spot?: Spot }, open: boolean) {
+    /** Loads the forecast and shows it for checking; nothing is stored until "Save forecast" */
+    async function saveForecastAt(t: { lat: number; lon: number; spot?: Spot }) {
         capturing = true;
         try {
             const sn = await capture(t.lat, t.lon, t.spot?.id ?? null);
-            data.snapshots = [...data.snapshots, sn];
-            persist();
-            if (open) {
-                if (view === 'pick') view = 'home'; // don't come back to the picker
-                openSnap(sn);
-            }
-            showToast(`Forecast saved · ${fmtDayTime(sn.ts)}`, () => removeSnap(sn.id));
+            if (view === 'pick') view = 'home'; // don't come back to the picker
+            snapDraft = true;
+            snap = sn;
+            snapNote = '';
+            go('snap');
+            setTemp(sn.lat, sn.lon);
         } catch (e) {
             showToast((e as Error).message?.startsWith('No forecast') ? (e as Error).message : 'No forecast for this place');
         } finally {
@@ -1433,7 +1374,17 @@
             persist();
         });
     }
+    function confirmSnap() {
+        if (!snap || !snapDraft) return;
+        const sn: Snapshot = { ...snap, note: snapNote.trim() || undefined, savedAt: Date.now() };
+        data.snapshots = [...data.snapshots, sn];
+        snapDraft = false;
+        persist();
+        back();
+        showToast(`Forecast saved · ${fmtDayTime(sn.ts)}`, () => removeSnap(sn.id));
+    }
     function openSnap(sn: Snapshot) {
+        snapDraft = false;
         snap = sn;
         snapNote = sn.note || '';
         go('snap');
@@ -1442,6 +1393,10 @@
     function updateSnap(patch: Partial<Snapshot>) {
         if (!snap) return;
         const n: Snapshot = { ...snap, ...patch };
+        if (snapDraft) {
+            snap = n; // not stored yet
+            return;
+        }
         data.snapshots = data.snapshots.map(x => (x.id === n.id ? n : x));
         snap = n;
         persist();
@@ -1745,7 +1700,7 @@
         window.addEventListener('storage', onStorage);
         drawSpotMarkers();
         loadAllNow();
-        if (cloudUser) syncNow(false);
+        if (wUser) syncNow();
     });
 
     onDestroy(() => {
