@@ -171,7 +171,7 @@
                 </div>
             </div>
             <div class="sig">
-                <span class="sig-name"><Brand /></span>
+                <PixelStar size={ 14 } />
                 <small class="ver">version { version }</small>
                 <a class="coffee" href={ COFFEE_URL } target="_blank" rel="noopener noreferrer">Buy me a coffee</a>
             </div>
@@ -1925,7 +1925,6 @@
     .n { width: 24px; height: 24px; flex-shrink: 0; border-radius: 12px; border: 1px solid @outline; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: @sub; }
     .data-links { gap: 18px; .link { font-size: 13px; padding: 2px 0; } }
     .sig { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0 4px; .coffee { margin-top: 6px; } }
-    .sig-name { font-size: 17px; color: @sub; }
     .data-links { flex-wrap: wrap; }
     /* one forecast per spot: saving another asks before replacing */
     .replace { flex: 1; display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 14px; border: 1px solid @orange; background: @card;
