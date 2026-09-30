@@ -12,10 +12,10 @@
     <div class="card">
         {#if gate === 'login'}
             <b>Log in to Windy to use <Brand /></b>
-            <p class="p muted"><Brand /> is for Windy Premium members. Your diary is linked to your Windy account.</p>
+            <p class="p muted"><Brand cap /> is for Windy Premium members. Your diary is linked to your Windy account.</p>
             <button class="btn primary wide" on:click={ () => bcast.emit('rqstOpen', 'login') }>Log in to Windy</button>
         {:else}
-            <b><Brand /> is part of Windy Premium</b>
+            <b><Brand cap /> is part of Windy Premium</b>
             <p class="p muted">You're logged in as { wUser?.username || wUser?.email || 'a Windy user' }. Upgrade to Premium to start your diary.</p>
             <button class="btn primary wide" on:click={ () => bcast.emit('rqstOpen', 'subscription') }>Get Windy Premium</button>
         {/if}
@@ -151,12 +151,12 @@
         <div class="about">
             <div class="card">
                 <b class="h3">Your forecast screenshots, but better.</b>
-                <p class="p">If your camera roll is full of Windy screenshots you can't even place anymore, <Brand /> might help. It's a little diary for all those wind, gust and swell numbers you check more often than you'd admit, next to how the session really turned out.</p>
+                <p class="p">If your camera roll is full of Windy screenshots you can't even place anymore, <Brand /> might help. It's a little diary for all those numbers you check more often than you'd admit.</p>
             </div>
             <div class="card steps">
                 <b class="h3">How it works</b>
-                <div class="step"><span class="n">1</span><span class="grow"><b>Save the forecast.</b><small>Before you go, tap Save forecast. <Brand /> keeps what the models say now and for the next 24 hours, for your spot.</small></span></div>
-                <div class="step"><span class="n">2</span><span class="grow"><b>Go out.</b><small>Surf, windsurf, kite, wing, or whatever floats your board.</small></span></div>
+                <div class="step"><span class="n">1</span><span class="grow"><b>Save the forecast.</b><small>Before you go, tap Save forecast. <Brand cap /> keeps what the models say now and for the next 24 hours, for your spot.</small></span></div>
+                <div class="step"><span class="n">2</span><span class="grow"><b>Go out.</b><small>Surf, windsurf, kite, wing, have fun.</small></span></div>
                 <div class="step"><span class="n">3</span><span class="grow"><b>Log how it was.</b><small>When you're done, tap Log session: rate it, say what the wind felt like, add your gear and your GPS track if you like.</small></span></div>
                 <div class="step"><span class="n">4</span><span class="grow"><b>Get smarter each time.</b><small>After a few sessions <Brand /> shows which forecast model is closest at each spot, guesses how good today looks for you, and suggests the wind that works at new spots.</small></span></div>
             </div>
@@ -166,7 +166,7 @@
                 <p class="p muted">Your diary belongs to your Windy account. Log in to Windy on another device and it's there.</p>
                 <p class="p muted">Your spots, sessions and GPS tracks are private. Nobody else sees them.</p>
                 <div class="row data-links">
-                    <button class="link" on:click={ () => exportJson(data) }>Download a copy (to be safe)</button>
+                    <button class="link" on:click={ () => exportJson(data) }>Download a copy</button>
                     <button class="link danger" on:click={ clearAll }>{ armed === 'all' ? 'Tap again: gone for good' : 'Delete everything, forever' }</button>
                 </div>
             </div>
@@ -324,7 +324,7 @@
     <div class="card">
         {#if spot.windUnknown}
             <div class="row start">
-                <span class="grow"><b>Wind window: not known yet</b><small><Brand /> learns it from your sessions rated great or epic.</small></span>
+                <span class="grow"><b>Wind window: not known yet</b><small><Brand cap /> learns it from your sessions rated great or epic.</small></span>
                 <button class="link" on:click={ () => spot && editSpot(spot) }>Edit</button>
             </div>
             {#if suggestion}
@@ -371,7 +371,7 @@
         <b>Which forecast to trust here</b>
         <div class="card">
             {#if scores.length === 0}
-                <span class="muted">Log a few sessions with “It felt like”. <Brand /> then ranks the models for this spot.</span>
+                <span class="muted">Log a few sessions with “It felt like”. <Brand cap /> then ranks the models for this spot.</span>
             {:else}
                 {#each scores as sc, i}
                     <div class="score"><span class="m" class:best={ i === 0 }>{ modelLabel(sc.model) }</span><span class="mbar"><i style="width: { Math.min(100, sc.miss * 25) }%" class:best={ i === 0 }></i></span><span>±{ fmtWind(sc.miss, S.wind) } { windLabel(S.wind) }</span></div>

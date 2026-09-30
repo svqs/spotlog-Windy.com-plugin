@@ -42,7 +42,7 @@ The same values appear in `src/plugin.svelte` (`@ground`, `@card` … at the top
 **Close:** Windy draws its own ✕ outside the pane on desktop (left of it) and in the sheet header on phones, so the units pill sits in the top-right corner.
 
 **Type:** Instrument Sans (UI, 400/500/600) and Doto 900 (pixel font) only for the big numbers in the snapshot tiles and the SPOTLOG wordmark.
-**Name in text:** whenever Spotlog is mentioned in a sentence it gets the little pixel star after it, in the normal text font (`src/ui/Brand.svelte`). Tone of voice (About tab): casual, a bit nerdy, a wink now and then ("whatever floats your board"), never shouty.
+**Name in text:** spotlog is written all lowercase (or all caps in the wordmark); a capital S only to start a sentence. In a sentence it is the normal text font with the little pixel star after it (`<Brand />`, `<Brand cap />` at a sentence start) (`src/ui/Brand.svelte`). Tone of voice (About tab): casual, a bit nerdy, light and friendly, never shouty.
 **Radii:** cards 18 px, buttons 12–14 px, chips 18 px (pill), tiles in the snapshot 12 px.
 **Panel:** 400 px wide on desktop (Windy right-hand pane), fullscreen on phones.
 
