@@ -1,4 +1,4 @@
-# Spotlog · Windy plugin (0.5.2)
+# Spotlog · Windy plugin (0.5.3)
 
 A session diary inside [Windy.com](https://www.windy.com) for surfers, windsurfers and kiters.
 Save the forecast for a spot (numbers, not a screenshot), log how the session really felt, attach a GPS track,
@@ -28,7 +28,10 @@ npm start            # watch mode, serves https://localhost:9999/plugin.js
 1. Create a **Windy Plugins API** key at <https://api.windy.com/keys>.
 2. Publish: `WINDY_API_KEY=… npm run publish:windy` (or push to GitHub, add the key as the `WINDY_API_KEY` secret and run the **publish-plugin** action).
 3. The response contains the install URL: `https://windy-plugins.com/<your user id>/windy-plugin-spotlog/<version>/plugin.min.js`.
-4. Testers go to <https://www.windy.com/plugins> › **Load plugin directly from URL**, paste it and press **Install untrusted plugin**. Works on desktop and on phones (in the phone it sits in Windy's small bottom panel under the timeline). Testers need to be logged in to Windy with Premium.
+4. Testers go to <https://www.windy.com/plugins> › **Load plugin directly from URL**, paste it and press **Install untrusted plugin**.
+   On phones, install on a desktop first: Windy lists the installed plugin on your other devices too. After publishing a new
+   version, install the new link on the desktop, remove older Spotlog entries from the installed plugins, then fully reload
+   windy.com on the phone. The version number at the bottom of Spotlog's home screen shows which one is running. Works on desktop and on phones (in the phone it sits in Windy's small bottom panel under the timeline). Testers need to be logged in to Windy with Premium.
 
 `private: true` in `src/pluginConfig.ts` keeps it out of the public gallery; only people with the URL can load it.
 Going public later = `private: false` + a review request on the Windy community forum.

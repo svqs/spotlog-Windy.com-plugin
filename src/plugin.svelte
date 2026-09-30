@@ -172,6 +172,7 @@
             Tip: click anywhere on the map (a town, a label or one of your spots) to open it here.
         {/if}
     </div>
+    <small class="ver">Spotlog { version }</small>
     <a class="coffee" href={ COFFEE_URL } target="_blank" rel="noopener noreferrer"><span aria-hidden="true">☕</span> Buy me a coffee</a>
 
 <!-- ================= PICK A PLACE ================= -->
@@ -642,7 +643,7 @@
     }
     interface Frame { view: View; spotId: string | null; snapId: string | null }
 
-    const { name, title } = config;
+    const { name, title, version } = config;
     const isMobile = !!rootScope?.isMobileOrTablet;
 
     let root: HTMLElement;
@@ -1821,6 +1822,7 @@
         small { font-size: 11px; }
         b { width: 30px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; color: @ink; font-size: 13px; }
         &.on { border-color: @orange; background: #4a4a4a; } }
+    .ver { align-self: center; margin-top: -6px; font-size: 11px; color: #7a7a7a; }
     .sl-note { margin-top: -8px; padding: 0 4px; line-height: 1.4; }
     .link.inline { display: inline; padding: 0; font-size: 12px; }
 
