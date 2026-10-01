@@ -88,7 +88,7 @@
                             {#if predOf(s) !== null}
                                 <span class="tag" style="background: { ratingBg(predOf(s) ?? 3) }; color: { ratingFg(predOf(s) ?? 3) }">{ predictionLabel(predOf(s) ?? 3) }</span>
                             {:else}
-                                <span class="tag ghost">{ ratingHint(s) }</span>
+                                <span class="tag ghost" title={ ratingHint(s) }>Rating soon</span>
                             {/if}
                         </span>
                     </button>
@@ -96,6 +96,16 @@
             </div>
             <small class="muted">Right now, ECMWF. The rating is a guess from your own sessions.</small>
         {/if}
+        <div class="card map-toggles">
+            <button class="maptog" role="switch" aria-checked={ S.mapSpots } on:click={ () => setSettings({ ...S, mapSpots: !S.mapSpots }) }>
+                <span class="grow"><b>Spots on the map</b><small>Pins light up green when it looks good</small></span>
+                <span class="switch" class:on={ S.mapSpots }><i></i></span>
+            </button>
+            <button class="maptog" role="switch" aria-checked={ S.mapSessions } on:click={ () => setSettings({ ...S, mapSessions: !S.mapSessions }) }>
+                <span class="grow"><b>Sessions on the map</b><small>A glow where you've been out. The more often, the brighter.</small></span>
+                <span class="switch" class:on={ S.mapSessions }><i></i></span>
+            </button>
+        </div>
     {:else if tab === 'sessions'}
         {#if data.sessions.length === 0}
             <div class="empty">No sessions yet. Press <b>Log session</b>. A spot is optional.</div>
@@ -708,6 +718,7 @@
     let spotModel = 'ecmwf';
     let modelsBySpot: Record<string, string[]> = {};
     let compactMarkers = false;
+    let mapReady = false;
     let place: Loc | null = null;
     let placeNow: ModelValue | null = null;
     let placeWaves: WaveValue | null = null;
@@ -1121,46 +1132,65 @@
             drawSpotMarkers();
         }
     }
-    /** where each session was, if it wasn't right at its spot (the spot's own pin shows those) */
-    function sessionPlaces(): { lat: number; lon: number; se: Session }[] {
-        const seen = new Set<string>();
-        const out: { lat: number; lon: number; se: Session }[] = [];
+    /** Sessions grouped by place (about 100 m), every session counts: the heat layer on the map */
+    function sessionPlaces(): { lat: number; lon: number; list: Session[] }[] {
+        const groups = new Map<string, { lat: number; lon: number; list: Session[] }>();
         for (const se of [...data.sessions].sort((a, b) => b.date - a.date)) {
             const sp = spotById(se.spotId);
             const lat = se.lat ?? se.track?.points[0]?.[0] ?? sp?.lat;
             const lon = se.lon ?? se.track?.points[0]?.[1] ?? sp?.lon;
             if (lat === undefined || lon === undefined) continue;
-            if (sp && distanceKm(sp, { lat, lon }) < 0.5) continue;
-            const k = `${lat.toFixed(2)},${lon.toFixed(2)}`;
-            if (seen.has(k)) continue;
-            seen.add(k);
-            out.push({ lat, lon, se });
+            const k = `${lat.toFixed(3)},${lon.toFixed(3)}`;
+            const g = groups.get(k);
+            if (g) g.list.push(se);
+            else groups.set(k, { lat, lon, list: [se] });
         }
-        return out;
+        return [...groups.values()];
+    }
+    function sessionTip(list: Session[]): string {
+        const sp = spotById(list[0].spotId);
+        const head = `<b>${escapeHtml(sp?.name || 'Your session')}</b>${list.length > 1 ? ` · ${list.length} sessions` : ''}`;
+        const rows = list.slice(0, 5).map(se => `<span><i style="background:${ratingBg(se.rating)}"></i>${escapeHtml(fmtDay(se.date))} · ${RATINGS[se.rating - 1]}</span>`).join('');
+        return head + rows + (list.length > 5 ? `<small>+ ${list.length - 5} more</small>` : '');
     }
     function drawSpotMarkers() {
         spotMarkers.forEach(m => m.remove());
         spotMarkers = [];
         if (typeof L === 'undefined' || !map) return;
+        const st = data.settings;
         const activeId = view === 'spot' ? spot?.id : view === 'log' ? f?.spotId : view === 'snap' ? snap?.spotId : null;
-        for (const p of sessionPlaces()) {
-            const icon = L.divIcon({
-                className: 'spotlog-marker',
-                html: `<div class="spotlog-sess" title="${escapeHtml(fmtDay(p.se.date))}"></div>`,
-                iconSize: [0, 0],
-                iconAnchor: [0, 0],
-            });
-            const m = new L.Marker({ lat: p.lat, lng: p.lon }, { icon }).addTo(map);
-            m.on('click', () => openSession(p.se));
-            spotMarkers.push(m);
+        if (st.mapSessions) {
+            // just a glow, no click: many sessions at one place overlap and get brighter (heat map feel); hover for dates
+            for (const p of sessionPlaces()) {
+                const n = p.list.length;
+                // big enough to show as a halo around a spot pin, growing with every session there
+                const size = Math.round(26 + Math.min(n, 15) * 4);
+                const alpha = Math.min(0.9, 0.5 + n * 0.05).toFixed(2);
+                const icon = L.divIcon({
+                    className: 'spotlog-marker',
+                    html: `<div class="spotlog-heat" style="--s:${size}px;--a:${alpha}"><div class="spotlog-tip">${sessionTip(p.list)}</div></div>`,
+                    iconSize: [0, 0],
+                    iconAnchor: [0, 0],
+                });
+                spotMarkers.push(new L.Marker({ lat: p.lat, lng: p.lon }, { icon, keyboard: false, zIndexOffset: -1000 }).addTo(map));
+            }
         }
         for (const s of data.spots) {
             const on = activeId === s.id;
+            if (!st.mapSpots && !on) continue;
+            // the pin sits on top of its own glow, so hovering the pin shows that spot's sessions
+            const here = st.mapSessions ? data.sessions.filter(x => x.spotId === s.id).sort((a, b) => b.date - a.date) : [];
+            const tip = here.length ? `<div class="spotlog-tip">${sessionTip(here)}</div>` : '';
+            // a spot that looks good right now lights up in its rating colour
+            const pred = predOf(s);
+            const good = pred !== null && pred >= 2.7;
+            const style = good ? ` style="background:${ratingBg(pred as number)};color:${ratingFg(pred as number)}"` : '';
+            const label = good ? `${escapeHtml(s.name)}<em>${predictionLabel(pred as number).replace('Likely ', '')}</em>` : escapeHtml(s.name);
             const icon = L.divIcon({
                 className: 'spotlog-marker',
                 html: compactMarkers && !on
-                    ? `<div class="spotlog-pin compact" title="${escapeHtml(s.name)}"><i></i></div>`
-                    : `<div class="spotlog-pin${on ? ' active' : ''}"><i></i>${escapeHtml(s.name)}</div>`,
+                    ? `<div class="spotlog-pin compact${good ? ' good' : ''}"${style}><i></i>${tip || `<div class="spotlog-tip"><b>${escapeHtml(s.name)}</b></div>`}</div>`
+                    : `<div class="spotlog-pin${on ? ' active' : ''}${good ? ' good' : ''}"${on ? '' : style}><i></i>${label}${tip}</div>`,
                 iconSize: [0, 0],
                 iconAnchor: [0, 0],
             });
@@ -1169,6 +1199,8 @@
             spotMarkers.push(m);
         }
     }
+    // conditions arrive one spot at a time: redraw so good spots light up
+    $: if (nowBySpot && mapReady) drawSpotMarkers();
     const TRACK_COLOR = '#ff3d8b';
     function drawTrack(t: Track | null, fit = false) {
         trackLayers.forEach(l => l.remove());
@@ -1826,6 +1858,7 @@
             /* no map events */
         }
         window.addEventListener('storage', onStorage);
+        mapReady = true;
         drawSpotMarkers();
         loadAllNow();
         if (wUser) syncNow();
@@ -1931,6 +1964,13 @@
     /* desktop: a plain chevron before the wordmark goes back to Windy's menu (like other plugins) */
     .back-menu { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 30px; margin: 0 -2px 0 -6px; padding: 0; border: 0; background: none; color: @text; opacity: 0.85;
         &:hover { opacity: 1; } }
+    /* map switches under the spot tiles */
+    .map-toggles { gap: 14px; }
+    .maptog { display: flex; align-items: center; gap: 12px; border: 0; background: none; padding: 0; text-align: left;
+        small { display: block; margin-top: 2px; } }
+    .switch { width: 40px; height: 24px; border-radius: 12px; background: @outline; position: relative; flex-shrink: 0; transition: background 0.15s;
+        i { position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 9px; background: @text; transition: transform 0.18s; }
+        &.on { background: @orange; i { transform: translateX(16px); } } }
     .sync { display: block; margin-top: -4px; color: @sub; &.err { color: #ff9a9a; } }
     .coffee { align-self: center; display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 18px; border: 1px solid @outline; color: @text; text-decoration: none; font-weight: 600; font-size: 13px;
         &:hover { border-color: @orange; } }
@@ -2047,8 +2087,22 @@
     /* zoomed out: just the dot */
     :global(.spotlog-pin.compact) { transform: translate(-7px, -50%); height: 14px; padding: 0 2px; border-radius: 7px; }
     :global(.spotlog-pin.compact i) { width: 10px; height: 10px; }
-    /* a place you logged a session (away from your spots) */
-    :global(.spotlog-sess) { position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; border-radius: 5px; box-sizing: border-box; background: #2e2e2e; border: 2.5px solid #d49500; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); cursor: pointer; }
+    /* a spot that looks good right now: the whole pin takes the rating colour */
+    :global(.spotlog-pin.good i) { background: #ffffff; }
+    :global(.spotlog-pin em) { font-style: normal; font-weight: 600; font-size: 11px; opacity: 0.9; margin-left: 2px; }
+    :global(.spotlog-pin.compact.good) { box-shadow: 0 0 0 3px rgba(79, 174, 104, 0.35), 0 2px 8px rgba(0, 0, 0, 0.35); }
+    /* sessions: a soft pink glow per place (same pink as GPS routes: your own activity); many sessions = bigger and brighter, overlapping places add up */
+    :global(.spotlog-heat) { position: absolute; left: calc(var(--s) / -2); top: calc(var(--s) / -2); width: var(--s); height: var(--s); border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 61, 139, var(--a)) 0%, rgba(255, 61, 139, calc(var(--a) * 0.6)) 35%, rgba(255, 61, 139, 0) 70%); cursor: default; }
+    :global(.spotlog-heat::after) { content: ''; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 3px; background: #ff3d8b; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.9); }
+    :global(.spotlog-tip) { display: none; position: absolute; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); z-index: 5; flex-direction: column; gap: 3px; min-width: 130px; padding: 8px 10px; border-radius: 10px;
+        background: #2e2e2e; color: #f8f8f8; font: 12px 'Instrument Sans', system-ui, sans-serif; white-space: nowrap; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45); pointer-events: none; }
+    :global(.spotlog-tip span) { display: flex; align-items: center; gap: 6px; color: #d0d0d0; }
+    :global(.spotlog-tip i) { width: 8px; height: 8px; border-radius: 4px; display: block; }
+    :global(.spotlog-tip small) { color: #9a9a9a; font-size: 11px; }
+    :global(.spotlog-heat:hover .spotlog-tip), :global(.spotlog-pin:hover .spotlog-tip) { display: flex; }
+    :global(.spotlog-pin .spotlog-tip) { left: 10px; transform: translateX(-50%); bottom: calc(100% + 6px); font-weight: 400; }
+    :global(.spotlog-pin .spotlog-tip b) { font-weight: 600; }
     :global(.spotlog-dot) { position: absolute; left: -8px; top: -8px; width: 16px; height: 16px; border-radius: 8px; box-sizing: border-box; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45); }
     :global(.spotlog-dot.start) { left: -6px; top: -6px; width: 12px; height: 12px; background: #ff3d8b; border: 2.5px solid #f8f8f8; }
     :global(.spotlog-dot.end) { left: -5px; top: -5px; width: 10px; height: 10px; background: #1c1c1c; border: 2.5px solid #ff3d8b; }

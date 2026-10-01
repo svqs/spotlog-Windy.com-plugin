@@ -57,7 +57,7 @@ The same values appear in `src/plugin.svelte` (`@ground`, `@card` … at the top
 | About + Buy me a coffee | `src/plugin.svelte` `.about`, `.sig`, link in `src/lib/links.ts` | About tab only: how-to steps, then pixel star · version · coffee link as a signature |
 | Model switch | `src/plugin.svelte` `.models-pick` | Spot page, under the card: ECMWF by default, only models that cover the spot |
 | Replace prompt | `src/plugin.svelte` `.replace` | One forecast per spot |
-| Map marks | `.spotlog-pin` (+ `.compact` below zoom 7), `.spotlog-sess` (session dots), route `#ff3d8b` 2.5 px | |
+| Map marks | `.spotlog-pin` (+ `.compact` below zoom 7, `.good` = rating colour when the guess is good or better), `.spotlog-heat` (pink session glow per ~100 m place, bigger/brighter with more sessions, hover = `.spotlog-tip` with dates + ratings), route `#ff3d8b` 2.5 px | Switches "Spots on the map" / "Sessions on the map" under the spot tiles (`settings.mapSpots` / `mapSessions`) |
 | Gear by sport | `src/plugin.svelte` gear tab, presets in `src/lib/wind.ts` `GEAR_BY_SPORT` | |
 | Action buttons (Save forecast / Add spot / Log session) | `src/plugin.svelte` `.actions` / `.act` | All three equal grey tiles: line icon, name, short context line |
 | White snapshot card (Windy point-forecast look) | `src/ui/SnapCard.svelte` | Wind, gusts, direction, waves tiles; badge; "Full snapshot" expands |

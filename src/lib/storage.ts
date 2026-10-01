@@ -28,6 +28,8 @@ export const defaultSettings = (): Settings => ({
     allModels: true,
     models: ['ecmwf'],
     layers: [...DEFAULT_LAYERS],
+    mapSpots: true,
+    mapSessions: true,
 });
 
 export const emptyData = (): SpotlogData => ({
@@ -87,6 +89,8 @@ export const normalise = (parsed: Any): SpotlogData => {
     if (!['C', 'F'].includes(settings.temp)) settings.temp = 'C';
     settings.layers = ids(settings.layers);
     settings.allModels = settings.allModels !== false;
+    settings.mapSpots = settings.mapSpots !== false;
+    settings.mapSessions = settings.mapSessions !== false;
     settings.models = ids(settings.models).length ? ids(settings.models) : ['ecmwf'];
     const deleted: Record<string, number> = {};
     if (isObj(parsed?.deleted)) {

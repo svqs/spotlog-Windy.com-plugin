@@ -127,6 +127,9 @@ export interface Settings {
     models: string[];
     /** optional layers saved in a snapshot (wind + gusts + direction are always saved) */
     layers: string[];
+    /** what Spotlog draws on the Windy map */
+    mapSpots: boolean;
+    mapSessions: boolean;
 }
 
 export interface SpotlogData {

@@ -380,14 +380,34 @@ with sync_playwright() as p:
     pg.wait_for_selector('text=Add spot')
     pg.wait_for_selector('.snap .cells', timeout=8000)
     shot('12-place')
-    # a session away from your spots leaves a dot on the map
-    assert pg.locator('.spotlog-sess').count() == 0
+    # every session place glows on the map; a new place adds a glow
+    h0 = pg.locator('.spotlog-heat').count()
+    assert h0 >= 1, h0
     pg.click('.act:has-text("Log session")')
     pg.wait_for_selector('.felt')
     bottom()
     pg.click('text=Save session')
-    pg.wait_for_selector('.spotlog-sess')
-    ok('sessions away from your spots show as dots on the map')
+    pg.wait_for_function(f"document.querySelectorAll('.spotlog-heat').length > {h0}")
+    ok('sessions show as a glow on the map, one per place')
+    # hover shows the dates; the switches hide and show spots and sessions
+    top()
+    pg.click('.tabs button:has-text("Spots")')
+    heat = pg.locator('.spotlog-heat').last  # the one just logged, in view
+    heat.hover()
+    pg.wait_for_selector('.spotlog-tip:visible')
+    shot('12b-heat-tip')
+    pg.mouse.move(5, 5)
+    pg.click('.maptog:has-text("Sessions on the map")')
+    assert pg.locator('.spotlog-heat').count() == 0 and stored(pg)['settings']['mapSessions'] is False
+    n_pins = pg.locator('.spotlog-pin').count()
+    pg.click('.maptog:has-text("Spots on the map")')
+    assert pg.locator('.spotlog-pin').count() == 0 and n_pins > 0
+    pg.click('.maptog:has-text("Spots on the map")')
+    pg.click('.maptog:has-text("Sessions on the map")')
+    assert pg.locator('.spotlog-heat').count() > h0 and pg.locator('.spotlog-pin').count() == n_pins
+    ok('hover a glow for dates and ratings; switches hide/show spots and sessions')
+    assert pg.locator('.tile .tag.ghost:has-text("Rating soon")').count() >= 1
+    ok('tiles without enough sessions say "Rating soon"')
     pg.mouse.click(280, 585)
     pg.wait_for_selector('.act:has-text("Add spot")')
     pg.wait_for_selector('.snap .cells', timeout=8000)
