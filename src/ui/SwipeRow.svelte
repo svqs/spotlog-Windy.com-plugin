@@ -1,5 +1,5 @@
 <div class="sw">
-    <button class="del" type="button" tabindex={ revealed ? 0 : -1 } on:click={ () => { revealed = false; dispatch('delete'); } }>Delete</button>
+    <button class="del" type="button" tabindex={ revealed ? 0 : -1 } on:click={ () => { revealed = false; dispatch('delete'); } }>{ $words.swipeDelete }</button>
     <div
         class="front"
         class:anim={ !dragging }
@@ -18,6 +18,7 @@
 
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
+    import { words } from '../lib/copy';
     const dispatch = createEventDispatcher();
 
     const OPEN = -88;
@@ -58,9 +59,9 @@
 </script>
 
 <style lang="less">
-    .sw { position: relative; overflow: hidden; border-bottom: 1px solid #4d4d4d; }
-    .del { position: absolute; right: 0; top: 0; bottom: 0; width: 88px; border: 0; background: #c9474f; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
-    .front { position: relative; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 2px; background: #2e2e2e; touch-action: pan-y; cursor: pointer; user-select: none; }
+    .sw { position: relative; overflow: hidden; border-bottom: 1px solid var(--sl-uLine, #4d4d4d); }
+    .del { position: absolute; right: 0; top: 0; bottom: 0; width: 88px; border: 0; background: var(--sl-deleteBg, #c9474f); color: var(--sl-deleteText, #ffffff); font: inherit; font-weight: 600; cursor: pointer; }
+    .front { position: relative; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 2px; background: var(--sl-uGround, #2e2e2e); touch-action: pan-y; cursor: pointer; user-select: none; }
     .front.anim { transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.1); }
-    .front:focus-visible { outline: 2px solid #d49500; outline-offset: -2px; }
+    .front:focus-visible { outline: 2px solid var(--sl-accent, #d49500); outline-offset: -2px; }
 </style>

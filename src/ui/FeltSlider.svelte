@@ -172,17 +172,17 @@
         mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
         -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); }
     .felt.dragging { cursor: grabbing; }
-    .felt:focus-visible { box-shadow: inset 0 0 0 2px #d49500; border-radius: 10px; mask-image: none; -webkit-mask-image: none; }
+    .felt:focus-visible { box-shadow: inset 0 0 0 2px var(--sl-accent, #d49500); border-radius: 10px; mask-image: none; -webkit-mask-image: none; }
     .strip { position: absolute; left: 0; top: 0; bottom: 0; width: 0; will-change: transform; }
     .strip.anim { transition: transform 0.38s cubic-bezier(0.18, 0.89, 0.32, 1.18); }
-    .tk { position: absolute; bottom: 24px; width: 2px; height: 12px; margin-left: -1px; border-radius: 1px; background: #6b6b6b; }
-    .tk.major { height: 20px; background: #9a9a9a; }
-    .tk.fc { height: 30px; background: #f8f8f8; }
-    .lb { position: absolute; bottom: 4px; transform: translateX(-50%); font-size: 11px; color: #b0b0b0; font-variant-numeric: tabular-nums; }
-    .lb.fc { color: #f8f8f8; font-weight: 600; }
-    .marker { position: absolute; left: 50%; bottom: 20px; width: 4px; height: 42px; margin-left: -2px; border-radius: 2px; background: #d49500; pointer-events: none; }
+    .tk { position: absolute; bottom: 24px; width: 2px; height: 12px; margin-left: -1px; border-radius: 1px; background: var(--sl-feltTick, #6b6b6b); }
+    .tk.major { height: 20px; background: var(--sl-feltMajor, #9a9a9a); }
+    .tk.fc { height: 30px; background: var(--sl-feltForecast, #f8f8f8); }
+    .lb { position: absolute; bottom: 4px; transform: translateX(-50%); font-size: 11px; color: var(--sl-feltLabel, #b0b0b0); font-variant-numeric: tabular-nums; }
+    .lb.fc { color: var(--sl-feltForecast, #f8f8f8); font-weight: 600; }
+    .marker { position: absolute; left: 50%; bottom: 20px; width: 4px; height: 42px; margin-left: -2px; border-radius: 2px; background: var(--sl-feltMarker, #d49500); pointer-events: none; }
     .marker.unset { opacity: 0.45; }
     /* the knob's head sits fully inside the ruler (it used to be clipped at the top) */
-    .knob { position: absolute; left: 50%; top: -8px; width: 14px; height: 14px; margin-left: -7px; border-radius: 7px; background: #d49500; box-shadow: 0 0 0 4px rgba(212, 149, 0, 0.25); }
+    .knob { position: absolute; left: 50%; top: -8px; width: 14px; height: 14px; margin-left: -7px; border-radius: 7px; background: var(--sl-feltMarker, #d49500); box-shadow: 0 0 0 4px rgba(212, 149, 0, 0.25); box-shadow: 0 0 0 4px color-mix(in srgb, var(--sl-feltMarker, #d49500) 25%, transparent); }
     @media (prefers-reduced-motion: reduce) { .strip.anim { transition: none; } }
 </style>

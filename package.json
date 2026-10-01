@@ -1,6 +1,6 @@
 {
     "name": "windy-plugin-spotlog",
-    "version": "0.9.1",
+    "version": "0.10.0",
     "description": "Spotlog: session diary for Windy",
     "main": "dist/plugin.min.js",
     "type": "module",
@@ -9,6 +9,9 @@
         "build:win": "rmdir /s /q dist && mkdir dist && set SERVE=false && rollup -c && copy package.json dist\\",
         "start": "rollup -w -c",
         "sandbox": "npm run build && python3 harness/assemble.py && python3 -m http.server 8765",
+        "lab": "npm run build && node scripts/build-lab.mjs",
+        "apply-design": "node scripts/apply-design.mjs",
+        "check-words": "python3 scripts/check-words.py",
         "publish:windy": "./scripts/publish.sh",
         "test:e2e": "python3 harness/e2e.py /tmp"
     },

@@ -28,13 +28,14 @@
             {/each}
         </div>
     {:else if selected}
-        <small class="none">No sessions that day.</small>
+        <small class="none">{ $words.calNone }</small>
     {/if}
 </div>
 
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
     import type { Session } from '../lib/types';
+    import { words } from '../lib/copy';
 
     export let sessions: Session[] = [];
     export let colors: string[] = [];
@@ -84,21 +85,21 @@
 </script>
 
 <style lang="less">
-    .cal { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 16px; background: #3c3c3c; border: 1px solid #4d4d4d; }
+    .cal { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: var(--sl-radiusCard, 18px); background: var(--sl-uCard, #3c3c3c); border: 1px solid var(--sl-uLine, #4d4d4d); }
     .head { display: flex; align-items: center; justify-content: space-between; text-transform: capitalize; }
-    .nav { width: 34px; height: 34px; border-radius: 17px; border: 1px solid #5a5a5a; background: transparent; color: #f8f8f8; font-size: 18px; cursor: pointer; }
+    .nav { width: 34px; height: 34px; border-radius: 17px; border: 1px solid var(--sl-uOutline, #5a5a5a); background: transparent; color: var(--sl-uText, #f8f8f8); font-size: 18px; cursor: pointer; }
     .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
-    .wd { text-align: center; font-size: 11px; color: #b0b0b0; padding-bottom: 2px; }
-    .day { height: 42px; border: 0; border-radius: 10px; background: transparent; color: #d0d0d0; font: inherit; font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; font-variant-numeric: tabular-nums; }
-    .day.has { color: #f8f8f8; font-weight: 600; }
-    .day.today { box-shadow: inset 0 0 0 1px #d49500; }
-    .day.sel { background: #f8f8f8; color: #1c1c1c; }
+    .wd { text-align: center; font-size: 11px; color: var(--sl-uSub, #b0b0b0); padding-bottom: 2px; }
+    .day { height: 42px; border: 0; border-radius: 10px; background: transparent; color: var(--sl-tabText, #d0d0d0); font: inherit; font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; font-variant-numeric: tabular-nums; }
+    .day.has { color: var(--sl-uText, #f8f8f8); font-weight: 600; }
+    .day.today { box-shadow: inset 0 0 0 1px var(--sl-calToday, #d49500); }
+    .day.sel { background: var(--sl-selBg, #f8f8f8); color: var(--sl-selText, #1c1c1c); }
     .dots { display: flex; gap: 2px; height: 6px; i { width: 6px; height: 6px; border-radius: 3px; display: block; } }
-    .picked { display: flex; flex-direction: column; border-top: 1px solid #4d4d4d; }
-    .it { display: flex; align-items: center; gap: 10px; height: 44px; border: 0; border-bottom: 1px solid #4d4d4d; background: none; color: #f8f8f8; font: inherit; text-align: left; cursor: pointer; }
+    .picked { display: flex; flex-direction: column; border-top: 1px solid var(--sl-uLine, #4d4d4d); }
+    .it { display: flex; align-items: center; gap: 10px; height: 44px; border: 0; border-bottom: 1px solid var(--sl-uLine, #4d4d4d); background: none; color: var(--sl-uText, #f8f8f8); font: inherit; text-align: left; cursor: pointer; }
     .it:last-child { border-bottom: 0; }
     .r { width: 10px; height: 10px; border-radius: 5px; display: block; }
     .grow { flex: 1; }
-    small { color: #b0b0b0; font-size: 12px; }
+    small { color: var(--sl-uSub, #b0b0b0); font-size: 12px; }
     .none { padding-top: 4px; }
 </style>

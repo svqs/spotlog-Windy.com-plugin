@@ -19,8 +19,8 @@
                 {/if}
             </div>
             <div class="tw-actions">
-                {#if value}<button type="button" class="clear" on:click={ clear }>Clear</button>{/if}
-                <button type="button" class="done" on:click={ () => (open = false) }>Done</button>
+                {#if value}<button type="button" class="clear" on:click={ clear }>{ $words.wheelClear }</button>{/if}
+                <button type="button" class="done" on:click={ () => (open = false) }>{ $words.wheelDone }</button>
             </div>
         </div>
     {/if}
@@ -30,6 +30,7 @@
     import { tick, onDestroy } from 'svelte';
     import { uses12h, fmtClock } from '../lib/units';
     import { haptic } from '../lib/haptic';
+    import { words } from '../lib/copy';
 
     export let value = '';
     export let placeholder = 'Set time';
@@ -140,14 +141,14 @@
 
 <style lang="less">
     .tw { position: relative; flex: 1; min-width: 0; }
-    .field-btn { width: 100%; height: 44px; border-radius: 12px; border: 1px solid #5a5a5a; background: #3c3c3c; color: #f8f8f8; font: inherit; font-size: 15px; font-variant-numeric: tabular-nums; cursor: pointer; }
-    .field-btn[aria-expanded='true'] { border-color: #d49500; }
+    .field-btn { width: 100%; height: 44px; border-radius: var(--sl-radiusButton, 12px); border: 1px solid var(--sl-inputLine, #5a5a5a); background: var(--sl-inputBg, #3c3c3c); color: var(--sl-inputText, #f8f8f8); font: inherit; font-size: 15px; font-variant-numeric: tabular-nums; cursor: pointer; }
+    .field-btn[aria-expanded='true'] { border-color: var(--sl-accent, #d49500); }
     .tw-pop { position: absolute; z-index: 30; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); width: max(100%, 196px); box-sizing: border-box;
-        padding: 8px; border-radius: 14px; background: #3c3c3c; border: 1px solid #5a5a5a; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+        padding: 8px; border-radius: 14px; background: var(--sl-wheelBg, #3c3c3c); border: 1px solid var(--sl-wheelLine, #5a5a5a); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
         display: flex; flex-direction: column; gap: 6px; animation: pop 0.16s ease-out; }
     .tw-pop.below { bottom: auto; top: calc(100% + 10px); }
     .tw-pop.below::after { bottom: auto; top: -7px; transform: rotate(225deg); }
-    .tw-pop::after { content: ''; position: absolute; left: 50%; bottom: -7px; width: 12px; height: 12px; margin-left: -6px; background: #3c3c3c; border-right: 1px solid #5a5a5a; border-bottom: 1px solid #5a5a5a; transform: rotate(45deg); }
+    .tw-pop::after { content: ''; position: absolute; left: 50%; bottom: -7px; width: 12px; height: 12px; margin-left: -6px; background: var(--sl-wheelBg, #3c3c3c); border-right: 1px solid var(--sl-wheelLine, #5a5a5a); border-bottom: 1px solid var(--sl-wheelLine, #5a5a5a); transform: rotate(45deg); }
     .tw-pop.end { left: auto; right: 0; transform: none; animation-name: popEnd; }
     .tw-pop.end::after { left: auto; right: calc(var(--fw, 100px) / 2 - 6px); margin-left: 0; }
     @keyframes popEnd { from { opacity: 0; transform: translateY(6px) scale(0.97); } to { opacity: 1; transform: none; } }
@@ -158,11 +159,11 @@
     .col { overflow-y: scroll; scroll-snap-type: y mandatory; padding: 34px 0; scrollbar-width: none; overscroll-behavior: contain;
         mask-image: linear-gradient(transparent, #000 35%, #000 65%, transparent); -webkit-mask-image: linear-gradient(transparent, #000 35%, #000 65%, transparent); }
     .col::-webkit-scrollbar { display: none; }
-    .it { display: block; width: 100%; height: 34px; scroll-snap-align: center; border: 0; background: none; color: #b0b0b0; font: inherit; font-size: 17px; font-variant-numeric: tabular-nums; cursor: pointer; }
-    .it.sel { color: #f8f8f8; font-weight: 600; }
+    .it { display: block; width: 100%; height: 34px; scroll-snap-align: center; border: 0; background: none; color: var(--sl-wheelQuiet, #b0b0b0); font: inherit; font-size: 17px; font-variant-numeric: tabular-nums; cursor: pointer; }
+    .it.sel { color: var(--sl-wheelText, #f8f8f8); font-weight: 600; }
     .tw-actions { display: flex; justify-content: flex-end; gap: 6px; }
     .done, .clear { height: 30px; padding: 0 12px; border-radius: 9px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .done { border: 0; background: #d49500; color: #fff; }
-    .clear { border: 1px solid #5a5a5a; background: transparent; color: #f8f8f8; }
+    .done { border: 0; background: var(--sl-primary-bg, #d49500); color: var(--sl-primary-text, #ffffff); }
+    .clear { border: 1px solid var(--sl-wheelLine, #5a5a5a); background: transparent; color: var(--sl-wheelText, #f8f8f8); }
     @media (prefers-reduced-motion: reduce) { .tw-pop { animation: none; } }
 </style>

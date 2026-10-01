@@ -18,5 +18,5 @@
 </script>
 
 <style>
-    .star { display: inline-block; flex-shrink: 0; color: #d49500; }
+    .star { display: inline-block; flex-shrink: 0; color: var(--sl-star, #d49500); }
 </style>

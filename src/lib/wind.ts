@@ -28,18 +28,13 @@ export const dirMatches = (deg: number, dirs: Dir8[]): boolean => {
 /** Windy-like colours for wind in m/s */
 export const windColor = (ms: number | null): string => {
     if (ms === null) {
-        return '#e9e8e3';
+        return `var(--sl-windNone, ${THEME.windNone})`;
     }
-    const stops: [number, string][] = [
-        [2, '#5b6ec2'], [4, '#3fa0a8'], [6, '#4dbb5f'], [8, '#8fc446'],
-        [11, '#d4c43a'], [14, '#e0a63a'], [17, '#e0873a'], [22, '#c9474f'],
-    ];
-    for (const [limit, color] of stops) {
-        if (ms < limit) {
-            return color;
-        }
-    }
-    return '#a23fa0';
+    const limits = [2, 4, 6, 8, 11, 14, 17, 22];
+    let i = limits.findIndex(l => ms < l);
+    if (i < 0) i = 8;
+    const key = `wind${i + 1}` as keyof typeof THEME;
+    return `var(--sl-${key}, ${THEME[key]})`;
 };
 
 export const round1 = (v: number | null): string => (v === null ? '–' : (Math.round(v * 10) / 10).toString());
@@ -69,8 +64,9 @@ export const dirsLabel = (dirs: Dir8[]): string => {
 
 export const RATINGS = ['flat', 'meh', 'good', 'great', 'epic'];
 /** Rating colours 1–5, from the theme (src/lib/theme.ts, designed in the Style Lab) */
-export const RATING_BG = [THEME.r1bg, THEME.r2bg, THEME.r3bg, THEME.r4bg, THEME.r5bg];
-export const RATING_FG = [THEME.r1fg, THEME.r2fg, THEME.r3fg, THEME.r4fg, THEME.r5fg];
+// as CSS variables, so a design change shows everywhere at once
+export const RATING_BG = [1, 2, 3, 4, 5].map(i => `var(--sl-r${i}bg, ${(THEME as Record<string, unknown>)[`r${i}bg`]})`);
+export const RATING_FG = [1, 2, 3, 4, 5].map(i => `var(--sl-r${i}fg, ${(THEME as Record<string, unknown>)[`r${i}fg`]})`);
 export const ratingBg = (r: number): string => RATING_BG[Math.max(0, Math.min(4, Math.round(r) - 1))];
 export const ratingFg = (r: number): string => RATING_FG[Math.max(0, Math.min(4, Math.round(r) - 1))];
 export const GEAR_SPORTS = ['Windsurf', 'Surf', 'Kite', 'Wing'];

@@ -74,9 +74,25 @@ The same values appear in `src/plugin.svelte` (`@ground`, `@card` … at the top
 - Mobile: Windy's picker dot flow for choosing a place is not designed/built yet.
 - Webcams and alerts (from the early drafts) are not in 0.2.
 
+## Style Lab: everything you can change yourself
+
+**Style Lab:** https://claude.ai/artifact/PWtJbKJMGekykAnzrLpsjD. It shows the real Spotlog (phone or desktop, with example data) and changes it live:
+
+- **Colours**: every colour in the panel, buttons, chips, tabs, fields, tiles, forecast card, wind colours, ruler, time picker and messages.
+- **Shapes**: corner roundness, text size, page titles, wordmark, spacing.
+- **Map**: spot pins, zoomed-out dots, session marks, GPS route, the card on the map. *Map marks* draws every map state side by side.
+- **Words**: all 315 phrases, grouped by screen. Parts in braces like `{n}` are filled in by Spotlog. `**bold**` shows bold, and `{spotlog}` / `{Spotlog}` is the name with the pixel star.
+- **Click to edit**: click anything in the preview to edit that part's colours and words right there.
+
+Press *Save design*, then ask Claude to "apply my style lab design". Claude reads the saved design and runs
+`node scripts/apply-design.mjs saved.json`. That writes **`src/lib/design.ts`** with only what differs from the defaults, then Claude rebuilds and tests.
+Wording defaults live in **`src/lib/copy.ts`** (`COPY_GROUPS`; `npm run check-words` checks that every phrase used exists).
+The lab itself is built from `harness/stylelab.src.html` + `harness/preview-bridge.js` with `npm run lab`
+(→ `harness/stylelab/index.html` and `preview.html`). The live preview only switches on inside the lab (`window.__spotlogDesignHost`); Windy never sets it.
+
 ## Theme (colours and map marks)
 
-All colours and map marks live in **`src/lib/theme.ts`** (`THEME`). Its keys match the **Style Lab** (https://claude.ai/artifact/PWtJbKJMGekykAnzrLpsjD) one to one:
+All colours, shapes and map marks live in **`src/lib/theme.ts`** (`THEME`, with the saved design from `design.ts` on top). Its keys match the **Style Lab** one to one, and every key is also a CSS variable `--sl-<key>`:
 play there, press *Save design*, then ask Claude to apply it. The plugin turns `THEME` into CSS variables (`--sl-*`, injected once as `<style id="spotlog-theme">`),
 so the panel, the map pins, the zoomed-out dots, session marks, tooltips, route dots and popup all follow it. Ratings come from `r1…r5`; rating guesses from
 `g1…g5` (or the rating colours when `guessLinked`). Spot labels: grey until the guess reaches `lightFrom`; selected = `activeBg` label with the dot in the

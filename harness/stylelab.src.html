@@ -1,0 +1,906 @@
+<title>Spotlog Style Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@900&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+  /* Layout: settings on the left (Colours · Shapes · Map · Words), the real Spotlog live on the right; stacked on phones.
+     Single dark look on purpose: it previews a dark plugin sitting on Windy. */
+  :root {
+    color-scheme: dark;
+    --ground: #1f2021;
+    --surface: #2a2b2c;
+    --raise: #343536;
+    --line: #444647;
+    --text: #f4f4f1;
+    --sub: #a6a7a3;
+    --faint: #7c7d7a;
+    --accent: #d49500;
+    --ok: #5cc27a;
+    --warn: #f1c56a;
+    --ui: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --pix: 'Doto', ui-monospace, Menlo, monospace;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body { background: var(--ground); color: var(--text); font-family: var(--ui); font-size: 14px; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .app { display: grid; grid-template-columns: minmax(340px, 430px) minmax(0, 1fr); height: 100%; }
+  .side { padding: 20px 18px 40px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 14px; min-width: 0; overflow-y: auto; }
+  .stage { height: 100%; overflow: auto; padding: 16px 20px 24px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+  .brand { display: flex; align-items: center; gap: 8px; }
+  .brand b { font-family: var(--pix); font-weight: 900; font-size: 24px; letter-spacing: .06em; }
+  .brand em { font-style: normal; font-size: 12px; color: var(--sub); padding: 3px 8px; border: 1px solid var(--line); border-radius: 10px; margin-left: 4px; }
+  .lead { margin: 0; color: var(--sub); line-height: 1.5; max-width: 60ch; }
+  .lead b { color: var(--text); font-weight: 600; }
+
+  .savebar { position: sticky; top: 0; z-index: 6; display: flex; flex-direction: column; gap: 8px; padding: 12px; margin: 0 -6px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 8px 20px rgba(0,0,0,.35); }
+  .savebar .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn { height: 38px; padding: 0 14px; white-space: nowrap; border-radius: 10px; border: 1px solid var(--line); background: transparent; font-weight: 600; font-size: 13px; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.small { height: 28px; padding: 0 10px; font-size: 12px; border-radius: 8px; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btn.grow { flex: 1; }
+  .status { font-size: 12px; color: var(--sub); line-height: 1.4; }
+  .status.dirty { color: var(--warn); }
+  .status.ok { color: var(--ok); }
+
+  /* the four kinds of settings */
+  .ktabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; padding: 3px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); }
+  .ktabs button { height: 34px; border: 0; border-radius: 9px; background: transparent; color: #cfcfcc; font-size: 13px; font-weight: 500; }
+  .ktabs button.on { background: var(--text); color: #1c1c1c; font-weight: 600; }
+  .ktabs small { display: inline-block; min-width: 16px; margin-left: 4px; padding: 0 4px; border-radius: 7px; background: var(--accent); color: #fff; font-size: 10px; line-height: 15px; font-weight: 600; }
+  .ktabs button.on small { color: #fff; }
+  .note { font-size: 12px; color: var(--faint); line-height: 1.45; margin: -4px 2px 0; }
+  .note code { font-family: var(--mono); font-size: 11.5px; color: var(--sub); background: var(--surface); padding: 0 4px; border-radius: 4px; }
+
+  /* what you clicked in the preview */
+  .picked { border: 1px solid var(--accent); border-radius: 14px; background: var(--surface); display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; }
+  .picked-h { display: flex; align-items: center; gap: 8px; }
+  .picked-h span { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .picked-h b { font-size: 14px; }
+  .picked-h button { margin-left: auto; border: 0; background: none; color: var(--sub); font-size: 18px; line-height: 1; padding: 2px 4px; }
+
+  details.grp { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+  details.grp > summary { list-style: none; cursor: pointer; padding: 13px 14px; display: flex; align-items: center; gap: 10px; }
+  details.grp > summary::-webkit-details-marker { display: none; }
+  details.grp > summary b { font-size: 14px; }
+  details.grp > summary small { display: block; color: var(--sub); font-size: 12px; margin-top: 2px; }
+  details.grp > summary .chev { margin-left: auto; color: var(--sub); transition: transform .15s; }
+  details.grp > summary .cnt { margin-left: auto; font-size: 11px; color: var(--accent); white-space: nowrap; }
+  details.grp > summary .cnt + .chev { margin-left: 6px; }
+  details.grp[open] > summary .chev { transform: rotate(180deg); }
+  .grp-body { padding: 2px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+  .sub-h { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); margin-top: 6px; }
+
+  .ctl { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; }
+  .ctl > label { min-width: 0; }
+  .ctl > label span { display: block; font-size: 13px; }
+  .ctl > label small { display: block; font-size: 11.5px; color: var(--faint); line-height: 1.35; }
+  .ctl.off { opacity: .4; pointer-events: none; }
+  .ctl.changed > label span::after { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 3px; background: var(--accent); margin-left: 6px; vertical-align: 2px; }
+  .colour { display: flex; align-items: center; gap: 6px; }
+  .colour input[type=color] { width: 34px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: none; cursor: pointer; }
+  .colour input[type=color]::-webkit-color-swatch-wrapper { padding: 3px; }
+  .colour input[type=color]::-webkit-color-swatch { border: 0; border-radius: 5px; }
+  .colour input[type=text] { width: 78px; height: 30px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--ground); font-family: var(--mono); font-size: 12px; text-transform: lowercase; }
+  .pair { display: flex; gap: 6px 14px; align-items: center; flex-wrap: wrap; }
+  .ctl.pr { grid-template-columns: minmax(0, 1fr); }
+  .ctl.pr > label span { font-weight: 600; }
+  .pc { display: inline-flex; align-items: center; gap: 6px; }
+  .pc > small { font-size: 11px; color: var(--faint); width: 26px; }
+  .pal { width: 26px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--ground); padding: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--sub); }
+  .pal:hover, .pal.on { color: var(--text); border-color: #6a6b6c; }
+  .pal svg { display: block; }
+  .tray { grid-column: 1 / -1; margin-top: 6px; padding: 10px; border-radius: 12px; background: var(--ground); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+  .tray-h { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--sub); }
+  .tray-h b { color: var(--text); font-weight: 600; }
+  .tray-h button { margin-left: auto; border: 0; background: none; color: var(--sub); font-size: 12px; padding: 2px 4px; }
+  .swg { display: flex; flex-direction: column; gap: 5px; }
+  .swg > span { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+  .sws { display: flex; flex-wrap: wrap; gap: 5px; }
+  .sw { width: 24px; height: 24px; border-radius: 7px; border: 1px solid rgba(255,255,255,.14); padding: 0; position: relative; }
+  .sw.cur::after { content: ''; position: absolute; inset: -4px; border-radius: 10px; border: 2px solid var(--text); }
+  .tray small { font-size: 11px; color: var(--faint); line-height: 1.4; }
+  .range { display: flex; align-items: center; gap: 8px; }
+  .range input { width: 120px; accent-color: var(--accent); }
+  .range output { width: 44px; text-align: right; font-family: var(--mono); font-size: 12px; color: var(--sub); font-variant-numeric: tabular-nums; }
+  .seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 10px; background: var(--ground); flex-wrap: wrap; }
+  .seg button { height: 28px; padding: 0 10px; border: 0; border-radius: 7px; background: transparent; color: #cfcfcc; font-size: 12px; }
+  .seg button.on { background: var(--text); color: #1c1c1c; font-weight: 600; }
+  .tog { width: 40px; height: 24px; border-radius: 12px; background: #5a5a5a; border: 0; position: relative; padding: 0; flex-shrink: 0; }
+  .tog i { position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 9px; background: var(--text); transition: transform .15s; }
+  .tog.on { background: var(--accent); }
+  .tog.on i { transform: translateX(16px); }
+
+  /* words */
+  .wtools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .wtools input[type=search] { flex: 1; min-width: 160px; height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); }
+  .wtools label { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--sub); cursor: pointer; }
+  .phrase { display: flex; flex-direction: column; gap: 5px; }
+  .phrase-h { display: flex; align-items: baseline; gap: 8px; }
+  .phrase-h small { font-size: 11.5px; color: var(--faint); line-height: 1.35; min-width: 0; }
+  .phrase-h button { margin-left: auto; border: 0; background: none; color: var(--accent); font-size: 12px; font-weight: 600; padding: 0; flex-shrink: 0; }
+  .phrase textarea { width: 100%; min-height: 36px; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--line); background: var(--ground); resize: vertical; line-height: 1.4; font-size: 13px; field-sizing: content; max-height: 200px; }
+  .phrase.changed textarea { border-color: #7a6020; }
+  .phrase .was { font-size: 11.5px; color: var(--faint); line-height: 1.4; }
+  .phrase .warn { font-size: 11.5px; color: var(--warn); line-height: 1.4; }
+  .empty-note { font-size: 13px; color: var(--sub); padding: 14px; border: 1px dashed var(--line); border-radius: 12px; text-align: center; }
+
+  /* ---------- preview ---------- */
+  .stage-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .stage-h .lbl { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+  .stage-h select { height: 34px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); }
+  .stage-h .sp { flex: 1; }
+  .pickt { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--sub); cursor: pointer; }
+  .stage-note { font-size: 12px; color: var(--faint); line-height: 1.45; margin: 0; }
+  .frame { position: relative; flex: 1; min-height: 520px; display: flex; justify-content: center; align-items: flex-start; }
+  .device { position: relative; flex-shrink: 0; border-radius: 30px; overflow: hidden; background: #000; box-shadow: 0 0 0 1px #444, 0 0 0 8px #151616, 0 18px 40px rgba(0,0,0,.5); transform-origin: top center; }
+  .device.desk { border-radius: 12px; box-shadow: 0 0 0 1px #444, 0 18px 40px rgba(0,0,0,.5); }
+  .device iframe { display: block; border: 0; width: 100%; height: 100%; background: #2e2e2e; }
+  .loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--sub); font-size: 13px; background: #2e2e2e; }
+
+  /* the drawn map sheet (all the map states side by side) */
+  .mapsheet { display: flex; flex-direction: column; gap: 10px; }
+  .map { position: relative; width: 100%; max-width: 900px; aspect-ratio: 4 / 3; border-radius: 16px; overflow: hidden; isolation: isolate; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+  .map .coast { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .map .place { position: absolute; transform: translate(-50%, -50%); font: 600 12px var(--ui); color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); white-space: nowrap; pointer-events: none; }
+  .map .place::before { content: ''; display: inline-block; width: 5px; height: 5px; border-radius: 3px; background: #fff; margin-right: 5px; vertical-align: middle; }
+  .map .mk { position: absolute; width: 0; height: 0; }
+  .legend { max-width: 900px; display: flex; justify-content: space-between; padding: 3px 8px; border-radius: 6px; font-size: 10.5px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+  [data-edit] { cursor: pointer; }
+  .pin { position: absolute; transform: translate(-10px, -50%); display: flex; align-items: center; gap: 6px; white-space: nowrap; height: 26px; padding: 0 10px 0 6px; border-radius: 13px;
+    background: var(--pinBg); color: var(--pinText); font: 600 12px var(--ui); box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+  .pin i { width: 10px; height: 10px; border-radius: 5px; background: var(--pinDot); display: block; flex-shrink: 0; }
+  .pin em { font-style: normal; font-size: 11px; opacity: .9; margin-left: 2px; }
+  .pin.active { background: var(--activeBg); color: var(--activeText); }
+  .cdot { position: absolute; transform: translate(-50%, -50%); border-radius: 50%; box-sizing: border-box; }
+  .heat { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); }
+  .heat.core::after { content: ''; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 3px; background: var(--sessColor); box-shadow: 0 0 0 1.5px var(--sessCoreRing); }
+  .tip { position: absolute; transform: translate(-50%, calc(-100% - 10px)); display: flex; flex-direction: column; gap: 3px; min-width: 140px; padding: 8px 10px; border-radius: 10px; background: var(--tipBg); color: var(--tipText); font: 12px var(--ui); white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,.45); z-index: 3; }
+  .tip span { display: flex; align-items: center; gap: 6px; opacity: .85; }
+  .tip i { width: 8px; height: 8px; border-radius: 4px; display: block; }
+  .tip small { opacity: .6; font-size: 11px; }
+  .rdot { position: absolute; transform: translate(-50%, -50%); border-radius: 50%; box-sizing: border-box; box-shadow: 0 1px 4px rgba(0,0,0,.45); }
+  .rlabel { position: absolute; transform: translate(12px, -50%); white-space: nowrap; font: 600 13px var(--ui); color: var(--routeLabel); text-shadow: 0 1px 3px rgba(0,0,0,.8), 0 0 8px rgba(0,0,0,.35); }
+  .popup { position: absolute; transform: translate(-50%, calc(-100% - 18px)); display: flex; flex-direction: column; gap: 8px; width: 270px; padding: 12px; border-radius: 16px; background: var(--popupBg); color: var(--popupText); font: 13px var(--ui); box-shadow: 0 6px 18px rgba(0,0,0,.4); z-index: 4; }
+  .popup::after { content: ''; position: absolute; left: 50%; bottom: -8px; margin-left: -8px; border: 8px solid transparent; border-bottom: 0; border-top-color: var(--popupBg); }
+  .popup small { color: var(--popupSub); font-size: 12px; }
+  .popup .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .popup .t { display: flex; flex-direction: column; gap: 4px; padding: 7px; border-radius: 9px; font-size: 10px; color: var(--windText); }
+  .popup .t b { font: 900 20px var(--pix); line-height: 1; }
+  .popup .badge { align-self: flex-start; padding: 3px 9px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+  .popup .acts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  .popup .acts span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 9px; font-size: 11.5px; font-weight: 600; background: var(--popupBtnBg); color: var(--popupBtnText); }
+  .popup .acts span:first-child { background: var(--primaryBg); color: var(--primaryText); }
+  .mapnote { font-size: 12px; color: var(--faint); line-height: 1.4; max-width: 900px; }
+
+  @media (max-width: 900px) {
+    .app { grid-template-columns: minmax(0, 1fr); height: auto; }
+    .side { border-right: 0; order: 2; padding-inline: 16px; overflow: visible; }
+    .stage { height: auto; overflow: visible; padding-inline: 16px; order: 1; }
+    .frame { min-height: 0; }
+    .savebar { position: sticky; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app">
+  <aside class="side">
+    <div class="brand"><b>SPOTLOG</b><svg width="15" height="15" viewBox="0 0 7 7" aria-hidden="true" id="brandStar"></svg><em>Style lab</em></div>
+    <p class="lead">Change how Spotlog looks and what it says. The preview is the real Spotlog with example data: <b>click anything in it</b> to edit its colours and words. When you like it, press <b>Save design</b> and tell Claude “apply my style lab design”.</p>
+
+    <div class="savebar" role="region" aria-label="Save">
+      <div class="row">
+        <button class="btn primary grow" id="save" type="button">Save design</button>
+        <button class="btn" id="revert" type="button" title="Go back to what you last saved">Undo changes</button>
+        <button class="btn" id="reset" type="button" title="Spotlog's look and words today">Start over</button>
+      </div>
+      <div class="status" id="status" aria-live="polite">Loading your saved design…</div>
+    </div>
+
+    <div class="ktabs" role="tablist" aria-label="What to change" id="ktabs">
+      <button type="button" role="tab" data-kind="colours" id="k-colours">Colours</button>
+      <button type="button" role="tab" data-kind="shapes" id="k-shapes">Shapes</button>
+      <button type="button" role="tab" data-kind="map" id="k-map">Map</button>
+      <button type="button" role="tab" data-kind="words" id="k-words">Words</button>
+    </div>
+
+    <div id="ctlwrap" style="display:flex;flex-direction:column;gap:12px">
+      <div id="picked" hidden></div>
+      <div id="controls" style="display:flex;flex-direction:column;gap:12px"></div>
+    </div>
+
+    <button class="btn" id="copy" type="button">Copy settings as text</button>
+    <textarea id="copyBox" hidden readonly rows="6" style="width:100%;background:var(--ground);border:1px solid var(--line);border-radius:10px;color:var(--text);font:12px var(--mono);padding:10px"></textarea>
+  </aside>
+
+  <main class="stage">
+    <div class="stage-h">
+      <div class="seg" id="viewSeg" role="group" aria-label="Preview">
+        <button type="button" data-view="live">Spotlog</button><button type="button" data-view="sheet">Map marks</button>
+      </div>
+      <div class="seg" id="devSeg" role="group" aria-label="Device">
+        <button type="button" data-dev="phone">Phone</button><button type="button" data-dev="desk">Desktop</button>
+      </div>
+      <label class="lbl" for="screen">Screen</label>
+      <select id="screen">
+        <option value="spots">Spots</option>
+        <option value="sessions">Sessions</option>
+        <option value="gear">Gear</option>
+        <option value="about">About</option>
+        <option value="spot">Spot page</option>
+        <option value="card">Card on the map</option>
+        <option value="session">Session (with GPS)</option>
+        <option value="log">Log session</option>
+        <option value="snap">Saved forecast</option>
+        <option value="pick">Pick a place</option>
+        <option value="spotForm">Edit spot</option>
+        <option value="units">Units and data</option>
+        <option value="home">Phone bar only</option>
+      </select>
+      <span class="sp"></span>
+      <label class="pickt" for="pickTog"><span>Click to edit</span><button type="button" class="tog on" role="switch" aria-checked="true" id="pickTog" aria-label="Click to edit"><i></i></button></label>
+    </div>
+    <p class="stage-note" id="stageNote">Click anything in Spotlog to edit it. Switch off “Click to edit” to use Spotlog normally: open pages, drag the ruler, tap the map.</p>
+
+    <div class="frame" id="frame">
+      <div class="device" id="device"><iframe id="pv" title="Spotlog preview"></iframe><div class="loading" id="pvLoading">Starting Spotlog…</div></div>
+    </div>
+
+    <div class="mapsheet" id="sheet" hidden>
+      <div class="stage-h">
+        <div class="seg" id="bgSeg" role="group" aria-label="Map background"></div>
+        <div class="seg" id="zoomSeg" role="group" aria-label="Zoom"></div>
+        <div class="seg" id="openSeg" role="group" aria-label="Selected spot"></div>
+      </div>
+      <div class="map" id="map" aria-label="Drawing of Spotlog's marks on the Windy map"></div>
+      <div class="legend" id="legend" aria-hidden="true"><span>m/s</span><span>0</span><span>3</span><span>5</span><span>10</span><span>15</span><span>20</span><span>30</span></div>
+      <div class="mapnote" id="mapnote"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+/*SPOTLOG_DATA*/
+(() => {
+  'use strict';
+  const RATINGS = ['flat', 'meh', 'good', 'great', 'epic'];
+  const GUESSES = ['Probably flat', 'Probably meh', 'Likely good', 'Likely great', 'Likely epic'];
+  /* ---------- what can be designed (the keys are Spotlog's design settings, src/lib/theme.ts) ---------- */
+  const DEFAULTS = SPOTLOG.look;
+  const WORDS = SPOTLOG.words;          // Spotlog's wording today
+  const GROUPS = SPOTLOG.groups;        // phrases by screen
+  const pair = (bg, fg, label, hint) => ({ type: 'pair', keys: [bg, fg], label, hint });
+  const col = (key, label, hint) => ({ type: 'color', key, label, hint });
+  const rng = (key, label, min, max, step, unit, hint) => ({ type: 'range', key, label, min, max, step, unit, hint });
+  const seg = (key, label, options, hint) => ({ type: 'seg', key, label, options, hint });
+  const tog = (key, label, hint) => ({ type: 'toggle', key, label, hint });
+  const WIND_STEPS = ['under 2 m/s', '2–4 m/s', '4–6 m/s', '6–8 m/s', '8–11 m/s', '11–14 m/s', '14–17 m/s', '17–22 m/s', '22 m/s and more'];
+  const SPEC = [
+    // ---- colours
+    { kind: 'colours', id: 'surfaces', title: 'Panel', note: 'The background, cards, lines and text everywhere', screen: 'spots', open: true, items: [
+      col('uGround', 'Background'), col('uCard', 'Cards'), col('uLine', 'Lines', 'Around cards, between rows'), col('uOutline', 'Outlines', 'Around buttons and empty states'),
+      col('uText', 'Text'), col('uSub', 'Quiet text'), col('uQuiet', 'Very quiet text', 'Version, small hints'), col('uInk', 'Dark text', 'On light fills'),
+      col('uHoverBg', 'Hover fill', 'Desktop, when the mouse is over a big button'), col('uHoverLine', 'Hover outline'),
+      col('accent', 'Accent', 'Focus, the spot dot, highlights'), col('star', 'Pixel star'),
+    ] },
+    { kind: 'colours', id: 'buttons', title: 'Buttons and links', note: 'Save, Cancel, Edit, Delete…', screen: 'snap', items: [
+      pair('primaryBg', 'primaryText', 'Main button', 'Save spot, Save session, Replace'),
+      col('ghostLine', 'Outline button edge', 'Cancel, Keep the old one, Edit'), col('ghostText', 'Outline button text'),
+      col('linkText', 'Links', 'Edit, Change, Download a copy'),
+      col('dangerText', 'Delete links'), col('dangerLine', 'Delete button edge'),
+      pair('deleteBg', 'deleteText', 'Swipe to delete', 'The red button behind a session row'),
+    ] },
+    { kind: 'colours', id: 'acts', title: 'Big action buttons', note: 'Save forecast, Add spot, Log session', screen: 'spots', items: [
+      col('actBg', 'Fill'), col('actLine', 'Edge'), col('actText', 'Name'), col('actSub', 'Small line', 'next 24 h, on the map'), col('actIcon', 'Icon'),
+    ] },
+    { kind: 'colours', id: 'tabs', title: 'Tabs and options', note: 'Spots / Sessions / Gear / About, List / Calendar, units', screen: 'sessions', items: [
+      col('tabsBg', 'Background'), col('tabText', 'Text'), pair('selBg', 'selText', 'Selected'),
+    ] },
+    { kind: 'colours', id: 'chips', title: 'Chips', note: 'Sports, gusts, water, gear, wind directions', screen: 'session', items: [
+      col('chipLine', 'Edge'), col('chipText', 'Text'), pair('chipOnBg', 'chipOnText', 'Picked'),
+    ] },
+    { kind: 'colours', id: 'fields', title: 'Fields and switches', note: 'Text fields, the date and time, switches', screen: 'log', items: [
+      col('inputBg', 'Field fill'), col('inputLine', 'Field edge'), col('inputText', 'Field text'),
+      col('switchOn', 'Switch on'), col('switchOff', 'Switch off'), col('switchKnob', 'Switch knob'),
+    ] },
+    { kind: 'colours', id: 'tiles', title: 'Spot tiles and tags', screen: 'spots', items: [
+      col('tileBg', 'Tile fill'), col('tileLine', 'Tile edge'), col('ghostTagLine', '“Rating soon” edge'),
+      pair('matchBg', 'matchText', '“Match” tag', 'Next good window on the spot page'),
+    ] },
+    { kind: 'colours', id: 'ratings', title: 'Session ratings', note: 'The 1–5 scale in lists, the calendar, the rating buttons and tags', screen: 'session', items: [
+      ...RATINGS.map((r, i) => pair(`r${i + 1}bg`, `r${i + 1}fg`, `${i + 1} · ${r}`)),
+    ] },
+    { kind: 'colours', id: 'guesses', title: 'Rating guesses', note: 'Likely good, Likely great… on tiles, the spot page, and the map', screen: 'spots', items: [
+      tog('guessLinked', 'Same colours as the ratings', 'Off: give each guess its own colour'),
+      ...GUESSES.map((g, i) => ({ ...pair(`g${i + 1}bg`, `g${i + 1}fg`, g), guess: true })),
+      seg('lightFrom', 'Pins light up from', [[3, 'Likely good'], [4, 'Likely great'], [5, 'Likely epic']], 'Spots below this keep the normal pin'),
+    ] },
+    { kind: 'colours', id: 'card', title: 'Forecast card', note: 'The light card with wind, gusts, direction and waves', screen: 'snap', items: [
+      col('lightBg', 'Card'), col('lightText', 'Text'), col('lightSub', 'Quiet text'), col('lightLine', 'Lines'),
+      col('dirTile', 'Direction tile'), col('wavesTile', 'Waves tile'), col('windText', 'Text on the wind tiles'),
+      pair('modelBg', 'modelText', 'Model tag', 'ECMWF in the corner'), pair('bestBg', 'bestText', 'Closest model'),
+    ] },
+    { kind: 'colours', id: 'wind', title: 'Wind colours', note: 'Behind every wind and gust number, calm to storm', screen: 'snap', items: [
+      ...WIND_STEPS.map((l, i) => col(`wind${i + 1}`, l)), col('windNone', 'No forecast'),
+    ] },
+    { kind: 'colours', id: 'felt', title: 'Ruler, time picker, calendar', screen: 'session', items: [
+      { type: 'h', label: '“It felt like” ruler' }, col('feltMarker', 'Marker'), col('feltTick', 'Ticks'), col('feltMajor', 'Long ticks'), col('feltForecast', 'Forecast line'), col('feltLabel', 'Numbers'),
+      { type: 'h', label: 'Time picker' }, col('wheelBg', 'Background'), col('wheelLine', 'Edge'), col('wheelText', 'Picked time'), col('wheelQuiet', 'Other times'),
+      { type: 'h', label: 'Calendar' }, col('calToday', 'Today'),
+    ] },
+    { kind: 'colours', id: 'toasts', title: 'Messages', note: 'The bar after you save or delete something', screen: 'spots', items: [
+      pair('toastBg', 'toastText', 'Message bar'), col('undoBg', 'Undo button'),
+    ] },
+    // ---- shapes and type
+    { kind: 'shapes', id: 'corners', title: 'Corners', note: 'How round things are', screen: 'spots', open: true, items: [
+      rng('radiusCard', 'Cards and tiles', 0, 28, 1, 'px'), rng('radiusButton', 'Buttons, fields, tabs', 0, 24, 1, 'px'),
+      rng('radiusChip', 'Chips and pills', 0, 24, 1, 'px', '18 = fully round'), rng('radiusSmall', 'Small buttons and selected tabs', 0, 16, 1, 'px'),
+    ] },
+    { kind: 'shapes', id: 'type', title: 'Type and spacing', screen: 'spot', open: true, items: [
+      rng('textSize', 'Text size', 12, 17, 0.5, 'px', 'The base size; small print and labels keep theirs'),
+      rng('titleSize', 'Page titles', 14, 22, 0.5, 'px'), rng('wordmarkSize', 'SPOTLOG wordmark', 16, 34, 1, 'px', 'Desktop panel'),
+      rng('panelGap', 'Space between blocks', 8, 24, 1, 'px', 'Desktop panel'),
+    ] },
+    // ---- map
+    { kind: 'map', id: 'spots', title: 'Spot pins', note: 'Zoomed in: a label per spot. Zoomed out: plain dots.', screen: 'card', open: true, items: [
+      { type: 'h', label: 'Zoomed in · not selected' },
+      col('pinBg', 'Label', 'Grey while there is no rating guess yet or it is below the level you pick'), col('pinText', 'Name'), col('pinDot', 'Dot'),
+      seg('goodStyle', 'When conditions look good', [['pin', 'Whole label'], ['dot', 'Dot only'], ['outline', 'Outline']], 'Takes the guess colour (see Colours › Rating guesses)'),
+      tog('goodWord', 'Show the guess after the name', 'e.g. Valdevaqueros great'),
+      { type: 'h', label: 'Zoomed in · selected' },
+      col('activeBg', 'Label'), col('activeText', 'Name'),
+      col('activeDot', 'Dot', 'Stays this colour without a good guess; turns the guess colour when it looks good'),
+      { type: 'h', label: 'Zoomed out' },
+      col('compactDot', 'Dot', 'Without a good guess. Good spots take the guess colour.'),
+      rng('compactSize', 'Dot size', 6, 18, 1, 'px'),
+      tog('compactRing', 'Outline around the dots'), col('compactRingColor', 'Outline colour'), rng('compactRingWidth', 'Outline width', 1, 4, 0.5, 'px'),
+      rng('compactBelow', 'Labels become dots below zoom', 4, 10, 1, '', 'Windy zoom 7 ≈ a whole coastline'),
+    ] },
+    { kind: 'map', id: 'popup', title: 'Card on the map', note: 'Show on map, and the phone’s spot card', screen: 'card', items: [
+      col('popupBg', 'Card'), col('popupText', 'Text'), col('popupSub', 'Quiet text and ✕'), col('popupBtnBg', 'Buttons'), col('popupBtnText', 'Button text'),
+    ] },
+    { kind: 'map', id: 'sessions', title: 'Sessions on the map', note: 'One mark per place, bigger and brighter the more often you were there', screen: 'card', items: [
+      seg('sessStyle', 'Mark', [['glow', 'Glow'], ['dot', 'Dot'], ['ring', 'Ring'], ['off', 'None']]),
+      col('sessColor', 'Colour'),
+      tog('sessCore', 'Small centre dot', 'Marks the exact place'), col('sessCoreRing', 'Centre dot edge'),
+      rng('sessSize', 'Size for one session', 6, 48, 1, 'px'), rng('sessGrow', 'Grows per session', 0, 8, 0.5, 'px', 'Counted up to 15 sessions'),
+      rng('sessAlpha', 'Strength for one session', 0.1, 1, 0.05, ''), rng('sessAlphaGrow', 'Stronger per session', 0, 0.15, 0.01, ''),
+      { type: 'h', label: 'Hover box' }, col('tipBg', 'Box'), col('tipText', 'Text'),
+    ] },
+    { kind: 'map', id: 'route', title: 'GPS route', note: 'Your track from Garmin, Strava…', screen: 'session', items: [
+      col('routeColor', 'Line'), rng('routeWidth', 'Line width', 1, 6, 0.5, 'px'),
+      col('casingColor', 'Edge'), rng('casingWidth', 'Edge width', 0, 10, 0.5, 'px', '0 = no edge'), rng('casingAlpha', 'Edge strength', 0, 1, 0.05, ''),
+      { type: 'h', label: 'Start and end' }, col('startFill', 'Start dot'), col('startBorder', 'Start edge'), col('endFill', 'End dot'), col('endBorder', 'End edge'),
+      col('routeLabel', 'Distance label'),
+    ] },
+  ];
+  // the screen to show for each group of phrases
+  const WORD_SCREEN = { bar: 'spots', gate: '', spots: 'spots', sessions: 'sessions', gear: 'gear', about: 'about', pick: 'pick', place: '', spotForm: 'spotForm', spot: 'spot', snap: 'snap', log: 'session', names: 'session', forecast: 'snap', toasts: '' };
+
+  /* ---------- state ---------- */
+  const DRAFT_KEY = 'spotlog-style-lab-draft-v2';
+  const UI_KEY = 'spotlog-style-lab-ui';
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const clean = o => { const out = clone(DEFAULTS); if (o && typeof o === 'object') for (const k of Object.keys(DEFAULTS)) if (k in o && typeof o[k] === typeof DEFAULTS[k]) out[k] = o[k]; return out; };
+  const cleanWords = o => { const out = {}; if (o && typeof o === 'object') for (const k of Object.keys(WORDS)) if (typeof o[k] === 'string' && o[k] !== WORDS[k]) out[k] = o[k]; return out; };
+  const migrate = o => { if (o.pinDot === '#d49500') o.pinDot = DEFAULTS.pinDot; if (o.activeDot === '#1c1c1c') o.activeDot = DEFAULTS.activeDot; return o; };
+  let state = clone(DEFAULTS);   // every design setting
+  let words = {};                 // only the phrases you changed
+  let saved = null, savedWords = {}, savedAt = 0;
+  let db = null;
+  let kind = 'colours', view = 'live', dev = 'phone', screen = 'spots', picking = true;
+  let bg = 'wind', zoom = 'close';
+  try { const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); if (d) { state = migrate(clean(d.tokens)); words = cleanWords(d.words); } } catch (e) { /* no storage */ }
+  try { const u = JSON.parse(localStorage.getItem(UI_KEY) || 'null'); if (u) { kind = u.kind || kind; dev = u.dev || dev; screen = u.screen || screen; } } catch (e) { /* no storage */ }
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const guessColours = i => state.guessLinked ? [state[`r${i}bg`], state[`r${i}fg`]] : [state[`g${i}bg`], state[`g${i}fg`]];
+  const rateColours = i => [state[`r${i}bg`], state[`r${i}fg`]];
+  const hexA = (hex, a) => { const h = hex.replace('#', ''); const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16); return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${Math.max(0, Math.min(1, a)).toFixed(3)})`; };
+  const esc = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const wordOf = k => (k in words ? words[k] : WORDS[k]);
+  const saveUi = () => { try { localStorage.setItem(UI_KEY, JSON.stringify({ kind, dev, screen })); } catch (e) { /* no storage */ } };
+
+  /* ---------- colours to pick from ---------- */
+  const PALETTE = [
+    { name: 'Spotlog today', note: '', colours: [
+      ['#d49500', 'Spotlog orange (accent, buttons, spot dots)'], ['#ff3d8b', 'Spotlog pink (GPS route)'], ['#0081fa', 'Session blue'],
+      ['#4d4d4d', 'Rating flat'], ['#375467', 'Rating meh'], ['#3c79cd', 'Rating good'], ['#50b450', 'Rating great'], ['#198546', 'Rating epic'], ['#34985a', 'Match tag'],
+      ['#ff9a9a', 'Delete links'], ['#6a4444', 'Delete button edge'], ['#c9474f', 'Swipe delete'],
+      ['#1c1c1c', 'Ink (dark text)'], ['#2e2e2e', 'Panel background'], ['#3c3c3c', 'Cards'], ['#4d4d4d', 'Lines'], ['#5a5a5a', 'Outlines'],
+      ['#b0b0b0', 'Quiet text'], ['#d0d0d0', 'Tab text'], ['#e9e8e3', 'Wind direction tile'], ['#dbe6f2', 'Waves tile'], ['#f8f8f8', 'Spotlog white'], ['#ffffff', 'White'],
+    ] },
+    { name: 'Spotlog wind tiles', note: 'The colours behind the wind numbers', colours: [
+      ['#5b6ec2', 'under 2 m/s'], ['#3fa0a8', '2–4 m/s'], ['#4dbb5f', '4–6 m/s'], ['#8fc446', '6–8 m/s'], ['#d4c43a', '8–11 m/s'], ['#e0a63a', '11–14 m/s'], ['#e0873a', '14–17 m/s'], ['#c9474f', '17–22 m/s'], ['#a23fa0', 'over 22 m/s'],
+    ] },
+    { name: 'Windy app', note: 'Picked from your Windy screenshots', colours: [
+      ['#cf8a00', 'Windy orange (timeline time, Forecast for this point)'], ['#930000', 'Windy red (menu and close buttons)'],
+      ['#303030', 'Windy dark'], ['#353535', 'Timeline, next day'], ['#424242', 'Windy panels'], ['#444444', 'Windy bars'], ['#606060', 'Windy pill'], ['#f7f7f7', 'Windy white'],
+    ] },
+    { name: 'Windy wind colours', note: 'From the wind legend, calm to storm', colours: [
+      ['#5865ae', '0 m/s'], ['#3b639c', '2 m/s'], ['#3b759c', '3 m/s'], ['#42889a', '4 m/s'], ['#41837a', '5 m/s'], ['#458861', '7 m/s'], ['#449944', '9 m/s'], ['#539a36', '10 m/s'],
+      ['#728e32', '12 m/s'], ['#97793a', '14 m/s'], ['#946748', '15 m/s'], ['#8d4d52', '17 m/s'], ['#82375a', '19 m/s'], ['#89407c', '20 m/s'], ['#6c4e8e', '24 m/s'], ['#526196', '27 m/s'], ['#507b97', '30 m/s'],
+    ] },
+  ];
+  const recent = [];
+  let trayKey = null;
+  const PAL_ICON = '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="4" cy="4" r="2.2" fill="currentColor"/><circle cx="10" cy="4" r="2.2" fill="currentColor"/><circle cx="4" cy="10" r="2.2" fill="currentColor"/><circle cx="10" cy="10" r="2.2" fill="currentColor"/></svg>';
+  const allItems = () => SPEC.flatMap(g => g.items.map(it => ({ ...it, group: g })));
+  const labelOf = key => { for (const it of allItems()) { if (it.key === key) return it.label; if (it.keys && it.keys.includes(key)) return it.label + (it.keys[0] === key ? ' · fill' : ' · text'); } return key; };
+  function trayHtml(key) {
+    const cur = String(state[key]).toLowerCase();
+    const group = (name, note, list) => `<div class="swg"><span>${name}</span><div class="sws">${list.map(([c, t]) => `<button type="button" class="sw${c.toLowerCase() === cur ? ' cur' : ''}" data-sw="${c}" data-for="${key}" style="background:${c}" title="${c} · ${esc(t)}" aria-label="${esc(t)} ${c}"></button>`).join('')}</div>${note ? `<small>${note}</small>` : ''}</div>`;
+    return `<div class="tray" data-tray="${key}"><div class="tray-h"><span>Pick for <b>${esc(labelOf(key))}</b></span><button type="button" data-close-tray>Close</button></div>
+      ${recent.length ? group('Used just now', '', recent.map(c => [c, 'recent'])) : ''}
+      ${PALETTE.map(g => group(g.name, g.note, g.colours)).join('')}</div>`;
+  }
+  const wrap = document.getElementById('ctlwrap');
+  const controls = document.getElementById('controls');
+  const pickedEl = document.getElementById('picked');
+  function syncInputs(key) {
+    wrap.querySelectorAll(`input[data-k="${key}"]`).forEach(i => { if (i.type === 'color' || i.type === 'text') i.value = state[key]; if (i.type === 'range') i.value = state[key]; });
+    wrap.querySelectorAll(`output[data-o="${key}"]`).forEach(o => (o.textContent = fmt(specOf(key), state[key])));
+    wrap.querySelectorAll(`[data-ctl~="${key}"]`).forEach(c => c.classList.toggle('changed', isChanged(c.dataset.ctl.split(' '))));
+  }
+  const isChanged = keys => keys.some(k => state[k] !== DEFAULTS[k]);
+  function setColour(key, c) {
+    state[key] = c.toLowerCase();
+    syncInputs(key);
+    if (!recent.includes(state[key])) { recent.unshift(state[key]); recent.length = Math.min(recent.length, 10); }
+  }
+  function openTray(key, row) {
+    wrap.querySelectorAll('.tray').forEach(t => t.remove());
+    wrap.querySelectorAll('.pal.on').forEach(b => b.classList.remove('on'));
+    if (trayKey === key || !row) { trayKey = null; return; }
+    trayKey = key;
+    row.insertAdjacentHTML('beforeend', trayHtml(key));
+    const b = row.querySelector(`.pal[data-pal="${key}"]`); if (b) b.classList.add('on');
+  }
+
+  /* ---------- controls ---------- */
+  function colourInput(key) {
+    return `<span class="colour"><input type="color" data-k="${key}" value="${state[key]}" aria-label="${esc(labelOf(key))} colour"><input type="text" data-k="${key}" value="${state[key]}" maxlength="7" spellcheck="false" aria-label="${esc(labelOf(key))} hex"><button type="button" class="pal" data-pal="${key}" title="Spotlog and Windy colours" aria-label="Pick from Spotlog and Windy colours">${PAL_ICON}</button></span>`;
+  }
+  const fmt = (it, v) => (!it ? v : (it.step < 1 && !it.unit ? Number(v).toFixed(2) : v) + (it.unit || ''));
+  const specOf = key => allItems().find(i => i.key === key);
+  function itemHtml(it) {
+    if (it.type === 'h') return `<div class="sub-h">${it.label}</div>`;
+    const keys = it.keys || [it.key];
+    const off = (it.guess && state.guessLinked) || (it.key === 'sessCoreRing' && !state.sessCore) || ((it.key === 'compactRingColor' || it.key === 'compactRingWidth') && !state.compactRing) ? ' off' : '';
+    const ch = isChanged(keys) ? ' changed' : '';
+    const lab = `<label><span>${it.label}</span>${it.hint ? `<small>${it.hint}</small>` : ''}</label>`;
+    const dc = `data-ctl="${keys.join(' ')}"`;
+    if (it.type === 'pair') return `<div class="ctl pr${off}${ch}" ${dc}>${lab}<div class="pair"><span class="pc"><small>Fill</small>${colourInput(it.keys[0])}</span><span class="pc"><small>Text</small>${colourInput(it.keys[1])}</span></div></div>`;
+    if (it.type === 'color') return `<div class="ctl${off}${ch}" ${dc}>${lab}${colourInput(it.key)}</div>`;
+    if (it.type === 'range') return `<div class="ctl${off}${ch}" ${dc}>${lab}<span class="range"><input type="range" data-k="${it.key}" min="${it.min}" max="${it.max}" step="${it.step}" value="${state[it.key]}" aria-label="${esc(it.label)}"><output data-o="${it.key}">${fmt(it, state[it.key])}</output></span></div>`;
+    if (it.type === 'seg') return `<div class="ctl${ch}" ${dc} style="grid-template-columns:1fr">${lab}<div class="seg" role="group">${it.options.map(([v, t]) => `<button type="button" data-k="${it.key}" data-v="${v}" class="${String(state[it.key]) === String(v) ? 'on' : ''}">${t}</button>`).join('')}</div></div>`;
+    if (it.type === 'toggle') return `<div class="ctl${ch}" ${dc}>${lab}<button type="button" class="tog${state[it.key] ? ' on' : ''}" role="switch" aria-checked="${!!state[it.key]}" data-k="${it.key}" aria-label="${esc(it.label)}"><i></i></button></div>`;
+    return '';
+  }
+  const changedIn = g => g.items.filter(it => (it.keys || (it.key ? [it.key] : [])).length && isChanged(it.keys || [it.key])).length;
+  function buildControls() {
+    trayKey = null;
+    if (kind === 'words') { buildWords(); updateTabs(); return; }
+    let openIds = new Set([...controls.querySelectorAll('details[open]')].map(d => d.dataset.id));
+    if (!controls.querySelector('details.grp[data-kind="' + kind + '"]')) openIds = new Set(SPEC.filter(g => g.open).map(g => g.id));
+    const groups = SPEC.filter(g => g.kind === kind);
+    controls.innerHTML = groups.map(g => {
+      const n = changedIn(g);
+      return `<details class="grp" data-kind="${kind}" data-id="${g.id}" data-screen="${g.screen || ''}" ${openIds.has(g.id) ? 'open' : ''}>
+        <summary><span><b>${g.title}</b>${g.note ? `<small>${g.note}</small>` : ''}</span>${n ? `<span class="cnt">${n} changed</span>` : ''}<span class="chev" aria-hidden="true">▾</span></summary>
+        <div class="grp-body">${g.items.map(itemHtml).join('')}</div>
+      </details>`;
+    }).join('') + (kind === 'map' ? '<p class="note">Tip: “Map marks” above the preview draws every map state side by side (zoomed out, selected, the hover box).</p>' : '');
+    updateTabs();
+  }
+  function updateTabs() {
+    document.querySelectorAll('#ktabs button').forEach(b => {
+      const k = b.dataset.kind;
+      b.classList.toggle('on', k === kind);
+      b.setAttribute('aria-selected', k === kind);
+      const n = k === 'words' ? Object.keys(words).length : SPEC.filter(g => g.kind === k).reduce((a, g) => a + changedIn(g), 0);
+      b.innerHTML = b.textContent.replace(/\d+$/, '').trim() + (n ? `<small>${n}</small>` : '');
+    });
+  }
+
+  /* ---------- words ---------- */
+  let wordFilter = '', onlyChanged = false;
+  const holes = s => (s.match(/\{\w+\}/g) || []).filter(h => h !== '{spotlog}' && h !== '{Spotlog}');
+  function phraseHtml([key, , note]) {
+    const v = wordOf(key), changed = key in words;
+    const lost = holes(WORDS[key]).filter(h => !v.includes(h));
+    return `<div class="phrase${changed ? ' changed' : ''}" data-phrase="${key}">
+      <div class="phrase-h"><small>${esc(note || '')}</small>${changed ? `<button type="button" data-wreset="${key}">Back to Spotlog’s</button>` : ''}</div>
+      <textarea id="w-${key}" data-w="${key}" rows="1" spellcheck="true" aria-label="${esc(note || WORDS[key])}">${esc(v)}</textarea>
+      ${changed ? `<div class="was">Spotlog says: ${esc(WORDS[key])}</div>` : ''}
+      ${lost.length ? `<div class="warn">Keep ${lost.join(', ')}: Spotlog fills in ${lost.length > 1 ? 'those' : 'that'} part.</div>` : ''}
+    </div>`;
+  }
+  function buildWords() {
+    const q = wordFilter.trim().toLowerCase();
+    const openIds = new Set([...controls.querySelectorAll('details.grp[data-kind="words"][open]')].map(d => d.dataset.id));
+    const groups = GROUPS.map(g => ({ ...g, items: g.items.filter(([k, d, n]) => (!onlyChanged || k in words) && (!q || [wordOf(k), d, n || ''].join(' ').toLowerCase().includes(q))) })).filter(g => g.items.length);
+    const tools = `<div class="wtools"><input type="search" id="wq" placeholder="Find a phrase…" value="${esc(wordFilter)}" aria-label="Find a phrase"><label for="wonly"><button type="button" class="tog${onlyChanged ? ' on' : ''}" role="switch" aria-checked="${onlyChanged}" id="wonly" aria-label="Only changed"><i></i></button>Only changed</label></div>
+      <p class="note">Spotlog fills in parts in braces like <code>{n}</code> or <code>{time}</code>: keep them. <code>**words**</code> shows bold. <code>{spotlog}</code> is the name with the pixel star (<code>{Spotlog}</code> to start a sentence).</p>`;
+    const list = groups.length ? groups.map(g => {
+      const n = g.items.filter(([k]) => k in words).length;
+      return `<details class="grp" data-kind="words" data-id="${g.id}" data-screen="${WORD_SCREEN[g.id] || ''}" ${openIds.has(g.id) || q ? 'open' : ''}>
+        <summary><span><b>${esc(g.title)}</b>${g.note ? `<small>${esc(g.note)}</small>` : ''}</span>${n ? `<span class="cnt">${n} changed</span>` : ''}<span class="chev" aria-hidden="true">▾</span></summary>
+        <div class="grp-body">${g.items.map(phraseHtml).join('')}</div></details>`;
+    }).join('') : `<div class="empty-note">${onlyChanged && !q ? 'No phrases changed yet.' : 'No phrase has these words.'}</div>`;
+    const hadFocus = document.activeElement && document.activeElement.id === 'wq';
+    controls.innerHTML = tools + list;
+    if (hadFocus) { const i = document.getElementById('wq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
+  }
+  function setWord(key, v) {
+    if (v === WORDS[key]) delete words[key]; else words[key] = v;
+    // refresh only this phrase's notes, so typing keeps its place
+    wrap.querySelectorAll(`[data-phrase="${key}"]`).forEach(p => {
+      const ta = p.querySelector('textarea');
+      const atEnd = ta === document.activeElement ? [ta.selectionStart, ta.selectionEnd] : null;
+      const tmp = document.createElement('div'); tmp.innerHTML = phraseHtml([key, WORDS[key], (p.querySelector('.phrase-h small') || {}).textContent]);
+      const fresh = tmp.firstElementChild; const fta = fresh.querySelector('textarea');
+      fta.value = ta.value; fta.id = ta.id;
+      p.replaceWith(fresh);
+      if (atEnd) { fta.focus(); fta.setSelectionRange(atEnd[0], atEnd[1]); }
+    });
+    updateTabs();
+  }
+
+  /* ---------- events on the controls ---------- */
+  wrap.addEventListener('input', e => {
+    const el = e.target;
+    if (el.dataset.w) { setWord(el.dataset.w, el.value); changed(); return; }
+    if (el.id === 'wq') { wordFilter = el.value; buildWords(); return; }
+    const k = el.dataset.k;
+    if (!k) return;
+    if (el.type === 'color') { state[k] = el.value; syncInputs(k); }
+    else if (el.type === 'text') { const v = el.value.trim().toLowerCase(); if (/^#[0-9a-f]{6}$/.test(v)) { state[k] = v; wrap.querySelectorAll(`input[type=color][data-k="${k}"]`).forEach(c => (c.value = v)); syncInputs(k); } else return; }
+    else if (el.type === 'range') { state[k] = Number(el.value); syncInputs(k); }
+    changed();
+  });
+  wrap.addEventListener('change', e => {
+    const el = e.target;
+    if ((el.type === 'color' || el.type === 'text') && el.dataset.k && /^#[0-9a-f]{6}$/.test(state[el.dataset.k])) {
+      const c = state[el.dataset.k]; if (!recent.includes(c)) { recent.unshift(c); recent.length = Math.min(recent.length, 10); }
+      updateTabs(); refreshCounts();
+    }
+  });
+  wrap.addEventListener('click', e => {
+    const pal = e.target.closest('.pal');
+    if (pal) { openTray(pal.dataset.pal, pal.closest('.ctl')); return; }
+    if (e.target.closest('[data-close-tray]')) { openTray(trayKey, null); return; }
+    if (e.target.closest('[data-unpick]')) { pickedEl.hidden = true; pickedEl.innerHTML = ''; return; }
+    const wr = e.target.closest('[data-wreset]');
+    if (wr) { const k = wr.dataset.wreset; delete words[k]; wrap.querySelectorAll(`textarea[data-w="${k}"]`).forEach(t => (t.value = WORDS[k])); setWord(k, WORDS[k]); changed(); return; }
+    if (e.target.closest('#wonly')) { onlyChanged = !onlyChanged; buildWords(); return; }
+    const sw = e.target.closest('.sw[data-sw]');
+    if (sw) {
+      const key = sw.dataset.for;
+      setColour(key, sw.dataset.sw);
+      sw.closest('.tray').outerHTML = trayHtml(key);
+      changed(); refreshCounts();
+      return;
+    }
+    const b = e.target.closest('button[data-k]');
+    if (!b) return;
+    const k = b.dataset.k;
+    if (b.classList.contains('tog')) state[k] = !state[k];
+    else { const v = b.dataset.v; state[k] = typeof DEFAULTS[k] === 'number' ? Number(v) : v; }
+    changed(true);
+  });
+  // opening a group shows its screen in the preview
+  wrap.addEventListener('toggle', e => {
+    const d = e.target;
+    if (!(d instanceof HTMLDetailsElement) || !d.open || !d.dataset.screen) return;
+    if (d.dataset.screen !== screen) { screen = d.dataset.screen; document.getElementById('screen').value = screen; saveUi(); goto(); }
+  }, true);
+  function refreshCounts() {
+    controls.querySelectorAll('details.grp').forEach(d => {
+      const g = SPEC.find(x => x.id === d.dataset.id && x.kind === d.dataset.kind);
+      if (!g) return;
+      const n = changedIn(g), sum = d.querySelector('summary'); let c = sum.querySelector('.cnt');
+      if (n && !c) { c = document.createElement('span'); c.className = 'cnt'; sum.insertBefore(c, sum.querySelector('.chev')); }
+      if (c) { if (n) c.textContent = `${n} changed`; else c.remove(); }
+    });
+  }
+  document.getElementById('ktabs').addEventListener('click', e => {
+    const b = e.target.closest('button[data-kind]'); if (!b) return;
+    kind = b.dataset.kind; saveUi(); buildControls();
+    if (kind === 'map' && view === 'live' && screen !== 'card' && screen !== 'session') { screen = 'card'; document.getElementById('screen').value = screen; goto(); }
+  });
+
+  /* ---------- the live preview: the real Spotlog in a frame ---------- */
+  const pv = document.getElementById('pv'), device = document.getElementById('device'), frame = document.getElementById('frame');
+  let pvReady = false;
+  const toPreview = msg => { try { pv.contentWindow.postMessage(msg, '*'); } catch (e) { /* not loaded */ } };
+  let sendTimer;
+  const sendDesign = () => { clearTimeout(sendTimer); sendTimer = setTimeout(() => toPreview({ type: 'design', tokens: state, words: { ...WORDS, ...words } }), 40); };
+  const goto = () => toPreview({ type: 'goto', where: screen });
+  const DEV = { phone: { w: 390, h: 800 }, desk: { w: 1180, h: 760 } };
+  function layoutDevice() {
+    const d = DEV[dev];
+    const avail = Math.max(260, frame.clientWidth - 24);
+    const maxH = dev === 'phone' ? Math.max(560, Math.min(d.h, window.innerHeight - 150)) : d.h;
+    const s = Math.min(1, avail / d.w);
+    device.style.width = d.w + 'px'; device.style.height = maxH + 'px';
+    device.style.transform = s < 1 ? `scale(${s})` : '';
+    frame.style.height = Math.round(maxH * s + 20) + 'px';
+    device.classList.toggle('desk', dev === 'desk');
+  }
+  function loadPreview() {
+    pvReady = false;
+    document.getElementById('pvLoading').hidden = false;
+    layoutDevice();
+    pv.src = 'preview.html?' + dev + '-' + Date.now();
+  }
+  window.addEventListener('message', e => {
+    if (e.source !== pv.contentWindow) return;
+    const d = e.data || {};
+    if (d.source !== 'spotlog-preview') return;
+    if (d.type === 'ready') {
+      pvReady = true;
+      document.getElementById('pvLoading').hidden = true;
+      toPreview({ type: 'design', tokens: state, words: { ...WORDS, ...words } });
+      toPreview({ type: 'pick', on: picking });
+      setTimeout(goto, 60);
+    }
+    if (d.type === 'picked') showPicked(d);
+  });
+  document.getElementById('devSeg').addEventListener('click', e => { const b = e.target.closest('button[data-dev]'); if (!b || b.dataset.dev === dev) return; dev = b.dataset.dev; saveUi(); paintStage(); loadPreview(); });
+  document.getElementById('viewSeg').addEventListener('click', e => { const b = e.target.closest('button[data-view]'); if (!b) return; view = b.dataset.view; paintStage(); if (view === 'sheet') renderMap(); });
+  document.getElementById('screen').addEventListener('change', e => { screen = e.target.value; saveUi(); goto(); });
+  document.getElementById('pickTog').addEventListener('click', e => {
+    picking = !picking; const t = e.currentTarget; t.classList.toggle('on', picking); t.setAttribute('aria-checked', picking);
+    toPreview({ type: 'pick', on: picking }); paintStage();
+  });
+  window.addEventListener('resize', () => { layoutDevice(); if (view === 'sheet') renderMap(); });
+  function paintStage() {
+    document.querySelectorAll('#devSeg button').forEach(b => b.classList.toggle('on', b.dataset.dev === dev));
+    document.querySelectorAll('#viewSeg button').forEach(b => b.classList.toggle('on', b.dataset.view === view));
+    const live = view === 'live';
+    frame.hidden = !live; document.getElementById('sheet').hidden = live;
+    ['devSeg', 'screen'].forEach(id => (document.getElementById(id).hidden = !live));
+    document.querySelector('label[for="screen"]').hidden = !live;
+    document.querySelector('.pickt').hidden = !live;
+    document.getElementById('stageNote').textContent = !live ? 'A drawing of every map state at once. Click a mark to jump to its setting.'
+      : picking ? 'Click anything in Spotlog to edit it. Switch off “Click to edit” to use Spotlog normally: open pages, drag the ruler, tap the map.'
+      : 'Spotlog works normally now: open pages, drag the ruler, tap the map. Switch “Click to edit” back on to pick a part.';
+  }
+
+  /* ---------- what you clicked ---------- */
+  const norm = s => String(s).replace(/\*\*/g, '').replace(/\{spotlog\}/gi, 'spotlog').replace(/\s+/g, ' ').trim();
+  function phraseKeysFor(texts) {
+    const found = [];
+    for (const t of texts) {
+      const tn = norm(t).toLowerCase();
+      for (const k of Object.keys(WORDS)) {
+        const v = norm(wordOf(k));
+        if (!v) continue;
+        const re = new RegExp('^' + v.split(/\{\w+\}/).map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.+?') + '$', 'i');
+        if (re.test(tn) && !found.includes(k)) found.push(k);
+      }
+      if (found.length) break;
+    }
+    return found.slice(0, 4);
+  }
+  function showPicked(d) {
+    const items = [], seen = new Set();
+    for (const k of d.keys) {
+      const grp = k[0] === '@' ? SPEC.find(g => g.id === ({ '@ratings': 'ratings', '@guesses': 'guesses', '@wind': 'wind' })[k]) : null;
+      const list = grp ? grp.items : [allItems().find(i => i.key === k || (i.keys && i.keys.includes(k)))].filter(Boolean);
+      for (const it of list) { const id = it.key || (it.keys && it.keys.join()) || it.label; if (!seen.has(id) && it.type !== 'h') { seen.add(id); items.push(it); } }
+    }
+    const phrases = phraseKeysFor(d.texts || []);
+    const groupOf = k => (GROUPS.find(g => g.items.some(i => i[0] === k)) || {}).title || '';
+    pickedEl.innerHTML = `<div class="picked">
+      <div class="picked-h"><span>You clicked</span><b>${esc(d.name)}</b><button type="button" data-unpick aria-label="Close">×</button></div>
+      ${phrases.map(k => { const g = GROUPS.find(x => x.items.some(i => i[0] === k)); const it = g.items.find(i => i[0] === k); return phraseHtml([k, it[1], (it[2] ? it[2] + ' · ' : '') + groupOf(k)]); }).join('')}
+      ${items.map(itemHtml).join('')}
+    </div>`;
+    pickedEl.hidden = false;
+    pickedEl.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  }
+
+  /* ---------- the map sheet: every map state drawn at once ---------- */
+  const BGS = {
+    wind: { label: 'Wind', css: 'radial-gradient(ellipse 45% 35% at 70% 70%, #d4c43a 0%, rgba(212,196,58,0) 100%), radial-gradient(ellipse 40% 30% at 20% 25%, #4dbb5f 0%, rgba(77,187,95,0) 100%), linear-gradient(160deg, #5b6ec2 0%, #3fa0a8 35%, #4dbb5f 65%, #3fa0a8 100%)' },
+    strong: { label: 'Strong wind', css: 'radial-gradient(ellipse 50% 40% at 65% 60%, #c9474f 0%, rgba(201,71,79,0) 100%), radial-gradient(ellipse 40% 40% at 30% 30%, #e0a63a 0%, rgba(224,166,58,0) 100%), linear-gradient(150deg, #a23fa0 0%, #e0873a 40%, #d4c43a 70%, #8fc446 100%)' },
+    waves: { label: 'Waves', css: 'radial-gradient(ellipse 45% 35% at 40% 60%, #6f4fb8 0%, rgba(111,79,184,0) 100%), linear-gradient(165deg, #23407c 0%, #3466b0 40%, #4a8fd0 70%, #2f5ea6 100%)' },
+    grey: { label: 'Grey map', css: 'linear-gradient(160deg, #cfd2d4 0%, #bfc4c8 50%, #d7d9da 100%)' },
+    dark: { label: 'Dark map', css: 'linear-gradient(160deg, #2c3338 0%, #20262a 60%, #2a3034 100%)' },
+  };
+  const legendCss = 'linear-gradient(90deg, #5b6ec2, #3fa0a8 12%, #4dbb5f 22%, #8fc446 34%, #d4c43a 46%, #e0a63a 58%, #e0873a 68%, #c9474f 82%, #a23fa0)';
+  const bgSeg = document.getElementById('bgSeg');
+  bgSeg.innerHTML = Object.entries(BGS).map(([k, v]) => `<button type="button" data-bg="${k}">${v.label}</button>`).join('');
+  bgSeg.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; bg = b.dataset.bg; renderMap(); });
+  const zoomSeg = document.getElementById('zoomSeg');
+  zoomSeg.innerHTML = '<button type="button" data-z="close">Close</button><button type="button" data-z="out">Zoomed out</button>';
+  zoomSeg.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; zoom = b.dataset.z; renderMap(); });
+  let openGood = true;
+  const openSeg = document.getElementById('openSeg');
+  openSeg.innerHTML = '<button type="button" data-o="1">Selected: looks good</button><button type="button" data-o="0">Selected: no rating yet</button>';
+  openSeg.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; openGood = b.dataset.o === '1'; renderMap(); });
+  const SPOTS = [
+    { name: 'Bolonia', x: 22, y: 34, guess: 2.3 },
+    { name: 'Valdevaqueros', x: 44, y: 47, guess: 3.8 },
+    { name: 'Los Lances', x: 66, y: 69, guess: 3.0, active: true, openSpot: true },
+    { name: 'Balneario', x: 79, y: 82, guess: 4.5 },
+  ];
+  const SESS = [
+    { x: 44, y: 47, n: 7, name: 'Valdevaqueros' }, { x: 20, y: 70, n: 3, name: 'Punta Paloma' }, { x: 57, y: 27, n: 1, name: 'Dropped pin' },
+    { x: 66, y: 69, n: 11, name: 'Los Lances' }, { x: 70, y: 64, n: 2, name: 'Los Lances' }, { x: 22, y: 34, n: 1, name: 'Bolonia' },
+  ];
+  const TIP_ROWS = [[5, 'Wed, Sep 30'], [4, 'Sun, Sep 27'], [2, 'Tue, Sep 22'], [3, 'Wed, Sep 16'], [5, 'Sat, Sep 12']];
+  const OUT_SPOTS = [{ x: 30, y: 52, guess: 3.8, active: true, openSpot: true }, { x: 33, y: 55, guess: 2.0 }, { x: 36, y: 57, guess: null }, { x: 64, y: 40, guess: 4.4 }, { x: 72, y: 30, guess: null }];
+  const OUT_SESS = [{ x: 30, y: 52, n: 14 }, { x: 31.5, y: 53.5, n: 6 }, { x: 33, y: 55, n: 4 }, { x: 36, y: 57, n: 9 }, { x: 38, y: 60, n: 1 }, { x: 64, y: 40, n: 5 }, { x: 72, y: 30, n: 2 }, { x: 52, y: 70, n: 1 }, { x: 49, y: 73, n: 1 }];
+  const ROUTE = [[40, 74], [44, 68], [48, 74], [52, 67], [56, 73], [54, 81], [50, 86], [46, 80], [42, 87], [39, 82]];
+  const guessLevel = r => r >= 4.2 ? 5 : r >= 3.5 ? 4 : r >= 2.7 ? 3 : r >= 1.9 ? 2 : 1;
+  function pinHtml(s, compact) {
+    const lvl = s.guess == null ? 0 : guessLevel(s.guess);
+    const good = lvl >= state.lightFrom;
+    const [gb, gf] = good ? guessColours(lvl) : [];
+    const gk = part => `${state.guessLinked ? 'r' : 'g'}${lvl}${part}`;
+    const word = good && state.goodWord ? `<em>${esc(wordOf('rate' + lvl))}</em>` : '';
+    const what = good ? wordOf('guess' + lvl) : 'no good guess';
+    if (compact) {
+      const c = good ? gb : state.compactDot;
+      const ring = state.compactRing ? `box-shadow:0 0 0 ${state.compactRingWidth}px ${state.compactRingColor};` : '';
+      return `<div class="cdot" style="width:${state.compactSize}px;height:${state.compactSize}px;background:${c};${ring}" data-edit="${good ? gk('bg') : 'compactDot'}" title="${esc(what)}${s.active ? ', selected' : ''} · click to edit"></div>`;
+    }
+    if (s.active) return `<div class="pin active" data-edit="activeBg" title="${esc(s.name)}, selected: ${esc(what)} · click to edit"><i style="background:${good ? gb : state.activeDot}" data-edit="${good ? gk('bg') : 'activeDot'}"></i>${esc(s.name)}${word}</div>`;
+    let style = '', dot = state.pinDot, dotKey = 'pinDot', pinKey = 'pinBg';
+    if (good && state.goodStyle === 'pin') { style = `background:${gb};color:${gf};`; dot = gf; dotKey = gk('fg'); pinKey = gk('bg'); }
+    if (good && state.goodStyle === 'dot') { dot = gb; dotKey = gk('bg'); }
+    if (good && state.goodStyle === 'outline') { style = `box-shadow:0 0 0 2px ${gb}, 0 2px 8px rgba(0,0,0,.35);`; dot = gb; dotKey = gk('bg'); }
+    return `<div class="pin" style="${style}" data-edit="${pinKey}" title="${esc(s.name)}: ${esc(what)} · click to edit"><i style="background:${dot}" data-edit="${dotKey}"></i>${esc(s.name)}${word}</div>`;
+  }
+  function heatHtml(n) {
+    if (state.sessStyle === 'off') return '';
+    const size = state.sessSize + Math.min(n, 15) * state.sessGrow;
+    const a = Math.min(0.95, state.sessAlpha + n * state.sessAlphaGrow);
+    const c = state.sessColor;
+    let css = `width:${size}px;height:${size}px;`;
+    if (state.sessStyle === 'glow') css += `background:radial-gradient(circle, ${hexA(c, a)} 0%, ${hexA(c, a * 0.6)} 35%, ${hexA(c, 0)} 70%);`;
+    if (state.sessStyle === 'dot') { const s2 = Math.max(6, size * 0.45); css = `width:${s2}px;height:${s2}px;background:${hexA(c, a)};`; }
+    if (state.sessStyle === 'ring') { const s2 = Math.max(8, size * 0.6); css = `width:${s2}px;height:${s2}px;border:2.5px solid ${hexA(c, a)};box-sizing:border-box;`; }
+    return `<div class="heat${state.sessCore && state.sessStyle !== 'dot' ? ' core' : ''}" style="${css}" data-edit="sessColor" title="Session mark · click to edit"></div>`;
+  }
+  function tipHtml(name, n) {
+    const rows = TIP_ROWS.slice(0, Math.min(5, n)).map(([r, d]) => `<span><i style="background:${rateColours(r)[0]}"></i>${d} · ${esc(wordOf('rate' + r))}</span>`).join('');
+    return `<div class="tip" data-edit="tipBg" title="Hover box · click to edit"><b>${esc(name)}${n > 1 ? ` · ${esc(wordOf('tipSessions').replace('{n}', n))}` : ''}</b>${rows}${n > 5 ? `<small>${esc(wordOf('tipMore').replace('{n}', n - 5))}</small>` : ''}</div>`;
+  }
+  function popupHtml() {
+    const [gb, gf] = guessColours(4);
+    const tile = (l, v, b) => `<div class="t" style="background:${b}"><span>${esc(l)}</span><b>${v}</b></div>`;
+    return `<div class="popup" data-edit="popupBg" title="Card on the map · click to edit"><div><b>Valdevaqueros</b><br><small>${esc(wordOf('cardNow'))}</small></div><div class="tiles">${tile(wordOf('fcWind'), '9', state.wind5)}${tile(wordOf('fcGusts'), '13', state.wind6)}${tile(wordOf('fcFrom'), '←', state.dirTile)}${tile(wordOf('fcWaves'), '0.8', state.wavesTile)}</div><small>19 °C</small><span class="badge" style="background:${gb};color:${gf}">${esc(wordOf('guess4'))}</span><div class="acts"><span data-edit="primaryBg">${esc(wordOf('cardSave'))}</span><span data-edit="popupBtnBg">${esc(wordOf('cardLog'))}</span><span data-edit="popupBtnBg">${esc(wordOf('cardDetails'))}</span></div></div>`;
+  }
+  function routeSvg(W, H) {
+    const pts = ROUTE.map(([x, y]) => `${(x / 100) * W},${(y / 100) * H}`).join(' ');
+    return `<svg class="coast" viewBox="0 0 ${W} ${H}" aria-hidden="true" style="z-index:1">
+      ${state.casingWidth > 0 ? `<polyline points="${pts}" fill="none" stroke="${state.casingColor}" stroke-opacity="${state.casingAlpha}" stroke-width="${state.casingWidth}" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+      <polyline points="${pts}" fill="none" stroke="${state.routeColor}" stroke-width="${state.routeWidth}" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+  const at = (x, y, html, z = 2) => `<div class="mk" style="left:${x}%;top:${y}%;z-index:${z}">${html}</div>`;
+  function editKey(key) {
+    const g = SPEC.find(gr => gr.items.some(it => it.key === key || (it.keys && it.keys.includes(key))));
+    if (!g) return;
+    if (kind !== g.kind) { kind = g.kind; buildControls(); }
+    const det = controls.querySelector(`details[data-id="${g.id}"]`);
+    if (det && !det.open) det.open = true;
+    const btn = controls.querySelector(`.pal[data-pal="${key}"]`);
+    if (!btn) return;
+    if (trayKey !== key) openTray(key, btn.closest('.ctl'));
+    btn.closest('.ctl').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+  }
+  document.getElementById('map').addEventListener('click', e => { const t = e.target.closest('[data-edit]'); if (t) editKey(t.dataset.edit); });
+  function renderMap() {
+    if (view !== 'sheet') return;
+    const m = document.getElementById('map');
+    m.style.background = BGS[bg].css;
+    document.getElementById('legend').style.background = legendCss;
+    [...bgSeg.children].forEach(b => b.classList.toggle('on', b.dataset.bg === bg));
+    [...zoomSeg.children].forEach(b => b.classList.toggle('on', b.dataset.z === zoom));
+    [...openSeg.children].forEach(b => b.classList.toggle('on', (b.dataset.o === '1') === openGood));
+    const withOpen = s => (s.openSpot ? { ...s, guess: openGood ? (s.guess ?? 3.8) : null } : s);
+    const W = m.clientWidth || 600, H = m.clientHeight || 480;
+    ['pinBg', 'pinText', 'pinDot', 'activeBg', 'activeText', 'activeDot', 'sessColor', 'sessCoreRing', 'tipBg', 'tipText', 'routeLabel', 'popupBg', 'popupText', 'popupSub', 'popupBtnBg', 'popupBtnText', 'primaryBg', 'primaryText', 'windText']
+      .forEach(k => m.style.setProperty('--' + k, state[k]));
+    const coast = `<svg class="coast" viewBox="0 0 1000 800" preserveAspectRatio="none" aria-hidden="true"><path d="M0 130 C120 170 220 260 300 330 C360 380 420 420 480 450 C540 480 600 520 640 560 C700 540 760 500 820 480 L840 520 L860 470 C910 420 960 400 1000 390" fill="none" stroke="#141414" stroke-opacity=".5" stroke-width="1.3"/><path d="M380 800 C470 710 560 680 650 672 C720 666 800 680 860 712 C910 705 960 690 1000 700" fill="none" stroke="#141414" stroke-opacity=".5" stroke-width="1.3"/></svg>`;
+    let html = coast;
+    if (zoom === 'close') {
+      html += at(30, 22, '<span class="place">Zahara</span>', 1) + at(80, 60, '<span class="place">Tarifa</span>', 1);
+      SESS.forEach(s => { html += at(s.x, s.y, heatHtml(s.n), 1); });
+      html += routeSvg(W, H);
+      const f = ROUTE[0], l = ROUTE[ROUTE.length - 1], far = ROUTE[8];
+      html += at(f[0], f[1], `<div class="rdot" style="width:12px;height:12px;background:${state.startFill};border:2.5px solid ${state.startBorder}" data-edit="startFill"></div>`, 2);
+      html += at(l[0], l[1], `<div class="rdot" style="width:10px;height:10px;background:${state.endFill};border:2.5px solid ${state.endBorder}" data-edit="endFill"></div>`, 2);
+      html += at(far[0], far[1], `<div class="rlabel" data-edit="routeLabel">21.8 km · 0:48 h</div>`, 2);
+      SPOTS.forEach(s => { html += at(s.x, s.y, pinHtml(withOpen(s), false), 3); });
+      html += at(SESS[1].x, SESS[1].y, tipHtml('Punta Paloma', SESS[1].n), 5);
+      html += at(80, 47, popupHtml(), 6);
+      document.getElementById('mapnote').textContent = 'Close up: a GPS route, your spots (Los Lances is selected; switch above whether it looks good), session marks with one hover box, and the card from “Show on map”.';
+    } else {
+      html += at(28, 40, '<span class="place">Cádiz</span>', 1) + at(70, 22, '<span class="place">Málaga</span>', 1) + at(46, 82, '<span class="place">Tanger</span>', 1);
+      OUT_SESS.forEach(s => { html += at(s.x, s.y, heatHtml(s.n), 1); });
+      OUT_SPOTS.forEach(s => { html += at(s.x, s.y, pinHtml(withOpen(s), true), 3); });
+      document.getElementById('mapnote').textContent = `Zoomed out (below Windy zoom ${state.compactBelow}): pins become dots and session marks overlap into a map of everywhere you've been.`;
+    }
+    m.innerHTML = html;
+  }
+  const STAR = ['...#...', '...#...', '..###..', '#######', '..###..', '...#...', '...#...'];
+  function starDots() { let s = ''; STAR.forEach((r, y) => [...r].forEach((c, x) => { if (c === '#') s += `<circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.42" fill="currentColor"/>`; })); return s; }
+
+  /* ---------- save / load ---------- */
+  const statusEl = document.getElementById('status');
+  const timeOf = t => new Date(t).toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+  const dirtyNow = () => saved ? !(same(state, saved) && same(words, savedWords)) : !(same(state, DEFAULTS) && !Object.keys(words).length);
+  function updateStatus(msg, cls) {
+    const dirty = dirtyNow();
+    document.getElementById('revert').disabled = !dirty;
+    statusEl.className = 'status' + (cls ? ' ' + cls : dirty ? ' dirty' : '');
+    if (msg) { statusEl.textContent = msg; return; }
+    const n = Object.keys(words).length, w = n ? ` ${n} phrase${n === 1 ? '' : 's'} reworded.` : '';
+    if (!db) statusEl.textContent = dirty ? 'Changes not saved. Saving needs the claude.ai viewer; use “Copy settings as text” below instead.' : 'Showing Spotlog’s look and words today.';
+    else if (dirty) statusEl.textContent = (saved ? 'You have changes that aren’t saved yet.' : 'Showing your changes. Nothing saved yet.') + w;
+    else statusEl.textContent = saved ? `Saved ${timeOf(savedAt)}. Tell Claude “apply my style lab design”.` + w : 'Showing Spotlog’s look and words today. Nothing saved yet.';
+  }
+  let draftTimer;
+  function changed(rebuild) {
+    if (rebuild) { buildControls(); if (!pickedEl.hidden) pickedEl.querySelectorAll('.ctl').forEach(c => { const tmp = document.createElement('div'); const it = allItems().find(i => (i.keys || [i.key]).join(' ') === c.dataset.ctl); if (it) { tmp.innerHTML = itemHtml(it); c.replaceWith(tmp.firstElementChild); } }); }
+    sendDesign(); renderMap(); updateStatus();
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(() => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ tokens: state, words })); } catch (e) { /* no storage */ } updateTabs(); refreshCounts(); }, 300);
+  }
+  function reloadAll() { buildControls(); pickedEl.hidden = true; pickedEl.innerHTML = ''; sendDesign(); renderMap(); updateStatus(); }
+  document.getElementById('save').addEventListener('click', async () => {
+    if (!db) { updateStatus('Saving isn’t available here. Use “Copy settings as text” and paste it to Claude.', 'dirty'); return; }
+    const btn = document.getElementById('save');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      const at = Date.now();
+      await db.doc('design/current').set({ tokens: clone(state), words: clone(words), savedAt: at, app: 'spotlog', version: 2 });
+      saved = clone(state); savedWords = clone(words); savedAt = at;
+      updateStatus(`Saved ${timeOf(at)}. Tell Claude “apply my style lab design”.`, 'ok');
+    } catch (e) {
+      updateStatus(e && e.code === 'not_granted' ? 'You can look but not save on this copy. Ask the owner to save, or copy the settings as text.' : 'Couldn’t save just now. Try again in a moment.', 'dirty');
+    } finally { btn.disabled = false; btn.textContent = 'Save design'; }
+  });
+  document.getElementById('revert').addEventListener('click', () => { state = clone(saved || DEFAULTS); words = clone(saved ? savedWords : {}); reloadAll(); });
+  document.getElementById('reset').addEventListener('click', () => { state = clone(DEFAULTS); words = {}; reloadAll(); updateStatus('Back to Spotlog’s look and words today. Press Save design to keep it.'); });
+  document.getElementById('copy').addEventListener('click', async () => {
+    const text = JSON.stringify({ spotlogDesign: { tokens: state, words } }, null, 1);
+    const box = document.getElementById('copyBox');
+    try { await navigator.clipboard.writeText(text); updateStatus('Copied. Paste it to Claude in the chat.', 'ok'); }
+    catch (e) { box.hidden = false; box.value = text; box.focus(); box.select(); updateStatus('Select the text below and copy it.', 'dirty'); }
+  });
+
+  /* ---------- start ---------- */
+  document.getElementById('brandStar').innerHTML = starDots();
+  document.getElementById('brandStar').style.color = DEFAULTS.accent;
+  document.getElementById('screen').value = screen;
+  buildControls(); paintStage(); layoutDevice(); updateStatus();
+  pv.src = 'preview.html?' + dev;
+  (async () => {
+    try { db = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch (e) { db = null; }
+    if (!db) { updateStatus(); return; }
+    try {
+      const snap = await db.doc('design/current').get();
+      if (snap.exists) {
+        const d = snap.data() || {};
+        saved = migrate(clean(d.tokens)); savedWords = cleanWords(d.words); savedAt = Number(d.savedAt) || 0;
+        let draft = null;
+        try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) { /* no storage */ }
+        if (!draft) { state = clone(saved); words = clone(savedWords); reloadAll(); }
+      }
+    } catch (e) { /* store not reachable: keep working locally */ }
+    updateStatus();
+  })();
+})();
+</script>
