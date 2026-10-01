@@ -34,6 +34,7 @@
 
 <script lang="ts">
     import { onDestroy } from 'svelte';
+    import { haptic } from '../lib/haptic';
 
     export let value: number | null = null;
     export let min = 0;
@@ -76,13 +77,7 @@
     function fromPos(p: number) {
         return +(min + Math.max(0, Math.min(count - 1, Math.round(p))) * step).toFixed(3);
     }
-    function tickHaptic() {
-        try {
-            navigator.vibrate?.(4);
-        } catch {
-            /* no haptics here */
-        }
-    }
+    const tickHaptic = haptic;
     function set(v: number, animate = true) {
         const nv = fromPos(toPos(v));
         if (animate) settleAnim();
@@ -173,7 +168,7 @@
 </script>
 
 <style lang="less">
-    .felt { position: relative; height: 72px; overflow: hidden; touch-action: pan-y; cursor: grab; outline: none; user-select: none; -webkit-user-select: none;
+    .felt { position: relative; height: 78px; overflow: hidden; touch-action: pan-y; cursor: grab; outline: none; user-select: none; -webkit-user-select: none;
         mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
         -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); }
     .felt.dragging { cursor: grabbing; }
@@ -187,6 +182,7 @@
     .lb.fc { color: #f8f8f8; font-weight: 600; }
     .marker { position: absolute; left: 50%; bottom: 20px; width: 4px; height: 42px; margin-left: -2px; border-radius: 2px; background: #d49500; pointer-events: none; }
     .marker.unset { opacity: 0.45; }
+    /* the knob's head sits fully inside the ruler (it used to be clipped at the top) */
     .knob { position: absolute; left: 50%; top: -8px; width: 14px; height: 14px; margin-left: -7px; border-radius: 7px; background: #d49500; box-shadow: 0 0 0 4px rgba(212, 149, 0, 0.25); }
     @media (prefers-reduced-motion: reduce) { .strip.anim { transition: none; } }
 </style>

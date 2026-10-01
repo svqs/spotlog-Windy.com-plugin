@@ -233,10 +233,11 @@ with sync_playwright() as p:
     assert pg.locator('.tiles.list').count() == 0
     ok('− shows the spots as a list, + as tiles')
 
-    # --- home: Save forecast at the map centre -> snapshot view, link to spot, delete
+    # --- home: Save forecast at your current location -> snapshot view, link to spot, delete
     pg.click('.act:has-text("Save forecast")')
-    pg.wait_for_selector('text=Map centre')
-    pg.click('.opt:has-text("Map centre")')
+    pg.wait_for_selector('text=Your current location')
+    assert pg.locator('text=Map centre').count() == 0
+    pg.click('.opt:has-text("Your current location")')
     pg.wait_for_selector('.snap:has-text("Not saved yet")', timeout=8000)
     shot('09-snapshot-view')
     # the map is centred on the spot after "Show on map", so the forecast links itself; otherwise link it by hand
@@ -475,6 +476,69 @@ with sync_playwright() as p:
     pg.click('.mock-popup .sl-acts button:has-text("Log session")')
     pg.wait_for_selector('.mwrap.open .felt', timeout=5000)
     ok('phone: spot card on the map, next spot, Log session opens in the panel')
+    # Log session on a phone: date, start and end on one line; the header stays put; nothing scrolls sideways
+    pg.wait_for_timeout(300)
+    tops = pg.evaluate("[...document.querySelectorAll('.mwrap.open .when.one > input, .mwrap.open .when.one .field-btn')].map(e => Math.round(e.getBoundingClientRect().top))")
+    assert len(tops) == 3 and max(tops) - min(tops) <= 2, tops
+    assert pg.locator('.mgrab').count() == 0, 'no drag line'
+    # the felt knob sits fully inside the ruler
+    kn = pg.evaluate("(() => { const k = document.querySelector('.mwrap.open .felt .knob').getBoundingClientRect(); const f = document.querySelector('.mwrap.open .felt').getBoundingClientRect(); return [k.top - 4 - f.top, k.height]; })()")
+    assert kn[0] >= 0, kn
+    pg.click('.mwrap.open .times .tw:last-child .field-btn')
+    pg.wait_for_selector('.mwrap.open .tw-pop.end')
+    pop = pg.evaluate("(() => { const p = document.querySelector('.mwrap.open .tw-pop').getBoundingClientRect(); const w = document.querySelector('.mwrap.open').getBoundingClientRect(); return [p.left - w.left, w.right - p.right]; })()")
+    assert pop[0] >= 0 and pop[1] >= 0, pop
+    shot('14d-phone-log-when')
+    pg.click('.mwrap.open .tw-pop .done')
+    sx = pg.evaluate("(() => { const b = document.querySelector('.mwrap.open .body'); return b.scrollWidth - b.clientWidth; })()")
+    assert sx <= 0, f'the panel can scroll sideways by {sx}px'
+    pg.evaluate("document.querySelector('.mwrap.open .body').scrollTop = 600")
+    pg.wait_for_timeout(100)
+    tb = pg.evaluate("(() => { const t = document.querySelector('.mwrap.open .topbar').getBoundingClientRect(); const w = document.querySelector('.mwrap.open').getBoundingClientRect(); return t.top - w.top; })()")
+    assert abs(tb) < 2, tb
+    shot('14e-phone-log-scrolled')
+    # typing in the notes: the field moves up in the panel (above where the keyboard comes)
+    pg.locator('.mwrap.open textarea').first.focus()
+    pg.wait_for_timeout(200)
+    ty = pg.evaluate("(() => { const t = document.querySelector('.mwrap.open textarea').getBoundingClientRect(); const w = document.querySelector('.mwrap.open .body').getBoundingClientRect(); return t.top - w.top; })()")
+    assert 0 <= ty < 200, ty
+    assert pg.locator('.mwrap.kb').count() == 1
+    pg.evaluate("document.activeElement.blur()")
+    ok('phone log: date/start/end on one line, header stays, no sideways scroll, knob not cut, notes lift above the keyboard')
+    # the ✕ in the header closes the panel
+    pg.click('.mwrap.open .topbar .mclose')
+    pg.wait_for_timeout(250)
+    assert pg.locator('.mwrap.open').count() == 0
+    # units from the bar: their own page, with back and ✕
+    pg.click('.mbar .units')
+    pg.wait_for_selector('.mwrap.open.units .topbar.upage:has-text("Units and data")')
+    assert pg.locator('.mwrap.open .home-head:visible, .mwrap.open .tiles:visible').count() == 0
+    shot('14f-phone-units')
+    pg.click('.mwrap.open .topbar.upage .round')
+    pg.wait_for_timeout(250)
+    assert pg.locator('.mwrap.open').count() == 0, 'back from units opened from the bar closes the panel'
+    pg.click('.mtabs button:has-text("Spots")')
+    pg.wait_for_selector('.mwrap.open .topbar:has-text("Your spots")')
+    pg.click('.mwrap.open .topbar .units')
+    pg.wait_for_selector('.mwrap.open.units')
+    pg.click('.mwrap.open .topbar.upage .round')
+    pg.wait_for_selector('.mwrap.open:not(.units) .tile')
+    gap = pg.evaluate("(() => { const b = document.querySelector('.mtabs button .cnt'); return b.getBoundingClientRect().left - b.previousSibling?.parentElement.getBoundingClientRect().left; })()")
+    pg.click('.mwrap.open .topbar .mclose')
+    pg.wait_for_timeout(250)
+    ok('phone: units open as their own page (back + ✕), tabs have a ✕ in the header')
+    # spot card: ✕ closes it, switching spots keeps the zoom
+    pg.locator('.spotlog-pin').first.click()
+    pg.wait_for_selector('.mock-popup .sl-x', timeout=5000)
+    z0 = pg.evaluate("W.map.map.getZoom()")
+    pg.click('.mock-popup .sl-nav button[data-act="next"]')
+    pg.wait_for_timeout(400)
+    z1 = pg.evaluate("W.map.map.getZoom()")
+    assert z1 == z0 or z0 < 7, (z0, z1)
+    pg.click('.mock-popup .sl-x')
+    pg.wait_for_timeout(300)
+    assert pg.locator('.mock-popup').count() == 0, 'card closes with ✕'
+    ok('phone: the spot card keeps your zoom from spot to spot and closes with ✕')
     # a phone that cuts off anything above Windy's pane: Spotlog falls back to the classic panel under the timeline
     pg.goto(URL.replace('index.html', 'index.html?m'))
     pg.wait_for_selector('#pane .mbar')

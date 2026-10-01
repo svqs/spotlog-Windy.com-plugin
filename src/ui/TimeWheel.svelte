@@ -1,19 +1,19 @@
-<div class="tw" bind:this={ rootEl }>
+<div class="tw" bind:this={ rootEl } bind:clientWidth={ fw } style="--fw: { fw }px">
     <button class="field-btn" type="button" aria-expanded={ open } on:click={ toggle }>
         { value ? fmtClock(value) : placeholder }
     </button>
     {#if open}
-        <div class="tw-pop" class:below role="dialog" aria-label="Choose time">
+        <div class="tw-pop" class:below class:end={ align === 'end' } role="dialog" aria-label="Choose time">
             <div class="wheels" class:three={ h12 }>
                 <div class="band"></div>
-                <div class="col" bind:this={ hEl } on:scroll={ () => settle('h') } aria-label="Hour">
+                <div class="col" bind:this={ hEl } on:scroll={ () => scrolled('h') } aria-label="Hour">
                     {#each hours as h, i}<button type="button" class="it" class:sel={ i === hi } on:click={ () => jump('h', i) }>{ h12 ? h : String(h).padStart(2, '0') }</button>{/each}
                 </div>
-                <div class="col" bind:this={ mEl } on:scroll={ () => settle('m') } aria-label="Minutes">
+                <div class="col" bind:this={ mEl } on:scroll={ () => scrolled('m') } aria-label="Minutes">
                     {#each minutes as m, i}<button type="button" class="it" class:sel={ i === mi } on:click={ () => jump('m', i) }>{ String(m).padStart(2, '0') }</button>{/each}
                 </div>
                 {#if h12}
-                    <div class="col" bind:this={ aEl } on:scroll={ () => settle('a') } aria-label="AM or PM">
+                    <div class="col" bind:this={ aEl } on:scroll={ () => scrolled('a') } aria-label="AM or PM">
                         {#each ['AM', 'PM'] as a, i}<button type="button" class="it" class:sel={ i === ai } on:click={ () => jump('a', i) }>{ a }</button>{/each}
                     </div>
                 {/if}
@@ -29,9 +29,13 @@
 <script lang="ts">
     import { tick, onDestroy } from 'svelte';
     import { uses12h, fmtClock } from '../lib/units';
+    import { haptic } from '../lib/haptic';
 
     export let value = '';
     export let placeholder = 'Set time';
+    /** where the picker sits: centred over the field, or lined up with its right edge (last field in a row) */
+    export let align: 'center' | 'end' = 'center';
+    let fw = 0;
 
     const ITEM = 34;
     let rootEl: HTMLDivElement;
@@ -101,6 +105,17 @@
         mEl?.scrollTo({ top: mi * ITEM });
         aEl?.scrollTo({ top: ai * ITEM });
     }
+    /** while the wheel turns: the number under the band lights up, with a tick at each step */
+    function scrolled(col: 'h' | 'm' | 'a') {
+        const el = col === 'h' ? hEl : col === 'm' ? mEl : aEl;
+        if (el) {
+            const i = Math.round(el.scrollTop / ITEM);
+            if (col === 'h' && i !== hi && i < hours.length) { hi = i; haptic(); }
+            if (col === 'm' && i !== mi && i < minutes.length) { mi = i; haptic(); }
+            if (col === 'a' && i !== ai && i < 2) { ai = i; haptic(); }
+        }
+        settle(col);
+    }
     function settle(col: 'h' | 'm' | 'a') {
         clearTimeout(timers[col]);
         timers[col] = setTimeout(() => {
@@ -133,6 +148,9 @@
     .tw-pop.below { bottom: auto; top: calc(100% + 10px); }
     .tw-pop.below::after { bottom: auto; top: -7px; transform: rotate(225deg); }
     .tw-pop::after { content: ''; position: absolute; left: 50%; bottom: -7px; width: 12px; height: 12px; margin-left: -6px; background: #3c3c3c; border-right: 1px solid #5a5a5a; border-bottom: 1px solid #5a5a5a; transform: rotate(45deg); }
+    .tw-pop.end { left: auto; right: 0; transform: none; animation-name: popEnd; }
+    .tw-pop.end::after { left: auto; right: calc(var(--fw, 100px) / 2 - 6px); margin-left: 0; }
+    @keyframes popEnd { from { opacity: 0; transform: translateY(6px) scale(0.97); } to { opacity: 1; transform: none; } }
     @keyframes pop { from { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.97); } to { opacity: 1; transform: translateX(-50%); } }
     .wheels { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; height: 102px; }
     .wheels.three { grid-template-columns: 1fr 1fr 1fr; }

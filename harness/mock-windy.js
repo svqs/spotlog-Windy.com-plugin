@@ -299,6 +299,8 @@
         reverseName,
         rootScope: { isMobileOrTablet: typeof matchMedia !== 'undefined' && matchMedia('(max-width: 760px)').matches },
         fetch: { getPointForecastData },
+        // "Your current location": the mock phone stands where the map is centred
+        geolocation: { getGPSlocation: async () => { const c = leafletMap.getCenter(); await new Promise(r => setTimeout(r, 150)); return { lat: c.lat, lon: c.lng, source: 'gps' }; } },
         __mock: { project, unproject, store, singleclick, PLACES, INIT, onMove: f => moveSubs.push(f), setView, view },
     };
 })();
