@@ -455,6 +455,16 @@ with sync_playwright() as p:
     pg.wait_for_selector('#pane .btn.primary:has-text("Save forecast")', timeout=8000)
     shot('14b-phone-forecast')
     ok('phone: tap on the map, the forecast opens in the panel')
+    # tapping a spot on the map opens its card there, with actions and ‹ › to the next spot
+    pg.locator('.spotlog-pin').first.click()
+    pg.wait_for_selector('.mock-popup .sl-acts button:has-text("Log session")', timeout=5000)
+    shot('14c-phone-card')
+    first = pg.locator('.mock-popup .sl-h b').inner_text()
+    pg.click('.mock-popup .sl-nav button[data-act="next"]')
+    pg.wait_for_function(f"document.querySelector('.mock-popup .sl-h b') && document.querySelector('.mock-popup .sl-h b').textContent !== {first!r}", timeout=5000)
+    pg.click('.mock-popup .sl-acts button:has-text("Log session")')
+    pg.wait_for_selector('#pane .felt', timeout=5000)
+    ok('phone: spot card on the map, next spot, Log session opens the log in the panel')
     data = stored(pg)
     b.close()
 

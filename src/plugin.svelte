@@ -1195,6 +1195,7 @@
             /* no zoom */
         }
         const c = z < COMPACT_BELOW;
+        if (isMobile && c && mapShown) clearPopup();
         if (c !== compactMarkers) {
             compactMarkers = c;
             drawSpotMarkers();
@@ -1316,10 +1317,13 @@
         const pred = n ? predictRating(sp, n.wind, data.sessions, data.snapshots) : null;
         const tile = (label: string, val: string, bg: string, unit = '') =>
             `<div class="sl-t" style="background:${bg}"><span>${label}</span><b>${val}${unit ? `<i>${unit}</i>` : ''}</b></div>`;
-        return `<div class="sl-pop"><div class="sl-h"><b>${escapeHtml(sp.name)}</b><small>Right now · ECMWF</small></div>` +
+        const many = isMobile && data.spots.length > 1;
+        const nav = many ? `<span class="sl-nav"><button data-act="prev" aria-label="Previous spot">‹</button><button data-act="next" aria-label="Next spot">›</button></span>` : '';
+        return `<div class="sl-pop"><div class="sl-h"><span><b>${escapeHtml(sp.name)}</b><small>Right now · ECMWF</small></span>${nav}</div>` +
             (w ? `<div class="sl-tiles">${tile('Wind', fmtWind0(w.wind, S.wind), windColor(w.wind), windLabel(S.wind))}${tile('Gusts', fmtWind0(w.gust, S.wind), windColor(w.gust), windLabel(S.wind))}${tile('From', dirName(w.dir), '#e9e8e3')}${n?.waves ? tile('Waves', fmtHeight(n.waves.waves, S.height), '#dbe6f2', S.height) : ''}</div>` : loading ? '<small>Loading conditions…</small>' : '<small>No forecast here</small>') +
             (w ? `<small>${fmtTemp(w.temp, S.temp)}</small>` : '') +
             (pred !== null ? `<span class="sl-b" style="background:${guessColours(pred)[0]};color:${guessColours(pred)[1]}">${predictionLabel(pred)}</span>` : '') +
+            (isMobile ? `<div class="sl-acts"><button data-act="snap">Save forecast</button><button data-act="log">Log session</button><button data-act="open">Details</button></div>` : '') +
             '</div>';
     }
     /** "Show on map" is a switch: the popup stays at the spot until you switch it off or leave the spot */
@@ -1343,7 +1347,7 @@
     function openSpotPopup(sp: Spot, n: Now | null, loading = false) {
         try {
             // not closed by map clicks or other popups; if Windy still closes it, it comes straight back
-            const p = L.popup({ className: 'spotlog-popup', closeButton: false, autoClose: false, closeOnClick: false, autoPan: false, offset: [0, -8] })
+            const p = L.popup({ className: 'spotlog-popup', closeButton: false, autoClose: false, closeOnClick: false, autoPan: isMobile, autoPanPadding: [12, 70], offset: [0, -8] })
                 .setLatLng([sp.lat, sp.lon])
                 .setContent(popupHtml(sp, n, loading));
             popup = p;
@@ -1354,9 +1358,39 @@
                 setTimeout(() => { if (popup === p && mapShown === sp.id) p.openOn(map); }, 60);
             });
             p.openOn(map);
+            const el: HTMLElement | null = p.getElement?.() || null;
+            if (el && !el.dataset.slWired) {
+                el.dataset.slWired = '1';
+                el.addEventListener('click', (e: MouseEvent) => {
+                    const b = (e.target as HTMLElement).closest('[data-act]') as HTMLElement | null;
+                    if (!b) return;
+                    e.stopPropagation();
+                    cardAction(b.dataset.act || '', sp);
+                });
+            }
         } catch (e) {
             console.info('[spotlog] popup not available', e);
         }
+    }
+    /** Phones: the buttons on a spot card */
+    function cardAction(act: string, sp: Spot) {
+        if (act === 'snap') saveForecastAt({ lat: sp.lat, lon: sp.lon, spot: sp });
+        else if (act === 'log') startLog({ spot: sp });
+        else if (act === 'open') openSpot(sp);
+        else if (act === 'prev' || act === 'next') {
+            const i = data.spots.findIndex(x => x.id === sp.id);
+            const n = data.spots[(i + (act === 'next' ? 1 : data.spots.length - 1)) % data.spots.length];
+            if (n) {
+                openSpot(n);
+                showSpotCard(n);
+            }
+        }
+    }
+    /** Phones: open a spot's card on the map (not a switch: tapping a spot always shows it) */
+    function showSpotCard(sp: Spot) {
+        if (mapShown === sp.id && popup) return;
+        mapShown = null;
+        toggleShowOnMap(sp);
     }
 
     async function onMapPick(ev: { lat: number; lon: number }, known?: Spot) {
@@ -1380,6 +1414,7 @@
         }
         if (near) {
             openSpot(near.s);
+            if (isMobile) showSpotCard(near.s);
             return;
         }
         setTemp(lat, lon);
@@ -2041,11 +2076,14 @@
     .spotlog > :global(*) { flex-shrink: 0; }
     /* phones: the panel sits in Windy's small pane under the timeline, half the screen high, and scrolls
        (the layout that works on real phones, 0.5.2–0.6; 0.7.0's bar + sheet showed an empty pane) */
-    .spotlog.m { padding: 10px 12px 16px; gap: 12px; height: 50vh; height: 50dvh; max-height: 50dvh; touch-action: pan-y;
+    .spotlog.m { padding: 8px 10px 16px; gap: 10px; height: 50vh; height: 50dvh; max-height: 50dvh; touch-action: pan-y; background: transparent; border-radius: 0;
         .head { padding: 10px 14px; gap: 8px; }
+        .head .stats, .head .sync { display: none; }
+        .act { min-height: 0; padding: 8px 10px; small { display: none; } }
         .wordmark { font-size: 20px; }
         .stats .big { font-size: 18px; }
-        .act { min-height: 64px; padding: 8px 10px; b { font-size: 13px; } :global(svg) { margin-bottom: 2px; } }
+        .act b { font-size: 13px; }
+        .act :global(svg) { margin-bottom: 2px; }
         .tile { min-height: 110px; padding: 12px; }
         .topbar .round { width: 34px; height: 34px; }
         .title { font-size: 16px; } }
@@ -2240,7 +2278,14 @@
     :global(.spotlog-popup .leaflet-popup-content) { margin: 12px; }
     :global(.sl-pop) { display: flex; flex-direction: column; gap: 8px; min-width: 220px; font: 13px 'Instrument Sans', system-ui, sans-serif; color: var(--sl-popup-text, #1c1c1c); }
     :global(.sl-pop small) { color: #6b6b6b; font-size: 12px; }
-    :global(.sl-h) { display: flex; flex-direction: column; gap: 1px; }
+    :global(.sl-h) { display: flex; align-items: flex-start; gap: 8px; }
+    :global(.sl-h > span) { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+    :global(.sl-nav) { display: flex; gap: 4px; }
+    :global(.sl-nav button), :global(.sl-acts button) { font: 600 13px 'Instrument Sans', system-ui, sans-serif; color: #1c1c1c; background: #ececea; border: 0; border-radius: 10px; cursor: pointer; }
+    :global(.sl-nav button) { width: 30px; height: 30px; font-size: 18px; line-height: 1; padding: 0; }
+    :global(.sl-acts) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin-top: 2px; }
+    :global(.sl-acts button) { height: 36px; padding: 0 4px; white-space: nowrap; }
+    :global(.sl-acts button:first-child) { background: var(--sl-primary-bg, #d49500); color: var(--sl-primary-text, #fff); }
     :global(.sl-h b) { font-size: 14px; }
     :global(.sl-tiles) { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
     :global(.sl-t) { display: flex; flex-direction: column; justify-content: space-between; gap: 6px; min-height: 58px; padding: 7px 8px; border-radius: 9px; font-size: 11px; color: #1c1c1c; box-sizing: border-box; }
