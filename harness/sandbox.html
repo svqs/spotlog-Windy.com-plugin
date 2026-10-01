@@ -416,8 +416,8 @@ const __pluginConfig =  {
   "addToContextmenu": true,
   "routerPath": "/spotlog",
   "private": true,
-  "built": 1790838750679,
-  "builtReadable": "2026-10-01T07:12:30.679Z"
+  "built": 1790839109608,
+  "builtReadable": "2026-10-01T07:18:29.608Z"
 };
 
 // transformCode: import bcast from '@windy/broadcast';
@@ -16820,7 +16820,6 @@ function instance($$self, $$props, $$invalidate) {
 
 	function toWindyMenu() {
 		try {
-			bcast.emit('rqstClose', name);
 			bcast.emit('rqstOpen', 'menu');
 		} catch(e) {
 			console.info('[spotlog] could not open the Windy menu', e);

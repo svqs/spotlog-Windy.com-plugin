@@ -968,10 +968,12 @@
             default: return { title: '', sub: '' };
         }
     }
-    /** Desktop: back to Windy's own menu (Spotlog closes, the menu opens in the same pane) */
+    /**
+     * Desktop: back to Windy's own menu. Only asks for the menu: Windy shows one right-hand pane at a time,
+     * so the menu takes Spotlog's place directly (closing Spotlog first made it slide out and the menu slide in).
+     */
     function toWindyMenu() {
         try {
-            bcast.emit('rqstClose', name);
             bcast.emit('rqstOpen', 'menu');
         } catch (e) {
             console.info('[spotlog] could not open the Windy menu', e);

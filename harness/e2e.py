@@ -47,7 +47,7 @@ with sync_playwright() as p:
     pg.on('console', lambda m: msgs.append(m.text))
     pg.click('.head .back-menu')
     pg.wait_for_timeout(100)
-    assert any("rqstOpen menu" in m for m in msgs) and any("rqstClose" in m for m in msgs), msgs
+    assert any("rqstOpen menu" in m for m in msgs) and not any("rqstClose" in m for m in msgs), msgs
     ok('desktop: arrow back to the Windy menu')
 
     # --- Add spot from home: pick on the map, "I know" the wind
