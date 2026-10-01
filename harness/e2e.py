@@ -499,22 +499,23 @@ with sync_playwright() as p:
     tb = pg.evaluate("(() => { const t = document.querySelector('.mwrap.open .topbar').getBoundingClientRect(); const w = document.querySelector('.mwrap.open').getBoundingClientRect(); return t.top - w.top; })()")
     assert abs(tb) < 2, tb
     shot('14e-phone-log-scrolled')
-    # typing in the notes: the field moves up in the panel (above where the keyboard comes)
-    pg.locator('.mwrap.open textarea').first.focus()
-    pg.wait_for_timeout(200)
-    ty = pg.evaluate("(() => { const t = document.querySelector('.mwrap.open textarea').getBoundingClientRect(); const w = document.querySelector('.mwrap.open .body').getBoundingClientRect(); return t.top - w.top; })()")
-    assert 0 <= ty < 200, ty
-    assert pg.locator('.mwrap.kb').count() == 1
-    pg.evaluate("document.activeElement.blur()")
-    ok('phone log: date/start/end on one line, header stays, no sideways scroll, knob not cut, notes lift above the keyboard')
+    ok('phone log: date/start/end on one line, header stays, no sideways scroll, knob not cut')
     # the ✕ in the header closes the panel
     pg.click('.mwrap.open .topbar .mclose')
     pg.wait_for_timeout(250)
     assert pg.locator('.mwrap.open').count() == 0
     # units from the bar: their own page, with back and ✕
     pg.click('.mbar .units')
-    pg.wait_for_selector('.mwrap.open.units .topbar.upage:has-text("Units and data")')
+    pg.wait_for_selector('.mwrap.open.unitspage .topbar.upage:has-text("Units and data")')
     assert pg.locator('.mwrap.open .home-head:visible, .mwrap.open .tiles:visible').count() == 0
+    pg.wait_for_timeout(250)
+    # the units page: normal type like on desktop, nothing sticking out of the panel
+    fw = pg.evaluate("[...document.querySelectorAll('.mwrap.open .set .lbl, .mwrap.open .set .chip:not(.on), .mwrap.open .set .toggle small')].map(e => getComputedStyle(e).fontWeight)")
+    assert fw and all(x == '400' for x in fw), fw
+    sx = pg.evaluate("(() => { const b = document.querySelector('.mwrap.open .body'); return b.scrollWidth - b.clientWidth; })()")
+    assert sx <= 0, f'units page sticks out by {sx}px'
+    sw = pg.evaluate("(() => { const s = document.querySelector('.mwrap.open .set .toggle .sw').getBoundingClientRect(); const w = document.querySelector('.mwrap.open').getBoundingClientRect(); return [s.right, w.right]; })()")
+    assert sw[0] <= sw[1] - 8, sw
     shot('14f-phone-units')
     pg.click('.mwrap.open .topbar.upage .round')
     pg.wait_for_timeout(250)
@@ -522,7 +523,7 @@ with sync_playwright() as p:
     pg.click('.mtabs button:has-text("Spots")')
     pg.wait_for_selector('.mwrap.open .topbar:has-text("Your spots")')
     pg.click('.mwrap.open .topbar .units')
-    pg.wait_for_selector('.mwrap.open.units')
+    pg.wait_for_selector('.mwrap.open.unitspage')
     pg.click('.mwrap.open .topbar.upage .round')
     pg.wait_for_selector('.mwrap.open:not(.units) .tile')
     gap = pg.evaluate("(() => { const b = document.querySelector('.mtabs button .cnt'); return b.getBoundingClientRect().left - b.previousSibling?.parentElement.getBoundingClientRect().left; })()")
@@ -541,6 +542,57 @@ with sync_playwright() as p:
     pg.wait_for_timeout(300)
     assert pg.locator('.mock-popup').count() == 0, 'card closes with ✕'
     ok('phone: the spot card keeps your zoom from spot to spot and closes with ✕')
+    # --- a touch phone: a tap types where you tapped, and nothing switches page by itself
+    tctx = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, locale='en-GB', storage_state=ctx.storage_state())
+    tp = tctx.new_page()
+    tp.on('pageerror', lambda e: errors.append(str(e)))
+    tp.goto(URL.replace('index.html', 'index.html?m'))
+    tp.wait_for_selector('#pane .mbar')
+    tp.tap('.mact:has-text("Log session")')
+    tp.wait_for_selector('.mwrap.open .section .opt')
+    tp.locator('.mwrap.open .section .opt').first.tap()
+    tp.wait_for_selector('.mwrap.open .felt', timeout=8000)
+    tp.wait_for_timeout(400)
+    title = lambda: tp.locator('.mwrap.open .topbar .title').inner_text()
+    t0 = title()
+    focused = lambda: tp.evaluate("(() => { const a = document.activeElement; return a ? (a.getAttribute('placeholder') || a.tagName) : ''; })()")
+    def tap_type(loc, text, what):
+        loc.scroll_into_view_if_needed()
+        tp.wait_for_timeout(250)
+        loc.tap()
+        tp.wait_for_timeout(450)
+        ph = loc.get_attribute('placeholder')
+        assert focused() == ph, f'{what}: tapped it, but the cursor is in {focused()!r}'
+        before = loc.input_value()
+        tp.keyboard.type(text)
+        tp.wait_for_timeout(150)
+        assert loc.input_value() == before + text, f'{what}: typed {text!r}, field has {loc.input_value()!r}'
+        assert tp.locator('.mwrap.open').count() == 1 and title() == t0, f'{what}: the page changed to {title()!r}'
+    gear = tp.locator('.mwrap.open .field .row input').first
+    notes = tp.locator('.mwrap.open textarea').first
+    tap_type(gear, 'Sail 5.3', 'gear field')
+    tap_type(notes, 'Clean and steady', 'notes')
+    tap_type(gear, ' mast', 'gear field again')
+    # chips and the rating still react to a tap after typing, and the page stays
+    tp.locator('.mwrap.open .chip:has-text("Gusty")').first.tap()
+    tp.locator('.mwrap.open .rate').nth(3).tap()
+    tp.wait_for_timeout(200)
+    assert tp.locator('.mwrap.open .chip.on:has-text("Gusty")').count() == 1 and tp.locator('.mwrap.open .rate.on').count() == 1
+    assert title() == t0
+    tp.screenshot(path=f'{OUT}/14g-phone-tap-type.png')
+    # typing a new spot's name
+    tp.tap('.mwrap.open .topbar .mclose')
+    tp.wait_for_timeout(250)
+    tp.tap('.mact:has-text("Add spot")')
+    tp.wait_for_selector('.mwrap.open .opt')
+    tp.tap('.mwrap.open .opt:has-text("Your current location")')
+    tp.wait_for_selector('.mwrap.open .field input', timeout=8000)
+    name = tp.locator('.mwrap.open .field input').first
+    name.fill('')
+    t0 = title()
+    tap_type(name, 'Secret reef 2', 'spot name')
+    tctx.close()
+    ok('touch phone: every tap types in the field you tapped, chips and ratings react, the page never switches by itself')
     # a phone that cuts off anything above Windy's pane: Spotlog falls back to the classic panel under the timeline
     pg.goto(URL.replace('index.html', 'index.html?m'))
     pg.wait_for_selector('#pane .mbar')

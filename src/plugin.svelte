@@ -1,7 +1,7 @@
 <div class="plugin__mobile-header">
     { title }
 </div>
-<section class="plugin__content spotlog" class:m={ isMobile } class:bar={ barMode } class:gatebar={ barMode && !!gate } bind:this={ root } on:touchstart={ touchStart } on:touchmove={ touchMove } on:keydown={ keepKeys } on:keyup={ keepKeys } on:keypress={ keepKeys }>
+<section class="plugin__content spotlog" class:m={ isMobile } class:bar={ barMode } class:gatebar={ barMode && !!gate } bind:this={ root } on:touchstart={ touchStart } on:touchmove={ touchMove } on:touchend={ fieldTouchEnd } on:keydown={ keepKeys } on:keyup={ keepKeys } on:keypress={ keepKeys }>
 
 {#if barMode}
 <!-- ================= PHONE: a compact bar in Windy's pane; pages open in a panel that rises over the map (like The Buoy's list) ================= -->
@@ -36,7 +36,7 @@
         {/if}
     </div>
 {/if}
-<div class="mwrap" class:on={ barMode } class:open={ modalOpen } class:units={ barMode && unitsOpen } class:kb={ kbRoom }>
+<div class="mwrap" class:on={ barMode } class:open={ modalOpen } class:unitspage={ barMode && unitsOpen } class:kb={ kbRoom }>
 <div class="body" bind:this={ bodyEl } on:focusin={ fieldFocus } on:focusout={ fieldBlur }>
 
 {#if gate}
@@ -455,7 +455,7 @@
                 <span class="muted">{@html rich(W.trustEmpty)}</span>
             {:else}
                 {#each scores as sc, i}
-                    <div class="score"><span class="m" class:best={ i === 0 }>{ modelLabel(sc.model) }</span><span class="mbar"><i style="width: { Math.min(100, sc.miss * 25) }%" class:best={ i === 0 }></i></span><span>±{ fmtWind(sc.miss, S.wind) } { windLabel(S.wind) }</span></div>
+                    <div class="score"><span class="m" class:best={ i === 0 }>{ modelLabel(sc.model) }</span><span class="missbar"><i style="width: { Math.min(100, sc.miss * 25) }%" class:best={ i === 0 }></i></span><span>±{ fmtWind(sc.miss, S.wind) } { windLabel(S.wind) }</span></div>
                 {/each}
                 <small class="muted">{ fill(W.trustNote, { n: scores[0].count }) }</small>
             {/if}
@@ -833,31 +833,58 @@
     let kbTimer: ReturnType<typeof setTimeout> | undefined;
     const typesText = (el: EventTarget | null): el is HTMLElement =>
         el instanceof HTMLElement && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !/^(date|time|checkbox|radio|range|button|file)$/i.test((el as HTMLInputElement).type)));
-    async function liftField(el: HTMLElement) {
-        if (!barMode || !bodyEl) return;
-        clearTimeout(kbTimer);
+    /** the field would end up under the keyboard (roughly the lower half of the screen) */
+    function underKeyboard(el: HTMLElement): boolean {
+        if (!bodyEl) return false;
         const box = bodyEl.getBoundingClientRect();
         const r = el.getBoundingClientRect();
-        // the keyboard takes roughly the lower half of the screen: anything below 40% moves up
-        const limit = Math.min(window.innerHeight * 0.4, box.top + 180);
-        if (r.bottom <= limit && r.top >= box.top + 40) return;
-        kbRoom = true;
-        await tick();
-        bodyEl.scrollTop += r.top - (box.top + 64);
+        return r.bottom > Math.min(window.innerHeight * 0.4, box.top + 180) || r.top < box.top + 40;
     }
-    function fieldTouch(e: TouchEvent) {
-        if (typesText(e.target) && document.activeElement !== e.target) liftField(e.target);
+    /**
+     * A tap on a field that the keyboard would cover: the tap is finished first (the finger is up), then the field
+     * moves up and gets the cursor. Nothing moves while the finger is down, so the tap can't land on something else
+     * (moving it at touchstart sent the tap to the notes, a chip or a tab).
+     */
+    let fieldDown: { x: number; y: number; el: HTMLElement } | null = null;
+    function fieldTouchStart(e: TouchEvent) {
+        const el = e.target;
+        const t = e.touches[0];
+        fieldDown = barMode && typesText(el) && document.activeElement !== el && t ? { x: t.clientX, y: t.clientY, el } : null;
+    }
+    function fieldTouchEnd(e: TouchEvent) {
+        const d = fieldDown;
+        fieldDown = null;
+        const t = e.changedTouches[0];
+        if (!d || !t || e.target !== d.el || document.activeElement === d.el) return;
+        if (Math.hypot(t.clientX - d.x, t.clientY - d.y) > 10) return; // that was a scroll
+        if (!bodyEl || !underKeyboard(d.el)) return; // the phone handles it as usual
+        e.preventDefault(); // no second, late tap on whatever is under the finger after the move
+        clearTimeout(kbTimer);
+        kbRoom = true;
+        bodyEl.style.paddingBottom = '55vh';
+        bodyEl.scrollTop += d.el.getBoundingClientRect().top - (bodyEl.getBoundingClientRect().top + 64);
+        d.el.focus({ preventScroll: true });
+        try {
+            const n = (d.el as HTMLInputElement).value.length;
+            (d.el as HTMLInputElement).setSelectionRange(n, n);
+        } catch {
+            /* not a text field with a cursor */
+        }
     }
     function fieldFocus(e: FocusEvent) {
-        if (typesText(e.target)) {
-            liftField(e.target);
-            // if the browser shifted the page anyway, put it back
-            setTimeout(() => { if (window.scrollY > 0) window.scrollTo(0, 0); }, 350);
-        }
+        if (!typesText(e.target) || !barMode) return;
+        clearTimeout(kbTimer);
+        kbRoom = true;
+        // if the browser shifted the page anyway, put it back
+        setTimeout(() => { if (window.scrollY > 0) window.scrollTo(0, 0); }, 350);
     }
     function fieldBlur() {
         clearTimeout(kbTimer);
-        kbTimer = setTimeout(() => { if (!typesText(document.activeElement)) kbRoom = false; }, 250);
+        kbTimer = setTimeout(() => {
+            if (typesText(document.activeElement)) return;
+            kbRoom = false;
+            if (bodyEl) bodyEl.style.paddingBottom = '';
+        }, 250);
     }
     /** Phones: a spot from the list goes to the map (its card), the panel steps aside */
     function spotOnMap(s: Spot) {
@@ -1061,7 +1088,7 @@
     function touchStart(e: TouchEvent) {
         touchY = e.touches[0]?.clientY ?? 0;
         touchX = e.touches[0]?.clientX ?? 0;
-        fieldTouch(e);
+        fieldTouchStart(e);
     }
     function touchMove(e: TouchEvent) {
         const y = e.touches[0]?.clientY ?? 0;
@@ -1723,7 +1750,11 @@
     async function myPosition(): Promise<{ lat: number; lon: number } | null> {
         try {
             if (typeof geo?.getGPSlocation === 'function') {
-                const p = await geo.getGPSlocation({ doNotShowFailureMessage: true, getMeFallbackGps: false, enableHighAccuracy: true, timeout: 12000 });
+                // a phone's quick fix (wifi/cell, a few tens of metres) is plenty to find a spot, and comes in a second or two
+                const p = await Promise.race([
+                    geo.getGPSlocation({ doNotShowFailureMessage: true, getMeFallbackGps: false, enableHighAccuracy: false, timeout: 7000, maximumAge: 120000 }),
+                    new Promise<null>(res => setTimeout(() => res(null), 7500)),
+                ]);
                 if (p && typeof p.lat === 'number' && (p.source === 'gps' || p.source === 'last')) return { lat: p.lat, lon: p.lon };
             }
         } catch {
@@ -1734,7 +1765,7 @@
             navigator.geolocation.getCurrentPosition(
                 p => res({ lat: p.coords.latitude, lon: p.coords.longitude }),
                 () => res(null),
-                { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 },
+                { enableHighAccuracy: false, timeout: 7000, maximumAge: 120000 },
             ),
         );
     }
@@ -2451,7 +2482,7 @@
     .mwrap.on .topbar .title { font-size: 16px; }
     .mclose { flex-shrink: 0; width: 34px; height: 34px; margin-left: -4px; border: 0; border-radius: 17px; background: none; color: @sub !important; font-size: 16px; line-height: 1; padding: 0; }
     /* the units page covers the page you were on (which stays as it was underneath) */
-    .mwrap.on.units .body > :global(:not(.upage)) { display: none !important; }
+    .mwrap.on.unitspage .body > :global(:not(.upage)) { display: none !important; }
     /* room below the last field, so it can scroll up above the keyboard */
     .mwrap.on.kb .body { padding-bottom: 55vh; }
     .when { display: contents; }
@@ -2610,7 +2641,7 @@
     .h2 { font-size: 20px; }
     .score { display: flex; align-items: center; gap: 10px; font-size: 13px;
         .m { width: 64px; &.best { color: @orange; font-weight: 600; } }
-        .mbar { flex: 1; height: 6px; border-radius: 3px; background: @line; display: flex; i { display: block; border-radius: 3px; background: @sub; &.best { background: @orange; } } } }
+        .missbar { flex: 1; height: 6px; border-radius: 3px; background: @line; display: flex; i { display: block; border-radius: 3px; background: @sub; &.best { background: @orange; } } } }
     .ratings { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
     .rate { height: 62px; border-radius: calc(var(--sl-radiusButton, 12px) + 2px); border: 1px solid @line; background: @card; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
         b { font-size: 19px; } span { font-size: 11px; } }
