@@ -350,12 +350,14 @@ with sync_playwright() as p:
     row = cloud['rows']['12345']
     assert len(row['data']['sessions']) >= 1, row
     ok('diary syncs to the Windy user id, no separate sign-in')
-    assert pg.locator('.coffee').count() == 0, 'coffee link only on About'
+    assert pg.locator('.coffee').count() == 0, 'feedback link only on About'
     pg.click('.tabs button:has-text("About")')
     pg.wait_for_selector('text=How it works')
-    pg.wait_for_selector('.sig .coffee')
+    pg.wait_for_selector('.sig .coffee:has-text("Give feedback")')
+    assert 'community.windy.com' in pg.get_attribute('.sig .coffee', 'href')
+    assert pg.locator('text=Buy me a coffee').count() == 0
     shot('11b-about')
-    ok('About tab: friendly how-to, coffee link only there')
+    ok('About tab: friendly how-to, "Give feedback" (Windy Community) only there')
 
     # --- two Windy tabs open at once must not overwrite each other
     pg2 = ctx.new_page()

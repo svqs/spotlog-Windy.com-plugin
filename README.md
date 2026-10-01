@@ -60,7 +60,7 @@ python3 harness/e2e.py /tmp    # clicks through every flow (pip install playwrig
 | Your data | Linked to your Windy account, no separate login: log in to Windy on another device and your diary is there (once the sync server from DEVELOPER.md is set up; until then it's kept in the browser). |
 | GPS route | GPX/TCX from Garmin Connect, Strava…: distance, time, top speed; drawn on the Windy map as a thin pink line. Sessions away from your spots show as dots on the map; zoomed out, spots become dots too. |
 | Sessions | List or calendar. |
-| About | Friendly how-to, “Download a copy” / “Delete everything”, Buy me a coffee. |
+| About | Friendly how-to, “Download a copy” / “Delete everything”, Give feedback (Windy Community). |
 | Gear | Pick the sport (Windsurf, Surf, Kite, Wing), then what it is (board, sail, mast, boom, fin, harness, kite, bar, wing, foil, leash, wetsuit…). |
 
 ## Not yet

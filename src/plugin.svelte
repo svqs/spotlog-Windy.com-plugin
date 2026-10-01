@@ -257,7 +257,7 @@
             <div class="sig">
                 <PixelStar size={ 14 } />
                 <small class="ver">version { version }</small>
-                <a class="coffee" href={ COFFEE_URL } target="_blank" rel="noopener noreferrer">Buy me a coffee</a>
+                <a class="coffee" href={ FEEDBACK_URL } target="_blank" rel="noopener noreferrer">Give feedback</a>
             </div>
         </div>
     {/if}
@@ -704,7 +704,7 @@
     import { waveValueAt, modelValueAt, nextMatch, conditionsNow, trimWaves, captureDay, seriesAt, covers, availableModels, SNAPSHOT_MODELS } from './lib/forecast';
     import { cloudAvailable, pull, push } from './lib/cloud';
     import type { WindyAuth } from './lib/cloud';
-    import { COFFEE_URL } from './lib/links';
+    import { FEEDBACK_URL } from './lib/links';
     import { FONT_CSS } from './lib/fonts';
     import { THEME, THEME_CSS, guessColours, lightsUp, sessionMarkStyle } from './lib/theme';
     import {

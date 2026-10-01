@@ -54,7 +54,7 @@ The same values appear in `src/plugin.svelte` (`@ground`, `@card` … at the top
 | Phone layout | `src/plugin.svelte` `.spotlog.m` | Windy's small bottom panel under the timeline (like The Buoy): half the screen high (`50dvh`), scrolls inside; swipes stay with Spotlog while it can still scroll |
 | Login / Premium gate | `src/plugin.svelte` top of the template | |
 | Header card (wordmark, units pill, stats, sync line) | `src/plugin.svelte` (top) | SPOTLOG wordmark + small pixel star (`src/ui/PixelStar.svelte`); on inner screens: back · title · units pill top right |
-| About + Buy me a coffee | `src/plugin.svelte` `.about`, `.sig`, link in `src/lib/links.ts` | About tab only: how-to steps, then pixel star · version · coffee link as a signature |
+| About + Give feedback | `src/plugin.svelte` `.about`, `.sig`, link in `src/lib/links.ts` | About tab only: how-to steps, then pixel star · version · "Give feedback" (Windy Community, plugins) as a signature. The coffee link is kept in `links.ts` for later. |
 | Model switch | `src/plugin.svelte` `.models-pick` | Spot page, under the card: ECMWF by default, only models that cover the spot |
 | Replace prompt | `src/plugin.svelte` `.replace` | One forecast per spot |
 | Map marks | `.spotlog-pin` (+ `.compact` below zoom 7, `.good` = rating colour when the guess is good or better), `.spotlog-heat` (pink session glow per ~100 m place, bigger/brighter with more sessions, hover = `.spotlog-tip` with dates + ratings), route `#ff3d8b` 2.5 px | Switches "Spots on the map" / "Sessions on the map" under the spot tiles (`settings.mapSpots` / `mapSessions`) |
