@@ -437,44 +437,24 @@ with sync_playwright() as p:
     shot('13-unknown-spot')
     ok('"I don\'t know yet" spot saved; suggestion pending')
 
-    # --- phone width
+    # --- phone width: the panel sits in Windy's small pane under the timeline, half the screen high (0.5.2–0.6 layout)
     pg.set_viewport_size({'width': 390, 'height': 844})
     pg.goto(URL.replace('index.html', 'index.html?m'))
-    # default on phones: the classic panel under the timeline (as in 0.6), half the screen high
     pg.wait_for_selector('#pane .spotlog.m .head')
     h = pg.evaluate("document.querySelector('#pane .spotlog').getBoundingClientRect().height")
     assert 380 < h < 460, h
-    shot('14a-phone-classic')
-    ok('phone: classic panel under the timeline by default')
-    # the new layout is a switch in About
-    pg.click('#pane .tabs button:has-text("About")')
-    pg.click('.maptog:has-text("New phone layout")')
-    pg.wait_for_selector('#pane .mbar')
-    pg.click('.sheet-x')
-    pg.wait_for_timeout(600)
-    # phones: a slim bar in Windy's pane; the panel is a sheet on the page, closed at first
-    assert pg.locator('body > .spotlog.sheet').count() == 1 and pg.locator('.spotlog.sheet.open').count() == 0
-    shot('14-phone-bar')
-    pg.click('.mtabs button:has-text("Spots")')
-    pg.wait_for_selector('.spotlog.sheet.open .tile')
-    pg.wait_for_timeout(350)
-    shot('14b-phone-sheet')
-    assert pg.locator('.tile .wdir svg').count() >= 1, 'tiles show a wind arrow'
-    pg.click('.sheet-x')
-    pg.wait_for_timeout(300)
-    assert pg.locator('.spotlog.sheet.open').count() == 0
-    ok('phone: bar under the timeline, tabs open the sheet, ✕ closes it')
-    pg.click('.mact:has-text("Save forecast")')
-    pg.wait_for_selector('.spotlog.sheet.open .opt:has-text("Tap on the map")')
-    pg.click('.opt:has-text("Tap on the map")')
-    pg.wait_for_timeout(300)
-    assert pg.locator('.spotlog.sheet.open').count() == 0
-    pg.wait_for_selector('.mbar .mhint:has-text("Tap the map")')
-    shot('14c-phone-tap-map')
-    pg.mouse.click(200, 200)
-    pg.wait_for_selector('.spotlog.sheet.open .btn.primary:has-text("Save forecast")', timeout=8000)
-    shot('14d-phone-forecast')
-    ok('phone: picking on the map moves the sheet aside, then the forecast opens in it')
+    shot('14-phone-home')
+    pg.click('#pane .tabs button:has-text("Sessions")')
+    pg.wait_for_selector('#pane .tabs button.on:has-text("Sessions")')
+    pg.click('#pane .tabs button:has-text("Spots")')
+    pg.wait_for_selector('#pane .tile .wdir svg', timeout=8000)
+    ok('phone: panel under the timeline, half the screen, tabs work')
+    pg.click('#pane .act:has-text("Save forecast")')
+    pg.click('#pane .opt:has-text("Tap on the map")')
+    pg.mouse.click(200, 150)
+    pg.wait_for_selector('#pane .btn.primary:has-text("Save forecast")', timeout=8000)
+    shot('14b-phone-forecast')
+    ok('phone: tap on the map, the forecast opens in the panel')
     data = stored(pg)
     b.close()
 

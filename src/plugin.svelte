@@ -1,45 +1,7 @@
 <div class="plugin__mobile-header">
     { title }
 </div>
-<section class="plugin__content spotlog-host" class:m={ isMobile } class:bar={ useSheet } class:gate={ useSheet && !!gate }>
-{#if useSheet}
-<!-- ================= PHONE: the slim bar under Windy's timeline (never scrolls) ================= -->
-    <div class="mbar">
-        <div class="mrow">
-            <button class="mbrand" aria-label="Open Spotlog" on:click={ () => openSheet() }><span class="wordmark">SPOTLOG</span><PixelStar size={ 12 } /></button>
-            {#if waitingForMap}
-                <span class="mhint">{ pickFor === 'snap' ? 'Tap the map: where to save the forecast' : pickFor === 'log' ? 'Tap the map: where you were out' : 'Tap the map where the spot is' }</span>
-                <button class="mlink" on:click={ () => { waitingForMap = false; openSheet(); } }>Cancel</button>
-            {:else if capturing}
-                <span class="mhint">Loading the forecast…</span>
-            {:else if gate}
-                <span class="mhint">For Windy Premium members</span>
-            {/if}
-        </div>
-        {#if !gate}
-            <div class="macts">
-                <button class="mact" disabled={ capturing } on:click={ () => { openSheet(); startPick('snap'); } }><Icon name="weather" size={ 18 } /><span>Save forecast</span></button>
-                <button class="mact" on:click={ () => { openSheet(); startPick('spot'); } }><Icon name="pin" size={ 18 } /><span>Add spot</span></button>
-                <button class="mact" on:click={ () => { openSheet(); startPick('log'); } }><Icon name="pen" size={ 18 } /><span>Log session</span></button>
-            </div>
-            <div class="mtabs">
-                <button on:click={ () => openTab('spots') }>Spots <small>{ data.spots.length }</small></button>
-                <button on:click={ () => openTab('sessions') }>Sessions <small>{ data.sessions.length }</small></button>
-                <button on:click={ () => openTab('gear') }>Gear</button>
-                <button on:click={ () => openTab('about') }>About</button>
-            </div>
-        {:else}
-            <button class="btn primary wide" on:click={ () => openSheet() }>{ gate === 'login' ? 'Log in to use Spotlog' : 'See how to get Spotlog' }</button>
-        {/if}
-    </div>
-{/if}
-<div class="spotlog" class:m={ isMobile } class:sheet={ useSheet } class:open={ sheetOpen } use:sheetPortal={ useSheet } bind:this={ root } on:touchstart={ touchStart } on:touchmove={ touchMove } on:keydown={ keepKeys } on:keyup={ keepKeys } on:keypress={ keepKeys }>
-{#if useSheet}
-    <div class="sheet-grab" role="presentation" on:touchstart={ grabStart } on:touchmove={ grabMove } on:touchend={ grabEnd }>
-        <i aria-hidden="true"></i>
-        <button class="sheet-x" aria-label="Close Spotlog panel" on:click={ () => (sheetOpen = false) }>✕</button>
-    </div>
-{/if}
+<section class="plugin__content spotlog" class:m={ isMobile } bind:this={ root } on:touchstart={ touchStart } on:touchmove={ touchMove } on:keydown={ keepKeys } on:keyup={ keepKeys } on:keypress={ keepKeys }>
 
 {#if gate}
 <!-- ================= LOGIN / PREMIUM GATE ================= -->
@@ -229,12 +191,6 @@
                 <p class="p muted">Save your forecast before the session. Windy keeps just a few hours of forecast history, so if you try to save a session from the previous day, there might not be enough data to save it.</p>
                 <p class="p muted">Your diary belongs to your Windy account. Log in to Windy on another device and it's there.</p>
                 <p class="p muted">Your spots, sessions and GPS tracks are private. Nobody else sees them.</p>
-                {#if isMobile}
-                    <button class="maptog" role="switch" aria-checked={ !!S.phoneSheet } on:click={ () => { const on = !S.phoneSheet; setSettings({ ...S, phoneSheet: on }); sheetOpen = on; } }>
-                        <span class="grow"><b>New phone layout (test)</b><small>A slim bar under the timeline, everything else in a panel over the map</small></span>
-                        <span class="switch" class:on={ S.phoneSheet }><i></i></span>
-                    </button>
-                {/if}
                 <div class="row data-links">
                     <button class="link" on:click={ () => exportJson(data) }>Download a copy</button>
                     <button class="link danger" on:click={ clearAll }>{ armed === 'all' ? 'Tap again: gone for good' : 'Delete everything, forever' }</button>
@@ -262,7 +218,7 @@
                 <span class="chev-r" aria-hidden="true">›</span>
             </button>
         {/if}
-        <button class="opt" class:on={ waitingForMap } on:click={ () => { waitingForMap = true; if (useSheet) sheetOpen = false; } }>
+        <button class="opt" class:on={ waitingForMap } on:click={ () => (waitingForMap = true) }>
             <span class="ico" class:live={ waitingForMap }><Icon name="pointer" /></span>
             <span class="grow"><span>{ isMobile ? 'Tap on the map' : 'Click on the map' }</span><small>{ waitingForMap ? (isMobile ? 'Tap a place, a town or one of your spots…' : 'Click a place, a town or one of your spots…') : 'any place, town or one of your spots' }</small></span>
         </button>
@@ -668,7 +624,6 @@
     </div>
 {/if}
 
-</div>
 </section>
 
 <script lang="ts">
@@ -774,50 +729,6 @@
         window.addEventListener('unhandledrejection', onRejection);
     }
 
-    /* ---------- phones: a slim bar in Windy's pane + Spotlog's own sheet over the map ---------- */
-    let sheetOpen = false;
-    // the new phone layout is opt-in until it is confirmed on real phones (About › Phone layout)
-    $: useSheet = isMobile && !!data.settings.phoneSheet;
-    function openSheet() {
-        sheetOpen = true;
-    }
-    function openTab(t: typeof tab) {
-        tab = t;
-        if (view !== 'home') goHome();
-        openSheet();
-        tick().then(scrollTop);
-    }
-    /** Phones: the panel lives on the page itself (not in Windy's small pane), so it can be tall and scroll properly */
-    function sheetPortal(node: HTMLElement, on: boolean) {
-        const home = node.parentNode;
-        const place = (v: boolean) => {
-            try {
-                if (v && node.parentNode !== document.body) document.body.appendChild(node);
-                else if (!v && home && node.parentNode !== home) home.appendChild(node);
-            } catch (e) {
-                showPhoneError('sheet: ' + (e as Error).message);
-            }
-        };
-        place(on);
-        return { update: place, destroy: () => node.remove() };
-    }
-    // swipe the handle down to close the sheet
-    let grabY = 0;
-    let grabDy = 0;
-    function grabStart(e: TouchEvent) {
-        grabY = e.touches[0]?.clientY ?? 0;
-        grabDy = 0;
-    }
-    function grabMove(e: TouchEvent) {
-        grabDy = Math.max(0, (e.touches[0]?.clientY ?? 0) - grabY);
-        if (root) root.style.transform = grabDy ? `translateY(${grabDy}px)` : '';
-        e.preventDefault();
-    }
-    function grabEnd() {
-        if (root) root.style.transform = '';
-        if (grabDy > 70) sheetOpen = false;
-        grabDy = 0;
-    }
 
     /* ---------- Windy account: Spotlog is for logged-in Premium users ---------- */
     interface WindyUser { id: number; username?: string; email?: string }
@@ -1498,8 +1409,6 @@
         if (v !== 'place' && v !== 'spotForm') clearTemp();
         if (v !== 'spot') clearPopup();
         drawSpotMarkers();
-        // phones: anything that opens a page opens the sheet (unless we are waiting for a tap on the map)
-        if (useSheet && !waitingForMap && v !== 'home') sheetOpen = true;
         tick().then(scrollTop);
     }
     function scrollTop() {
@@ -2130,40 +2039,9 @@
         textarea { resize: vertical; line-height: 1.45; }
     }
     .spotlog > :global(*) { flex-shrink: 0; }
-    /* desktop: the panel fills Windy's right-hand pane */
-    /* Windy styles .plugin__content (padding, height): the host is only a frame, the panel inside does the layout */
-    .spotlog-host { height: 100%; padding: 0 !important; margin: 0 !important; overflow: hidden; box-sizing: border-box; background: @ground; display: flex; flex-direction: column;
-        > .spotlog { flex: 1; min-height: 0; } }
-    /* phones: Windy's small pane under the timeline only holds a slim bar that never scrolls;
-       everything else opens in Spotlog's own sheet over the map (moved onto the page, so its gestures are ours) */
-    /* Windy's small pane doesn't size itself to content that has no height of its own (0.7.0 showed an empty pane),
-       so the bar gets an explicit height, like the old 50dvh panel had */
-    .spotlog-host.m { height: auto; overflow: visible; display: block; flex: none; background: @ground; }
-    .spotlog-host.m.bar { height: 146px !important; min-height: 146px; max-height: 146px; overflow: hidden; }
-    .spotlog-host.m.bar.gate { height: 104px !important; min-height: 104px; max-height: 104px; }
-    /* classic phone layout (as in 0.6): the panel itself sits under the timeline, half the screen high, and scrolls */
-    .spotlog.m:not(.sheet) { height: 50vh; height: 50dvh; max-height: 50dvh; padding-top: 10px; }
-    .mbar { background: var(--sl-ground, #2e2e2e); color: var(--sl-text, #f8f8f8); font: 14px 'Instrument Sans', system-ui, sans-serif; padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 9px;
-        button { font: inherit; color: inherit; cursor: pointer; } }
-    .mrow { display: flex; align-items: center; gap: 10px; min-height: 24px; }
-    .mbrand { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 0; .wordmark { font-size: 18px; } }
-    .mhint { flex: 1; min-width: 0; text-align: right; font-size: 12px; color: var(--sl-sub, #b0b0b0); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mlink { border: 0; background: none; padding: 4px 0; color: var(--sl-accent, #d49500) !important; font-weight: 600; font-size: 13px; }
-    .macts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-    .mact { height: 44px; padding: 0 6px; border-radius: 12px; border: 1px solid #5a5a5a; background: var(--sl-card, #3c3c3c); display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12.5px !important; font-weight: 600;
-        span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } &:disabled { opacity: 0.6; } }
-    .mtabs { display: flex; gap: 3px; padding: 3px; border-radius: 11px; background: var(--sl-card, #3c3c3c);
-        button { flex: 1; height: 30px; border: 0; border-radius: 8px; background: transparent; color: #d0d0d0 !important; font-size: 12.5px !important; }
-        small { opacity: 0.6; font-size: 11px; margin-left: 2px; } }
-    .spotlog.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2000; height: calc(100vh - 88px); height: calc(100dvh - 88px); max-height: none;
-        border-radius: 18px 18px 0 0; box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.45); padding-top: 0; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-        transition: transform 0.25s ease; }
-    .spotlog.sheet:not(.open) { transform: translateY(105%) !important; pointer-events: none; box-shadow: none; }
-    .sheet-grab { position: sticky; top: 0; z-index: 6; margin: 0 -12px; padding: 9px 12px 7px; background: @ground; display: flex; justify-content: center; align-items: center; touch-action: none;
-        i { width: 40px; height: 5px; border-radius: 3px; background: #5a5a5a; display: block; } }
-    .sheet-x { position: absolute; right: 8px; top: 3px; width: 34px; height: 30px; border: 0; background: none; color: @sub !important; font-size: 16px; }
-    @media (prefers-reduced-motion: reduce) { .spotlog.sheet { transition: none; } }
-    .spotlog.m { padding: 0 12px 16px; gap: 12px; touch-action: pan-y;
+    /* phones: the panel sits in Windy's small pane under the timeline, half the screen high, and scrolls
+       (the layout that works on real phones, 0.5.2–0.6; 0.7.0's bar + sheet showed an empty pane) */
+    .spotlog.m { padding: 10px 12px 16px; gap: 12px; height: 50vh; height: 50dvh; max-height: 50dvh; touch-action: pan-y;
         .head { padding: 10px 14px; gap: 8px; }
         .wordmark { font-size: 20px; }
         .stats .big { font-size: 18px; }
