@@ -121,7 +121,7 @@
                         {#if nowOf(s.id, nowBySpot)}
                             <span class="now">
                                 <span class="sw" style="background: { windColor(nowOf(s.id, nowBySpot)?.wind?.wind ?? null) }">{ fmtWind0(nowOf(s.id, nowBySpot)?.wind?.wind ?? null, S.wind) }</span>
-                                <span class="now-t"><b>{ windLabel(S.wind) }</b><small>gusts { fmtWind0(nowOf(s.id, nowBySpot)?.wind?.gust ?? null, S.wind) }{ nowOf(s.id, nowBySpot)?.waves ? ' · ' + fmtHeight(nowOf(s.id, nowBySpot)?.waves?.waves ?? null, S.height, true) : '' }</small></span>
+                                <span class="now-t"><b>{ windLabel(S.wind) }</b><small>gusts { fmtWind0(nowOf(s.id, nowBySpot)?.wind?.gust ?? null, S.wind) }</small>{#if nowOf(s.id, nowBySpot)?.waves}<small>waves { fmtHeight(nowOf(s.id, nowBySpot)?.waves?.waves ?? null, S.height, true) }</small>{/if}</span>
                                 {#if nowOf(s.id, nowBySpot)?.wind?.dir != null}
                                     <!-- the arrow points where the wind blows to, like Windy's; the letters say where it comes from -->
                                     <span class="wdir" title="Wind from { dirName(nowOf(s.id, nowBySpot)?.wind?.dir ?? null) }">
@@ -2069,10 +2069,12 @@
     }
     .spotlog > :global(*) { flex-shrink: 0; }
     /* desktop: the panel fills Windy's right-hand pane */
-    .spotlog-host { height: 100%; }
+    /* Windy styles .plugin__content (padding, height): the host is only a frame, the panel inside does the layout */
+    .spotlog-host { height: 100%; padding: 0 !important; margin: 0 !important; overflow: hidden; box-sizing: border-box; background: @ground; display: flex; flex-direction: column;
+        > .spotlog { flex: 1; min-height: 0; } }
     /* phones: Windy's small pane under the timeline only holds a slim bar that never scrolls;
        everything else opens in Spotlog's own sheet over the map (moved onto the page, so its gestures are ours) */
-    .spotlog-host.m { height: auto; }
+    .spotlog-host.m { height: auto; overflow: visible; display: block; }
     .mbar { background: var(--sl-ground, #2e2e2e); color: var(--sl-text, #f8f8f8); font: 14px 'Instrument Sans', system-ui, sans-serif; padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 9px;
         button { font: inherit; color: inherit; cursor: pointer; } }
     .mrow { display: flex; align-items: center; gap: 10px; min-height: 24px; }
