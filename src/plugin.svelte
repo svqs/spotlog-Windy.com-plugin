@@ -1,7 +1,7 @@
 <div class="plugin__mobile-header">
     { title }
 </div>
-<section class="plugin__content spotlog-host" class:m={ isMobile }>
+<section class="plugin__content spotlog-host" class:m={ isMobile } class:gate={ isMobile && !!gate }>
 {#if isMobile}
 <!-- ================= PHONE: the slim bar under Windy's timeline (never scrolls) ================= -->
     <div class="mbar">
@@ -2089,7 +2089,10 @@
         > .spotlog { flex: 1; min-height: 0; } }
     /* phones: Windy's small pane under the timeline only holds a slim bar that never scrolls;
        everything else opens in Spotlog's own sheet over the map (moved onto the page, so its gestures are ours) */
-    .spotlog-host.m { height: auto; overflow: visible; display: block; }
+    /* Windy's small pane doesn't size itself to content that has no height of its own (0.7.0 showed an empty pane),
+       so the bar gets an explicit height, like the old 50dvh panel had */
+    .spotlog-host.m { height: 146px !important; min-height: 146px; max-height: 146px; overflow: hidden; display: block; flex: none; background: @ground; }
+    .spotlog-host.m.gate { height: 104px !important; min-height: 104px; max-height: 104px; }
     .mbar { background: var(--sl-ground, #2e2e2e); color: var(--sl-text, #f8f8f8); font: 14px 'Instrument Sans', system-ui, sans-serif; padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 9px;
         button { font: inherit; color: inherit; cursor: pointer; } }
     .mrow { display: flex; align-items: center; gap: 10px; min-height: 24px; }
