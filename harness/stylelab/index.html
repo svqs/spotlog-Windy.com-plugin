@@ -638,7 +638,8 @@ const SPOTLOG = {"look":{"r1bg":"#4d4d4d","r1fg":"#ffffff","r2bg":"#375467","r2f
     pvReady = false;
     document.getElementById('pvLoading').hidden = false;
     layoutDevice();
-    pv.src = 'preview.html?' + dev + '-' + Date.now();
+    pv.src = 'about:blank';
+    setTimeout(() => { pv.src = 'preview.html'; }, 30);
   }
   window.addEventListener('message', e => {
     if (e.source !== pv.contentWindow) return;
@@ -886,7 +887,7 @@ const SPOTLOG = {"look":{"r1bg":"#4d4d4d","r1fg":"#ffffff","r2bg":"#375467","r2f
   document.getElementById('brandStar').style.color = DEFAULTS.accent;
   document.getElementById('screen').value = screen;
   buildControls(); paintStage(); layoutDevice(); updateStatus();
-  pv.src = 'preview.html?' + dev;
+  pv.src = 'preview.html';
   (async () => {
     try { db = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch (e) { db = null; }
     if (!db) { updateStatus(); return; }
