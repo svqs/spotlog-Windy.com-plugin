@@ -100,6 +100,13 @@ with sync_playwright() as p:
     # --- Show on map -> popup with current conditions
     pg.click('.act:has-text("Show on map")')
     pg.wait_for_selector('.mock-popup .sl-pop', timeout=5000)
+    pg.wait_for_timeout(1500)
+    assert pg.locator('.mock-popup .sl-pop').count() == 1, 'popup should stay'
+    pg.click('.act:has-text("Show on map")')
+    pg.wait_for_timeout(200)
+    assert pg.locator('.mock-popup .sl-pop').count() == 0, 'tapping again hides it'
+    pg.click('.act:has-text("Show on map")')
+    pg.wait_for_selector('.mock-popup .sl-pop', timeout=5000)
     ok('show on map opens a popup with current conditions')
     shot('04-show-on-map')
 
@@ -217,6 +224,13 @@ with sync_playwright() as p:
     shot('08-home-units-kt')
     pg.click('.units')
     ok('units pill switches to knots everywhere')
+    pg.click('.viewtog button[aria-label="List"]')
+    pg.wait_for_selector('.tiles.list .tile')
+    assert stored(pg)['settings']['spotView'] == 'list'
+    shot('08b-spots-list')
+    pg.click('.viewtog button[aria-label="Tiles"]')
+    assert pg.locator('.tiles.list').count() == 0
+    ok('− shows the spots as a list, + as tiles')
 
     # --- home: Save forecast at the map centre -> snapshot view, link to spot, delete
     pg.click('.act:has-text("Save forecast")')
@@ -315,9 +329,12 @@ with sync_playwright() as p:
     pg.click('.tabs button:has-text("Gear")')
     pg.click('.seg button >> text="Surf"')
     pg.click('.chip:has-text("Leash")')
-    pg.fill('.card input', "6' comp")
+    pg.click('.card input')
+    pg.keyboard.type("6' comp")  # real key presses: Windy must not steal them (search) or eat the space (timeline)
+    assert pg.input_value('.card input') == "6' comp", pg.input_value('.card input')
     pg.click('.card .btn:has-text("Add")')
     pg.wait_for_selector('.item:has-text("comp")')
+    ok('typing (with spaces) stays in Spotlog\'s field, not in Windy\'s search')
     g = [x for x in stored(pg)['gear'] if x['name'] == "6' comp"][0]
     assert g['sport'] == 'Surf' and g['kind'] == 'Leash', g
     shot('11-gear')
@@ -422,9 +439,31 @@ with sync_playwright() as p:
     # --- phone width
     pg.set_viewport_size({'width': 390, 'height': 844})
     pg.goto(URL.replace('index.html', 'index.html?m'))
-    pg.wait_for_selector('.spotlog')
-    pg.wait_for_timeout(900)
-    pane.screenshot(path=f'{OUT}/14-phone-home.png')
+    pg.wait_for_selector('#pane .mbar')
+    pg.wait_for_timeout(600)
+    # phones: a slim bar in Windy's pane; the panel is a sheet on the page, closed at first
+    assert pg.locator('body > .spotlog.sheet').count() == 1 and pg.locator('.spotlog.sheet.open').count() == 0
+    shot('14-phone-bar')
+    pg.click('.mtabs button:has-text("Spots")')
+    pg.wait_for_selector('.spotlog.sheet.open .tile')
+    pg.wait_for_timeout(350)
+    shot('14b-phone-sheet')
+    assert pg.locator('.tile .wdir svg').count() >= 1, 'tiles show a wind arrow'
+    pg.click('.sheet-x')
+    pg.wait_for_timeout(300)
+    assert pg.locator('.spotlog.sheet.open').count() == 0
+    ok('phone: bar under the timeline, tabs open the sheet, ✕ closes it')
+    pg.click('.mact:has-text("Save forecast")')
+    pg.wait_for_selector('.spotlog.sheet.open .opt:has-text("Tap on the map")')
+    pg.click('.opt:has-text("Tap on the map")')
+    pg.wait_for_timeout(300)
+    assert pg.locator('.spotlog.sheet.open').count() == 0
+    pg.wait_for_selector('.mbar .mhint:has-text("Tap the map")')
+    shot('14c-phone-tap-map')
+    pg.mouse.click(200, 200)
+    pg.wait_for_selector('.spotlog.sheet.open .btn.primary:has-text("Save forecast")', timeout=8000)
+    shot('14d-phone-forecast')
+    ok('phone: picking on the map moves the sheet aside, then the forecast opens in it')
     data = stored(pg)
     b.close()
 

@@ -1,7 +1,45 @@
 <div class="plugin__mobile-header">
     { title }
 </div>
-<section class="plugin__content spotlog" class:m={ isMobile } bind:this={ root } on:touchstart={ touchStart } on:touchmove={ touchMove }>
+<section class="plugin__content spotlog-host" class:m={ isMobile }>
+{#if isMobile}
+<!-- ================= PHONE: the slim bar under Windy's timeline (never scrolls) ================= -->
+    <div class="mbar">
+        <div class="mrow">
+            <button class="mbrand" aria-label="Open Spotlog" on:click={ () => openSheet() }><span class="wordmark">SPOTLOG</span><PixelStar size={ 12 } /></button>
+            {#if waitingForMap}
+                <span class="mhint">{ pickFor === 'snap' ? 'Tap the map: where to save the forecast' : pickFor === 'log' ? 'Tap the map: where you were out' : 'Tap the map where the spot is' }</span>
+                <button class="mlink" on:click={ () => { waitingForMap = false; openSheet(); } }>Cancel</button>
+            {:else if capturing}
+                <span class="mhint">Loading the forecast…</span>
+            {:else if gate}
+                <span class="mhint">For Windy Premium members</span>
+            {/if}
+        </div>
+        {#if !gate}
+            <div class="macts">
+                <button class="mact" disabled={ capturing } on:click={ () => { openSheet(); startPick('snap'); } }><Icon name="weather" size={ 18 } /><span>Save forecast</span></button>
+                <button class="mact" on:click={ () => { openSheet(); startPick('spot'); } }><Icon name="pin" size={ 18 } /><span>Add spot</span></button>
+                <button class="mact" on:click={ () => { openSheet(); startPick('log'); } }><Icon name="pen" size={ 18 } /><span>Log session</span></button>
+            </div>
+            <div class="mtabs">
+                <button on:click={ () => openTab('spots') }>Spots <small>{ data.spots.length }</small></button>
+                <button on:click={ () => openTab('sessions') }>Sessions <small>{ data.sessions.length }</small></button>
+                <button on:click={ () => openTab('gear') }>Gear</button>
+                <button on:click={ () => openTab('about') }>About</button>
+            </div>
+        {:else}
+            <button class="btn primary wide" on:click={ () => openSheet() }>{ gate === 'login' ? 'Log in to use Spotlog' : 'See how to get Spotlog' }</button>
+        {/if}
+    </div>
+{/if}
+<div class="spotlog" class:m={ isMobile } class:sheet={ isMobile } class:open={ sheetOpen } use:sheetPortal={ isMobile } bind:this={ root } on:touchstart={ touchStart } on:touchmove={ touchMove } on:keydown={ keepKeys } on:keyup={ keepKeys } on:keypress={ keepKeys }>
+{#if isMobile}
+    <div class="sheet-grab" role="presentation" on:touchstart={ grabStart } on:touchmove={ grabMove } on:touchend={ grabEnd }>
+        <i aria-hidden="true"></i>
+        <button class="sheet-x" aria-label="Close Spotlog panel" on:click={ () => (sheetOpen = false) }>✕</button>
+    </div>
+{/if}
 
 {#if gate}
 <!-- ================= LOGIN / PREMIUM GATE ================= -->
@@ -72,14 +110,25 @@
         {#if data.spots.length === 0}
             <div class="empty">No spots yet. Press <b>Add spot</b> and click on the map where you surf or sail.</div>
         {:else}
-            <div class="tiles">
+            <div class="viewtog" role="group" aria-label="How to show your spots">
+                <button class:on={ S.spotView === 'list' } aria-pressed={ S.spotView === 'list' } aria-label="List" title="List" on:click={ () => setSettings({ ...S, spotView: 'list' }) }>−</button>
+                <button class:on={ S.spotView !== 'list' } aria-pressed={ S.spotView !== 'list' } aria-label="Tiles" title="Tiles" on:click={ () => setSettings({ ...S, spotView: 'tiles' }) }>+</button>
+            </div>
+            <div class="tiles" class:list={ S.spotView === 'list' }>
                 {#each data.spots as s (s.id)}
                     <button class="tile" on:click={ () => openSpot(s, true) }>
                         <span class="t-name">{ s.name }</span>
                         {#if nowOf(s.id, nowBySpot)}
                             <span class="now">
                                 <span class="sw" style="background: { windColor(nowOf(s.id, nowBySpot)?.wind?.wind ?? null) }">{ fmtWind0(nowOf(s.id, nowBySpot)?.wind?.wind ?? null, S.wind) }</span>
-                                <span class="now-t"><b>{ windLabel(S.wind) } { dirName(nowOf(s.id, nowBySpot)?.wind?.dir ?? null) }</b><small>gusts { fmtWind0(nowOf(s.id, nowBySpot)?.wind?.gust ?? null, S.wind) }{ nowOf(s.id, nowBySpot)?.waves ? ' · ' + fmtHeight(nowOf(s.id, nowBySpot)?.waves?.waves ?? null, S.height, true) : '' }</small></span>
+                                <span class="now-t"><b>{ windLabel(S.wind) }</b><small>gusts { fmtWind0(nowOf(s.id, nowBySpot)?.wind?.gust ?? null, S.wind) }{ nowOf(s.id, nowBySpot)?.waves ? ' · ' + fmtHeight(nowOf(s.id, nowBySpot)?.waves?.waves ?? null, S.height, true) : '' }</small></span>
+                                {#if nowOf(s.id, nowBySpot)?.wind?.dir != null}
+                                    <!-- the arrow points where the wind blows to, like Windy's; the letters say where it comes from -->
+                                    <span class="wdir" title="Wind from { dirName(nowOf(s.id, nowBySpot)?.wind?.dir ?? null) }">
+                                        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" style="transform: rotate({ (nowOf(s.id, nowBySpot)?.wind?.dir ?? 0) + 180 }deg)"><path d="M9 2 L14 10 L10.2 9 L10.2 16 L7.8 16 L7.8 9 L4 10 Z" fill="currentColor" /></svg>
+                                        <small>{ dirName(nowOf(s.id, nowBySpot)?.wind?.dir ?? null) }</small>
+                                    </span>
+                                {/if}
                             </span>
                         {:else}
                             <span class="now"><small>Loading conditions…</small></span>
@@ -207,7 +256,7 @@
                 <span class="chev-r" aria-hidden="true">›</span>
             </button>
         {/if}
-        <button class="opt" class:on={ waitingForMap } on:click={ () => (waitingForMap = true) }>
+        <button class="opt" class:on={ waitingForMap } on:click={ () => { waitingForMap = true; if (isMobile) sheetOpen = false; } }>
             <span class="ico" class:live={ waitingForMap }><Icon name="pointer" /></span>
             <span class="grow"><span>{ isMobile ? 'Tap on the map' : 'Click on the map' }</span><small>{ waitingForMap ? (isMobile ? 'Tap a place, a town or one of your spots…' : 'Click a place, a town or one of your spots…') : 'any place, town or one of your spots' }</small></span>
         </button>
@@ -333,7 +382,7 @@
     <div class="actions">
         <button class="act" disabled={ capturing } on:click={ () => spot && saveForecastAt({ lat: spot.lat, lon: spot.lon, spot }) }><Icon name="weather" /><b>{ capturing ? 'Loading…' : 'Save forecast' }</b><small>next 24 h</small></button>
         <button class="act" on:click={ () => spot && startLog({ spot }) }><Icon name="pen" /><b>Log session</b><small>how was it?</small></button>
-        <button class="act" on:click={ () => spot && showOnMap(spot) }><Icon name="map" /><b>Show on map</b></button>
+        <button class="act" class:on={ mapShown === spot.id } aria-pressed={ mapShown === spot.id } on:click={ () => spot && toggleShowOnMap(spot) }><Icon name="map" /><b>Show on map</b>{#if mapShown === spot.id}<small>tap to hide</small>{/if}</button>
     </div>
 
     <div class="card">
@@ -613,6 +662,7 @@
     </div>
 {/if}
 
+</div>
 </section>
 
 <script lang="ts">
@@ -674,6 +724,56 @@
     const isMobile = !!rootScope?.isMobileOrTablet;
 
     let root: HTMLElement;
+
+    /**
+     * Windy listens to the keyboard on the whole page (typing jumps to its search, space plays the timeline).
+     * While you type in one of Spotlog's fields, the keys stay with that field.
+     */
+    function keepKeys(e: KeyboardEvent) {
+        const t = e.target as HTMLElement | null;
+        if (!t) return;
+        const editable = t.isContentEditable || t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && !['checkbox', 'radio', 'button', 'range', 'file'].includes((t as HTMLInputElement).type));
+        if (editable && e.key !== 'Escape') e.stopPropagation();
+    }
+
+    /* ---------- phones: a slim bar in Windy's pane + Spotlog's own sheet over the map ---------- */
+    let sheetOpen = false;
+    function openSheet() {
+        sheetOpen = true;
+    }
+    function openTab(t: typeof tab) {
+        tab = t;
+        if (view !== 'home') goHome();
+        openSheet();
+        tick().then(scrollTop);
+    }
+    /** Phones: the panel lives on the page itself (not in Windy's small pane), so it can be tall and scroll properly */
+    function sheetPortal(node: HTMLElement, on: boolean) {
+        const home = node.parentNode;
+        const place = (v: boolean) => {
+            if (v && node.parentNode !== document.body) document.body.appendChild(node);
+            else if (!v && home && node.parentNode !== home) home.appendChild(node);
+        };
+        place(on);
+        return { update: place, destroy: () => node.remove() };
+    }
+    // swipe the handle down to close the sheet
+    let grabY = 0;
+    let grabDy = 0;
+    function grabStart(e: TouchEvent) {
+        grabY = e.touches[0]?.clientY ?? 0;
+        grabDy = 0;
+    }
+    function grabMove(e: TouchEvent) {
+        grabDy = Math.max(0, (e.touches[0]?.clientY ?? 0) - grabY);
+        if (root) root.style.transform = grabDy ? `translateY(${grabDy}px)` : '';
+        e.preventDefault();
+    }
+    function grabEnd() {
+        if (root) root.style.transform = '';
+        if (grabDy > 70) sheetOpen = false;
+        grabDy = 0;
+    }
 
     /* ---------- Windy account: Spotlog is for logged-in Premium users ---------- */
     interface WindyUser { id: number; username?: string; email?: string }
@@ -759,6 +859,8 @@
     let trackLayers: any[] = [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let popup: any = null;
+    /** spot whose popup is shown on the map ("Show on map" switched on) */
+    let mapShown: string | null = null;
 
     /* ---------- derived ---------- */
     $: S = data.settings;
@@ -1111,8 +1213,10 @@
         tempMarker = null;
     }
     function clearPopup() {
-        popup?.remove();
-        popup = null;
+        const p = popup;
+        popup = null; // first, so its 'remove' handler knows this was on purpose
+        mapShown = null;
+        p?.remove();
     }
     function setTemp(lat: number, lon: number) {
         clearTemp();
@@ -1255,16 +1359,36 @@
             (pred !== null ? `<span class="sl-b" style="background:${guessColours(pred)[0]};color:${guessColours(pred)[1]}">${predictionLabel(pred)}</span>` : '') +
             '</div>';
     }
-    async function showOnMap(sp: Spot) {
-        centerMap({ lat: sp.lat, lon: sp.lon, zoom: 11 });
+    /** "Show on map" is a switch: the popup stays at the spot until you switch it off or leave the spot */
+    async function toggleShowOnMap(sp: Spot) {
+        if (mapShown === sp.id) {
+            clearPopup();
+            return;
+        }
         clearPopup();
+        mapShown = sp.id;
+        centerMap({ lat: sp.lat, lon: sp.lon, zoom: 11 });
         if (typeof L === 'undefined' || !map || !L.popup) return;
         const n = nowOf(sp.id) || (await loadNow(sp));
+        // let Windy finish moving the map first
+        await new Promise(r => setTimeout(r, 450));
+        if (mapShown !== sp.id) return;
+        openSpotPopup(sp, n);
+    }
+    function openSpotPopup(sp: Spot, n: Now | null) {
         try {
-            popup = L.popup({ className: 'spotlog-popup', closeButton: true, autoPan: true, offset: [0, -8] })
+            // not closed by map clicks or other popups; if Windy still closes it, it comes straight back
+            const p = L.popup({ className: 'spotlog-popup', closeButton: false, autoClose: false, closeOnClick: false, autoPan: false, offset: [0, -8] })
                 .setLatLng([sp.lat, sp.lon])
-                .setContent(popupHtml(sp, n))
-                .openOn(map);
+                .setContent(popupHtml(sp, n));
+            popup = p;
+            let reopened = 0;
+            p.on?.('remove', () => {
+                if (popup !== p || mapShown !== sp.id || reopened > 20) return;
+                reopened++;
+                setTimeout(() => { if (popup === p && mapShown === sp.id) p.openOn(map); }, 60);
+            });
+            p.openOn(map);
         } catch (e) {
             console.info('[spotlog] popup not available', e);
         }
@@ -1273,7 +1397,7 @@
     async function onMapPick(ev: { lat: number; lon: number }, known?: Spot) {
         const { lat, lon } = ev;
         const near = known ? { s: known, d: 0 } : nearestWithin(lat, lon, 1);
-        clearPopup();
+        if (!(known && mapShown === known.id)) clearPopup();
         if (view === 'spotForm' && sf) {
             // move the new spot's pin
             setTemp(lat, lon);
@@ -1320,6 +1444,8 @@
         if (v !== 'place' && v !== 'spotForm') clearTemp();
         if (v !== 'spot') clearPopup();
         drawSpotMarkers();
+        // phones: anything that opens a page opens the sheet (unless we are waiting for a tap on the map)
+        if (isMobile && !waitingForMap && v !== 'home') sheetOpen = true;
         tick().then(scrollTop);
     }
     function scrollTop() {
@@ -1352,6 +1478,7 @@
         loadAllNow();
     }
     function openSpot(s: Spot, center = false) {
+        if (mapShown && mapShown !== s.id) clearPopup();
         spot = s;
         go('spot');
         if (center) centerMap({ lat: s.lat, lon: s.lon, zoom: 10 });
@@ -1384,6 +1511,7 @@
         actOn(pickFor, loc, near?.s);
     }
     function actOn(what: PickFor, loc: Loc, s?: Spot) {
+        waitingForMap = false;
         if (what === 'snap') saveForecastAt({ lat: loc.lat, lon: loc.lon, spot: s || nearestWithin(loc.lat, loc.lon, 1)?.s });
         else if (what === 'log') startLog(s ? { spot: s } : { lat: loc.lat, lon: loc.lon });
         else startSpotForm(loc, null);
@@ -1940,10 +2068,32 @@
         textarea { resize: vertical; line-height: 1.45; }
     }
     .spotlog > :global(*) { flex-shrink: 0; }
-    /* phones: Spotlog sits in Windy's small bottom panel under the timeline, so everything is tighter */
-    /* Windy's small bottom panel sizes itself to its content, so on phones Spotlog sets its own height
-       (about half the screen, like The Buoy) and scrolls inside it */
-    .spotlog.m { padding: 10px 12px 16px; gap: 12px; height: 50vh; height: 50dvh; max-height: 50dvh; touch-action: pan-y;
+    /* desktop: the panel fills Windy's right-hand pane */
+    .spotlog-host { height: 100%; }
+    /* phones: Windy's small pane under the timeline only holds a slim bar that never scrolls;
+       everything else opens in Spotlog's own sheet over the map (moved onto the page, so its gestures are ours) */
+    .spotlog-host.m { height: auto; }
+    .mbar { background: var(--sl-ground, #2e2e2e); color: var(--sl-text, #f8f8f8); font: 14px 'Instrument Sans', system-ui, sans-serif; padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 9px;
+        button { font: inherit; color: inherit; cursor: pointer; } }
+    .mrow { display: flex; align-items: center; gap: 10px; min-height: 24px; }
+    .mbrand { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 0; .wordmark { font-size: 18px; } }
+    .mhint { flex: 1; min-width: 0; text-align: right; font-size: 12px; color: var(--sl-sub, #b0b0b0); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mlink { border: 0; background: none; padding: 4px 0; color: var(--sl-accent, #d49500) !important; font-weight: 600; font-size: 13px; }
+    .macts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+    .mact { height: 44px; padding: 0 6px; border-radius: 12px; border: 1px solid #5a5a5a; background: var(--sl-card, #3c3c3c); display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12.5px !important; font-weight: 600;
+        span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } &:disabled { opacity: 0.6; } }
+    .mtabs { display: flex; gap: 3px; padding: 3px; border-radius: 11px; background: var(--sl-card, #3c3c3c);
+        button { flex: 1; height: 30px; border: 0; border-radius: 8px; background: transparent; color: #d0d0d0 !important; font-size: 12.5px !important; }
+        small { opacity: 0.6; font-size: 11px; margin-left: 2px; } }
+    .spotlog.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2000; height: calc(100vh - 88px); height: calc(100dvh - 88px); max-height: none;
+        border-radius: 18px 18px 0 0; box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.45); padding-top: 0; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        transition: transform 0.25s ease; }
+    .spotlog.sheet:not(.open) { transform: translateY(105%) !important; pointer-events: none; box-shadow: none; }
+    .sheet-grab { position: sticky; top: 0; z-index: 6; margin: 0 -12px; padding: 9px 12px 7px; background: @ground; display: flex; justify-content: center; align-items: center; touch-action: none;
+        i { width: 40px; height: 5px; border-radius: 3px; background: #5a5a5a; display: block; } }
+    .sheet-x { position: absolute; right: 8px; top: 3px; width: 34px; height: 30px; border: 0; background: none; color: @sub !important; font-size: 16px; }
+    @media (prefers-reduced-motion: reduce) { .spotlog.sheet { transition: none; } }
+    .spotlog.m { padding: 0 12px 16px; gap: 12px; touch-action: pan-y;
         .head { padding: 10px 14px; gap: 8px; }
         .wordmark { font-size: 20px; }
         .stats .big { font-size: 18px; }
@@ -2013,6 +2163,7 @@
         :global(svg) { color: @text; margin-bottom: 4px; }
         b { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; } small { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
         &:hover { border-color: #777; background: #424242; }
+        &.on { border-color: var(--sl-accent, #d49500); :global(svg) { color: var(--sl-accent, #d49500); } }
         &:disabled { opacity: 0.6; cursor: default; } }
 
     .tabs, .seg { display: flex; gap: 4px; padding: 3px; background: @card; border-radius: 12px;
@@ -2024,8 +2175,22 @@
     .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .tile { text-align: left; min-height: 128px; padding: 14px; border-radius: 18px; background: @card; border: 1px solid @line; display: flex; flex-direction: column; gap: 10px; justify-content: space-between; }
     .t-name { font-size: 15px; font-weight: 600; }
+    /* − / + above the spots: compact list or tiles */
+    .viewtog { align-self: flex-end; display: flex; gap: 2px; padding: 2px; margin-bottom: -8px; border-radius: 9px; background: @card;
+        button { width: 30px; height: 24px; border: 0; border-radius: 7px; background: transparent; color: @sub !important; font-size: 17px !important; line-height: 1; padding: 0; }
+        button.on { background: var(--sl-sel-bg, #f8f8f8); color: var(--sl-sel-text, #1c1c1c) !important; font-weight: 600; } }
+    .tiles.list { grid-template-columns: minmax(0, 1fr); gap: 6px;
+        .tile { min-height: 0; flex-direction: row; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; border-radius: 14px; }
+        .t-name { flex: 1; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .now { flex: 0 0 auto; }
+        .now-t { display: none; }
+        .sw { width: 30px; height: 30px; border-radius: 9px; font-size: 13px; }
+        .t-tag { flex: 0 0 auto; }
+        .tag { font-size: 11px; padding: 3px 9px; } }
     .now { display: flex; align-items: center; gap: 8px; min-width: 0; }
-    .now-t { display: flex; flex-direction: column; gap: 1px; min-width: 0; b { font-size: 13px; } small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }
+    .now-t { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; b { font-size: 13px; } small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }
+    .wdir { display: flex; flex-direction: column; align-items: center; gap: 1px; flex-shrink: 0; min-width: 28px; color: @text;
+        svg { display: block; } small { font-size: 11px; font-weight: 600; color: @sub; } }
     .tag { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;
         &.green { background: var(--sl-match, #34985a); color: #fff; }
         &.ghost { border: 1px solid @outline; color: @sub; font-weight: 400; font-size: 11px; } }

@@ -130,6 +130,8 @@ export interface Settings {
     /** what Spotlog draws on the Windy map */
     mapSpots: boolean;
     mapSessions: boolean;
+    /** spots on the home screen: tiles or a compact list */
+    spotView: 'tiles' | 'list';
 }
 
 export interface SpotlogData {

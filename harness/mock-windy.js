@@ -65,22 +65,24 @@
     // ---- popups + polylines (the bits of Leaflet Spotlog uses) ----
     let openPopup = null;
     class Popup {
-        constructor(opts) { this.opts = opts || {}; }
+        constructor(opts) { this.opts = opts || {}; this.h = {}; }
+        on(ev, f) { (this.h[ev] = this.h[ev] || []).push(f); return this; }
         setLatLng(ll) { this.ll = Array.isArray(ll) ? { lat: ll[0], lng: ll[1] } : ll; return this; }
         setContent(html) { this.html = html; return this; }
         place() { const p = project(this.ll.lat, this.ll.lng); this.el.style.left = p.x + 'px'; this.el.style.top = p.y + 'px'; }
         openOn() {
-            openPopup?.remove();
+            if (openPopup && openPopup !== this && openPopup.opts.autoClose !== false) openPopup.remove();
+            this.el?.remove();
             const el = document.createElement('div');
             el.className = 'mock-popup leaflet-popup ' + (this.opts.className || '');
-            el.innerHTML = '<div class="leaflet-popup-content-wrapper"><div class="leaflet-popup-content">' + this.html + '</div></div><button class="mock-popup-x" aria-label="Close">×</button>';
+            el.innerHTML = '<div class="leaflet-popup-content-wrapper"><div class="leaflet-popup-content">' + this.html + '</div></div>' + (this.opts.closeButton === false ? '' : '<button class="mock-popup-x" aria-label="Close">×</button>');
             el.addEventListener('click', e => e.stopPropagation());
-            el.querySelector('.mock-popup-x').addEventListener('click', () => this.remove());
+            el.querySelector('.mock-popup-x')?.addEventListener('click', () => this.remove());
             mapEl().appendChild(el);
             this.el = el; this.place(); live.add(this); openPopup = this;
             return this;
         }
-        remove() { this.el?.remove(); live.delete(this); if (openPopup === this) openPopup = null; return this; }
+        remove() { const was = !!this.el?.isConnected; this.el?.remove(); live.delete(this); if (openPopup === this) openPopup = null; if (was) (this.h.remove || []).forEach(f => f()); return this; }
     }
     class Polyline {
         constructor(pts, opts) { this.pts = pts.map(p => Array.isArray(p) ? { lat: p[0], lng: p[1] } : p); this.opts = opts || {}; }
@@ -276,6 +278,17 @@
         pane.parentElement.appendChild(b);
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addClosingX); else addClosingX();
+
+    // like Windy: typing anywhere jumps into its search box, space plays the timeline
+    document.addEventListener('keydown', e => {
+        const t = e.target;
+        if (e.key === ' ') { e.preventDefault(); console.log('[W] space: play timeline'); return; }
+        if (e.key.length === 1 && !(t && t.id === 'mock-search')) {
+            let box = document.getElementById('mock-search');
+            if (!box) { box = document.createElement('input'); box.id = 'mock-search'; box.style.cssText = 'position:fixed;left:-9999px;top:0'; document.body.appendChild(box); }
+            box.focus();
+        }
+    });
 
     window.W = {
         broadcast: { emit: (t, ...a) => { console.log('[W.broadcast]', t, ...a); (listeners[t] || []).forEach(f => f(...a)); }, on: (t, f) => (listeners[t] = listeners[t] || []).push(f) },
