@@ -68,7 +68,8 @@
         constructor(opts) { this.opts = opts || {}; this.h = {}; }
         on(ev, f) { (this.h[ev] = this.h[ev] || []).push(f); return this; }
         setLatLng(ll) { this.ll = Array.isArray(ll) ? { lat: ll[0], lng: ll[1] } : ll; return this; }
-        setContent(html) { this.html = html; return this; }
+        setContent(html) { this.html = html; const c = this.el?.querySelector('.leaflet-popup-content'); if (c) c.innerHTML = html; return this; }
+        getElement() { return this.el || null; }
         place() { const p = project(this.ll.lat, this.ll.lng); this.el.style.left = p.x + 'px'; this.el.style.top = p.y + 'px'; }
         openOn() {
             if (openPopup && openPopup !== this && openPopup.opts.autoClose !== false) openPopup.remove();

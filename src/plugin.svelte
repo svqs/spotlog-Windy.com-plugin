@@ -1216,7 +1216,15 @@
         const p = popup;
         popup = null; // first, so its 'remove' handler knows this was on purpose
         mapShown = null;
-        p?.remove();
+        if (!p) return;
+        // fade it out, then take it off the map
+        const el: HTMLElement | null = p.getElement?.() || null;
+        if (el && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+            el.classList.add('sl-closing');
+            setTimeout(() => p.remove(), 170);
+        } else {
+            p.remove();
+        }
     }
     function setTemp(lat: number, lon: number) {
         clearTemp();
@@ -1348,13 +1356,13 @@
             console.info('[spotlog] could not draw the track', e);
         }
     }
-    function popupHtml(sp: Spot, n: Now | null): string {
+    function popupHtml(sp: Spot, n: Now | null, loading = false): string {
         const w = n?.wind;
         const pred = n ? predictRating(sp, n.wind, data.sessions, data.snapshots) : null;
-        const tile = (label: string, val: string, bg: string) =>
-            `<div class="sl-t" style="background:${bg}"><span>${label}</span><b>${val}</b></div>`;
+        const tile = (label: string, val: string, bg: string, unit = '') =>
+            `<div class="sl-t" style="background:${bg}"><span>${label}</span><b>${val}${unit ? `<i>${unit}</i>` : ''}</b></div>`;
         return `<div class="sl-pop"><div class="sl-h"><b>${escapeHtml(sp.name)}</b><small>Right now · ECMWF</small></div>` +
-            (w ? `<div class="sl-tiles">${tile('Wind ' + windLabel(S.wind), fmtWind0(w.wind, S.wind), windColor(w.wind))}${tile('Gusts', fmtWind0(w.gust, S.wind), windColor(w.gust))}${tile('From', dirName(w.dir), '#e9e8e3')}${n?.waves ? tile('Waves ' + S.height, fmtHeight(n.waves.waves, S.height), '#dbe6f2') : ''}</div>` : '<small>No forecast here</small>') +
+            (w ? `<div class="sl-tiles">${tile('Wind', fmtWind0(w.wind, S.wind), windColor(w.wind), windLabel(S.wind))}${tile('Gusts', fmtWind0(w.gust, S.wind), windColor(w.gust), windLabel(S.wind))}${tile('From', dirName(w.dir), '#e9e8e3')}${n?.waves ? tile('Waves', fmtHeight(n.waves.waves, S.height), '#dbe6f2', S.height) : ''}</div>` : loading ? '<small>Loading conditions…</small>' : '<small>No forecast here</small>') +
             (w ? `<small>${fmtTemp(w.temp, S.temp)}</small>` : '') +
             (pred !== null ? `<span class="sl-b" style="background:${guessColours(pred)[0]};color:${guessColours(pred)[1]}">${predictionLabel(pred)}</span>` : '') +
             '</div>';
@@ -1369,18 +1377,20 @@
         mapShown = sp.id;
         centerMap({ lat: sp.lat, lon: sp.lon, zoom: 11 });
         if (typeof L === 'undefined' || !map || !L.popup) return;
-        const n = nowOf(sp.id) || (await loadNow(sp));
-        // let Windy finish moving the map first
-        await new Promise(r => setTimeout(r, 450));
-        if (mapShown !== sp.id) return;
-        openSpotPopup(sp, n);
+        // open right away (it follows the map while Windy moves it); conditions fill in when they arrive
+        const cached = nowOf(sp.id);
+        openSpotPopup(sp, cached, !cached);
+        if (!cached) {
+            const n = await loadNow(sp);
+            if (mapShown === sp.id && popup) popup.setContent(popupHtml(sp, n));
+        }
     }
-    function openSpotPopup(sp: Spot, n: Now | null) {
+    function openSpotPopup(sp: Spot, n: Now | null, loading = false) {
         try {
             // not closed by map clicks or other popups; if Windy still closes it, it comes straight back
             const p = L.popup({ className: 'spotlog-popup', closeButton: false, autoClose: false, closeOnClick: false, autoPan: false, offset: [0, -8] })
                 .setLatLng([sp.lat, sp.lon])
-                .setContent(popupHtml(sp, n));
+                .setContent(popupHtml(sp, n, loading));
             popup = p;
             let reopened = 0;
             p.on?.('remove', () => {
@@ -2257,6 +2267,12 @@
         &.on { border-color: @orange; } }
     .chev-r { color: @sub; font-size: 18px; }
     .pulse { width: 10px; height: 10px; border-radius: 5px; background: @orange; flex-shrink: 0; &.live { animation: sl-pulse 1.6s ease-out infinite; } }
+    /* the spot popup: grows in from its tip, fades out when switched off */
+    :global(.spotlog-popup .leaflet-popup-content-wrapper), :global(.spotlog-popup .leaflet-popup-tip-container) { transform-origin: 50% 100%; animation: sl-pop-in 0.22s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+    :global(.spotlog-popup.sl-closing .leaflet-popup-content-wrapper), :global(.spotlog-popup.sl-closing .leaflet-popup-tip-container) { animation: sl-pop-out 0.17s ease-in both; }
+    @keyframes -global-sl-pop-in { from { opacity: 0; transform: translateY(8px) scale(0.94); } to { opacity: 1; transform: none; } }
+    @keyframes -global-sl-pop-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(6px) scale(0.96); } }
+    @media (prefers-reduced-motion: reduce) { :global(.spotlog-popup .leaflet-popup-content-wrapper), :global(.spotlog-popup .leaflet-popup-tip-container) { animation: none; } }
     @keyframes sl-pulse { 0% { box-shadow: 0 0 0 0 rgba(212, 149, 0, 0.55); } 100% { box-shadow: 0 0 0 12px rgba(212, 149, 0, 0); } }
     @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
     .toast { position: sticky; bottom: 12px; z-index: 5; display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 16px; border-radius: 14px; background: var(--sl-toast-bg, #f8f8f8); color: var(--sl-toast-text, #1c1c1c); font-weight: 600; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45); }
@@ -2296,7 +2312,9 @@
     :global(.sl-h) { display: flex; flex-direction: column; gap: 1px; }
     :global(.sl-h b) { font-size: 14px; }
     :global(.sl-tiles) { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
-    :global(.sl-t) { display: flex; flex-direction: column; gap: 4px; padding: 7px; border-radius: 9px; font-size: 10px; color: #1c1c1c; }
-    :global(.sl-t b) { font: 900 20px 'Doto', ui-monospace, monospace; line-height: 1; }
+    :global(.sl-t) { display: flex; flex-direction: column; justify-content: space-between; gap: 6px; min-height: 58px; padding: 7px 8px; border-radius: 9px; font-size: 11px; color: #1c1c1c; box-sizing: border-box; }
+    :global(.sl-t span) { white-space: nowrap; }
+    :global(.sl-t b) { display: flex; align-items: baseline; gap: 2px; font: 900 20px 'Doto', ui-monospace, monospace; line-height: 1; white-space: nowrap; }
+    :global(.sl-t b i) { font: 600 10px 'Instrument Sans', system-ui, sans-serif; font-style: normal; opacity: 0.7; }
     :global(.sl-b) { align-self: flex-start; padding: 3px 9px; border-radius: 10px; font-size: 12px; font-weight: 600; }
 </style>

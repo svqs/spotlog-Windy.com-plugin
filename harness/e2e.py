@@ -99,7 +99,8 @@ with sync_playwright() as p:
 
     # --- Show on map -> popup with current conditions
     pg.click('.act:has-text("Show on map")')
-    pg.wait_for_selector('.mock-popup .sl-pop', timeout=5000)
+    pg.wait_for_selector('.mock-popup .sl-pop', timeout=300)  # right away, no waiting for the map
+    pg.wait_for_selector('.mock-popup .sl-tiles', timeout=5000)
     pg.wait_for_timeout(1500)
     assert pg.locator('.mock-popup .sl-pop').count() == 1, 'popup should stay'
     pg.click('.act:has-text("Show on map")')
@@ -107,7 +108,7 @@ with sync_playwright() as p:
     assert pg.locator('.mock-popup .sl-pop').count() == 0, 'tapping again hides it'
     pg.click('.act:has-text("Show on map")')
     pg.wait_for_selector('.mock-popup .sl-pop', timeout=5000)
-    ok('show on map opens a popup with current conditions')
+    ok('show on map opens a popup right away, it stays, tapping again closes it')
     shot('04-show-on-map')
 
     # --- Log a session: rating, magnetic slider drag, gear, time wheel, GPX
