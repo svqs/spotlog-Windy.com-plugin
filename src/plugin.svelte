@@ -1,7 +1,46 @@
 <div class="plugin__mobile-header">
     { title }
 </div>
-<section class="plugin__content spotlog" class:m={ isMobile } bind:this={ root } on:touchstart={ touchStart } on:touchmove={ touchMove } on:keydown={ keepKeys } on:keyup={ keepKeys } on:keypress={ keepKeys }>
+<section class="plugin__content spotlog" class:m={ isMobile } class:bar={ barMode } class:gatebar={ barMode && !!gate } bind:this={ root } on:touchstart={ touchStart } on:touchmove={ touchMove } on:keydown={ keepKeys } on:keyup={ keepKeys } on:keypress={ keepKeys }>
+
+{#if barMode}
+<!-- ================= PHONE: a compact bar in Windy's pane; pages open in a panel that rises over the map (like The Buoy's list) ================= -->
+    <div class="mbar">
+        <div class="mrow">
+            <span class="brand"><span class="wordmark">SPOTLOG</span><PixelStar size={ 12 } /></span>
+            {#if waitingForMap}
+                <span class="mhint">{ pickFor === 'snap' ? 'Tap the map: where to save the forecast' : pickFor === 'log' ? 'Tap the map: where you were out' : 'Tap the map where the spot is' }</span>
+                <button class="mlink" on:click={ () => { waitingForMap = false; openModal(); } }>Cancel</button>
+            {:else if capturing}
+                <span class="mhint">Loading the forecast…</span>
+            {:else if gate}
+                <span class="mhint">For Windy Premium members</span>
+            {:else}
+                <span class="grow-b"></span>
+                <button class="units" aria-label="Units and saved data" on:click={ () => { if (view !== 'home') goHome(); showUnits = true; openModal(); } }>{ unitsLabel } <span class="chev">▾</span></button>
+            {/if}
+        </div>
+        {#if !gate}
+            <div class="macts">
+                <button class="mact" disabled={ capturing } on:click={ () => { startPick('snap'); } }><Icon name="weather" size={ 18 } /><span>Save forecast</span></button>
+                <button class="mact" on:click={ () => { startPick('spot'); } }><Icon name="pin" size={ 18 } /><span>Add spot</span></button>
+                <button class="mact" on:click={ () => { startPick('log'); } }><Icon name="pen" size={ 18 } /><span>Log session</span></button>
+            </div>
+            <div class="mtabs">
+                {#each [['spots', 'Spots'], ['sessions', 'Sessions'], ['gear', 'Gear'], ['about', 'About']] as [k, label]}
+                    <button class:on={ modalOpen && view === 'home' && tab === k } on:click={ () => toggleTab(asTab(k)) }>{ label }{#if k === 'spots'} <small>{ data.spots.length }</small>{:else if k === 'sessions'} <small>{ data.sessions.length }</small>{/if}</button>
+                {/each}
+            </div>
+        {:else}
+            <button class="btn primary wide" on:click={ openModal }>{ gate === 'login' ? 'Log in to use Spotlog' : 'See how to get Spotlog' }</button>
+        {/if}
+    </div>
+{/if}
+<div class="mwrap" class:on={ barMode } class:open={ modalOpen }>
+{#if barMode}
+    <div class="mgrab"><i aria-hidden="true"></i><button class="mclose" aria-label="Close" on:click={ () => (modalOpen = false) }>✕</button></div>
+{/if}
+<div class="body" bind:this={ bodyEl }>
 
 {#if gate}
 <!-- ================= LOGIN / PREMIUM GATE ================= -->
@@ -24,7 +63,8 @@
 
 <!-- ================= HEADER ================= -->
 {#if view === 'home'}
-    <div class="card head">
+    {#if barMode && showUnits}<div class="card"><Settings settings={ data.settings } on:change={ e => setSettings(e.detail) } /></div>{/if}
+    <div class="card head home-head">
         <div class="row">
             {#if !isMobile}
                 <button class="back-menu" aria-label="Back to the Windy menu" title="Back to the Windy menu" on:click={ toWindyMenu }>
@@ -55,13 +95,13 @@
 
 <!-- ================= HOME ================= -->
 {#if view === 'home'}
-    <div class="actions">
+    <div class="actions home-acts">
         <button class="act" disabled={ capturing } on:click={ () => startPick('snap') }><Icon name="weather" /><b>{ capturing ? 'Loading…' : 'Save forecast' }</b><small>next 24 h</small></button>
         <button class="act" on:click={ () => startPick('spot') }><Icon name="pin" /><b>Add spot</b><small>on the map</small></button>
         <button class="act" on:click={ () => startPick('log') }><Icon name="pen" /><b>Log session</b><small>after you're out</small></button>
     </div>
 
-    <div class="tabs">
+    <div class="tabs home-tabs">
         <button class:on={ tab === 'spots' } on:click={ () => (tab = 'spots') }>Spots</button>
         <button class:on={ tab === 'sessions' } on:click={ () => (tab = 'sessions') }>Sessions</button>
         <button class:on={ tab === 'gear' } on:click={ () => (tab = 'gear') }>Gear</button>
@@ -78,7 +118,7 @@
             </div>
             <div class="tiles" class:list={ S.spotView === 'list' }>
                 {#each data.spots as s (s.id)}
-                    <button class="tile" on:click={ () => openSpot(s, true) }>
+                    <button class="tile" on:click={ () => (barMode ? spotOnMap(s) : openSpot(s, true)) }>
                         <span class="t-name">{ s.name }</span>
                         {#if nowOf(s.id, nowBySpot)}
                             <span class="now">
@@ -218,7 +258,7 @@
                 <span class="chev-r" aria-hidden="true">›</span>
             </button>
         {/if}
-        <button class="opt" class:on={ waitingForMap } on:click={ () => (waitingForMap = true) }>
+        <button class="opt" class:on={ waitingForMap } on:click={ () => { waitingForMap = true; if (barMode) modalOpen = false; } }>
             <span class="ico" class:live={ waitingForMap }><Icon name="pointer" /></span>
             <span class="grow"><span>{ isMobile ? 'Tap on the map' : 'Click on the map' }</span><small>{ waitingForMap ? (isMobile ? 'Tap a place, a town or one of your spots…' : 'Click a place, a town or one of your spots…') : 'any place, town or one of your spots' }</small></span>
         </button>
@@ -624,6 +664,8 @@
     </div>
 {/if}
 
+</div>
+</div>
 </section>
 
 <script lang="ts">
@@ -685,6 +727,52 @@
     const isMobile = !!rootScope?.isMobileOrTablet;
 
     let root: HTMLElement;
+    let bodyEl: HTMLElement;
+
+    /* ---------- phones: compact bar + a panel that rises over the map ---------- */
+    let modalOpen = false;
+    /** set when this phone clips the panel (it would be invisible): then the classic half-screen panel is used */
+    let modalFallback = false;
+    $: barMode = isMobile && !modalFallback;
+    const asTab = (k: string) => k as typeof tab;
+    function openModal() {
+        if (!barMode) return;
+        modalOpen = true;
+        tick().then(() => setTimeout(checkModalVisible, 80));
+    }
+    /** Windy's pane could cut off anything above it: check the panel really shows, else fall back */
+    function checkModalVisible() {
+        if (!modalOpen || !bodyEl) return;
+        try {
+            const r = bodyEl.getBoundingClientRect();
+            const x = r.left + r.width / 2;
+            const y = Math.max(r.top + 30, 2);
+            const hit = document.elementFromPoint(x, y);
+            if (r.height < 60 || !hit || !root.contains(hit)) {
+                modalFallback = true;
+                modalOpen = false;
+                showPhoneError('the panel over the map is cut off on this phone, using the panel under the timeline instead');
+            }
+        } catch {
+            /* keep going */
+        }
+    }
+    function openTab(t: typeof tab) {
+        tab = t;
+        if (view !== 'home') goHome();
+        openModal();
+        tick().then(scrollTop);
+    }
+    function toggleTab(t: typeof tab) {
+        if (modalOpen && view === 'home' && tab === t) modalOpen = false;
+        else openTab(t);
+    }
+    /** Phones: a spot from the list goes to the map (its card), the panel steps aside */
+    function spotOnMap(s: Spot) {
+        openSpot(s, false, false);
+        modalOpen = false;
+        showSpotCard(s);
+    }
 
     /**
      * Windy listens to the keyboard on the whole page (typing jumps to its search, space plays the timeline).
@@ -1381,7 +1469,7 @@
             const i = data.spots.findIndex(x => x.id === sp.id);
             const n = data.spots[(i + (act === 'next' ? 1 : data.spots.length - 1)) % data.spots.length];
             if (n) {
-                openSpot(n);
+                openSpot(n, false, !barMode);
                 showSpotCard(n);
             }
         }
@@ -1413,8 +1501,13 @@
             return;
         }
         if (near) {
-            openSpot(near.s);
-            if (isMobile) showSpotCard(near.s);
+            if (barMode) {
+                openSpot(near.s, false, false);
+                showSpotCard(near.s);
+            } else {
+                openSpot(near.s);
+                if (isMobile) showSpotCard(near.s);
+            }
             return;
         }
         setTemp(lat, lon);
@@ -1435,7 +1528,7 @@
     }
 
     /* ---------- navigation ---------- */
-    function go(v: View, push = true) {
+    function go(v: View, push = true, phonePanel = true) {
         if (push && view !== v) hist = [...hist, { view, spotId: spot?.id ?? null, snapId: snap?.id ?? null }];
         view = v;
         showUnits = false;
@@ -1444,9 +1537,12 @@
         if (v !== 'place' && v !== 'spotForm') clearTemp();
         if (v !== 'spot') clearPopup();
         drawSpotMarkers();
+        // phones: a page opens the panel over the map (not while waiting for a tap on the map)
+        if (barMode && phonePanel && !waitingForMap && v !== 'home') openModal();
         tick().then(scrollTop);
     }
     function scrollTop() {
+        if (bodyEl && bodyEl.scrollTop > 0) bodyEl.scrollTop = 0;
         let el: HTMLElement | null = root;
         while (el) {
             if (el.scrollTop > 0) el.scrollTop = 0;
@@ -1475,10 +1571,10 @@
         go('home', false);
         loadAllNow();
     }
-    function openSpot(s: Spot, center = false) {
+    function openSpot(s: Spot, center = false, phonePanel = true) {
         if (mapShown && mapShown !== s.id) clearPopup();
         spot = s;
-        go('spot');
+        go('spot', true, phonePanel);
         if (center) centerMap({ lat: s.lat, lon: s.lon, zoom: 10 });
         checkMatch(s);
         loadNow(s);
@@ -2076,7 +2172,37 @@
     .spotlog > :global(*) { flex-shrink: 0; }
     /* phones: the panel sits in Windy's small pane under the timeline, half the screen high, and scrolls
        (the layout that works on real phones, 0.5.2–0.6; 0.7.0's bar + sheet showed an empty pane) */
-    .spotlog.m { padding: 8px 10px 16px; gap: 10px; height: 50vh; height: 50dvh; max-height: 50dvh; touch-action: pan-y; background: transparent; border-radius: 0;
+    /* desktop (and the phone fallback): the wrappers don't exist for layout, the pages flow in the panel as before */
+    .mwrap, .body { display: contents; }
+    .body > :global(*) { flex-shrink: 0; }
+    /* phones: a compact bar sits in Windy's pane under the timeline (explicit height: Windy's pane needs one) */
+    .spotlog.m.bar { height: 150px; max-height: none; min-height: 150px; padding: 0; gap: 0; display: block; overflow: visible; position: relative; }
+    .spotlog.m.bar.gatebar { height: 108px; min-height: 108px; }
+    .mbar { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 9px; }
+    .mrow { display: flex; align-items: center; gap: 10px; min-height: 30px; .wordmark { font-size: 18px; } .units { height: 28px; } }
+    .mhint { flex: 1; min-width: 0; text-align: right; font-size: 12px; color: @sub; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mlink { border: 0; background: none; padding: 4px 0; color: @orange !important; font-weight: 600; font-size: 13px; }
+    .macts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+    .mact { height: 42px; padding: 0 6px; border-radius: 12px; border: 1px solid @outline; background: @card; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12.5px !important; font-weight: 600;
+        span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } &:disabled { opacity: 0.6; } }
+    .mtabs { display: flex; gap: 3px; padding: 3px; border-radius: 11px; background: @card;
+        button { flex: 1; height: 30px; border: 0; border-radius: 8px; background: transparent; color: #d0d0d0 !important; font-size: 12.5px !important; padding: 0; }
+        button.on { background: var(--sl-sel-bg, #f8f8f8); color: var(--sl-sel-text, #1c1c1c) !important; font-weight: 600; }
+        small { opacity: 0.6; font-size: 11px; } }
+    /* the panel rises from the bar over the timeline and the map, like The Buoy's list; it scrolls inside */
+    .mwrap.on { display: flex; flex-direction: column; position: absolute; left: 8px; right: 8px; bottom: calc(100% + 8px); z-index: 30;
+        height: calc(100vh - 290px); height: calc(100dvh - 290px - env(safe-area-inset-top, 0px)); min-height: 280px;
+        background: @ground; border-radius: 18px; box-shadow: 0 10px 34px rgba(0, 0, 0, 0.5); overflow: hidden;
+        transform-origin: 50% 100%; transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.18s ease; }
+    .mwrap.on:not(.open) { opacity: 0; transform: translateY(14px) scale(0.98); pointer-events: none; visibility: hidden; transition: transform 0.18s ease, opacity 0.15s ease, visibility 0s 0.18s; }
+    .mwrap.on .body { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 0 12px 16px; touch-action: pan-y; }
+    .mgrab { flex: none; display: flex; align-items: center; justify-content: center; height: 30px; position: relative;
+        i { width: 38px; height: 5px; border-radius: 3px; background: @outline; display: block; } }
+    .mclose { position: absolute; right: 6px; top: 2px; width: 34px; height: 28px; border: 0; background: none; color: @sub !important; font-size: 16px; }
+    /* inside the phone panel the bar already shows the logo, the actions and the tabs */
+    .mwrap.on :global(.home-head), .mwrap.on :global(.home-acts), .mwrap.on :global(.home-tabs) { display: none !important; }
+    @media (prefers-reduced-motion: reduce) { .mwrap.on, .mwrap.on:not(.open) { transition: none; } }
+    .spotlog.m { padding: 8px 10px 16px; gap: 10px; height: 50vh; height: 50dvh; max-height: 50dvh; touch-action: pan-y;
         .head { padding: 10px 14px; gap: 8px; }
         .head .stats, .head .sync { display: none; }
         .act { min-height: 0; padding: 8px 10px; small { display: none; } }
@@ -2279,12 +2405,14 @@
     :global(.sl-pop) { display: flex; flex-direction: column; gap: 8px; min-width: 220px; font: 13px 'Instrument Sans', system-ui, sans-serif; color: var(--sl-popup-text, #1c1c1c); }
     :global(.sl-pop small) { color: #6b6b6b; font-size: 12px; }
     :global(.sl-h) { display: flex; align-items: flex-start; gap: 8px; }
-    :global(.sl-h > span) { flex: 1; display: flex; flex-direction: column; gap: 1px; }
-    :global(.sl-nav) { display: flex; gap: 4px; }
+    :global(.sl-h > span:first-child) { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+    :global(.sl-nav) { display: flex; gap: 4px; flex-shrink: 0; }
+    :global(.sl-pop:has(.sl-acts)) { min-width: 264px; }
     :global(.sl-nav button), :global(.sl-acts button) { font: 600 13px 'Instrument Sans', system-ui, sans-serif; color: #1c1c1c; background: #ececea; border: 0; border-radius: 10px; cursor: pointer; }
     :global(.sl-nav button) { width: 30px; height: 30px; font-size: 18px; line-height: 1; padding: 0; }
     :global(.sl-acts) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin-top: 2px; }
-    :global(.sl-acts button) { height: 36px; padding: 0 4px; white-space: nowrap; }
+    :global(.sl-acts) { grid-template-columns: 1.3fr 1.1fr 0.9fr !important; }
+    :global(.sl-acts button) { height: 36px; padding: 0 4px; white-space: nowrap; font-size: 12.5px !important; overflow: hidden; text-overflow: ellipsis; }
     :global(.sl-acts button:first-child) { background: var(--sl-primary-bg, #d49500); color: var(--sl-primary-text, #fff); }
     :global(.sl-h b) { font-size: 14px; }
     :global(.sl-tiles) { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }

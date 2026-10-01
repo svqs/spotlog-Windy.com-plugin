@@ -29,7 +29,7 @@
   .w-closing-x { position: fixed; top: 12px; right: 412px; z-index: 40; width: 30px; height: 30px; border-radius: 15px; border: 0; background: rgba(0,0,0,.45); color: #f8f8f8; font: 600 14px system-ui, sans-serif; cursor: pointer; }
   @media (max-width: 760px) { .w-closing-x { display: none; } }
   /* phones: map on top, Windy's small pane under it, as tall as the plugin makes it */
-  @media (max-width: 760px) { .wrap { flex-direction: column; height: 100dvh; min-height: 0; } #map { flex: 1; min-height: 0; } #pane { width: 100%; height: auto; flex: none; box-shadow: 0 -2px 14px rgba(0,0,0,.35); } }
+  @media (max-width: 760px) { .wrap { flex-direction: column; height: 100dvh; min-height: 0; } #map { flex: 1; min-height: 0; } #pane { width: 100%; height: auto; flex: none; box-shadow: 0 -2px 14px rgba(0,0,0,.35); overflow: visible; position: relative; z-index: 5; } }
   .mock-line { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
   .mock-flash { position: absolute; width: 0; height: 0; pointer-events: none; }
   .mock-flash::after { content: ''; position: absolute; left: -30px; top: -30px; width: 60px; height: 60px; border-radius: 50%; border: 2px solid #f8f8f8; animation: flash 1.3s ease-out forwards; }
