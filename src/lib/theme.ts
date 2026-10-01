@@ -1,7 +1,7 @@
 /**
  * Spotlog's look: every colour and map mark in one place.
  * The keys match the Style Lab (design page) one to one, so a saved design can be pasted in here as is.
- * Last applied: Sophia's Style Lab design of 1 Oct 2026.
+ * Last applied: Sophia's Style Lab design of 1 Oct 2026, 12:22.
  */
 export const THEME = {
     // session ratings 1–5 (flat, meh, good, great, epic): lists, calendar, rating buttons, tags
@@ -21,7 +21,7 @@ export const THEME = {
     goodStyle: 'pin' as 'pin' | 'dot' | 'outline',
     goodWord: true,
     // spot labels, zoomed in: selected (the dot takes the guess colour when it looks good)
-    activeBg: '#e0a63a', activeText: '#ffffff', activeDot: '#2e2e2e',
+    activeBg: '#ffffff', activeText: '#1c1c1c', activeDot: '#2e2e2e',
     // zoomed out: plain dots
     compactBelow: 7, compactSize: 18, compactDot: '#2e2e2e', compactRing: false, compactRingColor: '#3c3c3c', compactRingWidth: 2,
     // sessions on the map
