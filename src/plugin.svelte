@@ -1,8 +1,8 @@
 <div class="plugin__mobile-header">
     { title }
 </div>
-<section class="plugin__content spotlog-host" class:m={ isMobile } class:gate={ isMobile && !!gate }>
-{#if isMobile}
+<section class="plugin__content spotlog-host" class:m={ isMobile } class:bar={ useSheet } class:gate={ useSheet && !!gate }>
+{#if useSheet}
 <!-- ================= PHONE: the slim bar under Windy's timeline (never scrolls) ================= -->
     <div class="mbar">
         <div class="mrow">
@@ -33,8 +33,8 @@
         {/if}
     </div>
 {/if}
-<div class="spotlog" class:m={ isMobile } class:sheet={ isMobile } class:open={ sheetOpen } use:sheetPortal={ isMobile } bind:this={ root } on:touchstart={ touchStart } on:touchmove={ touchMove } on:keydown={ keepKeys } on:keyup={ keepKeys } on:keypress={ keepKeys }>
-{#if isMobile}
+<div class="spotlog" class:m={ isMobile } class:sheet={ useSheet } class:open={ sheetOpen } use:sheetPortal={ useSheet } bind:this={ root } on:touchstart={ touchStart } on:touchmove={ touchMove } on:keydown={ keepKeys } on:keyup={ keepKeys } on:keypress={ keepKeys }>
+{#if useSheet}
     <div class="sheet-grab" role="presentation" on:touchstart={ grabStart } on:touchmove={ grabMove } on:touchend={ grabEnd }>
         <i aria-hidden="true"></i>
         <button class="sheet-x" aria-label="Close Spotlog panel" on:click={ () => (sheetOpen = false) }>✕</button>
@@ -229,6 +229,12 @@
                 <p class="p muted">Save your forecast before the session. Windy keeps just a few hours of forecast history, so if you try to save a session from the previous day, there might not be enough data to save it.</p>
                 <p class="p muted">Your diary belongs to your Windy account. Log in to Windy on another device and it's there.</p>
                 <p class="p muted">Your spots, sessions and GPS tracks are private. Nobody else sees them.</p>
+                {#if isMobile}
+                    <button class="maptog" role="switch" aria-checked={ !!S.phoneSheet } on:click={ () => { const on = !S.phoneSheet; setSettings({ ...S, phoneSheet: on }); sheetOpen = on; } }>
+                        <span class="grow"><b>New phone layout (test)</b><small>A slim bar under the timeline, everything else in a panel over the map</small></span>
+                        <span class="switch" class:on={ S.phoneSheet }><i></i></span>
+                    </button>
+                {/if}
                 <div class="row data-links">
                     <button class="link" on:click={ () => exportJson(data) }>Download a copy</button>
                     <button class="link danger" on:click={ clearAll }>{ armed === 'all' ? 'Tap again: gone for good' : 'Delete everything, forever' }</button>
@@ -256,7 +262,7 @@
                 <span class="chev-r" aria-hidden="true">›</span>
             </button>
         {/if}
-        <button class="opt" class:on={ waitingForMap } on:click={ () => { waitingForMap = true; if (isMobile) sheetOpen = false; } }>
+        <button class="opt" class:on={ waitingForMap } on:click={ () => { waitingForMap = true; if (useSheet) sheetOpen = false; } }>
             <span class="ico" class:live={ waitingForMap }><Icon name="pointer" /></span>
             <span class="grow"><span>{ isMobile ? 'Tap on the map' : 'Click on the map' }</span><small>{ waitingForMap ? (isMobile ? 'Tap a place, a town or one of your spots…' : 'Click a place, a town or one of your spots…') : 'any place, town or one of your spots' }</small></span>
         </button>
@@ -736,8 +742,42 @@
         if (editable && e.key !== 'Escape') e.stopPropagation();
     }
 
+    /*
+     * Phones: errors are invisible there (no console), so while we test on real phones Spotlog shows its own
+     * errors in a small box at the top of the screen. Only errors from Spotlog's code, not Windy's.
+     */
+    let errBox: HTMLElement | null = null;
+    function showPhoneError(msg: string) {
+        if (!isMobile) return;
+        try {
+            if (!errBox) {
+                errBox = document.createElement('div');
+                errBox.style.cssText = 'position:fixed;left:8px;right:8px;top:calc(8px + env(safe-area-inset-top,0px));z-index:3000;padding:10px 12px;border-radius:12px;background:#5a1f24;color:#fff;font:12px/1.4 system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.4)';
+                errBox.addEventListener('click', () => { errBox?.remove(); errBox = null; });
+                document.body.appendChild(errBox);
+            }
+            errBox.textContent = `Spotlog ${version} problem (tap to hide): ${msg}`;
+        } catch {
+            /* nothing more we can do */
+        }
+    }
+    const fromSpotlog = (stack: string, file: string) => /plugin(\.min)?\.js|spotlog/i.test(file + ' ' + stack);
+    const onWinError = (e: ErrorEvent) => {
+        if (fromSpotlog(String(e.error?.stack || ''), e.filename || '')) showPhoneError(`${e.message} (${(e.filename || '').split('/').pop()}:${e.lineno})`);
+    };
+    const onRejection = (e: PromiseRejectionEvent) => {
+        const r = e.reason as Error | undefined;
+        if (r && fromSpotlog(String(r.stack || ''), '')) showPhoneError(String(r.message || r));
+    };
+    if (isMobile) {
+        window.addEventListener('error', onWinError);
+        window.addEventListener('unhandledrejection', onRejection);
+    }
+
     /* ---------- phones: a slim bar in Windy's pane + Spotlog's own sheet over the map ---------- */
     let sheetOpen = false;
+    // the new phone layout is opt-in until it is confirmed on real phones (About › Phone layout)
+    $: useSheet = isMobile && !!data.settings.phoneSheet;
     function openSheet() {
         sheetOpen = true;
     }
@@ -751,8 +791,12 @@
     function sheetPortal(node: HTMLElement, on: boolean) {
         const home = node.parentNode;
         const place = (v: boolean) => {
-            if (v && node.parentNode !== document.body) document.body.appendChild(node);
-            else if (!v && home && node.parentNode !== home) home.appendChild(node);
+            try {
+                if (v && node.parentNode !== document.body) document.body.appendChild(node);
+                else if (!v && home && node.parentNode !== home) home.appendChild(node);
+            } catch (e) {
+                showPhoneError('sheet: ' + (e as Error).message);
+            }
         };
         place(on);
         return { update: place, destroy: () => node.remove() };
@@ -1455,7 +1499,7 @@
         if (v !== 'spot') clearPopup();
         drawSpotMarkers();
         // phones: anything that opens a page opens the sheet (unless we are waiting for a tap on the map)
-        if (isMobile && !waitingForMap && v !== 'home') sheetOpen = true;
+        if (useSheet && !waitingForMap && v !== 'home') sheetOpen = true;
         tick().then(scrollTop);
     }
     function scrollTop() {
@@ -2021,6 +2065,9 @@
     });
 
     onDestroy(() => {
+        window.removeEventListener('error', onWinError);
+        window.removeEventListener('unhandledrejection', onRejection);
+        errBox?.remove();
         singleclick.off(name, onMapPick);
         try {
             map?.off?.('zoomend', onMapZoom);
@@ -2091,8 +2138,11 @@
        everything else opens in Spotlog's own sheet over the map (moved onto the page, so its gestures are ours) */
     /* Windy's small pane doesn't size itself to content that has no height of its own (0.7.0 showed an empty pane),
        so the bar gets an explicit height, like the old 50dvh panel had */
-    .spotlog-host.m { height: 146px !important; min-height: 146px; max-height: 146px; overflow: hidden; display: block; flex: none; background: @ground; }
-    .spotlog-host.m.gate { height: 104px !important; min-height: 104px; max-height: 104px; }
+    .spotlog-host.m { height: auto; overflow: visible; display: block; flex: none; background: @ground; }
+    .spotlog-host.m.bar { height: 146px !important; min-height: 146px; max-height: 146px; overflow: hidden; }
+    .spotlog-host.m.bar.gate { height: 104px !important; min-height: 104px; max-height: 104px; }
+    /* classic phone layout (as in 0.6): the panel itself sits under the timeline, half the screen high, and scrolls */
+    .spotlog.m:not(.sheet) { height: 50vh; height: 50dvh; max-height: 50dvh; padding-top: 10px; }
     .mbar { background: var(--sl-ground, #2e2e2e); color: var(--sl-text, #f8f8f8); font: 14px 'Instrument Sans', system-ui, sans-serif; padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 9px;
         button { font: inherit; color: inherit; cursor: pointer; } }
     .mrow { display: flex; align-items: center; gap: 10px; min-height: 24px; }

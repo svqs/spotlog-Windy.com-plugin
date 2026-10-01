@@ -440,7 +440,17 @@ with sync_playwright() as p:
     # --- phone width
     pg.set_viewport_size({'width': 390, 'height': 844})
     pg.goto(URL.replace('index.html', 'index.html?m'))
+    # default on phones: the classic panel under the timeline (as in 0.6), half the screen high
+    pg.wait_for_selector('#pane .spotlog.m .head')
+    h = pg.evaluate("document.querySelector('#pane .spotlog').getBoundingClientRect().height")
+    assert 380 < h < 460, h
+    shot('14a-phone-classic')
+    ok('phone: classic panel under the timeline by default')
+    # the new layout is a switch in About
+    pg.click('#pane .tabs button:has-text("About")')
+    pg.click('.maptog:has-text("New phone layout")')
     pg.wait_for_selector('#pane .mbar')
+    pg.click('.sheet-x')
     pg.wait_for_timeout(600)
     # phones: a slim bar in Windy's pane; the panel is a sheet on the page, closed at first
     assert pg.locator('body > .spotlog.sheet').count() == 1 and pg.locator('.spotlog.sheet.open').count() == 0

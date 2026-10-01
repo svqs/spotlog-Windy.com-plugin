@@ -132,6 +132,8 @@ export interface Settings {
     mapSessions: boolean;
     /** spots on the home screen: tiles or a compact list */
     spotView: 'tiles' | 'list';
+    /** phones: try the new bar + sheet layout (off = the panel under the timeline, as in 0.6) */
+    phoneSheet: boolean;
 }
 
 export interface SpotlogData {

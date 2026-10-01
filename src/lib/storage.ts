@@ -31,6 +31,7 @@ export const defaultSettings = (): Settings => ({
     mapSpots: true,
     mapSessions: true,
     spotView: 'tiles',
+    phoneSheet: false,
 });
 
 export const emptyData = (): SpotlogData => ({
@@ -93,6 +94,7 @@ export const normalise = (parsed: Any): SpotlogData => {
     settings.mapSpots = settings.mapSpots !== false;
     settings.mapSessions = settings.mapSessions !== false;
     settings.spotView = settings.spotView === 'list' ? 'list' : 'tiles';
+    settings.phoneSheet = settings.phoneSheet === true;
     settings.models = ids(settings.models).length ? ids(settings.models) : ['ecmwf'];
     const deleted: Record<string, number> = {};
     if (isObj(parsed?.deleted)) {
