@@ -2343,6 +2343,9 @@
         textarea { resize: vertical; line-height: 1.45; }
     }
     .spotlog > :global(*) { flex-shrink: 0; }
+    /* desktop: the scrollbar's room is always kept (thin), so every tab is equally wide and nothing gets cut off
+       when a long tab shows the scrollbar; the right padding gives back what the scrollbar takes */
+    .spotlog:not(.m) { scrollbar-gutter: stable; scrollbar-width: thin; padding-right: 8px; }
     /* phones: the panel sits in Windy's small pane under the timeline, half the screen high, and scrolls
        (the layout that works on real phones, 0.5.2–0.6; 0.7.0's bar + sheet showed an empty pane) */
     /* desktop (and the phone fallback): the wrappers don't exist for layout, the pages flow in the panel as before */
@@ -2459,7 +2462,7 @@
 
     /* the three actions are equals: same grey tile, an icon, a name and a short line */
     .actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-    .act { min-height: 78px; padding: 10px 11px; min-width: 0; border-radius: 14px; border: 1px solid @outline; background: @card; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 3px; text-align: left;
+    .act { min-height: 78px; padding: 10px 9px 10px 10px; min-width: 0; border-radius: 14px; border: 1px solid @outline; background: @card; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 3px; text-align: left;
         :global(svg) { color: @text; margin-bottom: 4px; }
         b { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; } small { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
         &:hover { border-color: #777; background: #424242; }
