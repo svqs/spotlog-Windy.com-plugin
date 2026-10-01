@@ -1539,7 +1539,6 @@
             dMin: Math.round(toWind(s.min, S.wind)), dMax: Math.round(toWind(s.max, S.wind)), windUnknown: !!s.windUnknown, created: s.created,
         };
         go('spotForm');
-        setTemp(s.lat, s.lon);
     }
     function stepRange(k: 'dMin' | 'dMax', dir: number) {
         if (!sf) return;
@@ -1641,7 +1640,7 @@
             linkOpen = false;
             replaceOf = null;
             go('snap');
-            setTemp(sn.lat, sn.lon);
+            markSnapPlace(sn);
         } catch (e) {
             showToast((e as Error).message?.startsWith('No forecast') ? (e as Error).message : 'No forecast for this place');
         } finally {
@@ -1686,7 +1685,7 @@
         linkOpen = false;
         replaceOf = null;
         go('snap');
-        setTemp(sn.lat, sn.lon);
+        markSnapPlace(sn);
     }
     function updateSnap(patch: Partial<Snapshot>) {
         if (!snap) return;
@@ -1699,9 +1698,15 @@
         snap = n;
         persist();
     }
+    /** A forecast at one of your spots is shown by that spot's own pin; only a forecast without a spot gets the temporary marker */
+    function markSnapPlace(sn: Snapshot) {
+        if (sn.spotId && spotById(sn.spotId)) clearTemp();
+        else setTemp(sn.lat, sn.lon);
+    }
     function linkSnap(spotId: string | null) {
         updateSnap({ spotId });
         replaceOf = null;
+        if (snap) markSnapPlace(snap);
         if (spotId) showToast(`Linked to ${spotById(spotId)?.name}`);
     }
     function saveSnapNote() {
