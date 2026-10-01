@@ -41,7 +41,7 @@
             <div><span class="lbl">On the water</span><span class="big">{ hoursOnWater } <small>h</small></span></div>
         </div>
         {#if synced}
-            <small class="sync" class:err={ syncState === 'error' }>{ syncLabel }</small>
+            <small class="sync" class:err={ syncState === 'error' } title={ syncState === 'error' ? syncError : '' }>{ syncLabel }</small>
         {/if}
     </div>
 {:else}
@@ -803,7 +803,6 @@
     const hhmmOf = (ts: number) => { const d = new Date(ts); return `${pad(d.getHours())}:${pad(d.getMinutes() - (d.getMinutes() % 5))}`; };
     const escapeHtml = (t: string) => t.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
     const gearUse = (id: string) => data.sessions.filter(s => s.gearIds?.includes(id)).length;
-    const gearPlaceholder = (k: string) => ({ Board: 'e.g. Freewave 105 L', Sail: 'e.g. 5.3 wave sail', Fin: 'e.g. 22 cm', Wetsuit: 'e.g. 4/3 steamer', Wing: 'e.g. 5 m', Kite: 'e.g. 9 m' } as Record<string, string>)[k] || 'Name';
 
     /**
      * Phones: Windy's bottom panel listens for swipes (to close or resize it). While Spotlog's content can still

@@ -95,7 +95,7 @@ export const normalise = (parsed: Any): SpotlogData => {
     }
     return {
         version: 1,
-        spots: list(parsed?.spots, cleanSpot, 2000),
+        spots: list(parsed?.spots, cleanSpot, 2000) as SpotlogData['spots'],
         snapshots: list(parsed?.snapshots, cleanSnap, 5000) as SpotlogData['snapshots'],
         sessions: list(parsed?.sessions, cleanSession, 10000) as SpotlogData['sessions'],
         gear: list(parsed?.gear, cleanGear, 500),
