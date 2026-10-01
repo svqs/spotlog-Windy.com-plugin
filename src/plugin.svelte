@@ -24,11 +24,13 @@
 
 <!-- ================= HEADER ================= -->
 {#if view === 'home'}
-    {#if !isMobile}
-        <button class="to-menu" on:click={ toWindyMenu }><span class="round" aria-hidden="true">←</span>Windy menu</button>
-    {/if}
     <div class="card head">
         <div class="row">
+            {#if !isMobile}
+                <button class="back-menu" aria-label="Back to the Windy menu" title="Back to the Windy menu" on:click={ toWindyMenu }>
+                    <svg width="14" height="22" viewBox="0 0 14 22" aria-hidden="true"><polyline points="11,3 3,11 11,19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </button>
+            {/if}
             <span class="brand grow-b"><span class="wordmark">SPOTLOG</span><PixelStar size={ 15 } /></span>
             <button class="units" aria-expanded={ showUnits } aria-label="Units and saved data" on:click={ () => (showUnits = !showUnits) }>{ unitsLabel } <span class="chev" class:up={ showUnits }>▾</span></button>
         </div>
@@ -1925,9 +1927,9 @@
     .topbar { display: flex; align-items: center; gap: 10px; }
     .brand { display: inline-flex; align-items: center; gap: 8px; }
     .grow-b { flex: 1; min-width: 0; }
-    .to-menu { align-self: flex-start; display: inline-flex; align-items: center; gap: 10px; margin: -2px 0 -6px; padding: 0; border: 0; background: none; color: @sub !important; font-size: 13px !important; font-weight: 600;
-        .round { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; color: @text; font-size: 15px; box-sizing: border-box; }
-        &:hover { color: @text !important; .round { border-color: @outline; } } }
+    /* desktop: a plain chevron before the wordmark goes back to Windy's menu (like other plugins) */
+    .back-menu { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 30px; margin: 0 -2px 0 -6px; padding: 0; border: 0; background: none; color: @text; opacity: 0.85;
+        &:hover { opacity: 1; } }
     .sync { display: block; margin-top: -4px; color: @sub; &.err { color: #ff9a9a; } }
     .coffee { align-self: center; display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 18px; border: 1px solid @outline; color: @text; text-decoration: none; font-weight: 600; font-size: 13px;
         &:hover { border-color: @orange; } }

@@ -41,10 +41,11 @@ with sync_playwright() as p:
     bottom = lambda: pane.evaluate('el => el.scrollTo(0, el.scrollHeight)')
     top = lambda: pane.evaluate('el => el.scrollTo(0, 0)')
     shot('01-home-empty')
-    pg.wait_for_selector('.to-menu:has-text("Windy menu")')
+    pg.wait_for_selector('.head .back-menu')
+    assert pg.locator('text=Windy menu').count() == 0
     msgs = []
     pg.on('console', lambda m: msgs.append(m.text))
-    pg.click('.to-menu')
+    pg.click('.head .back-menu')
     pg.wait_for_timeout(100)
     assert any("rqstOpen menu" in m for m in msgs) and any("rqstClose" in m for m in msgs), msgs
     ok('desktop: arrow back to the Windy menu')
