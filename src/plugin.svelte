@@ -86,7 +86,7 @@
                         {/if}
                         <span class="t-tag">
                             {#if predOf(s) !== null}
-                                <span class="tag" style="background: { ratingBg(predOf(s) ?? 3) }; color: { ratingFg(predOf(s) ?? 3) }">{ predictionLabel(predOf(s) ?? 3) }</span>
+                                <span class="tag" style="background: { guessColours(predOf(s) ?? 3)[0] }; color: { guessColours(predOf(s) ?? 3)[1] }">{ predictionLabel(predOf(s) ?? 3) }</span>
                             {:else}
                                 <span class="tag ghost" title={ ratingHint(s) }>Rating soon</span>
                             {/if}
@@ -165,19 +165,19 @@
     {:else}
         <div class="about">
             <div class="card">
-                <b class="h3">Your forecast screenshots, but better.</b>
-                <p class="p">If your camera roll is full of Windy screenshots you can't even place anymore, <Brand /> might help. It's a little diary for all those numbers you check more often than you'd admit.</p>
+                <b class="h3">About <Brand /></b>
+                <p class="p">For the weird people who have a camera roll full of Windy screenshots. Save forecasts for your favourite spots, log sessions and feelings, and keep it all in one place.</p>
             </div>
             <div class="card steps">
                 <b class="h3">How it works</b>
-                <div class="step"><span class="n">1</span><span class="grow"><b>Save the forecast.</b><small>Before you go, tap Save forecast. <Brand cap /> keeps what the models say now and for the next 24 hours, for your spot.</small></span></div>
-                <div class="step"><span class="n">2</span><span class="grow"><b>Go out.</b><small>Surf, windsurf, kite, wing, have fun.</small></span></div>
-                <div class="step"><span class="n">3</span><span class="grow"><b>Log how it was.</b><small>When you're done, tap Log session: rate it, say what the wind felt like, add your gear and your GPS track if you like.</small></span></div>
-                <div class="step"><span class="n">4</span><span class="grow"><b>Get smarter each time.</b><small>After a few sessions <Brand /> shows which forecast model is closest at each spot, guesses how good today looks for you, and suggests the wind that works at new spots.</small></span></div>
+                <div class="step"><span class="n">1</span><span class="grow"><b>Save the forecast</b><small>Before you go out, tap Save forecast. <Brand cap /> takes a snapshot and keeps the next 24 hours of forecast data.</small></span></div>
+                <div class="step"><span class="n">2</span><span class="grow"><b>Go out</b><small>Surf, windsurf, kite, wing, have fun.</small></span></div>
+                <div class="step"><span class="n">3</span><span class="grow"><b>Log how it was</b><small>After your session, tap Log session: rate it, say how the wind felt, add your gear or a GPS track if you like.</small></span></div>
+                <div class="step"><span class="n">4</span><span class="grow"><b>Get smarter each time</b><small>After a few sessions, <Brand /> guesses how good each spot looks for you on the given day, shows which forecast model works closest at each spot and suggests the wind that works best.</small></span></div>
             </div>
             <div class="card">
                 <b class="h3">Good to know</b>
-                <p class="p muted">Save your forecast before the session. Windy doesn't keep old forecasts, so a day that's over can't be saved afterwards.</p>
+                <p class="p muted">Save your forecast before the session. Windy keeps just a few hours of forecast history, so if you try to save a session from the previous day, there might not be enough data to save it.</p>
                 <p class="p muted">Your diary belongs to your Windy account. Log in to Windy on another device and it's there.</p>
                 <p class="p muted">Your spots, sessions and GPS tracks are private. Nobody else sees them.</p>
                 <div class="row data-links">
@@ -319,8 +319,8 @@
         u={ S }
         badge={ spotPred !== null ? predictionLabel(spotPred) : ratingHint(spot) }
         badgeNote={ spotPred !== null ? 'from ' + samplesFor(spot, data.sessions, data.snapshots).length + ' of your sessions' : '' }
-        badgeBg={ spotPred !== null ? ratingBg(spotPred) : '#e9e8e3' }
-        badgeFg={ spotPred !== null ? ratingFg(spotPred) : '#6b6b6b' }
+        badgeBg={ spotPred !== null ? guessColours(spotPred)[0] : '#e9e8e3' }
+        badgeFg={ spotPred !== null ? guessColours(spotPred)[1] : '#6b6b6b' }
     />
 
     {#if spotModels.length > 1}
@@ -631,6 +631,7 @@
     import type { WindyAuth } from './lib/cloud';
     import { COFFEE_URL } from './lib/links';
     import { FONT_CSS } from './lib/fonts';
+    import { THEME, THEME_CSS, guessColours, lightsUp, sessionMarkStyle } from './lib/theme';
     import {
         DIRS, SPORTS, RATINGS, RATING_BG, RATING_FG, GEAR_SPORTS, GEAR_BY_SPORT, ratingBg, ratingFg, dirName, dirsLabel, windColor, modelLabel,
         distanceKm, modelScores, forecastBias, fmtDay, fmtDayTime, fmtTime,
@@ -1118,7 +1119,7 @@
         if (typeof L !== 'undefined' && map) tempMarker = new L.Marker({ lat, lng: lon }, { icon: markers?.pulsatingIcon }).addTo(map);
     }
     /** Zoomed out, spots and sessions become plain dots: a map of everywhere you've been */
-    const COMPACT_BELOW = 7;
+    const COMPACT_BELOW = THEME.compactBelow;
     function onMapZoom() {
         let z = 10;
         try {
@@ -1162,13 +1163,12 @@
         if (st.mapSessions) {
             // just a glow, no click: many sessions at one place overlap and get brighter (heat map feel); hover for dates
             for (const p of sessionPlaces()) {
-                const n = p.list.length;
-                // big enough to show as a halo around a spot pin, growing with every session there
-                const size = Math.round(26 + Math.min(n, 15) * 4);
-                const alpha = Math.min(0.9, 0.5 + n * 0.05).toFixed(2);
+                const mark = sessionMarkStyle(p.list.length);
+                if (!mark) break;
+                const core = THEME.sessCore && THEME.sessStyle !== 'dot' ? ' core' : '';
                 const icon = L.divIcon({
                     className: 'spotlog-marker',
-                    html: `<div class="spotlog-heat" style="--s:${size}px;--a:${alpha}"><div class="spotlog-tip">${sessionTip(p.list)}</div></div>`,
+                    html: `<div class="spotlog-heat${core}" style="${mark.css}"><div class="spotlog-tip">${sessionTip(p.list)}</div></div>`,
                     iconSize: [0, 0],
                     iconAnchor: [0, 0],
                 });
@@ -1181,19 +1181,27 @@
             // the pin sits on top of its own glow, so hovering the pin shows that spot's sessions
             const here = st.mapSessions ? data.sessions.filter(x => x.spotId === s.id).sort((a, b) => b.date - a.date) : [];
             const tip = here.length ? `<div class="spotlog-tip">${sessionTip(here)}</div>` : '';
-            // a spot that looks good right now lights up in its rating colour
+            // a spot whose guess reaches the chosen level lights up in the guess colour; otherwise it stays grey
             const pred = predOf(s);
-            const good = pred !== null && pred >= 2.7;
-            const style = good ? ` style="background:${ratingBg(pred as number)};color:${ratingFg(pred as number)}"` : '';
-            const label = good ? `${escapeHtml(s.name)}<em>${predictionLabel(pred as number).replace('Likely ', '')}</em>` : escapeHtml(s.name);
-            const icon = L.divIcon({
-                className: 'spotlog-marker',
-                html: compactMarkers && !on
-                    ? `<div class="spotlog-pin compact${good ? ' good' : ''}"${style}><i></i>${tip || `<div class="spotlog-tip"><b>${escapeHtml(s.name)}</b></div>`}</div>`
-                    : `<div class="spotlog-pin${on ? ' active' : ''}${good ? ' good' : ''}"${on ? '' : style}><i></i>${label}${tip}</div>`,
-                iconSize: [0, 0],
-                iconAnchor: [0, 0],
-            });
+            const good = lightsUp(pred);
+            const [gb, gf] = good ? guessColours(pred as number) : ['', ''];
+            const word = good && THEME.goodWord ? `<em>${predictionLabel(pred as number).replace('Likely ', '').replace('Probably ', '')}</em>` : '';
+            let html: string;
+            if (compactMarkers) {
+                // zoomed out: a plain dot, guess colour or grey (outline only if the theme turns it on)
+                html = `<div class="spotlog-cdot" style="background:${good ? gb : 'var(--sl-compact-dot)'}">${tip || `<div class="spotlog-tip"><b>${escapeHtml(s.name)}</b></div>`}</div>`;
+            } else if (on) {
+                // selected: its own label colour; the dot shows the conditions
+                html = `<div class="spotlog-pin active"><i style="background:${good ? gb : 'var(--sl-active-dot)'}"></i>${escapeHtml(s.name)}${word}${tip}</div>`;
+            } else {
+                let style = '';
+                let dot = '';
+                if (good && THEME.goodStyle === 'pin') { style = `background:${gb};color:${gf};`; dot = gf; }
+                if (good && THEME.goodStyle === 'dot') dot = gb;
+                if (good && THEME.goodStyle === 'outline') { style = `box-shadow:0 0 0 2px ${gb}, 0 2px 8px rgba(0,0,0,.35);`; dot = gb; }
+                html = `<div class="spotlog-pin${good ? ' good' : ''}" style="${style}"><i${dot ? ` style="background:${dot}"` : ''}></i>${escapeHtml(s.name)}${word}${tip}</div>`;
+            }
+            const icon = L.divIcon({ className: 'spotlog-marker', html, iconSize: [0, 0], iconAnchor: [0, 0] });
             const m = new L.Marker({ lat: s.lat, lng: s.lon }, { icon }).addTo(map);
             m.on('click', () => onMapPick({ lat: s.lat, lon: s.lon }, s));
             spotMarkers.push(m);
@@ -1201,15 +1209,14 @@
     }
     // conditions arrive one spot at a time: redraw so good spots light up
     $: if (nowBySpot && mapReady) drawSpotMarkers();
-    const TRACK_COLOR = '#ff3d8b';
     function drawTrack(t: Track | null, fit = false) {
         trackLayers.forEach(l => l.remove());
         trackLayers = [];
         if (!t || !t.points.length || typeof L === 'undefined' || !map) return;
         try {
-            // a thin pink route with a faint dark edge: stands out on Windy's blues and on the grey base map
-            const casing = L.polyline(t.points, { color: '#1c1c1c', weight: 4.5, opacity: 0.3, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(map);
-            const line = L.polyline(t.points, { color: TRACK_COLOR, weight: 2.5, opacity: 1, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(map);
+            // route colours and widths come from the theme (a thin line with a faint edge)
+            const casing = L.polyline(t.points, { color: THEME.casingColor, weight: THEME.routeWidth + THEME.casingWidth * 2, opacity: THEME.casingWidth > 0 ? THEME.casingAlpha : 0, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(map);
+            const line = L.polyline(t.points, { color: THEME.routeColor, weight: THEME.routeWidth, opacity: 1, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(map);
             const first = t.points[0];
             const last = t.points[t.points.length - 1];
             const dot = (cls: string) => L.divIcon({ className: 'spotlog-marker', html: `<div class="spotlog-dot ${cls}"></div>`, iconSize: [0, 0], iconAnchor: [0, 0] });
@@ -1245,7 +1252,7 @@
         return `<div class="sl-pop"><div class="sl-h"><b>${escapeHtml(sp.name)}</b><small>Right now · ECMWF</small></div>` +
             (w ? `<div class="sl-tiles">${tile('Wind ' + windLabel(S.wind), fmtWind0(w.wind, S.wind), windColor(w.wind))}${tile('Gusts', fmtWind0(w.gust, S.wind), windColor(w.gust))}${tile('From', dirName(w.dir), '#e9e8e3')}${n?.waves ? tile('Waves ' + S.height, fmtHeight(n.waves.waves, S.height), '#dbe6f2') : ''}</div>` : '<small>No forecast here</small>') +
             (w ? `<small>${fmtTemp(w.temp, S.temp)}</small>` : '') +
-            (pred !== null ? `<span class="sl-b" style="background:${ratingBg(pred)};color:${ratingFg(pred)}">${predictionLabel(pred)}</span>` : '') +
+            (pred !== null ? `<span class="sl-b" style="background:${guessColours(pred)[0]};color:${guessColours(pred)[1]}">${predictionLabel(pred)}</span>` : '') +
             '</div>';
     }
     async function showOnMap(sp: Spot) {
@@ -1833,6 +1840,12 @@
 
     onMount(() => {
         // fonts are bundled in the plugin: no requests to Google Fonts (privacy, works offline)
+        if (!document.getElementById('spotlog-theme')) {
+            const th = document.createElement('style');
+            th.id = 'spotlog-theme';
+            th.textContent = THEME_CSS;
+            document.head.appendChild(th);
+        }
         if (!document.getElementById('spotlog-fonts')) {
             const st = document.createElement('style');
             st.id = 'spotlog-fonts';
@@ -1887,14 +1900,15 @@
 </script>
 
 <style lang="less">
-    @ground: #2e2e2e;
-    @card: #3c3c3c;
-    @line: #4d4d4d;
+    /* colours come from the theme (src/lib/theme.ts → CSS variables --sl-*) */
+    @ground: var(--sl-ground, #2e2e2e);
+    @card: var(--sl-card, #3c3c3c);
+    @line: var(--sl-line, #4d4d4d);
     @outline: #5a5a5a;
-    @text: #f8f8f8;
-    @sub: #b0b0b0;
+    @text: var(--sl-text, #f8f8f8);
+    @sub: var(--sl-sub, #b0b0b0);
     @ink: #1c1c1c;
-    @orange: #d49500;
+    @orange: var(--sl-accent, #d49500);
 
     .spotlog {
         background: @ground;
@@ -1970,7 +1984,7 @@
         small { display: block; margin-top: 2px; } }
     .switch { width: 40px; height: 24px; border-radius: 12px; background: @outline; position: relative; flex-shrink: 0; transition: background 0.15s;
         i { position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 9px; background: @text; transition: transform 0.18s; }
-        &.on { background: @orange; i { transform: translateX(16px); } } }
+        &.on { background: var(--sl-switch, #d49500); i { transform: translateX(16px); } } }
     .sync { display: block; margin-top: -4px; color: @sub; &.err { color: #ff9a9a; } }
     .coffee { align-self: center; display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 18px; border: 1px solid @outline; color: @text; text-decoration: none; font-weight: 600; font-size: 13px;
         &:hover { border-color: @orange; } }
@@ -1989,7 +2003,7 @@
         .btns { margin-top: 8px; } }
     .models-pick { display: flex; flex-wrap: wrap; gap: 4px; margin-top: -6px;
         button { height: 28px; padding: 0 11px; border-radius: 14px; border: 1px solid @outline; background: transparent; font-size: 12px !important; color: @sub !important; }
-        button.on { background: @text; border-color: @text; color: @ink !important; font-weight: 600; } }
+        button.on { background: var(--sl-sel-bg, #f8f8f8); border-color: var(--sl-sel-bg, #f8f8f8); color: var(--sl-sel-text, #1c1c1c) !important; font-weight: 600; } }
     .sl-note { margin-top: -8px; padding: 0 4px; line-height: 1.4; }
     .link.inline { display: inline; padding: 0; font-size: 12px; }
 
@@ -2003,7 +2017,7 @@
 
     .tabs, .seg { display: flex; gap: 4px; padding: 3px; background: @card; border-radius: 12px;
         button { flex: 1; height: 34px; border: 0; border-radius: 9px; background: transparent; color: #d0d0d0; }
-        button.on { background: @text; color: @ink !important; font-weight: 600; } }
+        button.on { background: var(--sl-sel-bg, #f8f8f8); color: var(--sl-sel-text, #1c1c1c) !important; font-weight: 600; } }
     .seg { background: @ground; button { height: 30px; } }
     .card .seg { background: @ground; }
 
@@ -2013,7 +2027,7 @@
     .now { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .now-t { display: flex; flex-direction: column; gap: 1px; min-width: 0; b { font-size: 13px; } small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }
     .tag { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;
-        &.green { background: #34985a; color: #fff; }
+        &.green { background: var(--sl-match, #34985a); color: #fff; }
         &.ghost { border: 1px solid @outline; color: @sub; font-weight: 400; font-size: 11px; } }
     .empty { padding: 20px; border: 1px dashed @outline; border-radius: 14px; color: @sub; text-align: center; line-height: 1.45; }
     .list { display: flex; flex-direction: column; }
@@ -2029,17 +2043,17 @@
     .dot { width: 30px; height: 30px; flex-shrink: 0; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; }
     .sw { width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: @ink; font-weight: 600; }
     .mini { height: 30px; padding: 0 10px; border-radius: 9px; border: 1px solid @outline; background: transparent; font-size: 12px !important;
-        &.danger { color: #ff9a9a !important; border-color: #6a4444; } }
+        &.danger { color: var(--sl-danger, #ff9a9a) !important; border-color: #6a4444; } }
     .btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .btn { height: 46px; padding: 0 16px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex: 1; box-sizing: border-box; white-space: nowrap;
-        &.primary { background: @orange; color: #fff !important; border: 0; }
+        &.primary { background: var(--sl-primary-bg, #d49500); color: var(--sl-primary-text, #fff) !important; border: 0; }
         &.ghost { background: transparent; border: 1px solid @outline; }
         &.wide { width: 100%; flex: none; }
         &.small { height: 36px; flex: none; padding: 0 14px; font-size: 13px; }
         &:disabled { opacity: 0.5; cursor: default; } }
     label.btn { cursor: pointer; }
     .link { background: none; border: 0; color: @orange !important; font-weight: 600; padding: 6px 0; align-self: flex-start; flex-shrink: 0;
-        &.danger { color: #ff9a9a !important; } }
+        &.danger { color: var(--sl-danger, #ff9a9a) !important; } }
     .link-card { text-align: left; align-items: center; }
     .field { display: flex; flex-direction: column; gap: 8px; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -2073,43 +2087,39 @@
     .pulse { width: 10px; height: 10px; border-radius: 5px; background: @orange; flex-shrink: 0; &.live { animation: sl-pulse 1.6s ease-out infinite; } }
     @keyframes sl-pulse { 0% { box-shadow: 0 0 0 0 rgba(212, 149, 0, 0.55); } 100% { box-shadow: 0 0 0 12px rgba(212, 149, 0, 0); } }
     @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
-    .toast { position: sticky; bottom: 12px; z-index: 5; display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 16px; border-radius: 14px; background: @text; color: @ink; font-weight: 600; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45); }
-    .undo { height: 32px; padding: 0 14px; border-radius: 10px; border: 0; background: @ink; color: @text !important; font-weight: 600; }
+    .toast { position: sticky; bottom: 12px; z-index: 5; display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 16px; border-radius: 14px; background: var(--sl-toast-bg, #f8f8f8); color: var(--sl-toast-text, #1c1c1c); font-weight: 600; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45); }
+    .undo { height: 32px; padding: 0 14px; border-radius: 10px; border: 0; background: var(--sl-undo, #1c1c1c); color: var(--sl-toast-bg, #f8f8f8) !important; font-weight: 600; }
 
     :global(.spotlog-marker) { background: none; border: 0; }
     :global(.spotlog-pin) {
         position: absolute; transform: translate(-10px, -50%); display: flex; align-items: center; gap: 6px; white-space: nowrap;
-        height: 26px; padding: 0 10px 0 6px; border-radius: 13px; background: #2e2e2e; color: #f8f8f8;
+        height: 26px; padding: 0 10px 0 6px; border-radius: 13px; background: var(--sl-pin-bg, #2e2e2e); color: var(--sl-pin-text, #f8f8f8);
         font: 600 12px 'Instrument Sans', system-ui, sans-serif; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); cursor: pointer;
     }
-    :global(.spotlog-pin i) { width: 10px; height: 10px; border-radius: 5px; background: #d49500; display: block; }
-    :global(.spotlog-pin.active) { background: #f8f8f8; color: #1c1c1c; }
-    /* zoomed out: just the dot */
-    :global(.spotlog-pin.compact) { transform: translate(-7px, -50%); height: 14px; padding: 0 2px; border-radius: 7px; }
-    :global(.spotlog-pin.compact i) { width: 10px; height: 10px; }
-    /* a spot that looks good right now: the whole pin takes the rating colour */
-    :global(.spotlog-pin.good i) { background: #ffffff; }
+    :global(.spotlog-pin i) { width: 10px; height: 10px; border-radius: 5px; background: var(--sl-pin-dot, #5a5a5a); display: block; flex-shrink: 0; }
+    :global(.spotlog-pin.active) { background: var(--sl-active-bg, #f8f8f8); color: var(--sl-active-text, #1c1c1c); }
     :global(.spotlog-pin em) { font-style: normal; font-weight: 600; font-size: 11px; opacity: 0.9; margin-left: 2px; }
-    :global(.spotlog-pin.compact.good) { box-shadow: 0 0 0 3px rgba(79, 174, 104, 0.35), 0 2px 8px rgba(0, 0, 0, 0.35); }
-    /* sessions: a soft pink glow per place (same pink as GPS routes: your own activity); many sessions = bigger and brighter, overlapping places add up */
-    :global(.spotlog-heat) { position: absolute; left: calc(var(--s) / -2); top: calc(var(--s) / -2); width: var(--s); height: var(--s); border-radius: 50%;
-        background: radial-gradient(circle, rgba(255, 61, 139, var(--a)) 0%, rgba(255, 61, 139, calc(var(--a) * 0.6)) 35%, rgba(255, 61, 139, 0) 70%); cursor: default; }
-    :global(.spotlog-heat::after) { content: ''; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 3px; background: #ff3d8b; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.9); }
+    /* zoomed out: a plain dot */
+    :global(.spotlog-cdot) { position: absolute; left: calc(var(--sl-compact-size, 10px) / -2); top: calc(var(--sl-compact-size, 10px) / -2); width: var(--sl-compact-size, 10px); height: var(--sl-compact-size, 10px);
+        border-radius: 50%; box-shadow: var(--sl-compact-ring, none); cursor: pointer; }
+    /* sessions: one mark per place (style, colour and growth from the theme); hover for dates */
+    :global(.spotlog-heat) { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); cursor: default; }
+    :global(.spotlog-heat.core::after) { content: ''; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 3px; background: var(--sl-sess-color, #ff3d8b); box-shadow: 0 0 0 1.5px var(--sl-sess-core-ring, #ffffff); }
     :global(.spotlog-tip) { display: none; position: absolute; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); z-index: 5; flex-direction: column; gap: 3px; min-width: 130px; padding: 8px 10px; border-radius: 10px;
-        background: #2e2e2e; color: #f8f8f8; font: 12px 'Instrument Sans', system-ui, sans-serif; white-space: nowrap; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45); pointer-events: none; }
-    :global(.spotlog-tip span) { display: flex; align-items: center; gap: 6px; color: #d0d0d0; }
+        background: var(--sl-tip-bg, #2e2e2e); color: var(--sl-tip-text, #f8f8f8); font: 12px 'Instrument Sans', system-ui, sans-serif; white-space: nowrap; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45); pointer-events: none; }
+    :global(.spotlog-tip span) { display: flex; align-items: center; gap: 6px; opacity: 0.85; }
     :global(.spotlog-tip i) { width: 8px; height: 8px; border-radius: 4px; display: block; }
-    :global(.spotlog-tip small) { color: #9a9a9a; font-size: 11px; }
-    :global(.spotlog-heat:hover .spotlog-tip), :global(.spotlog-pin:hover .spotlog-tip) { display: flex; }
+    :global(.spotlog-tip small) { opacity: 0.6; font-size: 11px; }
+    :global(.spotlog-heat:hover .spotlog-tip), :global(.spotlog-pin:hover .spotlog-tip), :global(.spotlog-cdot:hover .spotlog-tip) { display: flex; }
     :global(.spotlog-pin .spotlog-tip) { left: 10px; transform: translateX(-50%); bottom: calc(100% + 6px); font-weight: 400; }
     :global(.spotlog-pin .spotlog-tip b) { font-weight: 600; }
     :global(.spotlog-dot) { position: absolute; left: -8px; top: -8px; width: 16px; height: 16px; border-radius: 8px; box-sizing: border-box; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45); }
-    :global(.spotlog-dot.start) { left: -6px; top: -6px; width: 12px; height: 12px; background: #ff3d8b; border: 2.5px solid #f8f8f8; }
-    :global(.spotlog-dot.end) { left: -5px; top: -5px; width: 10px; height: 10px; background: #1c1c1c; border: 2.5px solid #ff3d8b; }
-    :global(.spotlog-route-label) { position: absolute; transform: translate(12px, -50%); white-space: nowrap; font: 600 13px 'Instrument Sans', system-ui, sans-serif; color: #f8f8f8; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 0, 0, 0.35); }
-    :global(.spotlog-popup .leaflet-popup-content-wrapper) { background: #f8f8f8; color: #1c1c1c; border-radius: 16px; }
+    :global(.spotlog-dot.start) { left: -6px; top: -6px; width: 12px; height: 12px; background: var(--sl-start-fill, #ff3d8b); border: 2.5px solid var(--sl-start-border, #f8f8f8); }
+    :global(.spotlog-dot.end) { left: -5px; top: -5px; width: 10px; height: 10px; background: var(--sl-end-fill, #1c1c1c); border: 2.5px solid var(--sl-end-border, #ff3d8b); }
+    :global(.spotlog-route-label) { position: absolute; transform: translate(12px, -50%); white-space: nowrap; font: 600 13px 'Instrument Sans', system-ui, sans-serif; color: var(--sl-route-label, #f8f8f8); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 0, 0, 0.35); }
+    :global(.spotlog-popup .leaflet-popup-content-wrapper) { background: var(--sl-popup-bg, #f8f8f8); color: var(--sl-popup-text, #1c1c1c); border-radius: 16px; }
     :global(.spotlog-popup .leaflet-popup-content) { margin: 12px; }
-    :global(.sl-pop) { display: flex; flex-direction: column; gap: 8px; min-width: 220px; font: 13px 'Instrument Sans', system-ui, sans-serif; color: #1c1c1c; }
+    :global(.sl-pop) { display: flex; flex-direction: column; gap: 8px; min-width: 220px; font: 13px 'Instrument Sans', system-ui, sans-serif; color: var(--sl-popup-text, #1c1c1c); }
     :global(.sl-pop small) { color: #6b6b6b; font-size: 12px; }
     :global(.sl-h) { display: flex; flex-direction: column; gap: 1px; }
     :global(.sl-h b) { font-size: 14px; }

@@ -1,4 +1,5 @@
 import type { Dir8, Spot, Session, Snapshot } from './types';
+import { THEME } from './theme';
 
 export const DIRS: Dir8[] = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 export const SPORTS = ['Surf', 'Windsurf', 'Kite', 'Wing', 'SUP', 'Other'];
@@ -67,9 +68,9 @@ export const dirsLabel = (dirs: Dir8[]): string => {
 };
 
 export const RATINGS = ['flat', 'meh', 'good', 'great', 'epic'];
-/** Rating colours: very bad red, bad grey, good -> epic in greens */
-export const RATING_BG = ['#c9474f', '#6b6b6b', '#4fae68', '#34985a', '#1f8249'];
-export const RATING_FG = ['#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff'];
+/** Rating colours 1–5, from the theme (src/lib/theme.ts, designed in the Style Lab) */
+export const RATING_BG = [THEME.r1bg, THEME.r2bg, THEME.r3bg, THEME.r4bg, THEME.r5bg];
+export const RATING_FG = [THEME.r1fg, THEME.r2fg, THEME.r3fg, THEME.r4fg, THEME.r5fg];
 export const ratingBg = (r: number): string => RATING_BG[Math.max(0, Math.min(4, Math.round(r) - 1))];
 export const ratingFg = (r: number): string => RATING_FG[Math.max(0, Math.min(4, Math.round(r) - 1))];
 export const GEAR_SPORTS = ['Windsurf', 'Surf', 'Kite', 'Wing'];

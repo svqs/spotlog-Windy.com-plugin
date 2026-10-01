@@ -73,3 +73,11 @@ The same values appear in `src/plugin.svelte` (`@ground`, `@card` … at the top
 - Route style is a first pass; tune once real GPS tracks are loaded in real Windy (line width, colour by speed like Strava?).
 - Mobile: Windy's picker dot flow for choosing a place is not designed/built yet.
 - Webcams and alerts (from the early drafts) are not in 0.2.
+
+## Theme (colours and map marks)
+
+All colours and map marks live in **`src/lib/theme.ts`** (`THEME`). Its keys match the **Style Lab** (https://claude.ai/artifact/PWtJbKJMGekykAnzrLpsjD) one to one:
+play there, press *Save design*, then ask Claude to apply it. The plugin turns `THEME` into CSS variables (`--sl-*`, injected once as `<style id="spotlog-theme">`),
+so the panel, the map pins, the zoomed-out dots, session marks, tooltips, route dots and popup all follow it. Ratings come from `r1…r5`; rating guesses from
+`g1…g5` (or the rating colours when `guessLinked`). Spot labels: grey until the guess reaches `lightFrom`; selected = `activeBg` label with the dot in the
+guess colour (or `activeDot`); zoomed out = plain dots (`compactDot` or the guess colour), outline only with `compactRing`.
