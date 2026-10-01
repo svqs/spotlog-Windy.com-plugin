@@ -8,6 +8,10 @@ from playwright.sync_api import sync_playwright
 URL = 'http://localhost:8765/harness/index.html'
 OUT = sys.argv[1] if len(sys.argv) > 1 else '.'
 GPX = os.path.join(os.path.dirname(__file__), 'session.gpx')
+# the track must be from today (Windy only has forecasts from today on): regenerate it for every run
+import subprocess, tempfile
+GPX = os.path.join(tempfile.gettempdir(), 'spotlog-session.gpx')
+subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), 'make_gpx.py'), GPX], check=True, capture_output=True)
 errors, steps = [], []
 
 
@@ -37,6 +41,13 @@ with sync_playwright() as p:
     bottom = lambda: pane.evaluate('el => el.scrollTo(0, el.scrollHeight)')
     top = lambda: pane.evaluate('el => el.scrollTo(0, 0)')
     shot('01-home-empty')
+    pg.wait_for_selector('.to-menu:has-text("Windy menu")')
+    msgs = []
+    pg.on('console', lambda m: msgs.append(m.text))
+    pg.click('.to-menu')
+    pg.wait_for_timeout(100)
+    assert any("rqstOpen menu" in m for m in msgs) and any("rqstClose" in m for m in msgs), msgs
+    ok('desktop: arrow back to the Windy menu')
 
     # --- Add spot from home: pick on the map, "I know" the wind
     pg.click('.act:has-text("Add spot")')

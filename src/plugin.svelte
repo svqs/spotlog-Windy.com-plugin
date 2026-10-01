@@ -24,6 +24,9 @@
 
 <!-- ================= HEADER ================= -->
 {#if view === 'home'}
+    {#if !isMobile}
+        <button class="to-menu" on:click={ toWindyMenu }><span class="round" aria-hidden="true">←</span>Windy menu</button>
+    {/if}
     <div class="card head">
         <div class="row">
             <span class="brand grow-b"><span class="wordmark">SPOTLOG</span><PixelStar size={ 15 } /></span>
@@ -962,6 +965,15 @@
             case 'snap': return { title: draft ? 'New forecast' : 'Saved forecast', sub: spotById(sn?.spotId ?? null)?.name || 'No spot' };
             case 'log': return { title: lf?.id ? 'Session' : 'New session', sub: spotById(lf?.spotId ?? null)?.name || 'No spot yet' };
             default: return { title: '', sub: '' };
+        }
+    }
+    /** Desktop: back to Windy's own menu (Spotlog closes, the menu opens in the same pane) */
+    function toWindyMenu() {
+        try {
+            bcast.emit('rqstClose', name);
+            bcast.emit('rqstOpen', 'menu');
+        } catch (e) {
+            console.info('[spotlog] could not open the Windy menu', e);
         }
     }
     function showToast(msg: string, undo?: () => void) {
@@ -1913,6 +1925,9 @@
     .topbar { display: flex; align-items: center; gap: 10px; }
     .brand { display: inline-flex; align-items: center; gap: 8px; }
     .grow-b { flex: 1; min-width: 0; }
+    .to-menu { align-self: flex-start; display: inline-flex; align-items: center; gap: 10px; margin: -2px 0 -6px; padding: 0; border: 0; background: none; color: @sub !important; font-size: 13px !important; font-weight: 600;
+        .round { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; color: @text; font-size: 15px; box-sizing: border-box; }
+        &:hover { color: @text !important; .round { border-color: @outline; } } }
     .sync { display: block; margin-top: -4px; color: @sub; &.err { color: #ff9a9a; } }
     .coffee { align-self: center; display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 18px; border: 1px solid @outline; color: @text; text-decoration: none; font-weight: 600; font-size: 13px;
         &:hover { border-color: @orange; } }
