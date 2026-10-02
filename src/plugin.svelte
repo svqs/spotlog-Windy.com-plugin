@@ -9,7 +9,7 @@
 <!-- ================= PHONE: a compact bar in Windy's pane; pages open in a panel that rises over the map (like The Buoy's list) ================= -->
     <div class="mbar">
         <div class="mrow">
-            <span class="brand"><span class="wordmark">SPOTLOG</span><PixelStar size={ 12 } /></span>
+            <span class="brand"><span class="wordmark">SPOTLOG</span><PixelStar size={ 12 } /><span class="beta">{ W.betaTag }</span></span>
             {#if waitingForMap}
                 <span class="mhint">{ pickFor === 'snap' ? W.hintSnap : pickFor === 'log' ? W.hintLog : W.hintSpot }</span>
                 <button class="mlink" on:click={ () => { waitingForMap = false; openModal(); } }>{ W.cancel }</button>
@@ -59,6 +59,16 @@
             <button class="btn primary wide" on:click={ () => bcast.emit('rqstOpen', 'subscription') }>{ W.gatePremiumBtn }</button>
         {/if}
     </div>
+{:else if welcome}
+<!-- ================= WELCOME (once, for someone new) ================= -->
+    <div class="welcome">
+        {#if barMode}<div class="topbar"><span class="grow"></span><button class="mclose" aria-label="Close" on:click={ closeModal }>✕</button></div>{/if}
+        <span class="brand"><span class="wordmark">SPOTLOG</span><PixelStar size={ 15 } /><span class="beta">{ W.betaTag }</span></span>
+        <b class="h2">{@html rich(W.welcomeTitle)}</b>
+        <p class="p">{@html rich(W.welcomeText)}</p>
+        <button class="btn primary wide" on:click={ finishWelcome }>{ W.welcomeStart }</button>
+        <button class="link" on:click={ () => { finishWelcome(); openHowItWorks(); } }>{ W.welcomeHow }</button>
+    </div>
 {:else}
 
 <!-- ================= HEADER ================= -->
@@ -86,7 +96,7 @@
                     <svg width="14" height="22" viewBox="0 0 14 22" aria-hidden="true"><polyline points="11,3 3,11 11,19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 </button>
             {/if}
-            <span class="brand grow-b"><span class="wordmark">SPOTLOG</span><PixelStar size={ 15 } /></span>
+            <span class="brand grow-b"><span class="wordmark">SPOTLOG</span><PixelStar size={ 15 } /><span class="beta">{ W.betaTag }</span></span>
             <button class="units" aria-expanded={ showUnits } aria-label="Units and saved data" on:click={ () => (showUnits = !showUnits) }>{ unitsLabel } <span class="chev" class:up={ showUnits }>▾</span></button>
         </div>
         {#if showUnits}<Settings settings={ data.settings } on:change={ e => setSettings(e.detail) } />{/if}
@@ -235,6 +245,15 @@
         {/if}
     {:else}
         <div class="about">
+            <div class="card beta-card">
+                <b class="h3">{@html rich(W.betaTitle)}</b>
+                <p class="p muted">{@html rich(W.betaText)}</p>
+                <div class="btns">
+                    <button class="btn ghost" on:click={ () => exportJson(data) }>{ W.download }</button>
+                    <label class="btn ghost">{ W.upload }<input type="file" accept=".json,application/json" on:change={ onUpload } hidden /></label>
+                </div>
+                <small class="muted">{ W.uploadHint }</small>
+            </div>
             <div class="card">
                 <b class="h3">{@html rich(W.aboutTitle)}</b>
                 <p class="p">{@html rich(W.aboutText)}</p>
@@ -249,7 +268,6 @@
                 <b class="h3">{@html rich(W.goodTitle)}</b>
                 {#each [1, 2, 3] as n}{#if W['good' + n]}<p class="p muted">{@html rich(W['good' + n])}</p>{/if}{/each}
                 <div class="row data-links">
-                    <button class="link" on:click={ () => exportJson(data) }>{ W.download }</button>
                     <button class="link danger" on:click={ clearAll }>{ armed === 'all' ? W.deleteAllArmed : W.deleteAll }</button>
                 </div>
             </div>
@@ -260,6 +278,7 @@
             </div>
         </div>
     {/if}
+    {#if tab !== 'about'}<small class="beta-note">{@html rich(W.betaNote)}</small>{/if}
 
 
 <!-- ================= PICK A PLACE ================= -->
@@ -699,7 +718,7 @@
     import { hapticCleanup } from './lib/haptic';
 
     import config from './pluginConfig';
-    import { load, save, exportJson, uid, emptyData, normalise, mergeData, storageKey, useWindyUser } from './lib/storage';
+    import { load, save, exportJson, importJson, uid, emptyData, normalise, mergeData, storageKey, useWindyUser } from './lib/storage';
     import { waveValueAt, modelValueAt, nextMatch, conditionsNow, trimWaves, captureDay, seriesAt, covers, availableModels, SNAPSHOT_MODELS } from './lib/forecast';
     import { cloudAvailable, pull, push } from './lib/cloud';
     import { FEEDBACK_URL } from './lib/links';
@@ -789,6 +808,7 @@
         tick().then(scrollTop);
     }
     function toggleTab(t: typeof tab) {
+        if (welcome) {finishWelcome();}
         if (modalOpen && !unitsOpen && view === 'home' && tab === t) {closeModal();}
         else {
             unitsOpen = false;
@@ -821,6 +841,7 @@
         else {unitsOpen = false;}
     }
     function closeModal() {
+        if (welcome) {finishWelcome();}
         modalOpen = false;
         // the units page stays until the panel has faded out
         setTimeout(() => { if (!modalOpen) {unitsOpen = false;} }, 200);
@@ -1378,6 +1399,40 @@
         persist();
     }
 
+    /* ---------- beta: the diary lives in this browser; a downloaded copy can be uploaded again ---------- */
+    async function onUpload(e: Event) {
+        const input = e.currentTarget as HTMLInputElement;
+        const file = input.files?.[0];
+        input.value = '';
+        if (!file) {return;}
+        try {
+            data = await importJson(file, data);
+            persist();
+            drawSpotMarkers();
+            loadAllNow();
+            showToast(tr('toastImported', { spots: data.spots.length, sessions: data.sessions.length }));
+        } catch {
+            showToast(w('toastImportFail'));
+        }
+    }
+
+    /* ---------- welcome: once, the first time someone new opens spotlog ---------- */
+    let previewWelcome = false; // the Style Lab can show it
+    $: welcome = !gate && (previewWelcome || (!data.settings.welcomed && !data.spots.length && !data.sessions.length && !data.snapshots.length && !data.gear.length));
+    let welcomeOpened = false;
+    $: if (welcome && barMode && mapReady && !welcomeOpened) {
+        welcomeOpened = true;
+        setTimeout(openModal, 250);
+    }
+    function finishWelcome() {
+        previewWelcome = false;
+        if (!data.settings.welcomed) {setSettings({ ...data.settings, welcomed: true });}
+    }
+    function openHowItWorks() {
+        tab = 'about';
+        if (barMode) {openTab('about');}
+    }
+
     /* ---------- map ---------- */
     function clearTemp() {
         tempMarker?.remove();
@@ -1532,7 +1587,7 @@
         const wv = n?.wind;
         const pred = n ? predictRating(sp, n.wind, data.sessions, data.snapshots) : null;
         const tile = (label: string, val: string, bg: string, unit = '') =>
-            `<div class="sl-t" style="background:${bg}"><span>${label}</span><b>${val}${unit ? `<i>${unit}</i>` : ''}</b></div>`;
+            `<div class="sl-t" style="background:${bg}"><span>${label}</span><b>${val}</b><small>${unit || '&nbsp;'}</small></div>`;
         const many = isMobile && data.spots.length > 1;
         const nav = isMobile
             ? `<span class="sl-nav">${many ? '<button data-act="prev" aria-label="Previous spot">‹</button><button data-act="next" aria-label="Next spot">›</button>' : ''}<button class="sl-x" data-act="close" aria-label="Close">✕</button></span>`
@@ -1741,6 +1796,7 @@
         loadNow(s, m);
     }
     function startPick(what: PickFor) {
+        if (welcome) {finishWelcome();}
         pickFor = what;
         waitingForMap = false;
         locError = '';
@@ -2304,12 +2360,17 @@
             },
             goto(where: string) {
                 const s0 = data.spots[0];
+                if (where !== 'welcome') {previewWelcome = false;}
                 waitingForMap = false;
                 if (where !== 'card') {clearPopup();}
                 if (['spots', 'sessions', 'gear', 'about'].includes(where)) {
                     goHome();
                     tab = asTab(where);
                     if (barMode) {openTab(tab);}
+                } else if (where === 'welcome') {
+                    goHome();
+                    previewWelcome = true;
+                    if (barMode) {openModal();}
                 } else if (where === 'home') {
                     goHome();
                     tab = 'spots';
@@ -2467,7 +2528,7 @@
     .mact { height: 42px; padding: 0 6px; border-radius: var(--sl-radiusButton, 12px); border: 1px solid var(--sl-actLine, #5a5a5a); background: var(--sl-actBg, #3c3c3c); color: var(--sl-actText, #f8f8f8) !important; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12.5px !important; font-weight: 600;
         span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } &:disabled { opacity: 0.6; } }
     .mtabs { display: flex; gap: 3px; padding: 3px; border-radius: var(--sl-radiusButton, 12px); background: var(--sl-tabsBg, #3c3c3c);
-        button { flex: 1; height: 30px; border: 0; border-radius: var(--sl-radiusSmall, 9px); background: transparent; color: var(--sl-tabText, #d0d0d0) !important; font-size: 12.5px !important; padding: 0; }
+        button { flex: 1 1 auto; height: 30px; border: 0; border-radius: var(--sl-radiusSmall, 9px); background: transparent; color: var(--sl-tabText, #d0d0d0) !important; font-size: 12px !important; padding: 0 5px; white-space: nowrap; }
         button.on { background: var(--sl-sel-bg, #f8f8f8); color: var(--sl-sel-text, #1c1c1c) !important; font-weight: 600; }
         .cnt { display: inline-block; margin-left: 6px; min-width: 16px; padding: 1px 5px; box-sizing: border-box; border-radius: 8px; background: rgba(248, 248, 248, 0.14); color: inherit; font-size: 10.5px; line-height: 14px; font-weight: 600; font-variant-numeric: tabular-nums; vertical-align: 1px; }
         button.on .cnt { background: rgba(28, 28, 28, 0.12); } }
@@ -2509,6 +2570,16 @@
         .tile { min-height: 110px; padding: 12px; }
         .topbar .round { width: 34px; height: 34px; }
         .title { font-size: 16px; } }
+    /* beta: a small tag by the wordmark, a quiet line under the tabs, a card on How it works */
+    .beta { padding: 2px 6px 1px; border-radius: 7px; border: 1px solid @outline; color: @sub; font: 600 9.5px 'Instrument Sans', system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; line-height: 1.2; align-self: center; }
+    .beta-note { display: block; margin-top: 2px; color: var(--sl-uQuiet, #7a7a7a); font-size: 11.5px; line-height: 1.45; text-align: center; text-wrap: balance; }
+    .beta-card .btns { flex-wrap: wrap; }
+    .beta-card .btn { min-width: 0; }
+    /* welcome: once, for someone new */
+    .welcome { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 6px 2px 4px;
+        .brand { margin-bottom: 6px; } .h2 { font-size: 20px; text-wrap: balance; } .p { color: @sub; line-height: 1.5; max-width: 34em; }
+        .btn { margin-top: 4px; } .link { align-self: center; } }
+    .mwrap.on .welcome { padding-top: 0; }
     .wordmark { font-family: 'Doto', monospace; font-weight: 900; font-size: var(--sl-wordmarkSize, 24px); letter-spacing: 0.06em; }
     .card { background: @card; border: 1px solid @line; border-radius: var(--sl-radiusCard, 18px); padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
     .row { display: flex; align-items: center; gap: 10px; &.start { align-items: flex-start; } }
@@ -2573,7 +2644,7 @@
         &:disabled { opacity: 0.6; cursor: default; } }
 
     .tabs, .seg { display: flex; gap: 4px; padding: 3px; background: var(--sl-tabsBg, #3c3c3c); border-radius: var(--sl-radiusButton, 12px);
-        button { flex: 1; height: 34px; border: 0; border-radius: var(--sl-radiusSmall, 9px); background: transparent; color: var(--sl-tabText, #d0d0d0); }
+        button { flex: 1 1 auto; height: 34px; padding: 0 6px; border: 0; border-radius: var(--sl-radiusSmall, 9px); background: transparent; color: var(--sl-tabText, #d0d0d0); white-space: nowrap; }
         button.on { background: var(--sl-sel-bg, #f8f8f8); color: var(--sl-sel-text, #1c1c1c) !important; font-weight: 600; } }
     .seg { background: @ground; button { height: 30px; } }
     .card .seg { background: @ground; }
@@ -2712,7 +2783,7 @@
     :global(.sl-tiles) { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
     :global(.sl-t) { display: flex; flex-direction: column; justify-content: space-between; gap: 6px; min-height: 58px; padding: 7px 8px; border-radius: 9px; font-size: 11px; color: var(--sl-windText, #1c1c1c); box-sizing: border-box; }
     :global(.sl-t span) { white-space: nowrap; }
-    :global(.sl-t b) { display: flex; align-items: baseline; gap: 2px; font: 900 20px 'Doto', ui-monospace, monospace; line-height: 1; white-space: nowrap; }
-    :global(.sl-t b i) { font: 600 10px 'Instrument Sans', system-ui, sans-serif; font-style: normal; opacity: 0.7; }
+    :global(.sl-t b) { display: block; font: 900 20px 'Doto', ui-monospace, monospace; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: clip; }
+    :global(.sl-pop .sl-t small) { display: block; font: 600 10px 'Instrument Sans', system-ui, sans-serif; color: inherit; opacity: 0.7; line-height: 1; white-space: nowrap; }
     :global(.sl-b) { align-self: flex-start; padding: 3px 9px; border-radius: 10px; font-size: 12px; font-weight: 600; }
 </style>

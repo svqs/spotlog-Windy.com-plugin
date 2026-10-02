@@ -32,6 +32,7 @@ export const defaultSettings = (): Settings => ({
     mapSessions: true,
     spotView: 'tiles',
     phoneSheet: false,
+    welcomed: false,
 });
 
 export const emptyData = (): SpotlogData => ({
@@ -95,6 +96,7 @@ export const normalise = (parsed: Any): SpotlogData => {
     settings.mapSessions = settings.mapSessions !== false;
     settings.spotView = settings.spotView === 'list' ? 'list' : 'tiles';
     settings.phoneSheet = settings.phoneSheet === true;
+    settings.welcomed = settings.welcomed === true;
     settings.models = ids(settings.models).length ? ids(settings.models) : ['ecmwf'];
     const deleted: Record<string, number> = {};
     if (isObj(parsed?.deleted)) {
@@ -178,7 +180,10 @@ export const MAX_IMPORT_MB = 25;
 /** Merges an exported JSON file into the current data (items with the same id are replaced; imported items are "undeleted") */
 export const importJson = async (file: File, current: SpotlogData): Promise<SpotlogData> => {
     if (file.size > MAX_IMPORT_MB * 1024 * 1024) {throw new Error(`That file is larger than ${MAX_IMPORT_MB} MB`);}
-    const incoming = normalise(JSON.parse(await file.text()));
+    const raw = JSON.parse(await file.text());
+    // a spotlog copy has at least its lists of spots and sessions
+    if (!raw || typeof raw !== 'object' || !(Array.isArray(raw.spots) || Array.isArray(raw.sessions))) {throw new Error('not a spotlog copy');}
+    const incoming = normalise(raw);
     const merge = <T extends { id: string }>(a: T[], b: T[]): T[] => {
         const map = new Map(a.map(x => [x.id, x]));
         b.forEach(x => map.set(x.id, x));

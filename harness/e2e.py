@@ -40,6 +40,19 @@ with sync_playwright() as p:
     pane = pg.locator('#pane .spotlog')  # the plugin scrolls itself (Windy's pane does not)
     bottom = lambda: pane.evaluate('el => el.scrollTo(0, el.scrollHeight)')
     top = lambda: pane.evaluate('el => el.scrollTo(0, 0)')
+    # someone new: a short welcome first, once
+    pg.wait_for_selector('.welcome .btn.primary:has-text("Let\'s start")')
+    assert pg.locator('.welcome .beta').count() == 1
+    shot('00-welcome')
+    pg.click('.welcome .btn.primary')
+    pg.wait_for_selector('.head .back-menu')
+    assert stored(pg)['settings']['welcomed'] is True
+    pg.reload()
+    pg.wait_for_selector('.head .back-menu')
+    assert pg.locator('.welcome').count() == 0, 'the welcome shows only once'
+    ok('new user: a welcome once, "Let\'s start" opens spotlog, never shown again')
+    # beta: the tag by the wordmark and a quiet line under the tab
+    assert pg.locator('.head .beta').count() == 1 and pg.locator('.beta-note').count() == 1
     shot('01-home-empty')
     pg.wait_for_selector('.head .back-menu')
     assert pg.locator('text=Windy menu').count() == 0
@@ -351,13 +364,26 @@ with sync_playwright() as p:
     assert len(row['data']['sessions']) >= 1, row
     ok('diary syncs to the Windy user id, no separate sign-in')
     assert pg.locator('.coffee').count() == 0, 'feedback link only on About'
-    pg.click('.tabs button:has-text("About")')
-    pg.wait_for_selector('text=How it works')
+    pg.click('.tabs button:has-text("How it works")')
+    pg.wait_for_selector('.beta-card:has-text("in beta")')
     pg.wait_for_selector('.sig .coffee:has-text("Give feedback")')
     assert 'community.windy.com' in pg.get_attribute('.sig .coffee', 'href')
     assert pg.locator('text=Buy me a coffee').count() == 0
+    assert pg.locator('.beta-note').count() == 0, 'the full beta card replaces the short line here'
     shot('11b-about')
-    ok('About tab: friendly how-to, "Give feedback" (Windy Community) only there')
+    ok('How it works: beta explained, how-to, "Give feedback" (Windy Community) only there')
+    # upload a downloaded copy (from another device): it adds to what's here
+    copy = stored(pg)
+    n_spots = len(copy['spots'])
+    copy['spots'].append({**copy['spots'][0], 'id': 'from-other-phone', 'name': 'Other phone spot', 'lat': copy['spots'][0]['lat'] + 0.6, 'lon': copy['spots'][0]['lon'] - 0.9})
+    pg.set_input_files('.beta-card input[type=file]', files=[{'name': 'spotlog-copy.json', 'mimeType': 'application/json', 'buffer': json.dumps(copy).encode()}])
+    pg.wait_for_selector('.toast:has-text("Copy uploaded")')
+    after = stored(pg)
+    assert len(after['spots']) == n_spots + 1 and any(x['id'] == 'from-other-phone' for x in after['spots'])
+    pg.set_input_files('.beta-card input[type=file]', files=[{'name': 'notes.json', 'mimeType': 'application/json', 'buffer': b'{"hello": 1}'}])
+    pg.wait_for_selector('.toast:has-text("isn")')
+    assert len(stored(pg)['spots']) == n_spots + 1, 'a wrong file changes nothing'
+    ok('upload a copy: adds the spots and sessions from it; a wrong file is refused with a clear message')
 
     # --- two Windy tabs open at once must not overwrite each other
     pg2 = ctx.new_page()

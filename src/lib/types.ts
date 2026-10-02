@@ -134,6 +134,8 @@ export interface Settings {
     spotView: 'tiles' | 'list';
     /** phones: try the new bar + sheet layout (off = the panel under the timeline, as in 0.6) */
     phoneSheet: boolean;
+    /** the welcome for new users was seen (it shows once) */
+    welcomed: boolean;
 }
 
 export interface SpotlogData {

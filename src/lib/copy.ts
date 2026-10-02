@@ -16,9 +16,11 @@ export interface CopyGroup { id: string; title: string; note?: string; items: It
 
 export const COPY_GROUPS: CopyGroup[] = [
     { id: 'bar', title: 'Bar, tabs and page titles', note: 'The phone bar, the tabs, the big buttons on the home page', items: [
-        ['tabSpots', 'Spots'], ['tabSessions', 'Sessions'], ['tabGear', 'Gear'], ['tabAbout', 'About'],
+        ['tabSpots', 'Spots'], ['tabSessions', 'Sessions'], ['tabGear', 'Gear'], ['tabAbout', 'How it works'],
         ['titleSpots', 'Your spots', 'Phone: title of the Spots panel'], ['titleSessions', 'Sessions', 'Phone: title of the Sessions panel'],
-        ['titleGear', 'Gear', 'Phone: title of the Gear panel'], ['titleAbout', 'About', 'Phone: title of the About panel'],
+        ['titleGear', 'Gear', 'Phone: title of the Gear panel'], ['titleAbout', 'How it works', 'Phone: title of the How it works panel'],
+        ['betaTag', 'beta', 'Next to the SPOTLOG wordmark'],
+        ['betaNote', 'Beta: your diary is saved in this browser only, so download a copy now and then. Saving to your account is coming soon.', 'Small grey line under the tabs’ content'],
         ['actSaveForecast', 'Save forecast'], ['actSaveForecastSub', 'next 24 h'],
         ['actAddSpot', 'Add spot'], ['actAddSpotSub', 'on the map'],
         ['actLogSession', 'Log session'], ['actLogSessionSub', "after you're out"],
@@ -63,7 +65,15 @@ export const COPY_GROUPS: CopyGroup[] = [
         ['gearEmpty', 'Save your boards, sails, kites, wings… They show up as quick picks when you log a session.'],
         ['gearSaved', '{n} saved'], ['gearUsed', 'used in {n} session(s)'], ['gearRemove', 'Remove'],
     ] },
-    { id: 'about', title: 'About tab', items: [
+    { id: 'welcome', title: 'Welcome', note: 'Shown once, the first time someone opens spotlog', items: [
+        ['welcomeTitle', 'Welcome to {spotlog}'],
+        ['welcomeText', 'Save the forecast before you go out and log how it really was after. {Spotlog} learns which forecast to trust at your spots and when they look good for you.'],
+        ['welcomeStart', "Let's start"], ['welcomeHow', 'How it works'],
+    ] },
+    { id: 'about', title: 'How it works tab', items: [
+        ['betaTitle', '{Spotlog} is in beta'],
+        ['betaText', 'For now your diary is saved in this browser, on this device. If you clear the browser’s data or change devices, it’s gone, so download a copy now and then. To move your diary, upload the copy on the other device. Saving to your account is coming soon.'],
+        ['upload', 'Upload a copy'], ['uploadHint', 'Adds a downloaded copy to what’s here. Nothing is replaced or lost.'],
         ['aboutTitle', 'About {spotlog}'],
         ['aboutText', 'For the weird people who have a camera roll full of Windy screenshots. Save forecasts for your favourite spots, log sessions and feelings, and keep it all in one place.'],
         ['howTitle', 'How it works'],
@@ -73,7 +83,7 @@ export const COPY_GROUPS: CopyGroup[] = [
         ['step4Title', 'Get smarter each time'], ['step4Text', 'After a few sessions, {spotlog} guesses how good each spot looks for you on the given day, shows which forecast model works closest at each spot and suggests the wind that works best.'],
         ['goodTitle', 'Good to know'],
         ['good1', 'Save your forecast before the session. Windy keeps just a few hours of forecast history, so if you try to save a session from the previous day, there might not be enough data to save it.'],
-        ['good2', "Your diary belongs to your Windy account. Log in to Windy on another device and it's there."],
+        ['good2', 'In the beta your diary stays in this browser. A downloaded copy is a file you keep, and you can upload it again any time.'],
         ['good3', 'Your spots, sessions and GPS tracks are private. Nobody else sees them.'],
         ['download', 'Download a copy'], ['deleteAll', 'Delete everything, forever'], ['deleteAllArmed', 'Tap again: gone for good'],
         ['version', 'version {v}'], ['feedback', 'Give feedback'],
@@ -194,6 +204,7 @@ export const COPY_GROUPS: CopyGroup[] = [
         ['toastTrack', 'Track added · {dist}'], ['trackError', 'Could not read this file'],
         ['toastGearSaved', 'Saved to your gear'], ['toastGearRemoved', '{name} removed'],
         ['toastAllDeleted', 'All data deleted'],
+        ['toastImported', 'Copy uploaded: {spots} spots, {sessions} sessions'], ['toastImportFail', 'That file isn’t a spotlog copy. Pick the .json file you downloaded.'],
         ['toastFullSynced', "This browser's storage is full. Your Windy account still has everything."],
         ['toastFull', "This browser's storage is full. Export your data to keep it safe."],
     ] },
