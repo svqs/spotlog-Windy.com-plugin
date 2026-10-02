@@ -101,11 +101,13 @@ export const normalise = (parsed: Any): SpotlogData => {
     // the welcome is for someone new: a diary with anything in it has met spotlog already (diaries from before 0.11 had no mark)
     settings.welcomed = settings.welcomed === true || ['spots', 'sessions', 'snapshots', 'gear'].some(k => Array.isArray(parsed?.[k]) && parsed[k].length > 0);
     settings.models = ids(settings.models).length ? ids(settings.models) : ['ecmwf'];
-    const deleted: Record<string, number> = {};
-    if (isObj(parsed?.deleted)) {
-        const cut = Date.now() - 90 * 864e5;
-        Object.entries(parsed.deleted).forEach(([k, v]) => { if (typeof v === 'number' && v > cut && k.length <= 80) {deleted[k] = v;} });
-    }
+    const cut = Date.now() - 90 * 864e5;
+    const stamps = (x: Any): Record<string, number> => {
+        const out: Record<string, number> = {};
+        if (isObj(x)) {Object.entries(x).forEach(([k, v]) => { if (typeof v === 'number' && v > cut && k.length <= 80) {out[k] = v;} });}
+        return out;
+    };
+    const [deleted, revived] = settle(stamps(parsed?.deleted), stamps(parsed?.revived));
     return {
         version: 1,
         spots: list(parsed?.spots, cleanSpot, 2000) as SpotlogData['spots'],
@@ -115,7 +117,20 @@ export const normalise = (parsed: Any): SpotlogData => {
         settings,
         updatedAt: typeof parsed?.updatedAt === 'number' ? parsed.updatedAt : 0,
         deleted,
+        revived,
     };
+};
+
+/** A delete and a later "bring back" (upload, undo) of the same id: the newer one wins */
+const settle = (deleted: Record<string, number>, revived: Record<string, number>): [Record<string, number>, Record<string, number>] => {
+    const d = { ...deleted };
+    Object.entries(revived).forEach(([k, v]) => { if (d[k] !== undefined && v >= d[k]) {delete d[k];} });
+    return [d, revived];
+};
+const latest = (a: Record<string, number> = {}, b: Record<string, number> = {}): Record<string, number> => {
+    const out = { ...a };
+    Object.entries(b).forEach(([k, v]) => (out[k] = Math.max(v, out[k] || 0)));
+    return out;
 };
 
 /**
@@ -125,8 +140,8 @@ export const normalise = (parsed: Any): SpotlogData => {
  */
 export const mergeData = (a: SpotlogData, b: SpotlogData): SpotlogData => {
     const [older, newer] = (a.updatedAt || 0) > (b.updatedAt || 0) ? [b, a] : [a, b];
-    const deleted: Record<string, number> = { ...(older.deleted || {}) };
-    Object.entries(newer.deleted || {}).forEach(([k, v]) => (deleted[k] = Math.max(v, deleted[k] || 0)));
+    // a delete in one copy removes the item, unless it was brought back later (an upload in another tab)
+    const [deleted, revived] = settle(latest(older.deleted, newer.deleted), latest(older.revived, newer.revived));
     const merge = <T extends { id: string }>(x: T[], y: T[]): T[] => {
         const m = new Map(x.map(i => [i.id, i]));
         y.forEach(i => m.set(i.id, i));
@@ -141,6 +156,7 @@ export const mergeData = (a: SpotlogData, b: SpotlogData): SpotlogData => {
         settings: newer.settings || older.settings,
         updatedAt: Math.max(a.updatedAt || 0, b.updatedAt || 0),
         deleted,
+        revived,
     };
 };
 
@@ -192,8 +208,11 @@ export const importJson = async (file: File, current: SpotlogData): Promise<Spot
         b.forEach(x => map.set(x.id, x));
         return [...map.values()];
     };
+    // everything in the copy counts as brought back now: newer than any delete, here or in another open tab
+    const now = Date.now();
     const deleted = { ...(current.deleted || {}) };
-    [...incoming.spots, ...incoming.snapshots, ...incoming.sessions, ...incoming.gear].forEach(x => delete deleted[x.id]);
+    const revived = { ...(current.revived || {}) };
+    [...incoming.spots, ...incoming.snapshots, ...incoming.sessions, ...incoming.gear].forEach(x => { delete deleted[x.id]; revived[x.id] = now; });
     return {
         version: 1,
         spots: merge(current.spots, incoming.spots),
@@ -201,8 +220,9 @@ export const importJson = async (file: File, current: SpotlogData): Promise<Spot
         sessions: merge(current.sessions, incoming.sessions),
         gear: merge(current.gear, incoming.gear),
         settings: current.settings,
-        updatedAt: Date.now(),
+        updatedAt: now,
         deleted,
+        revived,
     };
 };
 

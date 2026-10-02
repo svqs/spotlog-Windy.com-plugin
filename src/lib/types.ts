@@ -155,4 +155,6 @@ export interface SpotlogData {
     updatedAt?: number;
     /** ids deleted on this device (id -> ms), so a sync doesn't bring them back; pruned after 90 days */
     deleted?: Record<string, number>;
+    /** ids brought back (upload, undo) after a delete (id -> ms): newer than the delete wins, also in other tabs and on other devices */
+    revived?: Record<string, number>;
 }

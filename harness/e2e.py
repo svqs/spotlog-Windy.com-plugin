@@ -415,6 +415,22 @@ with sync_playwright() as p:
     pg.wait_for_selector('.spotlog')
     assert len(stored(pg)['sessions']) == len(full['sessions'])
     ok(f'download, delete everything, upload: all {len(full["spots"])} spots and {len(full["sessions"])} sessions come back (and stay after a reload)')
+    # the same with a second Windy tab open: that tab still remembers "all deleted" and must not wipe the upload again
+    other = ctx.new_page()
+    other.goto(URL)
+    other.wait_for_selector('.spotlog')
+    pg.click('.tabs button:has-text("How it works")')
+    pg.click('.link.danger')
+    pg.click('.link.danger')
+    pg.wait_for_selector('.toast:has-text("All data deleted")')
+    other.wait_for_function("() => [...document.querySelectorAll('.stats .big')].some(x => x.textContent.trim() === '0')")
+    pg.set_input_files('.beta-card input[type=file]', copy_path)
+    pg.wait_for_selector('.toast:has-text("Copy uploaded")')
+    pg.wait_for_timeout(1500)
+    assert len(stored(pg)['sessions']) == len(full['sessions']), len(stored(pg)['sessions'])
+    other.wait_for_function(f"() => [...document.querySelectorAll('.stats .big')].some(x => x.textContent.trim() === '{len(full['sessions'])}')")
+    other.close()
+    ok('upload with a second Windy tab open: the other tab shows the uploaded diary too, nothing gets wiped')
 
     # --- two Windy tabs open at once must not overwrite each other
     pg2 = ctx.new_page()

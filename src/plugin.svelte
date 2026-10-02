@@ -1362,10 +1362,13 @@
         const now = Date.now();
         const cur = allIds(data);
         const deleted = { ...(data.deleted || {}) };
+        const revived = { ...(data.revived || {}) };
         knownIds.forEach(id => { if (!cur.has(id)) {deleted[id] = now;} });
-        cur.forEach(id => { if (deleted[id]) {delete deleted[id];} }); // undo brings an item back
+        // undo brings an item back: remembered, so another open tab doesn't delete it again
+        cur.forEach(id => { if (deleted[id]) { delete deleted[id]; revived[id] = now; } });
         knownIds = cur;
         data.deleted = deleted;
+        data.revived = revived;
         data.updatedAt = now;
         if (!save(data) && !storageWarned) {
             storageWarned = true;
@@ -1432,7 +1435,7 @@
         }
     }
     /** Another Windy tab saved the diary: merge it in, so two open tabs never overwrite each other */
-    const sig = (d: SpotlogData) => JSON.stringify([[...allIds(d)].sort(), Object.keys(d.deleted || {}).sort(), d.settings]);
+    const sig = (d: SpotlogData) => JSON.stringify([[...allIds(d)].sort(), Object.keys(d.deleted || {}).sort(), Object.keys(d.revived || {}).sort(), d.settings]);
     function onStorage(e: StorageEvent) {
         if (e.key !== storageKey() || !e.newValue) {return;}
         try {
