@@ -31,4 +31,6 @@
         }
     },
     "include": ["**/*.ts", "**/*.svelte"],
+    // the sync server runs on Supabase (Deno), not in Windy: it has its own types there
+    "exclude": ["node_modules", "dist", "supabase"],
 }

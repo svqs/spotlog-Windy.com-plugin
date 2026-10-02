@@ -1,7 +1,9 @@
 <div class="plugin__mobile-header">
     { title }
 </div>
-<section class="plugin__content spotlog" class:m={ isMobile } class:bar={ barMode } class:gatebar={ barMode && !!gate } bind:this={ root } on:touchstart={ touchStart } on:touchmove={ touchMove } on:touchend={ fieldTouchEnd } on:keydown={ keepKeys } on:keyup={ keepKeys } on:keypress={ keepKeys }>
+<!-- the key handlers only keep your typing inside Spotlog (away from Windy's search); the swipe handlers keep scrolling inside the panel -->
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+<section aria-label="Spotlog" class="plugin__content spotlog" class:m={ isMobile } class:bar={ barMode } class:gatebar={ barMode && !!gate } bind:this={ root } on:touchstart={ touchStart } on:touchmove={ touchMove } on:touchend={ fieldTouchEnd } on:keydown={ keepKeys } on:keyup={ keepKeys } on:keypress={ keepKeys }>
 
 {#if barMode}
 <!-- ================= PHONE: a compact bar in Windy's pane; pages open in a panel that rises over the map (like The Buoy's list) ================= -->
@@ -1751,8 +1753,10 @@
         try {
             if (typeof geo?.getGPSlocation === 'function') {
                 // a phone's quick fix (wifi/cell, a few tens of metres) is plenty to find a spot, and comes in a second or two
+                // Windy passes these on to the phone; its type only lists its own two (the rest come from a package plugins don't get)
+                const opts = { doNotShowFailureMessage: true, getMeFallbackGps: false, enableHighAccuracy: false, timeout: 7000, maximumAge: 120000 };
                 const p = await Promise.race([
-                    geo.getGPSlocation({ doNotShowFailureMessage: true, getMeFallbackGps: false, enableHighAccuracy: false, timeout: 7000, maximumAge: 120000 }),
+                    geo.getGPSlocation(opts as Parameters<typeof geo.getGPSlocation>[0]),
                     new Promise<null>(res => setTimeout(() => res(null), 7500)),
                 ]);
                 if (p && typeof p.lat === 'number' && (p.source === 'gps' || p.source === 'last')) {return { lat: p.lat, lon: p.lon };}
@@ -2517,7 +2521,6 @@
     .big2 { font-size: 26px; font-weight: 600; line-height: 1.1; small { font-size: 13px; } }
     .muted { color: @sub; font-size: 13px; }
     .p { margin: 0; line-height: 1.45; }
-    .w { color: @text; }
     .small { margin: 0; font-size: 12px; color: @sub; }
     .r { text-align: right; }
     .err { color: var(--sl-danger, #ff9a9a) !important; line-height: 1.4; }
@@ -2559,7 +2562,6 @@
         button { height: 28px; padding: 0 11px; border-radius: var(--sl-radiusChip, 18px); border: 1px solid var(--sl-chipLine, #5a5a5a); background: transparent; font-size: 12px !important; color: @sub !important; }
         button.on { background: var(--sl-sel-bg, #f8f8f8); border-color: var(--sl-sel-bg, #f8f8f8); color: var(--sl-sel-text, #1c1c1c) !important; font-weight: 600; } }
     .sl-note { margin-top: -8px; padding: 0 4px; line-height: 1.4; }
-    .link.inline { display: inline; padding: 0; font-size: 12px; }
 
     /* the three actions are equals: same grey tile, an icon, a name and a short line */
     .actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -2605,8 +2607,7 @@
     .plain { border: 0; background: none; padding: 0; text-align: left; }
     /* row icons: simple line icons and plain dots, no filled circle behind them */
     .ico { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: @sub;
-        &.live { color: @orange; }
-        &.o { color: @orange; font-size: 11px; } }
+        &.live { color: @orange; } }
     .dot-s { display: block; width: 8px; height: 8px; border-radius: 4px; background: @orange; &.off { background: transparent; border: 1.5px solid @outline; box-sizing: border-box; } }
     .kind { min-width: 58px; height: 26px; padding: 0 8px; border-radius: 8px; background: @ground; font-size: 11px; color: @sub; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
     .dot { width: 30px; height: 30px; flex-shrink: 0; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; }
@@ -2653,15 +2654,12 @@
         &:hover { border-color: @outline; }
         &.on { border-color: @orange; } }
     .chev-r { color: @sub; font-size: 18px; }
-    .pulse { width: 10px; height: 10px; border-radius: 5px; background: @orange; flex-shrink: 0; &.live { animation: sl-pulse 1.6s ease-out infinite; } }
     /* the spot popup: grows in from its tip, fades out when switched off */
     :global(.spotlog-popup .leaflet-popup-content-wrapper), :global(.spotlog-popup .leaflet-popup-tip-container) { transform-origin: 50% 100%; animation: sl-pop-in 0.22s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
     :global(.spotlog-popup.sl-closing .leaflet-popup-content-wrapper), :global(.spotlog-popup.sl-closing .leaflet-popup-tip-container) { animation: sl-pop-out 0.17s ease-in both; }
     @keyframes -global-sl-pop-in { from { opacity: 0; transform: translateY(8px) scale(0.94); } to { opacity: 1; transform: none; } }
     @keyframes -global-sl-pop-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(6px) scale(0.96); } }
     @media (prefers-reduced-motion: reduce) { :global(.spotlog-popup .leaflet-popup-content-wrapper), :global(.spotlog-popup .leaflet-popup-tip-container) { animation: none; } }
-    @keyframes sl-pulse { 0% { box-shadow: 0 0 0 0 rgba(212, 149, 0, 0.55); } 100% { box-shadow: 0 0 0 12px rgba(212, 149, 0, 0); } }
-    @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
     .toast { position: sticky; bottom: 12px; z-index: 5; display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 16px; border-radius: 14px; background: var(--sl-toast-bg, #f8f8f8); color: var(--sl-toast-text, #1c1c1c); font-weight: 600; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45); }
     .undo { height: 32px; padding: 0 14px; border-radius: 10px; border: 0; background: var(--sl-undo, #1c1c1c); color: var(--sl-toast-bg, #f8f8f8) !important; font-weight: 600; }
 

@@ -76,7 +76,6 @@
     .badge-row { display: flex; align-items: center; gap: 8px; padding: 0 14px 12px; flex-wrap: wrap; }
     .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
     .rows { padding: 0 14px 6px; > div { display: flex; justify-content: space-between; gap: 10px; height: 34px; align-items: center; border-top: 1px solid var(--sl-lightLine, #e5e5e5); span { color: var(--sl-lightSub, #6b6b6b); } } }
-    .soon { color: var(--sl-lightSub, #6b6b6b); font-weight: 400; font-size: 12px; }
     .models-t { padding: 10px 14px 8px; border-top: 1px solid var(--sl-lightLine, #e5e5e5); font-size: 12px; color: var(--sl-lightSub, #6b6b6b); }
     .models { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 0 14px 12px;
         > div { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 0; border-radius: 10px; background: var(--sl-dirTile, #e9e8e3); font-size: 11px; b { font-size: 15px; } }
