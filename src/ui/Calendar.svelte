@@ -34,8 +34,8 @@
 
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
-    import type { Session } from '../lib/types';
     import { words } from '../lib/copy';
+    import type { Session } from '../lib/types';
 
     export let sessions: Session[] = [];
     export let colors: string[] = [];

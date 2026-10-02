@@ -80,7 +80,7 @@
     const tickHaptic = haptic;
     function set(v: number, animate = true) {
         const nv = fromPos(toPos(v));
-        if (animate) settleAnim();
+        if (animate) {settleAnim();}
         if (nv !== value) {
             value = nv;
             tickHaptic();
@@ -93,7 +93,7 @@
     }
 
     function down(e: PointerEvent) {
-        if (e.button !== undefined && e.button > 0) return;
+        if (e.button !== undefined && e.button > 0) {return;}
         dragging = true;
         moved = false;
         animating = false;
@@ -105,9 +105,9 @@
         (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
     }
     function move(e: PointerEvent) {
-        if (!dragging) return;
+        if (!dragging) {return;}
         const dx = e.clientX - startX;
-        if (!moved && Math.abs(dx) < 4) return;
+        if (!moved && Math.abs(dx) < 4) {return;}
         moved = true;
         e.preventDefault();
         const p = Math.max(-0.4, Math.min(count - 0.6, startPos - dx / PX));
@@ -123,14 +123,14 @@
         }
     }
     function up(e: PointerEvent) {
-        if (!dragging) return;
+        if (!dragging) {return;}
         dragging = false;
         if (!moved) {
             // a tap: jump to the tapped tick
             const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-            const p = restPos + (e.clientX - r.left - width / 2) / PX;
+            const tapped = restPos + (e.clientX - r.left - width / 2) / PX;
             raw = null;
-            set(fromPos(p));
+            set(fromPos(tapped));
             return;
         }
         // flick: carry on a little in the direction of travel, then settle on a whole tick.
@@ -145,9 +145,9 @@
         // only sideways scrolling (trackpad swipe, or shift + wheel) moves the ruler;
         // a normal up/down scroll must keep scrolling the page
         const sideways = Math.abs(e.deltaX) > Math.abs(e.deltaY);
-        if (!sideways && !e.shiftKey) return;
+        if (!sideways && !e.shiftKey) {return;}
         const d = sideways ? e.deltaX : e.deltaY;
-        if (!d) return;
+        if (!d) {return;}
         e.preventDefault();
         wheelAcc += d;
         const stepPx = e.deltaMode === 1 ? 1 : 24;

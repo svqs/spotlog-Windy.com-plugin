@@ -46,15 +46,15 @@
         let el: HTMLElement | null = rootEl?.parentElement || null;
         while (el && el !== document.body) {
             const o = getComputedStyle(el).overflowY;
-            if (o === 'auto' || o === 'scroll') break;
+            if (o === 'auto' || o === 'scroll') {break;}
             el = el.parentElement;
         }
         const top = el && el !== document.body ? el.getBoundingClientRect().top : 0;
         return rootEl.getBoundingClientRect().top - top;
     }
     // close when clicking/tapping anywhere else, or on Escape
-    const outside = (e: Event) => { if (open && rootEl && !rootEl.contains(e.target as Node)) open = false; };
-    const esc = (e: KeyboardEvent) => { if (open && e.key === 'Escape') open = false; };
+    const outside = (e: Event) => { if (open && rootEl && !rootEl.contains(e.target as Node)) {open = false;} };
+    const esc = (e: KeyboardEvent) => { if (open && e.key === 'Escape') {open = false;} };
     $: if (typeof window !== 'undefined') {
         if (open) { window.addEventListener('pointerdown', outside, true); window.addEventListener('keydown', esc); }
         else { window.removeEventListener('pointerdown', outside, true); window.removeEventListener('keydown', esc); }
@@ -96,9 +96,9 @@
         value = `${String(h).padStart(2, '0')}:${String(minutes[mi]).padStart(2, '0')}`;
     }
     async function toggle() {
-        if (!open) below = roomAbove() < 190;
+        if (!open) {below = roomAbove() < 190;}
         open = !open;
-        if (!open) return;
+        if (!open) {return;}
         fromValue();
         commit();
         await tick();
@@ -121,11 +121,11 @@
         clearTimeout(timers[col]);
         timers[col] = setTimeout(() => {
             const el = col === 'h' ? hEl : col === 'm' ? mEl : aEl;
-            if (!el) return;
+            if (!el) {return;}
             const i = Math.round(el.scrollTop / ITEM);
-            if (col === 'h') hi = Math.min(i, hours.length - 1);
-            if (col === 'm') mi = Math.min(i, minutes.length - 1);
-            if (col === 'a') ai = Math.min(i, 1);
+            if (col === 'h') {hi = Math.min(i, hours.length - 1);}
+            if (col === 'm') {mi = Math.min(i, minutes.length - 1);}
+            if (col === 'a') {ai = Math.min(i, 1);}
             commit();
         }, 90);
     }

@@ -48,11 +48,11 @@
 
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
-    import type { Settings } from '../lib/types';
     import { WIND_UNITS, HEIGHT_UNITS, TEMP_UNITS } from '../lib/units';
     import { SNAPSHOT_MODELS } from '../lib/forecast';
     import { words, rich } from '../lib/copy';
     import { modelLabel } from '../lib/wind';
+    import type { Settings } from '../lib/types';
 
     export let settings: Settings;
     const dispatch = createEventDispatcher();
@@ -71,7 +71,7 @@
     }
     function toggleModel(m: string) {
         const has = settings.models.includes(m);
-        if (has && settings.models.length === 1) return; // keep at least one
+        if (has && settings.models.length === 1) {return;} // keep at least one
         set({ models: has ? settings.models.filter(x => x !== m) : [...settings.models, m] });
     }
     function toggleLayer(id: string) {

@@ -1,5 +1,5 @@
-import type { Track } from './types';
 import { distanceKm } from './wind';
+import type { Track } from './types';
 
 interface Pt { lat: number; lon: number; t: number | null }
 
@@ -22,17 +22,17 @@ const parseTcx = (doc: Document): Pt[] =>
 /** Reads a GPX or TCX file (what Garmin Connect, Strava & co. export) into a compact track */
 export const readTrack = async (file: File): Promise<Track> => {
     const name = file.name.toLowerCase();
-    if (file.size > 40 * 1024 * 1024) throw new Error('That file is larger than 40 MB. Export a single activity as GPX or TCX.');
+    if (file.size > 40 * 1024 * 1024) {throw new Error('That file is larger than 40 MB. Export a single activity as GPX or TCX.');}
     if (name.endsWith('.fit')) {
         throw new Error('FIT files are not supported yet. In Garmin Connect choose “Export to GPX” (or TCX) and add that file.');
     }
     const text = await file.text();
     const doc = new DOMParser().parseFromString(text, 'application/xml');
-    if (doc.getElementsByTagName('parsererror').length) throw new Error('This file could not be read as GPX or TCX.');
+    if (doc.getElementsByTagName('parsererror').length) {throw new Error('This file could not be read as GPX or TCX.');}
     let pts = parseGpx(doc);
-    if (!pts.length) pts = parseTcx(doc);
+    if (!pts.length) {pts = parseTcx(doc);}
     pts = pts.filter(p => isFinite(p.lat) && isFinite(p.lon));
-    if (pts.length < 2) throw new Error('No track points found in this file.');
+    if (pts.length < 2) {throw new Error('No track points found in this file.');}
 
     let dist = 0;
     let maxSpeed: number | null = null;
@@ -44,9 +44,9 @@ export const readTrack = async (file: File): Promise<Track> => {
         const b = pts[i];
         if (a.t !== null && b.t !== null && b.t - a.t >= 10e3) {
             let d = 0;
-            for (let k = wStart + 1; k <= i; k++) d += distanceKm(pts[k - 1], pts[k]);
+            for (let k = wStart + 1; k <= i; k++) {d += distanceKm(pts[k - 1], pts[k]);}
             const v = (d * 1000) / ((b.t - a.t) / 1000);
-            if (v < 40 && (maxSpeed === null || v > maxSpeed)) maxSpeed = v;
+            if (v < 40 && (maxSpeed === null || v > maxSpeed)) {maxSpeed = v;}
             wStart = i;
         }
     }

@@ -1,7 +1,7 @@
 import { getPointForecastData } from '@windy/fetch';
 
-import type { ModelValue, WaveValue, Spot, DaySeries } from './types';
 import { dirMatches } from './wind';
+import type { ModelValue, WaveValue, Spot, DaySeries } from './types';
 
 /** Global models that exist almost everywhere, plus regional ones that fail gracefully outside their area */
 export const SNAPSHOT_MODELS = ['ecmwf', 'gfs', 'icon', 'iconEu', 'arome'];
@@ -12,7 +12,7 @@ const num = (v: unknown): number | null => (typeof v === 'number' && isFinite(v)
 const nearestIndex = (tsList: number[], ts: number): number => {
     let best = 0;
     for (let i = 1; i < tsList.length; i++) {
-        if (Math.abs(tsList[i] - ts) < Math.abs(tsList[best] - ts)) best = i;
+        if (Math.abs(tsList[i] - ts) < Math.abs(tsList[best] - ts)) {best = i;}
     }
     return best;
 };
@@ -26,7 +26,7 @@ const TTL = 20 * 60e3;
 const fetchData = (model: string, lat: number, lon: number): Promise<any | null> => {
     const key = `${model}|${lat.toFixed(3)}|${lon.toFixed(3)}`;
     const hit = cache.get(key);
-    if (hit && Date.now() - hit.at < TTL) return hit.p;
+    if (hit && Date.now() - hit.at < TTL) {return hit.p;}
     const p = (async () => {
         try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,9 +43,9 @@ const fetchData = (model: string, lat: number, lon: number): Promise<any | null>
 
 export const modelValueAt = async (model: string, lat: number, lon: number, ts: number): Promise<ModelValue | null> => {
     const d = await fetchData(model, lat, lon);
-    if (!d || !Array.isArray(d.ts) || !d.ts.length) return null;
+    if (!d || !Array.isArray(d.ts) || !d.ts.length) {return null;}
     const i = nearestIndex(d.ts, ts);
-    if (Math.abs(d.ts[i] - ts) > 3 * 3600e3) return null;
+    if (Math.abs(d.ts[i] - ts) > 3 * 3600e3) {return null;}
     const tempK = num(d.temperature?.[i]);
     return {
         model,
@@ -60,7 +60,7 @@ export const modelValueAt = async (model: string, lat: number, lon: number, ts: 
 export const waveValueAt = async (lat: number, lon: number, ts: number): Promise<WaveValue | null> => {
     for (const model of WAVE_MODELS) {
         const d = await fetchData(model, lat, lon);
-        if (!d || !Array.isArray(d.ts) || !d.ts.length || !Array.isArray(d.waves)) continue;
+        if (!d || !Array.isArray(d.ts) || !d.ts.length || !Array.isArray(d.waves)) {continue;}
         const i = nearestIndex(d.ts, ts);
         const v: WaveValue = {
             model,
@@ -72,7 +72,7 @@ export const waveValueAt = async (lat: number, lon: number, ts: number): Promise
             swell1Period: num(d.swell1Period?.[i]),
             swell1Dir: num(d.swell1Dir?.[i]),
         };
-        if (v.waves !== null) return v;
+        if (v.waves !== null) {return v;}
     }
     return null;
 };
@@ -93,13 +93,13 @@ export const captureModels = async (lat: number, lon: number, ts: number, primar
 
 /** Removes the layers the user chose not to keep */
 export const trimWaves = (w: WaveValue | null, layers: string[]): WaveValue | null => {
-    if (!w) return null;
+    if (!w) {return null;}
     const keepWaves = layers.includes('waves');
     const out: WaveValue = { ...w };
     if (!keepWaves) { out.waves = null; out.wavesDir = null; }
     if (!layers.includes('swell1')) { out.swell1 = null; out.swell1Period = null; out.swell1Dir = null; }
-    if (!layers.includes('wavesPeriod')) out.wavesPeriod = null;
-    if (!layers.includes('wavesPower')) out.wavesPower = null;
+    if (!layers.includes('wavesPeriod')) {out.wavesPeriod = null;}
+    if (!layers.includes('wavesPower')) {out.wavesPower = null;}
     const any = [out.waves, out.swell1, out.wavesPeriod, out.wavesPower].some(v => v !== null);
     return any ? out : null;
 };
@@ -113,16 +113,16 @@ export interface MatchWindow {
 
 /** Next window of at least `minHours` of daylight where the forecast fits the spot's directions and strength */
 export const nextMatch = async (spot: Spot, model = 'ecmwf', minHours = 2): Promise<MatchWindow | null> => {
-    if (spot.windUnknown && !spot.dirs.length) return null;
+    if (spot.windUnknown && !spot.dirs.length) {return null;}
     const d = await fetchData(model, spot.lat, spot.lon);
-    if (!d || !Array.isArray(d.ts)) return null;
+    if (!d || !Array.isArray(d.ts)) {return null;}
     const now = Date.now();
     let run: number[] = [];
     const close = (): MatchWindow | null => {
-        if (!run.length) return null;
+        if (!run.length) {return null;}
         const first = run[0];
         const last = run[run.length - 1];
-        if ((d.ts[last] - d.ts[first]) / 3600e3 + 1 < minHours) return null;
+        if ((d.ts[last] - d.ts[first]) / 3600e3 + 1 < minHours) {return null;}
         const winds = run.map(i => d.wind[i]);
         return {
             start: d.ts[first],
@@ -132,7 +132,7 @@ export const nextMatch = async (spot: Spot, model = 'ecmwf', minHours = 2): Prom
         };
     };
     for (let i = 0; i < d.ts.length; i++) {
-        if (d.ts[i] < now) continue;
+        if (d.ts[i] < now) {continue;}
         const w = num(d.wind?.[i]);
         const dir = num(d.windDir?.[i]);
         const daylight = d.isDay ? !!d.isDay[i] : true;
@@ -141,7 +141,7 @@ export const nextMatch = async (spot: Spot, model = 'ecmwf', minHours = 2): Prom
             run.push(i);
         } else {
             const found = close();
-            if (found) return found;
+            if (found) {return found;}
             run = [];
         }
     }
@@ -195,11 +195,11 @@ export const captureDay = async (
     const list = Array.from(new Set([primary, ...(models.length ? models : SNAPSHOT_MODELS)]));
     const datas = await Promise.all(list.map(m => fetchData(m, lat, lon)));
     const grid: number[] = [];
-    for (let t = from; t <= to; t += HOUR) grid.push(t);
+    for (let t = from; t <= to; t += HOUR) {grid.push(t);}
     const pick = (d: any, key: string, t: number): number | null => {
-        if (!d || !Array.isArray(d.ts) || !d.ts.length) return null;
+        if (!d || !Array.isArray(d.ts) || !d.ts.length) {return null;}
         const i = nearestIndex(d.ts, t);
-        if (Math.abs(d.ts[i] - t) > 1.6 * HOUR) return null;
+        if (Math.abs(d.ts[i] - t) > 1.6 * HOUR) {return null;}
         return num(d[key]?.[i]);
     };
     const keepTemp = layers.includes('temp');
@@ -207,7 +207,7 @@ export const captureDay = async (
     list.forEach((m, k) => {
         const d = datas[k];
         const wind = grid.map(t => pick(d, 'wind', t));
-        if (!wind.some(v => v !== null)) return;
+        if (!wind.some(v => v !== null)) {return;}
         out[m] = {
             wind,
             gust: grid.map(t => pick(d, 'windGust', t)),
@@ -218,13 +218,13 @@ export const captureDay = async (
             }),
         };
     });
-    if (!Object.keys(out).length) return null;
+    if (!Object.keys(out).length) {return null;}
 
     let waves: DaySeries['waves'] = null;
     for (const wm of WAVE_MODELS) {
         const d = await fetchData(wm, lat, lon);
         const wv = grid.map(t => pick(d, 'waves', t));
-        if (!wv.some(v => v !== null)) continue;
+        if (!wv.some(v => v !== null)) {continue;}
         const col = (key: string, layer: string) => grid.map(t => (layers.includes(layer) ? pick(d, key, t) : null));
         waves = {
             model: wm,

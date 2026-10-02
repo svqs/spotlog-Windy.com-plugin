@@ -39,10 +39,10 @@
 </div>
 
 <script lang="ts">
-    import type { ModelValue, WaveValue, Settings } from '../lib/types';
     import { windColor, dirName, modelLabel } from '../lib/wind';
     import { fmtWind, fmtWind0, fmtHeight, fmtTemp, windLabel } from '../lib/units';
     import { words } from '../lib/copy';
+    import type { ModelValue, WaveValue, Settings } from '../lib/types';
 
     export let title = '';
     export let sub = '';

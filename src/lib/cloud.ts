@@ -33,7 +33,7 @@ async function call<T>(method: string, a: WindyAuth, body?: unknown): Promise<T>
     const text = await res.text();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const json: any = text ? JSON.parse(text) : null;
-    if (!res.ok) throw new Error(json?.error || `Sync failed (${res.status})`);
+    if (!res.ok) {throw new Error(json?.error || `Sync failed (${res.status})`);}
     return json as T;
 }
 
@@ -54,9 +54,9 @@ export async function pull(a: WindyAuth): Promise<Remote | null> {
 }
 export async function push(a: WindyAuth, data: SpotlogData): Promise<void> {
     const b = backend();
-    if (b) await b.push(a, data);
+    if (b) {await b.push(a, data);}
 }
 export async function removeRemote(a: WindyAuth): Promise<void> {
     const b = backend();
-    if (b) await b.remove(a);
+    if (b) {await b.remove(a);}
 }

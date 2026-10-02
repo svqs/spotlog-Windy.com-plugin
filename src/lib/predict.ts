@@ -1,5 +1,5 @@
-import type { Dir8, Session, Snapshot, Spot, ModelValue } from './types';
 import { DIRS } from './wind';
+import type { Dir8, Session, Snapshot, Spot, ModelValue } from './types';
 
 const angDiff = (a: number, b: number): number => Math.abs((((a - b) % 360) + 540) % 360 - 180);
 
@@ -23,9 +23,9 @@ export const MIN_SAMPLES = 3;
  * user's own sessions at this spot (nearest neighbours in wind speed + direction).
  */
 export const predictRating = (spot: Spot, now: ModelValue | null, sessions: Session[], snapshots: Snapshot[]): number | null => {
-    if (!now || now.wind === null || now.dir === null) return null;
+    if (!now || now.wind === null || now.dir === null) {return null;}
     const samples = samplesFor(spot, sessions, snapshots);
-    if (samples.length < MIN_SAMPLES) return null;
+    if (samples.length < MIN_SAMPLES) {return null;}
     let wSum = 0;
     let rSum = 0;
     for (const s of samples) {
@@ -34,7 +34,7 @@ export const predictRating = (spot: Spot, now: ModelValue | null, sessions: Sess
         wSum += w;
         rSum += w * s.rating;
     }
-    if (wSum < 0.05) return 1.5; // nothing like this in your history — likely not great
+    if (wSum < 0.05) {return 1.5;} // nothing like this in your history — likely not great
     return rSum / wSum;
 };
 
@@ -51,7 +51,7 @@ export interface WindSuggestion {
 /** "I don't know yet" spots: learn the wind window from sessions rated great or epic */
 export const suggestWindow = (spot: Spot, sessions: Session[], snapshots: Snapshot[]): WindSuggestion | null => {
     const good = samplesFor(spot, sessions, snapshots).filter(s => s.rating >= 4);
-    if (good.length < 2) return null;
+    if (good.length < 2) {return null;}
     const dirs = Array.from(new Set(good.map(s => DIRS[Math.round((((s.dir % 360) + 360) % 360) / 45) % 8])));
     const winds = good.map(s => s.wind);
     return {

@@ -53,29 +53,29 @@ export const fromWind = (v: number, u: WindUnit): number => {
 
 /** Rounded wind in the display unit, as a number (0 decimals, 1 for m/s under 10) */
 export const windNum = (ms: number | null, u: WindUnit): number | null => {
-    if (ms === null || ms === undefined || !isFinite(ms)) return null;
+    if (ms === null || ms === undefined || !isFinite(ms)) {return null;}
     const v = toWind(ms, u);
     return u === 'ms' ? Math.round(v * 10) / 10 : Math.round(v);
 };
 export const fmtWind = (ms: number | null, u: WindUnit, withUnit = false): string => {
     const n = windNum(ms, u);
-    if (n === null) return '–';
+    if (n === null) {return '–';}
     return withUnit ? `${n} ${windLabel(u)}` : `${n}`;
 };
 /** For big tiles: whole numbers only */
 export const fmtWind0 = (ms: number | null, u: WindUnit): string => {
-    if (ms === null || !isFinite(ms)) return '–';
+    if (ms === null || !isFinite(ms)) {return '–';}
     return `${Math.round(toWind(ms, u))}`;
 };
 
 export const fmtHeight = (m: number | null, u: HeightUnit, withUnit = false): string => {
-    if (m === null || !isFinite(m)) return '–';
+    if (m === null || !isFinite(m)) {return '–';}
     const v = u === 'ft' ? Math.round(m * 3.28084 * 10) / 10 : Math.round(m * 10) / 10;
     return withUnit ? `${v} ${u}` : `${v}`;
 };
 
 export const fmtTemp = (c: number | null, u: TempUnit): string => {
-    if (c === null || !isFinite(c)) return '–';
+    if (c === null || !isFinite(c)) {return '–';}
     return u === 'F' ? `${Math.round(c * 9 / 5 + 32)} °F` : `${Math.round(c)} °C`;
 };
 
@@ -90,10 +90,10 @@ export const windStep = (u: WindUnit): number => (u === 'kmh' ? 2 : 1);
 export const guessWindUnit = (metrics: any): WindUnit => {
     try {
         const m = String(metrics?.wind?.metric || '').toLowerCase();
-        if (m.includes('kt')) return 'kt';
-        if (m.includes('km')) return 'kmh';
-        if (m.includes('mph')) return 'mph';
-        if (m.includes('bft')) return 'bft';
+        if (m.includes('kt')) {return 'kt';}
+        if (m.includes('km')) {return 'kmh';}
+        if (m.includes('mph')) {return 'mph';}
+        if (m.includes('bft')) {return 'bft';}
     } catch {
         /* ignore */
     }
@@ -109,9 +109,9 @@ export const uses12h = (): boolean => {
 };
 
 export const fmtClock = (hhmm: string): string => {
-    if (!hhmm) return '';
+    if (!hhmm) {return '';}
     const [h, m] = hhmm.split(':').map(Number);
-    if (!uses12h()) return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    if (!uses12h()) {return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;}
     const ap = h >= 12 ? 'PM' : 'AM';
     const h12 = h % 12 === 0 ? 12 : h % 12;
     return `${h12}:${String(m).padStart(2, '0')} ${ap}`;

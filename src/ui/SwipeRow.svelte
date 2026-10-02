@@ -37,16 +37,16 @@
         (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
     }
     function move(e: PointerEvent) {
-        if (!dragging) return;
+        if (!dragging) {return;}
         const d = e.clientX - startX;
-        if (Math.abs(d) > 6) moved = true;
+        if (Math.abs(d) > 6) {moved = true;}
         dx = Math.max(OPEN - 20, Math.min(0, startDx + d));
     }
     function up() {
-        if (!dragging) return;
+        if (!dragging) {return;}
         dragging = false;
         if (!moved) {
-            if (revealed) { dx = 0; revealed = false; } else dispatch('open');
+            if (revealed) { dx = 0; revealed = false; } else {dispatch('open');}
             return;
         }
         revealed = dx < OPEN / 2;

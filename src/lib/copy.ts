@@ -200,7 +200,7 @@ export const COPY_GROUPS: CopyGroup[] = [
 ];
 
 /** the default wording */
-export const COPY: Record<string, string> = Object.fromEntries(COPY_GROUPS.flatMap(g => g.items.map(([k, t]) => [k, t])));
+export const COPY: Record<string, string> = Object.fromEntries(COPY_GROUPS.flatMap(g => g.items.map(([k, text]) => [k, text])));
 
 let current: Record<string, string> = { ...COPY, ...clean(DESIGN.words) };
 /** the wording in use (the Style Lab's live preview can swap it while you edit) */
@@ -211,7 +211,7 @@ export function setWords(o: Record<string, string> | null | undefined): void {
 }
 function clean(o: Record<string, string> | null | undefined): Record<string, string> {
     const out: Record<string, string> = {};
-    if (o && typeof o === 'object') for (const k of Object.keys(o)) if (k in COPY && typeof o[k] === 'string') out[k] = o[k];
+    if (o && typeof o === 'object') {for (const k of Object.keys(o)) {if (k in COPY && typeof o[k] === 'string') {out[k] = o[k];}}}
     return out;
 }
 

@@ -68,7 +68,7 @@ export const THEME = {
 /** Spotlog's own look, before a saved design: the Style Lab's "start again" */
 export const THEME_DEFAULTS: Readonly<typeof THEME> = { ...THEME };
 // the saved design (only what differs) goes on top
-for (const [k, v] of Object.entries(DESIGN.tokens)) if (k in THEME && typeof v === typeof (THEME as Record<string, unknown>)[k]) (THEME as Record<string, unknown>)[k] = v;
+for (const [k, v] of Object.entries(DESIGN.tokens)) {if (k in THEME && typeof v === typeof (THEME as Record<string, unknown>)[k]) {(THEME as Record<string, unknown>)[k] = v;}}
 /** settings that are sizes in px */
 const PX = new Set(['compactSize', 'radiusCard', 'radiusButton', 'radiusChip', 'radiusSmall', 'textSize', 'titleSize', 'wordmarkSize', 'panelGap']);
 export type Theme = typeof THEME;
@@ -96,7 +96,7 @@ const hexA = (hex: string, a: number): string => {
 /** Inline style for a session mark with n sessions at one place */
 export const sessionMarkStyle = (n: number): { size: number; css: string } | null => {
     const t = THEME;
-    if (t.sessStyle === 'off') return null;
+    if (t.sessStyle === 'off') {return null;}
     const size = t.sessSize + Math.min(n, 15) * t.sessGrow;
     const a = Math.min(0.95, t.sessAlpha + n * t.sessAlphaGrow);
     if (t.sessStyle === 'dot') {
@@ -125,7 +125,7 @@ export const themeCss = (): string => {
         'popup-bg': t.popupBg, 'popup-text': t.popupText,
     };
     // every setting also has its own variable, named like the setting (--sl-uOutline, --sl-radiusCard…)
-    for (const [k, x] of Object.entries(t)) if (typeof x === 'string' || typeof x === 'number') v[k] = typeof x === 'number' && PX.has(k) ? `${x}px` : x;
+    for (const [k, x] of Object.entries(t)) {if (typeof x === 'string' || typeof x === 'number') {v[k] = typeof x === 'number' && PX.has(k) ? `${x}px` : x;}}
     return `:root{${Object.entries(v).map(([k, x]) => `--sl-${k}:${x}`).join(';')}}`;
 };
 export const THEME_CSS = themeCss();

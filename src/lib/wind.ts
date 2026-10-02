@@ -1,5 +1,5 @@
-import type { Dir8, Spot, Session, Snapshot } from './types';
 import { THEME } from './theme';
+import type { Dir8, Spot, Session, Snapshot } from './types';
 
 export const DIRS: Dir8[] = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 export const SPORTS = ['Surf', 'Windsurf', 'Kite', 'Wing', 'SUP', 'Other'];
@@ -32,7 +32,7 @@ export const windColor = (ms: number | null): string => {
     }
     const limits = [2, 4, 6, 8, 11, 14, 17, 22];
     let i = limits.findIndex(l => ms < l);
-    if (i < 0) i = 8;
+    if (i < 0) {i = 8;}
     const key = `wind${i + 1}` as keyof typeof THEME;
     return `var(--sl-${key}, ${THEME[key]})`;
 };
@@ -55,7 +55,7 @@ export const dirsLabel = (dirs: Dir8[]): string => {
         const i = (startAt + k) % 8;
         if (on[i] && !on[(i + 7) % 8]) {
             let j = i;
-            while (on[(j + 1) % 8] && (j + 1) % 8 !== i) j = (j + 1) % 8;
+            while (on[(j + 1) % 8] && (j + 1) % 8 !== i) {j = (j + 1) % 8;}
             runs.push(i === j ? DIRS[i] : `${DIRS[i]}–${DIRS[j]}`);
         }
     }

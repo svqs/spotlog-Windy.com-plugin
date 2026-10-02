@@ -535,7 +535,7 @@
 <script type="module">
 const __pluginConfig =  {
   "name": "windy-plugin-spotlog",
-  "version": "0.10.2",
+  "version": "0.10.3",
   "icon": "🌊",
   "title": "spotlog ✦",
   "description": "Save forecasts for your spots, log how the session really was, and learn which forecast to trust.",
@@ -547,8 +547,8 @@ const __pluginConfig =  {
   "addToContextmenu": true,
   "routerPath": "/spotlog",
   "private": true,
-  "built": 1790863238122,
-  "builtReadable": "2026-10-01T14:00:38.122Z"
+  "built": 1790919326393,
+  "builtReadable": "2026-10-02T05:35:26.393Z"
 };
 
 // transformCode: import bcast from '@windy/broadcast';
@@ -1621,14 +1621,18 @@ if (typeof window !== 'undefined')
 let last = 0;
 function haptic() {
     const now = Date.now();
-    if (now - last < 30) return; // fast flicks: not a buzz
+    if (now - last < 30) {
+        return;
+    } // fast flicks: not a buzz
     last = now;
     try {
         if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
             navigator.vibrate(8);
             return;
         }
-        if (typeof document === 'undefined') return;
+        if (typeof document === 'undefined') {
+            return;
+        }
         if (!label || !label.isConnected) {
             label = document.createElement('label');
             label.setAttribute('aria-hidden', 'true');
@@ -1651,7 +1655,7 @@ function hapticCleanup() {
 
 const config = {
     name: 'windy-plugin-spotlog',
-    version: '0.10.2',
+    version: '0.10.3',
     title: 'spotlog ✦'};
 
 const KEY = 'windy-plugin-spotlog:v1';
@@ -1659,7 +1663,9 @@ const KEY = 'windy-plugin-spotlog:v1';
 const storageKey = ()=>activeKey;
 const useWindyUser = (id)=>{
     activeKey = id ? `${KEY}:u${id}` : KEY;
-    if (!id) return;
+    if (!id) {
+        return;
+    }
     try {
         // first time for this Windy account: take over a diary made before accounts were linked
         const legacy = localStorage.getItem(KEY);
@@ -1725,8 +1731,11 @@ const DIR8 = [
     'NW'
 ];
 const cleanSpot = (s)=>{
-    const la = lat(s.lat), lo = lon(s.lon);
-    if (la === null || lo === null) return null;
+    const la = lat(s.lat);
+    const lo = lon(s.lon);
+    if (la === null || lo === null) {
+        return null;
+    }
     return {
         id: s.id,
         name: str(s.name, 80) || 'Spot',
@@ -1742,8 +1751,11 @@ const cleanSpot = (s)=>{
     };
 };
 const cleanSnap = (s)=>{
-    const la = lat(s.lat), lo = lon(s.lon);
-    if (la === null || lo === null || !Array.isArray(s.models)) return null;
+    const la = lat(s.lat);
+    const lo = lon(s.lon);
+    if (la === null || lo === null || !Array.isArray(s.models)) {
+        return null;
+    }
     return {
         ...s,
         spotId: typeof s.spotId === 'string' ? s.spotId : null,
@@ -1757,7 +1769,9 @@ const cleanSnap = (s)=>{
     };
 };
 const cleanTrack = (t)=>{
-    if (!isObj(t) || !Array.isArray(t.points)) return null;
+    if (!isObj(t) || !Array.isArray(t.points)) {
+        return null;
+    }
     const points = t.points.filter((p)=>Array.isArray(p) && lat(p[0]) !== null && lon(p[1]) !== null).slice(0, 2000);
     return {
         points,
@@ -1806,15 +1820,21 @@ const normalise = (parsed)=>{
         'kmh',
         'mph',
         'bft'
-    ].includes(settings.wind)) settings.wind = 'ms';
+    ].includes(settings.wind)) {
+        settings.wind = 'ms';
+    }
     if (![
         'm',
         'ft'
-    ].includes(settings.height)) settings.height = 'm';
+    ].includes(settings.height)) {
+        settings.height = 'm';
+    }
     if (![
         'C',
         'F'
-    ].includes(settings.temp)) settings.temp = 'C';
+    ].includes(settings.temp)) {
+        settings.temp = 'C';
+    }
     settings.layers = ids(settings.layers);
     settings.allModels = settings.allModels !== false;
     settings.mapSpots = settings.mapSpots !== false;
@@ -1828,7 +1848,9 @@ const normalise = (parsed)=>{
     if (isObj(parsed?.deleted)) {
         const cut = Date.now() - 90 * 864e5;
         Object.entries(parsed.deleted).forEach(([k, v])=>{
-            if (typeof v === 'number' && v > cut && k.length <= 80) deleted[k] = v;
+            if (typeof v === 'number' && v > cut && k.length <= 80) {
+                deleted[k] = v;
+            }
         });
     }
     return {
@@ -2094,7 +2116,11 @@ const THEME = {
     ...THEME
 });
 // the saved design (only what differs) goes on top
-for (const [k, v] of Object.entries(DESIGN.tokens))if (k in THEME && typeof v === typeof THEME[k]) THEME[k] = v;
+for (const [k, v] of Object.entries(DESIGN.tokens)){
+    if (k in THEME && typeof v === typeof THEME[k]) {
+        THEME[k] = v;
+    }
+}
 /** settings that are sizes in px */ const PX$1 = new Set([
     'compactSize',
     'radiusCard',
@@ -2130,7 +2156,9 @@ const hexA = (hex, a)=>{
 };
 /** Inline style for a session mark with n sessions at one place */ const sessionMarkStyle = (n)=>{
     const t = THEME;
-    if (t.sessStyle === 'off') return null;
+    if (t.sessStyle === 'off') {
+        return null;
+    }
     const size = t.sessSize + Math.min(n, 15) * t.sessGrow;
     const a = Math.min(0.95, t.sessAlpha + n * t.sessAlphaGrow);
     if (t.sessStyle === 'dot') {
@@ -2193,7 +2221,11 @@ const hexA = (hex, a)=>{
         'popup-text': t.popupText
     };
     // every setting also has its own variable, named like the setting (--sl-uOutline, --sl-radiusCard…)
-    for (const [k, x] of Object.entries(t))if (typeof x === 'string' || typeof x === 'number') v[k] = typeof x === 'number' && PX$1.has(k) ? `${x}px` : x;
+    for (const [k, x] of Object.entries(t)){
+        if (typeof x === 'string' || typeof x === 'number') {
+            v[k] = typeof x === 'number' && PX$1.has(k) ? `${x}px` : x;
+        }
+    }
     return `:root{${Object.entries(v).map(([k, x])=>`--sl-${k}:${x}`).join(';')}}`;
 };
 const THEME_CSS = themeCss();
@@ -2265,7 +2297,9 @@ const SPORTS = [
         22
     ];
     let i = limits.findIndex((l)=>ms < l);
-    if (i < 0) i = 8;
+    if (i < 0) {
+        i = 8;
+    }
     const key = `wind${i + 1}`;
     return `var(--sl-${key}, ${THEME[key]})`;
 };
@@ -2284,7 +2318,9 @@ const dirsLabel = (dirs)=>{
         const i = (startAt + k) % 8;
         if (on[i] && !on[(i + 7) % 8]) {
             let j = i;
-            while(on[(j + 1) % 8] && (j + 1) % 8 !== i)j = (j + 1) % 8;
+            while(on[(j + 1) % 8] && (j + 1) % 8 !== i){
+                j = (j + 1) % 8;
+            }
             runs.push(i === j ? DIRS[i] : `${DIRS[i]}–${DIRS[j]}`);
         }
     }
@@ -2512,7 +2548,9 @@ const num = (v)=>typeof v === 'number' && isFinite(v) ? v : null;
 const nearestIndex = (tsList, ts)=>{
     let best = 0;
     for(let i = 1; i < tsList.length; i++){
-        if (Math.abs(tsList[i] - ts) < Math.abs(tsList[best] - ts)) best = i;
+        if (Math.abs(tsList[i] - ts) < Math.abs(tsList[best] - ts)) {
+            best = i;
+        }
     }
     return best;
 };
@@ -2524,7 +2562,9 @@ const TTL = 20 * 60e3;
 const fetchData = (model, lat, lon)=>{
     const key = `${model}|${lat.toFixed(3)}|${lon.toFixed(3)}`;
     const hit = cache.get(key);
-    if (hit && Date.now() - hit.at < TTL) return hit.p;
+    if (hit && Date.now() - hit.at < TTL) {
+        return hit.p;
+    }
     const p = (async ()=>{
         try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2546,9 +2586,13 @@ const fetchData = (model, lat, lon)=>{
 };
 const modelValueAt = async (model, lat, lon, ts)=>{
     const d = await fetchData(model, lat, lon);
-    if (!d || !Array.isArray(d.ts) || !d.ts.length) return null;
+    if (!d || !Array.isArray(d.ts) || !d.ts.length) {
+        return null;
+    }
     const i = nearestIndex(d.ts, ts);
-    if (Math.abs(d.ts[i] - ts) > 3 * 3600e3) return null;
+    if (Math.abs(d.ts[i] - ts) > 3 * 3600e3) {
+        return null;
+    }
     const tempK = num(d.temperature?.[i]);
     return {
         model,
@@ -2562,7 +2606,9 @@ const modelValueAt = async (model, lat, lon, ts)=>{
 const waveValueAt = async (lat, lon, ts)=>{
     for (const model of WAVE_MODELS){
         const d = await fetchData(model, lat, lon);
-        if (!d || !Array.isArray(d.ts) || !d.ts.length || !Array.isArray(d.waves)) continue;
+        if (!d || !Array.isArray(d.ts) || !d.ts.length || !Array.isArray(d.waves)) {
+            continue;
+        }
         const i = nearestIndex(d.ts, ts);
         const v = {
             model,
@@ -2574,7 +2620,9 @@ const waveValueAt = async (lat, lon, ts)=>{
             swell1Period: num(d.swell1Period?.[i]),
             swell1Dir: num(d.swell1Dir?.[i])
         };
-        if (v.waves !== null) return v;
+        if (v.waves !== null) {
+            return v;
+        }
     }
     return null;
 };
@@ -2590,7 +2638,9 @@ const waveValueAt = async (lat, lon, ts)=>{
     };
 };
 /** Removes the layers the user chose not to keep */ const trimWaves = (w, layers)=>{
-    if (!w) return null;
+    if (!w) {
+        return null;
+    }
     const keepWaves = layers.includes('waves');
     const out = {
         ...w
@@ -2604,8 +2654,12 @@ const waveValueAt = async (lat, lon, ts)=>{
         out.swell1Period = null;
         out.swell1Dir = null;
     }
-    if (!layers.includes('wavesPeriod')) out.wavesPeriod = null;
-    if (!layers.includes('wavesPower')) out.wavesPower = null;
+    if (!layers.includes('wavesPeriod')) {
+        out.wavesPeriod = null;
+    }
+    if (!layers.includes('wavesPower')) {
+        out.wavesPower = null;
+    }
     const any = [
         out.waves,
         out.swell1,
@@ -2615,16 +2669,24 @@ const waveValueAt = async (lat, lon, ts)=>{
     return any ? out : null;
 };
 /** Next window of at least `minHours` of daylight where the forecast fits the spot's directions and strength */ const nextMatch = async (spot, model = 'ecmwf', minHours = 2)=>{
-    if (spot.windUnknown && !spot.dirs.length) return null;
+    if (spot.windUnknown && !spot.dirs.length) {
+        return null;
+    }
     const d = await fetchData(model, spot.lat, spot.lon);
-    if (!d || !Array.isArray(d.ts)) return null;
+    if (!d || !Array.isArray(d.ts)) {
+        return null;
+    }
     const now = Date.now();
     let run = [];
     const close = ()=>{
-        if (!run.length) return null;
+        if (!run.length) {
+            return null;
+        }
         const first = run[0];
         const last = run[run.length - 1];
-        if ((d.ts[last] - d.ts[first]) / 3600e3 + 1 < minHours) return null;
+        if ((d.ts[last] - d.ts[first]) / 3600e3 + 1 < minHours) {
+            return null;
+        }
         const winds = run.map((i)=>d.wind[i]);
         return {
             start: d.ts[first],
@@ -2634,7 +2696,9 @@ const waveValueAt = async (lat, lon, ts)=>{
         };
     };
     for(let i = 0; i < d.ts.length; i++){
-        if (d.ts[i] < now) continue;
+        if (d.ts[i] < now) {
+            continue;
+        }
         const w = num(d.wind?.[i]);
         const dir = num(d.windDir?.[i]);
         const daylight = d.isDay ? !!d.isDay[i] : true;
@@ -2643,7 +2707,9 @@ const waveValueAt = async (lat, lon, ts)=>{
             run.push(i);
         } else {
             const found = close();
-            if (found) return found;
+            if (found) {
+                return found;
+            }
             run = [];
         }
     }
@@ -2704,11 +2770,17 @@ const HOUR = 3600e3;
     ]));
     const datas = await Promise.all(list.map((m)=>fetchData(m, lat, lon)));
     const grid = [];
-    for(let t = from; t <= to; t += HOUR)grid.push(t);
+    for(let t = from; t <= to; t += HOUR){
+        grid.push(t);
+    }
     const pick = (d, key, t)=>{
-        if (!d || !Array.isArray(d.ts) || !d.ts.length) return null;
+        if (!d || !Array.isArray(d.ts) || !d.ts.length) {
+            return null;
+        }
         const i = nearestIndex(d.ts, t);
-        if (Math.abs(d.ts[i] - t) > 1.6 * HOUR) return null;
+        if (Math.abs(d.ts[i] - t) > 1.6 * HOUR) {
+            return null;
+        }
         return num(d[key]?.[i]);
     };
     const keepTemp = layers.includes('temp');
@@ -2716,7 +2788,9 @@ const HOUR = 3600e3;
     list.forEach((m, k)=>{
         const d = datas[k];
         const wind = grid.map((t)=>pick(d, 'wind', t));
-        if (!wind.some((v)=>v !== null)) return;
+        if (!wind.some((v)=>v !== null)) {
+            return;
+        }
         out[m] = {
             wind,
             gust: grid.map((t)=>pick(d, 'windGust', t)),
@@ -2727,12 +2801,16 @@ const HOUR = 3600e3;
             })
         };
     });
-    if (!Object.keys(out).length) return null;
+    if (!Object.keys(out).length) {
+        return null;
+    }
     let waves = null;
     for (const wm of WAVE_MODELS){
         const d = await fetchData(wm, lat, lon);
         const wv = grid.map((t)=>pick(d, 'waves', t));
-        if (!wv.some((v)=>v !== null)) continue;
+        if (!wv.some((v)=>v !== null)) {
+            continue;
+        }
         const col = (key, layer)=>grid.map((t)=>layers.includes(layer) ? pick(d, key, t) : null);
         waves = {
             model: wm,
@@ -2774,7 +2852,9 @@ async function pull(a) {
 }
 async function push(a, data) {
     const b = backend();
-    if (b) await b.push(a, data);
+    if (b) {
+        await b.push(a, data);
+    }
 }
 
 /** "Give feedback" on the About tab: the plugins corner of the Windy Community */ const FEEDBACK_URL = 'https://community.windy.com/category/21/windy-plugins';
@@ -2878,26 +2958,36 @@ const windLabel = (u)=>WIND_UNITS.find((x)=>x.id === u)?.label || u;
     }
 };
 /** Rounded wind in the display unit, as a number (0 decimals, 1 for m/s under 10) */ const windNum = (ms, u)=>{
-    if (ms === null || ms === undefined || !isFinite(ms)) return null;
+    if (ms === null || ms === undefined || !isFinite(ms)) {
+        return null;
+    }
     const v = toWind(ms, u);
     return u === 'ms' ? Math.round(v * 10) / 10 : Math.round(v);
 };
 const fmtWind = (ms, u, withUnit = false)=>{
     const n = windNum(ms, u);
-    if (n === null) return '–';
+    if (n === null) {
+        return '–';
+    }
     return withUnit ? `${n} ${windLabel(u)}` : `${n}`;
 };
 /** For big tiles: whole numbers only */ const fmtWind0 = (ms, u)=>{
-    if (ms === null || !isFinite(ms)) return '–';
+    if (ms === null || !isFinite(ms)) {
+        return '–';
+    }
     return `${Math.round(toWind(ms, u))}`;
 };
 const fmtHeight = (m, u, withUnit = false)=>{
-    if (m === null || !isFinite(m)) return '–';
+    if (m === null || !isFinite(m)) {
+        return '–';
+    }
     const v = u === 'ft' ? Math.round(m * 3.28084 * 10) / 10 : Math.round(m * 10) / 10;
     return withUnit ? `${v} ${u}` : `${v}`;
 };
 const fmtTemp = (c, u)=>{
-    if (c === null || !isFinite(c)) return '–';
+    if (c === null || !isFinite(c)) {
+        return '–';
+    }
     return u === 'F' ? `${Math.round(c * 9 / 5 + 32)} °F` : `${Math.round(c)} °C`;
 };
 const fmtDistance = (km, h)=>h === 'ft' ? `${(km * 0.621371).toFixed(1)} mi` : `${km.toFixed(1)} km`;
@@ -2912,9 +3002,13 @@ const uses12h = ()=>{
     }
 };
 const fmtClock = (hhmm)=>{
-    if (!hhmm) return '';
+    if (!hhmm) {
+        return '';
+    }
     const [h, m] = hhmm.split(':').map(Number);
-    if (!uses12h()) return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    if (!uses12h()) {
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
     const ap = h >= 12 ? 'PM' : 'AM';
     const h12 = h % 12 === 0 ? 12 : h % 12;
     return `${h12}:${String(m).padStart(2, '0')} ${ap}`;
@@ -2935,9 +3029,13 @@ const MIN_SAMPLES = 3;
  * Predicts how a session would be rated in the given conditions, from the
  * user's own sessions at this spot (nearest neighbours in wind speed + direction).
  */ const predictRating = (spot, now, sessions, snapshots)=>{
-    if (!now || now.wind === null || now.dir === null) return null;
+    if (!now || now.wind === null || now.dir === null) {
+        return null;
+    }
     const samples = samplesFor(spot, sessions, snapshots);
-    if (samples.length < MIN_SAMPLES) return null;
+    if (samples.length < MIN_SAMPLES) {
+        return null;
+    }
     let wSum = 0;
     let rSum = 0;
     for (const s of samples){
@@ -2946,12 +3044,16 @@ const MIN_SAMPLES = 3;
         wSum += w;
         rSum += w * s.rating;
     }
-    if (wSum < 0.05) return 1.5; // nothing like this in your history — likely not great
+    if (wSum < 0.05) {
+        return 1.5;
+    } // nothing like this in your history — likely not great
     return rSum / wSum;
 };
 /** "I don't know yet" spots: learn the wind window from sessions rated great or epic */ const suggestWindow = (spot, sessions, snapshots)=>{
     const good = samplesFor(spot, sessions, snapshots).filter((s)=>s.rating >= 4);
-    if (good.length < 2) return null;
+    if (good.length < 2) {
+        return null;
+    }
     const dirs = Array.from(new Set(good.map((s)=>DIRS[Math.round((s.dir % 360 + 360) % 360 / 45) % 8])));
     const winds = good.map((s)=>s.wind);
     return {
@@ -4417,9 +4519,9 @@ const COPY_GROUPS = [
         ]
     }
 ];
-/** the default wording */ const COPY = Object.fromEntries(COPY_GROUPS.flatMap((g)=>g.items.map(([k, t])=>[
+/** the default wording */ const COPY = Object.fromEntries(COPY_GROUPS.flatMap((g)=>g.items.map(([k, text])=>[
             k,
-            t
+            text
         ])));
 let current = {
     ...COPY,
@@ -4436,7 +4538,11 @@ function setWords(o) {
 function clean(o) {
     const out = {};
     if (o && typeof o === 'object') {
-        for (const k of Object.keys(o))if (k in COPY && typeof o[k] === 'string') out[k] = o[k];
+        for (const k of Object.keys(o)){
+            if (k in COPY && typeof o[k] === 'string') {
+                out[k] = o[k];
+            }
+        }
     }
     return out;
 }
@@ -4488,17 +4594,25 @@ const parseTcx = (doc)=>Array.from(doc.getElementsByTagName('Trackpoint')).map((
     });
 /** Reads a GPX or TCX file (what Garmin Connect, Strava & co. export) into a compact track */ const readTrack = async (file)=>{
     const name = file.name.toLowerCase();
-    if (file.size > 40 * 1024 * 1024) throw new Error('That file is larger than 40 MB. Export a single activity as GPX or TCX.');
+    if (file.size > 40 * 1024 * 1024) {
+        throw new Error('That file is larger than 40 MB. Export a single activity as GPX or TCX.');
+    }
     if (name.endsWith('.fit')) {
         throw new Error('FIT files are not supported yet. In Garmin Connect choose “Export to GPX” (or TCX) and add that file.');
     }
     const text = await file.text();
     const doc = new DOMParser().parseFromString(text, 'application/xml');
-    if (doc.getElementsByTagName('parsererror').length) throw new Error('This file could not be read as GPX or TCX.');
+    if (doc.getElementsByTagName('parsererror').length) {
+        throw new Error('This file could not be read as GPX or TCX.');
+    }
     let pts = parseGpx(doc);
-    if (!pts.length) pts = parseTcx(doc);
+    if (!pts.length) {
+        pts = parseTcx(doc);
+    }
     pts = pts.filter((p)=>isFinite(p.lat) && isFinite(p.lon));
-    if (pts.length < 2) throw new Error('No track points found in this file.');
+    if (pts.length < 2) {
+        throw new Error('No track points found in this file.');
+    }
     let dist = 0;
     let maxSpeed = null;
     // top speed over ~10 s windows so single GPS spikes don't count
@@ -4509,9 +4623,13 @@ const parseTcx = (doc)=>Array.from(doc.getElementsByTagName('Trackpoint')).map((
         const b = pts[i];
         if (a.t !== null && b.t !== null && b.t - a.t >= 10e3) {
             let d = 0;
-            for(let k = wStart + 1; k <= i; k++)d += distanceKm(pts[k - 1], pts[k]);
+            for(let k = wStart + 1; k <= i; k++){
+                d += distanceKm(pts[k - 1], pts[k]);
+            }
             const v = d * 1000 / ((b.t - a.t) / 1000);
-            if (v < 40 && (maxSpeed === null || v > maxSpeed)) maxSpeed = v;
+            if (v < 40 && (maxSpeed === null || v > maxSpeed)) {
+                maxSpeed = v;
+            }
             wStart = i;
         }
     }
@@ -5794,7 +5912,10 @@ function instance$8($$self, $$props, $$invalidate) {
 
 	function set(v, animate = true) {
 		const nv = fromPos(toPos(v));
-		if (animate) settleAnim();
+
+		if (animate) {
+			settleAnim();
+		}
 
 		if (nv !== value) {
 			$$invalidate(0, value = nv);
@@ -5809,7 +5930,10 @@ function instance$8($$self, $$props, $$invalidate) {
 	}
 
 	function down(e) {
-		if (e.button !== undefined && e.button > 0) return;
+		if (e.button !== undefined && e.button > 0) {
+			return;
+		}
+
 		$$invalidate(6, dragging = true);
 		moved = false;
 		$$invalidate(7, animating = false);
@@ -5822,9 +5946,16 @@ function instance$8($$self, $$props, $$invalidate) {
 	}
 
 	function move(e) {
-		if (!dragging) return;
+		if (!dragging) {
+			return;
+		}
+
 		const dx = e.clientX - startX;
-		if (!moved && Math.abs(dx) < 4) return;
+
+		if (!moved && Math.abs(dx) < 4) {
+			return;
+		}
+
 		moved = true;
 		e.preventDefault();
 		const p = Math.max(-0.4, Math.min(count - 0.6, startPos - dx / PX));
@@ -5842,14 +5973,17 @@ function instance$8($$self, $$props, $$invalidate) {
 	}
 
 	function up(e) {
-		if (!dragging) return;
+		if (!dragging) {
+			return;
+		}
+
 		$$invalidate(6, dragging = false);
 
 		if (!moved) {
 			const r = e.currentTarget.getBoundingClientRect();
-			const p = restPos + (e.clientX - r.left - width / 2) / PX;
+			const tapped = restPos + (e.clientX - r.left - width / 2) / PX;
 			$$invalidate(17, raw = null);
-			set(fromPos(p));
+			set(fromPos(tapped));
 			return;
 		}
 
@@ -5862,9 +5996,17 @@ function instance$8($$self, $$props, $$invalidate) {
 
 	function wheel(e) {
 		const sideways = Math.abs(e.deltaX) > Math.abs(e.deltaY);
-		if (!sideways && !e.shiftKey) return;
+
+		if (!sideways && !e.shiftKey) {
+			return;
+		}
+
 		const d = sideways ? e.deltaX : e.deltaY;
-		if (!d) return;
+
+		if (!d) {
+			return;
+		}
+
 		e.preventDefault();
 		wheelAcc += d;
 		const stepPx = e.deltaMode === 1 ? 1 : 24;
@@ -6583,7 +6725,11 @@ function instance$7($$self, $$props, $$invalidate) {
 
 		while (el && el !== document.body) {
 			const o = getComputedStyle(el).overflowY;
-			if (o === 'auto' || o === 'scroll') break;
+
+			if (o === 'auto' || o === 'scroll') {
+				break;
+			}
+
 			el = el.parentElement;
 		}
 
@@ -6595,11 +6741,15 @@ function instance$7($$self, $$props, $$invalidate) {
 	}
 
 	const outside = e => {
-		if (open && rootEl && !rootEl.contains(e.target)) $$invalidate(3, open = false);
+		if (open && rootEl && !rootEl.contains(e.target)) {
+			$$invalidate(3, open = false);
+		}
 	};
 
 	const esc = e => {
-		if (open && e.key === 'Escape') $$invalidate(3, open = false);
+		if (open && e.key === 'Escape') {
+			$$invalidate(3, open = false);
+		}
 	};
 
 	onDestroy(() => {
@@ -6651,9 +6801,16 @@ function instance$7($$self, $$props, $$invalidate) {
 	}
 
 	async function toggle() {
-		if (!open) $$invalidate(6, below = roomAbove() < 190);
+		if (!open) {
+			$$invalidate(6, below = roomAbove() < 190);
+		}
+
 		$$invalidate(3, open = !open);
-		if (!open) return;
+
+		if (!open) {
+			return;
+		}
+
 		fromValue();
 		commit();
 		await tick();
@@ -6693,11 +6850,25 @@ function instance$7($$self, $$props, $$invalidate) {
 		timers[col] = setTimeout(
 			() => {
 				const el = col === 'h' ? hEl : col === 'm' ? mEl : aEl;
-				if (!el) return;
+
+				if (!el) {
+					return;
+				}
+
 				const i = Math.round(el.scrollTop / ITEM);
-				if (col === 'h') $$invalidate(10, hi = Math.min(i, hours.length - 1));
-				if (col === 'm') $$invalidate(11, mi = Math.min(i, minutes.length - 1));
-				if (col === 'a') $$invalidate(12, ai = Math.min(i, 1));
+
+				if (col === 'h') {
+					$$invalidate(10, hi = Math.min(i, hours.length - 1));
+				}
+
+				if (col === 'm') {
+					$$invalidate(11, mi = Math.min(i, minutes.length - 1));
+				}
+
+				if (col === 'a') {
+					$$invalidate(12, ai = Math.min(i, 1));
+				}
+
 				commit();
 			},
 			90
@@ -6959,21 +7130,33 @@ function instance$6($$self, $$props, $$invalidate) {
 	}
 
 	function move(e) {
-		if (!dragging) return;
+		if (!dragging) {
+			return;
+		}
+
 		const d = e.clientX - startX;
-		if (Math.abs(d) > 6) moved = true;
+
+		if (Math.abs(d) > 6) {
+			moved = true;
+		}
+
 		$$invalidate(0, dx = Math.max(OPEN - 20, Math.min(0, startDx + d)));
 	}
 
 	function up() {
-		if (!dragging) return;
+		if (!dragging) {
+			return;
+		}
+
 		$$invalidate(1, dragging = false);
 
 		if (!moved) {
 			if (revealed) {
 				$$invalidate(0, dx = 0);
 				$$invalidate(2, revealed = false);
-			} else dispatch('open');
+			} else {
+				dispatch('open');
+			}
 
 			return;
 		}
@@ -8622,7 +8805,10 @@ function instance$4($$self, $$props, $$invalidate) {
 
 	function toggleModel(m) {
 		const has = settings.models.includes(m);
-		if (has && settings.models.length === 1) return;
+
+		if (has && settings.models.length === 1) {
+			return;
+		}
 
 		set({
 			models: has
@@ -20664,19 +20850,36 @@ const NO_DAY = 'spotlog:no-forecast-for-day';
 
 function keepKeys(e) {
 	const t = e.target;
-	if (!t) return;
+
+	if (!t) {
+		return;
+	}
+
 	const editable = t.isContentEditable || t.tagName === 'TEXTAREA' || t.tagName === 'INPUT' && !['checkbox', 'radio', 'button', 'range', 'file'].includes(t.type);
-	if (editable && e.key !== 'Escape') e.stopPropagation();
+
+	if (editable && e.key !== 'Escape') {
+		e.stopPropagation();
+	}
 }
 
 function sessionFocus(lf) {
-	if (!lf.start) return null;
+	if (!lf.start) {
+		return null;
+	}
+
 	const a = new Date(`${lf.dateStr}T${lf.start}`).getTime();
-	if (!isFinite(a)) return null;
+
+	if (!isFinite(a)) {
+		return null;
+	}
 
 	if (lf.end) {
 		let b = new Date(`${lf.dateStr}T${lf.end}`).getTime();
-		if (b < a) b += 864e5;
+
+		if (b < a) {
+			b += 864e5;
+		}
+
 		return a + (b - a) / 2;
 	}
 
@@ -20691,15 +20894,23 @@ function closestModel(sn, ms) {
 	let best = null;
 
 	for (const m of sn.models) {
-		if (m.wind === null) continue;
-		if (!best || Math.abs(m.wind - ms) < Math.abs(best.wind - ms)) best = m;
+		if (m.wind === null) {
+			continue;
+		}
+
+		if (!best || Math.abs(m.wind - ms) < Math.abs(best.wind - ms)) {
+			best = m;
+		}
 	}
 
 	return best;
 }
 
 function durationH(a, b) {
-	if (!a || !b) return 0;
+	if (!a || !b) {
+		return 0;
+	}
+
 	const [ah, am] = a.split(':').map(Number);
 	const [bh, bm] = b.split(':').map(Number);
 	const d = (bh * 60 + bm - (ah * 60 + am)) / 60;
@@ -20758,13 +20969,18 @@ function instance($$self, $$props, $$invalidate) {
 	const asTab = k => k;
 
 	function openModal() {
-		if (!barMode) return;
+		if (!barMode) {
+			return;
+		}
+
 		$$invalidate(25, modalOpen = true);
 		tick().then(() => setTimeout(checkModalVisible, 80));
 	}
 
 	function checkModalVisible() {
-		if (!modalOpen || !bodyEl) return;
+		if (!modalOpen || !bodyEl) {
+			return;
+		}
 
 		try {
 			const r = bodyEl.getBoundingClientRect();
@@ -20787,13 +21003,19 @@ function instance($$self, $$props, $$invalidate) {
 
 	function openTab(t) {
 		$$invalidate(28, tab = t);
-		if (view !== 'home') goHome();
+
+		if (view !== 'home') {
+			goHome();
+		}
+
 		openModal();
 		tick().then(scrollTop);
 	}
 
 	function toggleTab(t) {
-		if (modalOpen && !unitsOpen && view === 'home' && tab === t) closeModal(); else {
+		if (modalOpen && !unitsOpen && view === 'home' && tab === t) {
+			closeModal();
+		} else {
 			$$invalidate(26, unitsOpen = false);
 			openTab(t);
 		}
@@ -20810,18 +21032,27 @@ function instance($$self, $$props, $$invalidate) {
 	let unitsAlone = false;
 
 	function openUnits(fromBar = false) {
-		if (fromBar && unitsOpen && modalOpen) return closeModal();
+		if (fromBar && unitsOpen && modalOpen) {
+			return closeModal();
+		}
+
 		unitsAlone = fromBar && !modalOpen;
 		$$invalidate(26, unitsOpen = true);
 		openModal();
 
 		tick().then(() => {
-			if (bodyEl) $$invalidate(24, bodyEl.scrollTop = 0, bodyEl);
+			if (bodyEl) {
+				$$invalidate(24, bodyEl.scrollTop = 0, bodyEl);
+			}
 		});
 	}
 
 	function unitsBack() {
-		if (unitsAlone) closeModal(); else $$invalidate(26, unitsOpen = false);
+		if (unitsAlone) {
+			closeModal();
+		} else {
+			$$invalidate(26, unitsOpen = false);
+		}
 	}
 
 	function closeModal() {
@@ -20829,7 +21060,9 @@ function instance($$self, $$props, $$invalidate) {
 
 		setTimeout(
 			() => {
-				if (!modalOpen) $$invalidate(26, unitsOpen = false);
+				if (!modalOpen) {
+					$$invalidate(26, unitsOpen = false);
+				}
 			},
 			200
 		);
@@ -20840,7 +21073,10 @@ function instance($$self, $$props, $$invalidate) {
 	const typesText = el => el instanceof HTMLElement && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT' && !(/^(date|time|checkbox|radio|range|button|file)$/i).test(el.type));
 
 	function underKeyboard(el) {
-		if (!bodyEl) return false;
+		if (!bodyEl) {
+			return false;
+		}
+
 		const box = bodyEl.getBoundingClientRect();
 		const r = el.getBoundingClientRect();
 		return r.bottom > Math.min(window.innerHeight * 0.4, box.top + 180) || r.top < box.top + 40;
@@ -20861,9 +21097,19 @@ function instance($$self, $$props, $$invalidate) {
 		const d = fieldDown;
 		fieldDown = null;
 		const t = e.changedTouches[0];
-		if (!d || !t || e.target !== d.el || document.activeElement === d.el) return;
-		if (Math.hypot(t.clientX - d.x, t.clientY - d.y) > 10) return;
-		if (!bodyEl || !underKeyboard(d.el)) return;
+
+		if (!d || !t || e.target !== d.el || document.activeElement === d.el) {
+			return;
+		}
+
+		if (Math.hypot(t.clientX - d.x, t.clientY - d.y) > 10) {
+			return;
+		}
+
+		if (!bodyEl || !underKeyboard(d.el)) {
+			return;
+		}
+
 		e.preventDefault();
 		clearTimeout(kbTimer);
 		$$invalidate(27, kbRoom = true);
@@ -20880,13 +21126,18 @@ function instance($$self, $$props, $$invalidate) {
 	}
 
 	function fieldFocus(e) {
-		if (!typesText(e.target) || !barMode) return;
+		if (!typesText(e.target) || !barMode) {
+			return;
+		}
+
 		clearTimeout(kbTimer);
 		$$invalidate(27, kbRoom = true);
 
 		setTimeout(
 			() => {
-				if (window.scrollY > 0) window.scrollTo(0, 0);
+				if (window.scrollY > 0) {
+					window.scrollTo(0, 0);
+				}
 			},
 			350
 		);
@@ -20897,9 +21148,15 @@ function instance($$self, $$props, $$invalidate) {
 
 		kbTimer = setTimeout(
 			() => {
-				if (typesText(document.activeElement)) return;
+				if (typesText(document.activeElement)) {
+					return;
+				}
+
 				$$invalidate(27, kbRoom = false);
-				if (bodyEl) $$invalidate(24, bodyEl.style.paddingBottom = '', bodyEl);
+
+				if (bodyEl) {
+					$$invalidate(24, bodyEl.style.paddingBottom = '', bodyEl);
+				}
 			},
 			250
 		);
@@ -20914,7 +21171,9 @@ function instance($$self, $$props, $$invalidate) {
 	let errBox = null;
 
 	function showPhoneError(msg) {
-		if (!isMobile) return;
+		if (!isMobile) {
+			return;
+		}
 
 		try {
 			if (!errBox) {
@@ -20938,12 +21197,17 @@ function instance($$self, $$props, $$invalidate) {
 	const fromSpotlog = (stack, file) => (/plugin(\.min)?\.js|spotlog/i).test(file + ' ' + stack);
 
 	const onWinError = e => {
-		if (fromSpotlog(String(e.error?.stack || ''), e.filename || '')) showPhoneError(`${e.message} (${(e.filename || '').split('/').pop()}:${e.lineno})`);
+		if (fromSpotlog(String(e.error?.stack || ''), e.filename || '')) {
+			showPhoneError(`${e.message} (${(e.filename || '').split('/').pop()}:${e.lineno})`);
+		}
 	};
 
 	const onRejection = e => {
 		const r = e.reason;
-		if (r && fromSpotlog(String(r.stack || ''), '')) showPhoneError(String(r.message || r));
+
+		if (r && fromSpotlog(String(r.stack || ''), '')) {
+			showPhoneError(String(r.message || r));
+		}
 	};
 
 	if (isMobile) {
@@ -21084,14 +21348,20 @@ function instance($$self, $$props, $$invalidate) {
 		}
 
 		let el = e.target;
-		while (el && el !== root && !(el.scrollHeight > el.clientHeight + 1 && (/auto|scroll/).test(getComputedStyle(el).overflowY))) el = el.parentElement;
+
+		while (el && el !== root && !(el.scrollHeight > el.clientHeight + 1 && (/auto|scroll/).test(getComputedStyle(el).overflowY))) {
+			el = el.parentElement;
+		}
+
 		const box = el || root;
 
 		const canScroll = dy > 0
 		? box.scrollTop + box.clientHeight < box.scrollHeight - 1
 		: box.scrollTop > 0;
 
-		if (canScroll) e.stopPropagation();
+		if (canScroll) {
+			e.stopPropagation();
+		}
 	}
 
 	const deviceTz = () => {
@@ -21105,13 +21375,20 @@ function instance($$self, $$props, $$invalidate) {
 	function onWindyUser(u) {
 		const changed = (u?.id || null) !== (wUser?.id || null);
 		$$invalidate(0, wUser = u && u.id ? u : null);
-		if (!changed) return;
+
+		if (!changed) {
+			return;
+		}
+
 		useWindyUser(wUser?.id);
 		$$invalidate(1, data = load());
 		knownIds = allIds(data);
 		$$invalidate(147, syncAt = 0);
 		goHome();
-		if (wUser) syncNow();
+
+		if (wUser) {
+			syncNow();
+		}
 	}
 
 	const gearHint = (sport, kind) => GEAR_BY_SPORT[sport]?.find(k => k.kind === kind)?.hint || 'Name';
@@ -21172,7 +21449,10 @@ function instance($$self, $$props, $$invalidate) {
 	const sessionHours = s => durationH(s.start, s.end) || (s.track ? s.track.durationMin / 60 : 0);
 
 	const feltLine = se => {
-		if (se.felt === null) return '';
+		if (se.felt === null) {
+			return '';
+		}
+
 		const sn = data.snapshots.find(x => x.id === se.snapshotId);
 		const p = sn ? primaryOf(sn) : null;
 		const felt = fmtWind0(se.felt, S.wind);
@@ -21211,7 +21491,10 @@ function instance($$self, $$props, $$invalidate) {
 	function centre() {
 		try {
 			const c = map?.getCenter?.();
-			if (c && typeof c.lat === 'number') return { lat: c.lat, lon: c.lng };
+
+			if (c && typeof c.lat === 'number') {
+				return { lat: c.lat, lon: c.lng };
+			}
 		} catch {
 			
 		}
@@ -21313,11 +21596,15 @@ function instance($$self, $$props, $$invalidate) {
 		const deleted = { ...data.deleted || {} };
 
 		knownIds.forEach(id => {
-			if (!cur.has(id)) deleted[id] = now;
+			if (!cur.has(id)) {
+				deleted[id] = now;
+			}
 		});
 
 		cur.forEach(id => {
-			if (deleted[id]) delete deleted[id];
+			if (deleted[id]) {
+				delete deleted[id];
+			}
 		});
 
 		knownIds = cur;
@@ -21335,7 +21622,10 @@ function instance($$self, $$props, $$invalidate) {
 	}
 
 	const windyAuth = () => {
-		if (!wUser) return null;
+		if (!wUser) {
+			return null;
+		}
+
 		let token = null;
 
 		try {
@@ -21348,13 +21638,20 @@ function instance($$self, $$props, $$invalidate) {
 	};
 
 	function schedulePush() {
-		if (!synced) return;
+		if (!synced) {
+			return;
+		}
+
 		clearTimeout(pushTimer);
 
 		pushTimer = setTimeout(
 			async () => {
 				const a = windyAuth();
-				if (!a) return;
+
+				if (!a) {
+					return;
+				}
+
 				$$invalidate(13, syncState = 'saving');
 
 				try {
@@ -21373,7 +21670,11 @@ function instance($$self, $$props, $$invalidate) {
 
 	async function syncNow() {
 		const a = windyAuth();
-		if (!cloudOn || !a) return;
+
+		if (!cloudOn || !a) {
+			return;
+		}
+
 		$$invalidate(13, syncState = 'saving');
 
 		try {
@@ -21403,14 +21704,20 @@ function instance($$self, $$props, $$invalidate) {
 	const sig = d => JSON.stringify([[...allIds(d)].sort(), Object.keys(d.deleted || {}).sort(), d.settings]);
 
 	function onStorage(e) {
-		if (e.key !== storageKey() || !e.newValue) return;
+		if (e.key !== storageKey() || !e.newValue) {
+			return;
+		}
 
 		try {
 			const other = normalise(JSON.parse(e.newValue));
 			const merged = mergeData(other, data);
 			$$invalidate(1, data = merged);
 			knownIds = allIds(data);
-			if (sig(merged) !== sig(other)) save(merged);
+
+			if (sig(merged) !== sig(other)) {
+				save(merged);
+			}
+
 			drawSpotMarkers();
 		} catch(err) {
 			console.info('[spotlog] could not read the other tab\'s data', err);
@@ -21431,7 +21738,11 @@ function instance($$self, $$props, $$invalidate) {
 		const p = popup;
 		popup = null;
 		$$invalidate(47, mapShown = null);
-		if (!p) return;
+
+		if (!p) {
+			return;
+		}
+
 		const el = p.getElement?.() || null;
 
 		if (el && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
@@ -21444,7 +21755,10 @@ function instance($$self, $$props, $$invalidate) {
 
 	function setTemp(lat, lon) {
 		clearTemp();
-		if (typeof L !== 'undefined' && map) tempMarker = new L.Marker({ lat, lng: lon }, { icon: markers?.pulsatingIcon }).addTo(map);
+
+		if (typeof L !== 'undefined' && map) {
+			tempMarker = new L.Marker({ lat, lng: lon }, { icon: markers?.pulsatingIcon }).addTo(map);
+		}
 	}
 
 	const compactBelow = () => THEME.compactBelow;
@@ -21459,7 +21773,10 @@ function instance($$self, $$props, $$invalidate) {
 		}
 
 		const c = z < compactBelow();
-		if (isMobile && c && mapShown) clearPopup();
+
+		if (isMobile && c && mapShown) {
+			clearPopup();
+		}
 
 		if (c !== compactMarkers) {
 			compactMarkers = c;
@@ -21474,10 +21791,19 @@ function instance($$self, $$props, $$invalidate) {
 			const sp = spotById(se.spotId);
 			const lat = se.lat ?? se.track?.points[0]?.[0] ?? sp?.lat;
 			const lon = se.lon ?? se.track?.points[0]?.[1] ?? sp?.lon;
-			if (lat === undefined || lon === undefined) continue;
+
+			if (lat === undefined || lon === undefined) {
+				continue;
+			}
+
 			const k = `${lat.toFixed(3)},${lon.toFixed(3)}`;
 			const g = groups.get(k);
-			if (g) g.list.push(se); else groups.set(k, { lat, lon, list: [se] });
+
+			if (g) {
+				g.list.push(se);
+			} else {
+				groups.set(k, { lat, lon, list: [se] });
+			}
 		}
 
 		return [...groups.values()];
@@ -21500,7 +21826,11 @@ function instance($$self, $$props, $$invalidate) {
 	function drawSpotMarkers() {
 		spotMarkers.forEach(m => m.remove());
 		spotMarkers = [];
-		if (typeof L === 'undefined' || !map) return;
+
+		if (typeof L === 'undefined' || !map) {
+			return;
+		}
+
 		const st = data.settings;
 
 		const activeId = view === 'spot'
@@ -21512,7 +21842,10 @@ function instance($$self, $$props, $$invalidate) {
 		if (st.mapSessions) {
 			for (const p of sessionPlaces()) {
 				const mark = sessionMarkStyle(p.list.length);
-				if (!mark) break;
+
+				if (!mark) {
+					break;
+				}
 
 				const core = THEME.sessCore && THEME.sessStyle !== 'dot'
 				? ' core'
@@ -21536,7 +21869,10 @@ function instance($$self, $$props, $$invalidate) {
 
 		for (const s of data.spots) {
 			const on = activeId === s.id;
-			if (!st.mapSpots && !on) continue;
+
+			if (!st.mapSpots && !on) {
+				continue;
+			}
 
 			const here = st.mapSessions
 			? data.sessions.filter(x => x.spotId === s.id).sort((a, b) => b.date - a.date)
@@ -21569,7 +21905,9 @@ function instance($$self, $$props, $$invalidate) {
 					dot = gf;
 				}
 
-				if (good && THEME.goodStyle === 'dot') dot = gb;
+				if (good && THEME.goodStyle === 'dot') {
+					dot = gb;
+				}
 
 				if (good && THEME.goodStyle === 'outline') {
 					style = `box-shadow:0 0 0 2px ${gb}, 0 2px 8px rgba(0,0,0,.35);`;
@@ -21595,7 +21933,10 @@ function instance($$self, $$props, $$invalidate) {
 	function drawTrack(t, fit = false) {
 		trackLayers.forEach(l => l.remove());
 		trackLayers = [];
-		if (!t || !t.points.length || typeof L === 'undefined' || !map) return;
+
+		if (!t || !t.points.length || typeof L === 'undefined' || !map) {
+			return;
+		}
 
 		try {
 			const casing = L.polyline(t.points, {
@@ -21652,7 +21993,10 @@ function instance($$self, $$props, $$invalidate) {
 
 			const lab = new L.Marker({ lat: far[0], lng: far[1] }, { icon: label, interactive: false }).addTo(map);
 			trackLayers = [casing, line, start, end, lab];
-			if (fit) map.fitBounds?.(line.getBounds(), { padding: [60, 60], maxZoom: 15 });
+
+			if (fit) {
+				map.fitBounds?.(line.getBounds(), { padding: [60, 60], maxZoom: 15 });
+			}
 		} catch(e) {
 			console.info('[spotlog] could not draw the track', e);
 		}
@@ -21704,18 +22048,27 @@ function instance($$self, $$props, $$invalidate) {
 			zoom: cardZoom()
 		});
 
-		if (typeof L === 'undefined' || !map || !L.popup) return;
+		if (typeof L === 'undefined' || !map || !L.popup) {
+			return;
+		}
+
 		const cached = nowOf(sp.id);
 		openSpotPopup(sp, cached, !cached);
 
 		if (!cached) {
 			const n = await loadNow(sp);
-			if (mapShown === sp.id && popup) popup.setContent(popupHtml(sp, n));
+
+			if (mapShown === sp.id && popup) {
+				popup.setContent(popupHtml(sp, n));
+			}
 		}
 	}
 
 	function cardZoom() {
-		if (!isMobile) return 11;
+		if (!isMobile) {
+			return 11;
+		}
+
 		let z = 0;
 
 		try {
@@ -21743,12 +22096,17 @@ function instance($$self, $$props, $$invalidate) {
 			let reopened = 0;
 
 			p.on?.('remove', () => {
-				if (popup !== p || mapShown !== sp.id || reopened > 20) return;
+				if (popup !== p || mapShown !== sp.id || reopened > 20) {
+					return;
+				}
+
 				reopened++;
 
 				setTimeout(
 					() => {
-						if (popup === p && mapShown === sp.id) p.openOn(map);
+						if (popup === p && mapShown === sp.id) {
+							p.openOn(map);
+						}
 					},
 					60
 				);
@@ -21762,7 +22120,11 @@ function instance($$self, $$props, $$invalidate) {
 
 				el.addEventListener('click', e => {
 					const b = e.target.closest('[data-act]');
-					if (!b) return;
+
+					if (!b) {
+						return;
+					}
+
 					e.stopPropagation();
 					cardAction(b.dataset.act || '', sp);
 				});
@@ -21773,7 +22135,13 @@ function instance($$self, $$props, $$invalidate) {
 	}
 
 	function cardAction(act, sp) {
-		if (act === 'snap') saveForecastAt({ lat: sp.lat, lon: sp.lon, spot: sp }); else if (act === 'log') startLog({ spot: sp }); else if (act === 'open') openSpot(sp); else if (act === 'close') {
+		if (act === 'snap') {
+			saveForecastAt({ lat: sp.lat, lon: sp.lon, spot: sp });
+		} else if (act === 'log') {
+			startLog({ spot: sp });
+		} else if (act === 'open') {
+			openSpot(sp);
+		} else if (act === 'close') {
 			clearPopup();
 			drawSpotMarkers();
 		} else if (act === 'prev' || act === 'next') {
@@ -21788,7 +22156,10 @@ function instance($$self, $$props, $$invalidate) {
 	}
 
 	function showSpotCard(sp) {
-		if (mapShown === sp.id && popup) return;
+		if (mapShown === sp.id && popup) {
+			return;
+		}
+
 		$$invalidate(47, mapShown = null);
 		toggleShowOnMap(sp);
 	}
@@ -21796,19 +22167,24 @@ function instance($$self, $$props, $$invalidate) {
 	async function onMapPick(ev, known) {
 		const { lat, lon } = ev;
 		const near = known ? { s: known} : nearestWithin(lat, lon, 1);
-		if (!(known && mapShown === known.id)) clearPopup();
+
+		if (!(known && mapShown === known.id)) {
+			clearPopup();
+		}
 
 		if (view === 'spotForm' && sf) {
 			setTemp(lat, lon);
 			const old = sf;
 			$$invalidate(9, sf = { ...sf, lat, lon });
-			const n = await placeName(lat, lon);
+			const pn = await placeName(lat, lon);
 
-			if (sf && sf.lat === lat) $$invalidate(9, sf = {
-				...sf,
-				place: n,
-				name: old.name && old.name !== old.place ? old.name : n
-			});
+			if (sf && sf.lat === lat) {
+				$$invalidate(9, sf = {
+					...sf,
+					place: pn,
+					name: old.name && old.name !== old.place ? old.name : pn
+				});
+			}
 
 			return;
 		}
@@ -21822,7 +22198,10 @@ function instance($$self, $$props, $$invalidate) {
 				}
 			: { lat, lon };
 
-			if (!near || pickFor === 'spot') loc.name = await placeName(lat, lon);
+			if (!near || pickFor === 'spot') {
+				loc.name = await placeName(lat, lon);
+			}
+
 			actOn(pickFor, loc, pickFor === 'spot' ? undefined : near?.s);
 			return;
 		}
@@ -21833,7 +22212,10 @@ function instance($$self, $$props, $$invalidate) {
 				showSpotCard(near.s);
 			} else {
 				openSpot(near.s);
-				if (isMobile) showSpotCard(near.s);
+
+				if (isMobile) {
+					showSpotCard(near.s);
+				}
 			}
 
 			return;
@@ -21846,45 +22228,71 @@ function instance($$self, $$props, $$invalidate) {
 		$$invalidate(36, placeLoading = true);
 		go('place');
 		const n = await placeName(lat, lon);
-		if (n && place && place.lat === lat) $$invalidate(7, place = { ...place, name: n });
+
+		if (n && place && place.lat === lat) {
+			$$invalidate(7, place = { ...place, name: n });
+		}
+
 		const ts = currentTs();
-		const [w, wv] = await Promise.all([modelValueAt(currentModel(), lat, lon, ts), waveValueAt(lat, lon, ts)]);
+		const [mv, wv] = await Promise.all([modelValueAt(currentModel(), lat, lon, ts), waveValueAt(lat, lon, ts)]);
 
 		if (place && place.lat === lat) {
-			$$invalidate(34, placeNow = w);
+			$$invalidate(34, placeNow = mv);
 			$$invalidate(35, placeWaves = trimWaves(wv, data.settings.layers));
 			$$invalidate(36, placeLoading = false);
 		}
 	}
 
-	function go(v, push = true, phonePanel = true) {
-		if (push && view !== v) hist = [
-			...hist,
-			{
-				view,
-				spotId: spot?.id ?? null,
-				snapId: snap?.id ?? null
-			}
-		];
+	function go(v, remember = true, phonePanel = true) {
+		if (remember && view !== v) {
+			hist = [
+				...hist,
+				{
+					view,
+					spotId: spot?.id ?? null,
+					snapId: snap?.id ?? null
+				}
+			];
+		}
 
 		$$invalidate(2, view = v);
 		$$invalidate(30, showUnits = false);
 		$$invalidate(26, unitsOpen = false);
 		$$invalidate(40, armed = '');
-		if (v !== 'log') drawTrack(null);
-		if (v !== 'place' && v !== 'spotForm') clearTemp();
-		if (v !== 'spot') clearPopup();
+
+		if (v !== 'log') {
+			drawTrack(null);
+		}
+
+		if (v !== 'place' && v !== 'spotForm') {
+			clearTemp();
+		}
+
+		if (v !== 'spot') {
+			clearPopup();
+		}
+
 		drawSpotMarkers();
-		if (barMode && phonePanel && !waitingForMap && v !== 'home') openModal();
+
+		if (barMode && phonePanel && !waitingForMap && v !== 'home') {
+			openModal();
+		}
+
 		tick().then(scrollTop);
 	}
 
 	function scrollTop() {
-		if (bodyEl && bodyEl.scrollTop > 0) $$invalidate(24, bodyEl.scrollTop = 0, bodyEl);
+		if (bodyEl && bodyEl.scrollTop > 0) {
+			$$invalidate(24, bodyEl.scrollTop = 0, bodyEl);
+		}
+
 		let el = root;
 
 		while (el) {
-			if (el.scrollTop > 0) el.scrollTop = 0;
+			if (el.scrollTop > 0) {
+				el.scrollTop = 0;
+			}
+
 			el = el.parentElement;
 		}
 	}
@@ -21900,11 +22308,24 @@ function instance($$self, $$props, $$invalidate) {
 
 		$$invalidate(3, spot = spotById(fr.spotId) || null);
 		$$invalidate(4, snap = data.snapshots.find(x => x.id === fr.snapId) || (snap && snap.id === fr.snapId ? snap : null));
-		if (fr.view === 'spot' && !spot) return goHome();
-		if (fr.view === 'snap' && !snap) return back();
-		if (fr.view === 'place' && place) setTemp(place.lat, place.lon);
+
+		if (fr.view === 'spot' && !spot) {
+			return goHome();
+		}
+
+		if (fr.view === 'snap' && !snap) {
+			return back();
+		}
+
+		if (fr.view === 'place' && place) {
+			setTemp(place.lat, place.lon);
+		}
+
 		go(fr.view, false);
-		if (fr.view === 'log' && f?.track) drawTrack(f.track);
+
+		if (fr.view === 'log' && f?.track) {
+			drawTrack(f.track);
+		}
 	}
 
 	function goHome() {
@@ -21916,10 +22337,17 @@ function instance($$self, $$props, $$invalidate) {
 	}
 
 	function openSpot(s, center = false, phonePanel = true) {
-		if (mapShown && mapShown !== s.id) clearPopup();
+		if (mapShown && mapShown !== s.id) {
+			clearPopup();
+		}
+
 		$$invalidate(3, spot = s);
 		go('spot', true, phonePanel);
-		if (center) centerMap({ lat: s.lat, lon: s.lon, zoom: 10 });
+
+		if (center) {
+			centerMap({ lat: s.lat, lon: s.lon, zoom: 10 });
+		}
+
 		checkMatch(s);
 		loadNow(s);
 	}
@@ -21927,7 +22355,10 @@ function instance($$self, $$props, $$invalidate) {
 	const modelsLoading = new Set();
 
 	async function loadModels(s) {
-		if (modelsBySpot[s.id] || modelsLoading.has(s.id)) return;
+		if (modelsBySpot[s.id] || modelsLoading.has(s.id)) {
+			return;
+		}
+
 		modelsLoading.add(s.id);
 		const list = await availableModels(s.lat, s.lon);
 		$$invalidate(145, modelsBySpot = { ...modelsBySpot, [s.id]: list });
@@ -21962,13 +22393,17 @@ function instance($$self, $$props, $$invalidate) {
 					new Promise(res => setTimeout(() => res(null), 7500))
 				]);
 
-				if (p && typeof p.lat === 'number' && (p.source === 'gps' || p.source === 'last')) return { lat: p.lat, lon: p.lon };
+				if (p && typeof p.lat === 'number' && (p.source === 'gps' || p.source === 'last')) {
+					return { lat: p.lat, lon: p.lon };
+				}
 			}
 		} catch {
 			
 		}
 
-		if (!navigator.geolocation) return null;
+		if (!navigator.geolocation) {
+			return null;
+		}
 
 		return new Promise(res => navigator.geolocation.getCurrentPosition(
 				p => res({
@@ -21985,13 +22420,19 @@ function instance($$self, $$props, $$invalidate) {
 	}
 
 	async function useMyLocation() {
-		if (locating) return;
+		if (locating) {
+			return;
+		}
+
 		const what = pickFor;
 		$$invalidate(48, locating = true);
 		$$invalidate(49, locError = '');
 		const c = await myPosition();
 		$$invalidate(48, locating = false);
-		if (view !== 'pick' || pickFor !== what) return;
+
+		if (view !== 'pick' || pickFor !== what) {
+			return;
+		}
 
 		if (!c) {
 			$$invalidate(49, locError = w('pickMeError'));
@@ -22011,11 +22452,17 @@ function instance($$self, $$props, $$invalidate) {
 	function actOn(what, loc, s) {
 		$$invalidate(37, waitingForMap = false);
 
-		if (what === 'snap') saveForecastAt({
-			lat: loc.lat,
-			lon: loc.lon,
-			spot: s || nearestWithin(loc.lat, loc.lon, 1)?.s
-		}); else if (what === 'log') startLog(s ? { spot: s } : { lat: loc.lat, lon: loc.lon }); else startSpotForm(loc, null);
+		if (what === 'snap') {
+			saveForecastAt({
+				lat: loc.lat,
+				lon: loc.lon,
+				spot: s || nearestWithin(loc.lat, loc.lon, 1)?.s
+			});
+		} else if (what === 'log') {
+			startLog(s ? { spot: s } : { lat: loc.lat, lon: loc.lon });
+		} else {
+			startSpotForm(loc, null);
+		}
 	}
 
 	async function startSpotForm(loc, ret) {
@@ -22039,7 +22486,10 @@ function instance($$self, $$props, $$invalidate) {
 
 		if (isPin) {
 			const n = await placeName(loc.lat, loc.lon);
-			if (sf && !sf.id && sf.lat === loc.lat && n) $$invalidate(9, sf = { ...sf, place: n, name: sf.name || n });
+
+			if (sf && !sf.id && sf.lat === loc.lat && n) {
+				$$invalidate(9, sf = { ...sf, place: n, name: sf.name || n });
+			}
 		}
 	}
 
@@ -22064,20 +22514,29 @@ function instance($$self, $$props, $$invalidate) {
 	}
 
 	function stepRange(k, dir) {
-		if (!sf) return;
+		if (!sf) {
+			return;
+		}
+
 		const st = windStep(S.wind);
 
-		if (k === 'dMin') $$invalidate(9, sf = {
-			...sf,
-			dMin: Math.max(0, Math.min(sf.dMax - st, sf.dMin + dir * st))
-		}); else $$invalidate(9, sf = {
-			...sf,
-			dMax: Math.max(sf.dMin + st, sf.dMax + dir * st)
-		});
+		if (k === 'dMin') {
+			$$invalidate(9, sf = {
+				...sf,
+				dMin: Math.max(0, Math.min(sf.dMax - st, sf.dMin + dir * st))
+			});
+		} else {
+			$$invalidate(9, sf = {
+				...sf,
+				dMax: Math.max(sf.dMin + st, sf.dMax + dir * st)
+			});
+		}
 	}
 
 	function saveSpotForm() {
-		if (!sf || !sf.name.trim()) return;
+		if (!sf || !sf.name.trim()) {
+			return;
+		}
 
 		const s = {
 			id: sf.id || uid(),
@@ -22117,7 +22576,11 @@ function instance($$self, $$props, $$invalidate) {
 			});
 
 			back();
-			if (!f.snapshotId) captureForLog();
+
+			if (!f.snapshotId) {
+				captureForLog();
+			}
+
 			return;
 		}
 
@@ -22140,7 +22603,9 @@ function instance($$self, $$props, $$invalidate) {
 	}
 
 	function deleteSpot(s) {
-		if (!arm('spot')) return;
+		if (!arm('spot')) {
+			return;
+		}
 
 		const before = {
 			spots: data.spots,
@@ -22161,7 +22626,9 @@ function instance($$self, $$props, $$invalidate) {
 	}
 
 	function applySuggestion() {
-		if (!spot || !suggestion) return;
+		if (!spot || !suggestion) {
+			return;
+		}
 
 		const s = {
 			...spot,
@@ -22188,9 +22655,16 @@ function instance($$self, $$props, $$invalidate) {
 		const list = modelsToSave(st);
 		const primary = list.includes('ecmwf') ? 'ecmwf' : list[0];
 		const day = await captureDay(lat, lon, from ?? Date.now(), primary, list, st.layers);
-		if (!day || !day.models.length) throw new Error(NO_DAY);
+
+		if (!day || !day.models.length) {
+			throw new Error(NO_DAY);
+		}
+
 		let { models, waves } = day;
-		if (focus !== undefined && covers(day.series, focus)) ({ models, waves } = seriesAt(day.series, focus));
+
+		if (focus !== undefined && covers(day.series, focus)) {
+			({ models, waves } = seriesAt(day.series, focus));
+		}
 
 		return {
 			id: uid(),
@@ -22207,7 +22681,10 @@ function instance($$self, $$props, $$invalidate) {
 	}
 
 	function pendingFor(spotId, except) {
-		if (!spotId) return null;
+		if (!spotId) {
+			return null;
+		}
+
 		const used = new Set(data.sessions.map(se => se.snapshotId));
 		return data.snapshots.filter(x => x.spotId === spotId && x.id !== except && !used.has(x.id)).sort((a, b) => b.savedAt - a.savedAt)[0] || null;
 	}
@@ -22217,7 +22694,11 @@ function instance($$self, $$props, $$invalidate) {
 
 		try {
 			const sn = await capture(t.lat, t.lon, t.spot?.id ?? null);
-			if (view === 'pick') $$invalidate(2, view = 'home');
+
+			if (view === 'pick') {
+				$$invalidate(2, view = 'home');
+			}
+
 			$$invalidate(5, snapDraft = true);
 			$$invalidate(4, snap = sn);
 			$$invalidate(31, snapNote = '');
@@ -22235,7 +22716,10 @@ function instance($$self, $$props, $$invalidate) {
 	function removeSnap(id) {
 		$$invalidate(1, data.snapshots = data.snapshots.filter(x => x.id !== id), data);
 		persist();
-		if (view === 'snap' && snap?.id === id) back();
+
+		if (view === 'snap' && snap?.id === id) {
+			back();
+		}
 	}
 
 	function deleteSnap(sn) {
@@ -22248,7 +22732,10 @@ function instance($$self, $$props, $$invalidate) {
 	}
 
 	function confirmSnap(replace) {
-		if (!snap || !snapDraft) return;
+		if (!snap || !snapDraft) {
+			return;
+		}
+
 		const old = pendingFor(snap.spotId, snap.id);
 
 		if (old && !replace) {
@@ -22299,7 +22786,10 @@ function instance($$self, $$props, $$invalidate) {
 	}
 
 	function updateSnap(patch) {
-		if (!snap) return;
+		if (!snap) {
+			return;
+		}
+
 		const n = { ...snap, ...patch };
 
 		if (snapDraft) {
@@ -22313,14 +22803,24 @@ function instance($$self, $$props, $$invalidate) {
 	}
 
 	function markSnapPlace(sn) {
-		if (sn.spotId && spotById(sn.spotId)) clearTemp(); else setTemp(sn.lat, sn.lon);
+		if (sn.spotId && spotById(sn.spotId)) {
+			clearTemp();
+		} else {
+			setTemp(sn.lat, sn.lon);
+		}
 	}
 
 	function linkSnap(spotId) {
 		updateSnap({ spotId });
 		$$invalidate(33, replaceOf = null);
-		if (snap) markSnapPlace(snap);
-		if (spotId) showToast(t('toastLinked', { spot: spotById(spotId)?.name || '' }));
+
+		if (snap) {
+			markSnapPlace(snap);
+		}
+
+		if (spotId) {
+			showToast(t('toastLinked', { spot: spotById(spotId)?.name || '' }));
+		}
 	}
 
 	function saveSnapNote() {
@@ -22361,7 +22861,10 @@ function instance($$self, $$props, $$invalidate) {
 			nf.lon = o.spot.lon;
 			const today = new Date().toDateString();
 			const pend = pendingFor(o.spot.id);
-			if (pend && (covers(pend.series, Date.now()) || new Date(pend.ts).toDateString() === today)) nf.snapshotId = pend.id;
+
+			if (pend && (covers(pend.series, Date.now()) || new Date(pend.ts).toDateString() === today)) {
+				nf.snapshotId = pend.id;
+			}
 		} else if (o.lat !== undefined) {
 			nf.lat = o.lat;
 			nf.lon = o.lon;
@@ -22376,15 +22879,28 @@ function instance($$self, $$props, $$invalidate) {
 		: null;
 
 		$$invalidate(10, f = nf);
-		if (view === 'pick') $$invalidate(2, view = 'home');
+
+		if (view === 'pick') {
+			$$invalidate(2, view = 'home');
+		}
+
 		go('log');
-		if (nf.lat !== undefined && !nf.spotId) setTemp(nf.lat, nf.lon ?? 0);
+
+		if (nf.lat !== undefined && !nf.spotId) {
+			setTemp(nf.lat, nf.lon ?? 0);
+		}
+
 		$$invalidate(43, captureError = '');
-		if (!nf.snapshotId && nf.lat !== undefined) captureForLog();
+
+		if (!nf.snapshotId && nf.lat !== undefined) {
+			captureForLog();
+		}
 	}
 
-	async function captureForLog(force = false) {
-		if (!f || f.lat === undefined) return;
+	async function captureForLog() {
+		if (!f || f.lat === undefined) {
+			return;
+		}
 
 		const focus = sessionFocus(f) ?? (f.dateStr === dateStrOf(Date.now())
 		? Date.now()
@@ -22441,13 +22957,24 @@ function instance($$self, $$props, $$invalidate) {
 
 		recaptureTimer = setTimeout(
 			() => {
-				if (view !== 'log' || !f || f.lat === undefined || capturing) return;
+				if (view !== 'log' || !f || f.lat === undefined || capturing) {
+					return;
+				}
+
 				const sn = data.snapshots.find(x => x.id === f?.snapshotId);
 				const focus = sessionFocus(f);
 				const day = focus ?? new Date(`${f.dateStr}T12:00`).getTime();
 				const auto = !!f.autoSnap && f.autoSnap === f.snapshotId;
-				if (captureError && captureErrorDay !== f.dateStr) $$invalidate(43, captureError = '');
-				if (!sn && !f.id && !captureError) captureForLog(); else if (sn && auto && (dateStrOf(sn.ts) !== dateStrOf(day) || focus !== null && !!sn.series && !covers(sn.series, focus))) captureForLog(true);
+
+				if (captureError && captureErrorDay !== f.dateStr) {
+					$$invalidate(43, captureError = '');
+				}
+
+				if (!sn && !f.id && !captureError) {
+					captureForLog();
+				} else if (sn && auto && (dateStrOf(sn.ts) !== dateStrOf(day) || focus !== null && !!sn.series && !covers(sn.series, focus))) {
+					captureForLog();
+				}
 			},
 			500
 		);
@@ -22479,11 +23006,18 @@ function instance($$self, $$props, $$invalidate) {
 		});
 
 		go('log');
-		if (f.track) drawTrack(f.track, true); else if (sp) centerMap({ lat: sp.lat, lon: sp.lon, zoom: 10 });
+
+		if (f.track) {
+			drawTrack(f.track, true);
+		} else if (sp) {
+			centerMap({ lat: sp.lat, lon: sp.lon, zoom: 10 });
+		}
 	}
 
 	function assignSpot(s) {
-		if (!f) return;
+		if (!f) {
+			return;
+		}
 
 		$$invalidate(10, f = {
 			...f,
@@ -22494,11 +23028,16 @@ function instance($$self, $$props, $$invalidate) {
 
 		clearTemp();
 		drawSpotMarkers();
-		if (!f.snapshotId) captureForLog();
+
+		if (!f.snapshotId) {
+			captureForLog();
+		}
 	}
 
 	function newSpotFromLog() {
-		if (!f) return;
+		if (!f) {
+			return;
+		}
 
 		const loc = f.lat !== undefined
 		? { lat: f.lat, lon: f.lon ?? 0 }
@@ -22513,11 +23052,26 @@ function instance($$self, $$props, $$invalidate) {
 	}
 
 	function saveSession() {
-		if (!f) return;
+		if (!f) {
+			return;
+		}
+
 		const sn = data.snapshots.find(x => x.id === f?.snapshotId);
 		let date;
-		if (f.start) date = new Date(`${f.dateStr}T${f.start}`).getTime(); else if (sn && dateStrOf(sn.ts) === f.dateStr) date = sn.ts; else if (f.track?.start && dateStrOf(f.track.start) === f.dateStr) date = f.track.start; else date = new Date(`${f.dateStr}T12:00`).getTime();
-		if (!isFinite(date)) date = Date.now();
+
+		if (f.start) {
+			date = new Date(`${f.dateStr}T${f.start}`).getTime();
+		} else if (sn && dateStrOf(sn.ts) === f.dateStr) {
+			date = sn.ts;
+		} else if (f.track?.start && dateStrOf(f.track.start) === f.dateStr) {
+			date = f.track.start;
+		} else {
+			date = new Date(`${f.dateStr}T12:00`).getTime();
+		}
+
+		if (!isFinite(date)) {
+			date = Date.now();
+		}
 
 		const se = {
 			id: f.id || uid(),
@@ -22588,7 +23142,10 @@ function instance($$self, $$props, $$invalidate) {
 	function deleteSession(se, leave = false) {
 		$$invalidate(1, data.sessions = data.sessions.filter(x => x.id !== se.id), data);
 		persist();
-		if (leave) back();
+
+		if (leave) {
+			back();
+		}
 
 		showToast(w('toastSessDeleted'), () => {
 			$$invalidate(1, data.sessions = [...data.sessions, se], data);
@@ -22600,20 +23157,33 @@ function instance($$self, $$props, $$invalidate) {
 		const input = e.target;
 		const file = input.files?.[0];
 		input.value = '';
-		if (!file || !f) return;
+
+		if (!file || !f) {
+			return;
+		}
+
 		$$invalidate(38, trackError = '');
 
 		try {
 			const t = await readTrack(file);
-			if (!f) return;
+
+			if (!f) {
+				return;
+			}
+
 			const nf = { ...f, track: t };
 
 			if (t.start) {
 				nf.dateStr = dateStrOf(t.start);
-				if (!nf.start) nf.start = hhmmOf(t.start);
+
+				if (!nf.start) {
+					nf.start = hhmmOf(t.start);
+				}
 			}
 
-			if (t.end && !nf.end) nf.end = hhmmOf(t.end + 4 * 60e3);
+			if (t.end && !nf.end) {
+				nf.end = hhmmOf(t.end + 4 * 60e3);
+			}
 
 			if (nf.lat === undefined && t.points[0]) {
 				nf.lat = t.points[0][0];
@@ -22633,13 +23203,18 @@ function instance($$self, $$props, $$invalidate) {
 	}
 
 	function removeTrack() {
-		if (!f) return;
+		if (!f) {
+			return;
+		}
+
 		$$invalidate(10, f = { ...f, track: null });
 		drawTrack(null);
 	}
 
 	function addGear() {
-		if (!gearName.trim()) return;
+		if (!gearName.trim()) {
+			return;
+		}
 
 		$$invalidate(
 			1,
@@ -22660,7 +23235,10 @@ function instance($$self, $$props, $$invalidate) {
 	}
 
 	function saveTypedGear() {
-		if (!f || !f.gear.trim()) return;
+		if (!f || !f.gear.trim()) {
+			return;
+		}
+
 		const sport = (spotById(f.spotId)?.sports || []).find(x => GEAR_SPORTS.includes(x));
 
 		const g = {
@@ -22687,16 +23265,22 @@ function instance($$self, $$props, $$invalidate) {
 		$$invalidate(1, data.gear = data.gear.filter(x => x.id !== id), data);
 		persist();
 
-		if (g) showToast(t('toastGearRemoved', { name: g.name }), () => {
-			$$invalidate(1, data.gear = [...data.gear, g], data);
-			persist();
-		});
+		if (g) {
+			showToast(t('toastGearRemoved', { name: g.name }), () => {
+				$$invalidate(1, data.gear = [...data.gear, g], data);
+				persist();
+			});
+		}
 	}
 
 	async function loadNow(s, model = 'ecmwf') {
 		const k = nowKey(s.id, model);
 		const cur = nowBySpot[k];
-		if (cur && cur !== 'loading') return cur;
+
+		if (cur && cur !== 'loading') {
+			return cur;
+		}
+
 		$$invalidate(12, nowBySpot = { ...nowBySpot, [k]: 'loading' });
 		const n = await conditionsNow(s.lat, s.lon, model);
 		$$invalidate(12, nowBySpot = { ...nowBySpot, [k]: n });
@@ -22708,14 +23292,20 @@ function instance($$self, $$props, $$invalidate) {
 	}
 
 	async function checkMatch(s) {
-		if (matches[s.id] !== undefined) return;
+		if (matches[s.id] !== undefined) {
+			return;
+		}
+
 		$$invalidate(11, matches = { ...matches, [s.id]: 'loading' });
 		const m = await nextMatch(s);
 		$$invalidate(11, matches = { ...matches, [s.id]: m });
 	}
 
 	function clearAll() {
-		if (!arm('all')) return;
+		if (!arm('all')) {
+			return;
+		}
+
 		const before = data;
 		$$invalidate(1, data = { ...emptyData(), settings: data.settings });
 		persist();
@@ -22735,7 +23325,9 @@ function instance($$self, $$props, $$invalidate) {
 	const painted = [];
 
 	function paintPane() {
-		if (!isMobile || !root) return;
+		if (!isMobile || !root) {
+			return;
+		}
 
 		try {
 			const r = root.getBoundingClientRect();
@@ -22743,7 +23335,11 @@ function instance($$self, $$props, $$invalidate) {
 
 			for (let i = 0; el && i < 4 && el !== document.body && el !== document.documentElement; (i++, el = el.parentElement)) {
 				const b = el.getBoundingClientRect();
-				if (b.height > r.height + 120 || b.top < r.top - 80) break;
+
+				if (b.height > r.height + 120 || b.top < r.top - 80) {
+					break;
+				}
+
 				painted.push({ el, bg: el.style.background });
 				el.style.background = 'var(--sl-ground, #2e2e2e)';
 			}
@@ -22759,25 +23355,46 @@ function instance($$self, $$props, $$invalidate) {
 
 	function designHook() {
 		const win = window;
-		if (!win.__spotlogDesignHost) return;
+
+		if (!win.__spotlogDesignHost) {
+			return;
+		}
+
 		const T = THEME;
 
 		win.__spotlogDesign = {
 			apply(d) {
 				if (d.tokens) {
-					for (const [k, v] of Object.entries(d.tokens)) if (k in T && typeof v === typeof T[k]) T[k] = v;
+					for (const [k, v] of Object.entries(d.tokens)) {
+						if (k in T && typeof v === typeof T[k]) {
+							T[k] = v;
+						}
+					}
+
 					const st = document.getElementById('spotlog-theme');
-					if (st) st.textContent = themeCss();
+
+					if (st) {
+						st.textContent = themeCss();
+					}
+
 					onMapZoom();
 					drawSpotMarkers();
-					if (view === 'log' && f?.track) drawTrack(f.track);
+
+					if (view === 'log' && f?.track) {
+						drawTrack(f.track);
+					}
 				}
 
-				if (d.words) setWords(d.words);
+				if (d.words) {
+					setWords(d.words);
+				}
 
 				if (popup && mapShown) {
 					const sp = spotById(mapShown);
-					if (sp) popup.setContent(popupHtml(sp, nowOf(sp.id)));
+
+					if (sp) {
+						popup.setContent(popupHtml(sp, nowOf(sp.id)));
+					}
 				}
 
 				$$invalidate(1, data);
@@ -22785,26 +23402,55 @@ function instance($$self, $$props, $$invalidate) {
 			goto(where) {
 				const s0 = data.spots[0];
 				$$invalidate(37, waitingForMap = false);
-				if (where !== 'card') clearPopup();
+
+				if (where !== 'card') {
+					clearPopup();
+				}
 
 				if (['spots', 'sessions', 'gear', 'about'].includes(where)) {
 					goHome();
 					$$invalidate(28, tab = asTab(where));
-					if (barMode) openTab(tab);
+
+					if (barMode) {
+						openTab(tab);
+					}
 				} else if (where === 'home') {
 					goHome();
 					$$invalidate(28, tab = 'spots');
 					$$invalidate(25, modalOpen = false);
 				} else if (where === 'units') {
 					goHome();
-					if (barMode) openUnits(true); else $$invalidate(30, showUnits = true);
-				} else if (where === 'pick') startPick('snap'); else if (where === 'spot' && s0) openSpot(s0, true); else if (where === 'spotForm' && s0) editSpot(s0); else if (where === 'snap' && data.snapshots[0]) openSnap(data.snapshots[0]); else if (where === 'log' && s0) startLog({ spot: s0 }); else if (where === 'session') {
+
+					if (barMode) {
+						openUnits(true);
+					} else {
+						$$invalidate(30, showUnits = true);
+					}
+				} else if (where === 'pick') {
+					startPick('snap');
+				} else if (where === 'spot' && s0) {
+					openSpot(s0, true);
+				} else if (where === 'spotForm' && s0) {
+					editSpot(s0);
+				} else if (where === 'snap' && data.snapshots[0]) {
+					openSnap(data.snapshots[0]);
+				} else if (where === 'log' && s0) {
+					startLog({ spot: s0 });
+				} else if (where === 'session') {
 					const se = data.sessions.find(x => x.track) || data.sessions[0];
-					if (se) openSession(se);
+
+					if (se) {
+						openSession(se);
+					}
 				} else if (where === 'card' && s0) {
-					if (barMode) spotOnMap(s0); else {
+					if (barMode) {
+						spotOnMap(s0);
+					} else {
 						openSpot(s0, false);
-						if (mapShown !== s0.id) toggleShowOnMap(s0);
+
+						if (mapShown !== s0.id) {
+							toggleShowOnMap(s0);
+						}
 					}
 				}
 			}
@@ -22857,7 +23503,10 @@ function instance($$self, $$props, $$invalidate) {
 		$$invalidate(146, mapReady = true);
 		drawSpotMarkers();
 		loadAllNow();
-		if (wUser) syncNow();
+
+		if (wUser) {
+			syncNow();
+		}
 	});
 
 	onDestroy(() => {
@@ -22876,9 +23525,19 @@ function instance($$self, $$props, $$invalidate) {
 		}
 
 		window.removeEventListener('storage', onStorage);
-		if (tsListener !== null) store.off(tsListener);
-		if (userListener !== null) store.off(userListener);
-		if (subsListener !== null) store.off(subsListener);
+
+		if (tsListener !== null) {
+			store.off(tsListener);
+		}
+
+		if (userListener !== null) {
+			store.off(userListener);
+		}
+
+		if (subsListener !== null) {
+			store.off(subsListener);
+		}
+
 		spotMarkers.forEach(m => m.remove());
 		clearTemp();
 		clearPopup();
@@ -22957,7 +23616,10 @@ function instance($$self, $$props, $$invalidate) {
 	const click_handler_31 = () => {
 		$$invalidate(37, waitingForMap = true);
 		$$invalidate(49, locError = '');
-		if (barMode) $$invalidate(25, modalOpen = false);
+
+		if (barMode) {
+			$$invalidate(25, modalOpen = false);
+		}
 	};
 
 	const click_handler_32 = () => startLog({});
@@ -23015,8 +23677,8 @@ function instance($$self, $$props, $$invalidate) {
 	const click_handler_61 = () => $$invalidate(33, replaceOf = null);
 	const click_handler_62 = () => confirmSnap(false);
 	const click_handler_63 = () => snap && deleteSnap(snap);
-	const click_handler_64 = () => captureForLog(true);
-	const click_handler_65 = () => f && captureForLog(true);
+	const click_handler_64 = () => captureForLog();
+	const click_handler_65 = () => f && captureForLog();
 
 	function input0_input_handler() {
 		f.dateStr = this.value;
@@ -23066,7 +23728,10 @@ function instance($$self, $$props, $$invalidate) {
 
 	const click_handler_73 = () => {
 		const se = data.sessions.find(x => x.id === f?.id);
-		if (se) deleteSession(se, true);
+
+		if (se) {
+			deleteSession(se, true);
+		}
 	};
 
 	function div1_binding($$value) {
@@ -23176,7 +23841,9 @@ function instance($$self, $$props, $$invalidate) {
 		}
 
 		if ($$self.$$.dirty[0] & /*view, spot*/ 12) {
-			if (view === 'spot' && spot) loadModels(spot);
+			if (view === 'spot' && spot) {
+				loadModels(spot);
+			}
 		}
 
 		if ($$self.$$.dirty[0] & /*spot, spotNow, data*/ 4194314) {
@@ -23218,7 +23885,9 @@ function instance($$self, $$props, $$invalidate) {
 		}
 
 		if ($$self.$$.dirty[0] & /*view, f*/ 1028) {
-			if (view === 'log' && f) scheduleRecapture(f.dateStr, f.start, f.end);
+			if (view === 'log' && f) {
+				scheduleRecapture(f.dateStr, f.start, f.end);
+			}
 		}
 
 		if ($$self.$$.dirty[0] & /*data*/ 2) {
@@ -23313,7 +23982,9 @@ function instance($$self, $$props, $$invalidate) {
 		}
 
 		if ($$self.$$.dirty[0] & /*nowBySpot*/ 4096 | $$self.$$.dirty[4] & /*mapReady*/ 4194304) {
-			if (nowBySpot && mapReady) drawSpotMarkers();
+			if (nowBySpot && mapReady) {
+				drawSpotMarkers();
+			}
 		}
 	};
 

@@ -273,7 +273,7 @@
                 <span class="chev-r" aria-hidden="true">›</span>
             </button>
         {/if}
-        <button class="opt" class:on={ waitingForMap } on:click={ () => { waitingForMap = true; locError = ''; if (barMode) modalOpen = false; } }>
+        <button class="opt" class:on={ waitingForMap } on:click={ () => { waitingForMap = true; locError = ''; if (barMode) {modalOpen = false;} } }>
             <span class="ico" class:live={ waitingForMap }><Icon name="pointer" /></span>
             <span class="grow"><span>{ isMobile ? W.pickTap : W.pickClick }</span><small>{ waitingForMap ? (isMobile ? W.pickTapWaiting : W.pickClickWaiting) : W.pickMapSub }</small></span>
         </button>
@@ -555,7 +555,7 @@
         />
         {#if logView.note}<small class="muted sl-note">{ logView.note }</small>{/if}
         {#if logView.otherDay && f.lat !== undefined && !capturing}
-            <button class="btn ghost" on:click={ () => captureForLog(true) }>{ f.dateStr === dateStrOf(Date.now()) ? W.logUseHours : fill(W.logSaveFor, { day: fmtDay(sessionFocus(f) ?? Date.now()) }) }</button>
+            <button class="btn ghost" on:click={ () => captureForLog() }>{ f.dateStr === dateStrOf(Date.now()) ? W.logUseHours : fill(W.logSaveFor, { day: fmtDay(sessionFocus(f) ?? Date.now()) }) }</button>
         {/if}
     {:else}
         <div class="snapless">
@@ -563,7 +563,7 @@
                 <span>{ W.logSaving }</span>
             {:else if f.lat !== undefined}
                 <span class="grow">{ captureError || W.logNoFc }</span>
-                <button class="btn primary small" on:click={ () => f && captureForLog(true) }>{ W.logSaveNow }</button>
+                <button class="btn primary small" on:click={ () => f && captureForLog() }>{ W.logSaveNow }</button>
             {:else}
                 <span class="grow">{ W.logNoPlace }</span>
             {/if}
@@ -668,7 +668,7 @@
 
     <button class="btn primary wide" on:click={ saveSession }>{ f.id ? W.saveChanges : W.saveSession }</button>
     {#if f.id}
-        <button class="link danger" on:click={ () => { const se = data.sessions.find(x => x.id === f?.id); if (se) deleteSession(se, true); } }>{ W.deleteSession }</button>
+        <button class="link danger" on:click={ () => { const se = data.sessions.find(x => x.id === f?.id); if (se) {deleteSession(se, true);} } }>{ W.deleteSession }</button>
     {/if}
 {/if}
 
@@ -693,14 +693,13 @@
     import * as reverse from '@windy/reverseName';
     import * as rootScope from '@windy/rootScope';
     import * as geo from '@windy/geolocation';
-    import { hapticCleanup } from './lib/haptic';
     import { onDestroy, onMount, tick } from 'svelte';
+    import { hapticCleanup } from './lib/haptic';
 
     import config from './pluginConfig';
     import { load, save, exportJson, uid, emptyData, normalise, mergeData, storageKey, useWindyUser } from './lib/storage';
     import { waveValueAt, modelValueAt, nextMatch, conditionsNow, trimWaves, captureDay, seriesAt, covers, availableModels, SNAPSHOT_MODELS } from './lib/forecast';
     import { cloudAvailable, pull, push } from './lib/cloud';
-    import type { WindyAuth } from './lib/cloud';
     import { FEEDBACK_URL } from './lib/links';
     import { FONT_CSS } from './lib/fonts';
     import { THEME, THEME_CSS, themeCss, guessColours, guessLevel, lightsUp, sessionMarkStyle } from './lib/theme';
@@ -722,6 +721,7 @@
     import Icon from './ui/Icon.svelte';
     import PixelStar from './ui/PixelStar.svelte';
     import Brand from './ui/Brand.svelte';
+    import type { WindyAuth } from './lib/cloud';
 
     import type { Spot, Snapshot, Session, ModelValue, WaveValue, Dir8, Settings as SettingsT, Track, SpotlogData, Gear } from './lib/types';
     import type { MatchWindow } from './lib/forecast';
@@ -756,13 +756,13 @@
     $: barMode = isMobile && !modalFallback;
     const asTab = (k: string) => k as typeof tab;
     function openModal() {
-        if (!barMode) return;
+        if (!barMode) {return;}
         modalOpen = true;
         tick().then(() => setTimeout(checkModalVisible, 80));
     }
     /** Windy's pane could cut off anything above it: check the panel really shows, else fall back */
     function checkModalVisible() {
-        if (!modalOpen || !bodyEl) return;
+        if (!modalOpen || !bodyEl) {return;}
         try {
             const r = bodyEl.getBoundingClientRect();
             // a few points across the panel: one of them may sit under a card or a Windy button, not all
@@ -782,12 +782,12 @@
     }
     function openTab(t: typeof tab) {
         tab = t;
-        if (view !== 'home') goHome();
+        if (view !== 'home') {goHome();}
         openModal();
         tick().then(scrollTop);
     }
     function toggleTab(t: typeof tab) {
-        if (modalOpen && !unitsOpen && view === 'home' && tab === t) closeModal();
+        if (modalOpen && !unitsOpen && view === 'home' && tab === t) {closeModal();}
         else {
             unitsOpen = false;
             openTab(t);
@@ -808,20 +808,20 @@
     /** opened from the bar while the panel was closed: back closes the panel again */
     let unitsAlone = false;
     function openUnits(fromBar = false) {
-        if (fromBar && unitsOpen && modalOpen) return closeModal();
+        if (fromBar && unitsOpen && modalOpen) {return closeModal();}
         unitsAlone = fromBar && !modalOpen;
         unitsOpen = true;
         openModal();
-        tick().then(() => { if (bodyEl) bodyEl.scrollTop = 0; });
+        tick().then(() => { if (bodyEl) {bodyEl.scrollTop = 0;} });
     }
     function unitsBack() {
-        if (unitsAlone) closeModal();
-        else unitsOpen = false;
+        if (unitsAlone) {closeModal();}
+        else {unitsOpen = false;}
     }
     function closeModal() {
         modalOpen = false;
         // the units page stays until the panel has faded out
-        setTimeout(() => { if (!modalOpen) unitsOpen = false; }, 200);
+        setTimeout(() => { if (!modalOpen) {unitsOpen = false;} }, 200);
     }
 
     /**
@@ -835,7 +835,7 @@
         el instanceof HTMLElement && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !/^(date|time|checkbox|radio|range|button|file)$/i.test((el as HTMLInputElement).type)));
     /** the field would end up under the keyboard (roughly the lower half of the screen) */
     function underKeyboard(el: HTMLElement): boolean {
-        if (!bodyEl) return false;
+        if (!bodyEl) {return false;}
         const box = bodyEl.getBoundingClientRect();
         const r = el.getBoundingClientRect();
         return r.bottom > Math.min(window.innerHeight * 0.4, box.top + 180) || r.top < box.top + 40;
@@ -855,9 +855,9 @@
         const d = fieldDown;
         fieldDown = null;
         const t = e.changedTouches[0];
-        if (!d || !t || e.target !== d.el || document.activeElement === d.el) return;
-        if (Math.hypot(t.clientX - d.x, t.clientY - d.y) > 10) return; // that was a scroll
-        if (!bodyEl || !underKeyboard(d.el)) return; // the phone handles it as usual
+        if (!d || !t || e.target !== d.el || document.activeElement === d.el) {return;}
+        if (Math.hypot(t.clientX - d.x, t.clientY - d.y) > 10) {return;} // that was a scroll
+        if (!bodyEl || !underKeyboard(d.el)) {return;} // the phone handles it as usual
         e.preventDefault(); // no second, late tap on whatever is under the finger after the move
         clearTimeout(kbTimer);
         kbRoom = true;
@@ -872,18 +872,18 @@
         }
     }
     function fieldFocus(e: FocusEvent) {
-        if (!typesText(e.target) || !barMode) return;
+        if (!typesText(e.target) || !barMode) {return;}
         clearTimeout(kbTimer);
         kbRoom = true;
         // if the browser shifted the page anyway, put it back
-        setTimeout(() => { if (window.scrollY > 0) window.scrollTo(0, 0); }, 350);
+        setTimeout(() => { if (window.scrollY > 0) {window.scrollTo(0, 0);} }, 350);
     }
     function fieldBlur() {
         clearTimeout(kbTimer);
         kbTimer = setTimeout(() => {
-            if (typesText(document.activeElement)) return;
+            if (typesText(document.activeElement)) {return;}
             kbRoom = false;
-            if (bodyEl) bodyEl.style.paddingBottom = '';
+            if (bodyEl) {bodyEl.style.paddingBottom = '';}
         }, 250);
     }
     /** Phones: a spot from the list goes to the map (its card), the panel steps aside */
@@ -899,9 +899,9 @@
      */
     function keepKeys(e: KeyboardEvent) {
         const t = e.target as HTMLElement | null;
-        if (!t) return;
+        if (!t) {return;}
         const editable = t.isContentEditable || t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && !['checkbox', 'radio', 'button', 'range', 'file'].includes((t as HTMLInputElement).type));
-        if (editable && e.key !== 'Escape') e.stopPropagation();
+        if (editable && e.key !== 'Escape') {e.stopPropagation();}
     }
 
     /*
@@ -910,7 +910,7 @@
      */
     let errBox: HTMLElement | null = null;
     function showPhoneError(msg: string) {
-        if (!isMobile) return;
+        if (!isMobile) {return;}
         try {
             if (!errBox) {
                 errBox = document.createElement('div');
@@ -925,11 +925,11 @@
     }
     const fromSpotlog = (stack: string, file: string) => /plugin(\.min)?\.js|spotlog/i.test(file + ' ' + stack);
     const onWinError = (e: ErrorEvent) => {
-        if (fromSpotlog(String(e.error?.stack || ''), e.filename || '')) showPhoneError(`${e.message} (${(e.filename || '').split('/').pop()}:${e.lineno})`);
+        if (fromSpotlog(String(e.error?.stack || ''), e.filename || '')) {showPhoneError(`${e.message} (${(e.filename || '').split('/').pop()}:${e.lineno})`);}
     };
     const onRejection = (e: PromiseRejectionEvent) => {
         const r = e.reason as Error | undefined;
-        if (r && fromSpotlog(String(r.stack || ''), '')) showPhoneError(String(r.message || r));
+        if (r && fromSpotlog(String(r.stack || ''), '')) {showPhoneError(String(r.message || r));}
     };
     if (isMobile) {
         window.addEventListener('error', onWinError);
@@ -1041,7 +1041,7 @@
         modelSpotId = spot?.id ?? null;
         spotModel = 'ecmwf';
     }
-    $: if (view === 'spot' && spot) loadModels(spot);
+    $: if (view === 'spot' && spot) {loadModels(spot);}
     $: spotPred = spot && spotNow ? predictRating(spot, spotNow.wind, data.sessions, data.snapshots) : null;
     $: suggestion = spot && spot.windUnknown ? suggestWindow(spot, data.sessions, data.snapshots) : null;
     $: goodCount = spot ? samplesFor(spot, data.sessions, data.snapshots).filter(x => x.rating >= 4).length : 0;
@@ -1050,7 +1050,7 @@
     // what the snapshot card shows while logging: the saved day read at the session time
     $: logView = logSnap && f ? viewFor(logSnap, sessionFocus(f)) : null;
     $: logPrimary = logView ? logView.models.find(m => m.model === logSnap?.primary) || logView.models[0] || null : null;
-    $: if (view === 'log' && f) scheduleRecapture(f.dateStr, f.start, f.end);
+    $: if (view === 'log' && f) {scheduleRecapture(f.dateStr, f.start, f.end);}
     $: gearGroups = groupGear(data.gear, GEAR_SPORTS);
     $: logGearGroups = f ? groupGear(data.gear, [...(spotById(f.spotId)?.sports || []), ...GEAR_SPORTS]) : [];
     $: synced = cloudOn && !!wUser;
@@ -1100,10 +1100,10 @@
         }
         let el = e.target as HTMLElement | null;
         // the nearest scrollable box between the finger and the panel (usually the panel itself)
-        while (el && el !== root && !(el.scrollHeight > el.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(el).overflowY))) el = el.parentElement;
+        while (el && el !== root && !(el.scrollHeight > el.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(el).overflowY))) {el = el.parentElement;}
         const box = el || root;
         const canScroll = dy > 0 ? box.scrollTop + box.clientHeight < box.scrollHeight - 1 : box.scrollTop > 0;
-        if (canScroll) e.stopPropagation();
+        if (canScroll) {e.stopPropagation();}
     }
     const deviceTz = (): string | undefined => {
         try {
@@ -1116,13 +1116,13 @@
     function onWindyUser(u: WindyUser | null) {
         const changed = (u?.id || null) !== (wUser?.id || null);
         wUser = u && u.id ? u : null;
-        if (!changed) return;
+        if (!changed) {return;}
         useWindyUser(wUser?.id);
         data = load();
         knownIds = allIds(data);
         syncAt = 0;
         goHome();
-        if (wUser) syncNow();
+        if (wUser) {syncNow();}
     }
     const gearHint = (sport: string, kind: string) => GEAR_BY_SPORT[sport]?.find(k => k.kind === kind)?.hint || 'Name';
     function groupGear(list: Gear[], order: string[]): { sport: string; items: Gear[] }[] {
@@ -1133,12 +1133,12 @@
     }
     /** The moment a session is about: middle of start–end, or the start, on the chosen date */
     function sessionFocus(lf: LogForm): number | null {
-        if (!lf.start) return null;
+        if (!lf.start) {return null;}
         const a = new Date(`${lf.dateStr}T${lf.start}`).getTime();
-        if (!isFinite(a)) return null;
+        if (!isFinite(a)) {return null;}
         if (lf.end) {
             let b = new Date(`${lf.dateStr}T${lf.end}`).getTime();
-            if (b < a) b += 864e5;
+            if (b < a) {b += 864e5;}
             return a + (b - a) / 2;
         }
         return a;
@@ -1181,13 +1181,13 @@
     function closestModel(sn: Snapshot, ms: number): ModelValue | null {
         let best: ModelValue | null = null;
         for (const m of sn.models) {
-            if (m.wind === null) continue;
-            if (!best || Math.abs(m.wind - ms) < Math.abs((best.wind as number) - ms)) best = m;
+            if (m.wind === null) {continue;}
+            if (!best || Math.abs(m.wind - ms) < Math.abs((best.wind as number) - ms)) {best = m;}
         }
         return best;
     }
     function durationH(a: string, b: string): number {
-        if (!a || !b) return 0;
+        if (!a || !b) {return 0;}
         const [ah, am] = a.split(':').map(Number);
         const [bh, bm] = b.split(':').map(Number);
         const d = (bh * 60 + bm - (ah * 60 + am)) / 60;
@@ -1195,7 +1195,7 @@
     }
     const sessionHours = (s: Session) => durationH(s.start, s.end) || (s.track ? s.track.durationMin / 60 : 0);
     const feltLine = (se: Session): string => {
-        if (se.felt === null) return '';
+        if (se.felt === null) {return '';}
         const sn = data.snapshots.find(x => x.id === se.snapshotId);
         const p = sn ? primaryOf(sn) : null;
         const felt = fmtWind0(se.felt, S.wind);
@@ -1226,7 +1226,7 @@
     function centre(): { lat: number; lon: number } {
         try {
             const c = map?.getCenter?.();
-            if (c && typeof c.lat === 'number') return { lat: c.lat, lon: c.lng };
+            if (c && typeof c.lat === 'number') {return { lat: c.lat, lon: c.lng };}
         } catch {
             /* no map */
         }
@@ -1287,8 +1287,8 @@
         const now = Date.now();
         const cur = allIds(data);
         const deleted = { ...(data.deleted || {}) };
-        knownIds.forEach(id => { if (!cur.has(id)) deleted[id] = now; });
-        cur.forEach(id => { if (deleted[id]) delete deleted[id]; }); // undo brings an item back
+        knownIds.forEach(id => { if (!cur.has(id)) {deleted[id] = now;} });
+        cur.forEach(id => { if (deleted[id]) {delete deleted[id];} }); // undo brings an item back
         knownIds = cur;
         data.deleted = deleted;
         data.updatedAt = now;
@@ -1303,7 +1303,7 @@
 
     /* ---------- sync with the Windy account (no separate login) ---------- */
     const windyAuth = (): WindyAuth | null => {
-        if (!wUser) return null;
+        if (!wUser) {return null;}
         let token: string | null = null;
         try {
             token = (store.get('userToken') as string | null) || null;
@@ -1313,11 +1313,11 @@
         return { id: wUser.id, token };
     };
     function schedulePush() {
-        if (!synced) return;
+        if (!synced) {return;}
         clearTimeout(pushTimer);
         pushTimer = setTimeout(async () => {
             const a = windyAuth();
-            if (!a) return;
+            if (!a) {return;}
             syncState = 'saving';
             try {
                 await push(a, data);
@@ -1333,7 +1333,7 @@
     /** Merges this browser's diary with the one stored for this Windy user (by id, newer wins, deletions stay deleted) */
     async function syncNow() {
         const a = windyAuth();
-        if (!cloudOn || !a) return;
+        if (!cloudOn || !a) {return;}
         syncState = 'saving';
         try {
             const remote = await pull(a);
@@ -1359,13 +1359,13 @@
     /** Another Windy tab saved the diary: merge it in, so two open tabs never overwrite each other */
     const sig = (d: SpotlogData) => JSON.stringify([[...allIds(d)].sort(), Object.keys(d.deleted || {}).sort(), d.settings]);
     function onStorage(e: StorageEvent) {
-        if (e.key !== storageKey() || !e.newValue) return;
+        if (e.key !== storageKey() || !e.newValue) {return;}
         try {
             const other = normalise(JSON.parse(e.newValue));
             const merged = mergeData(other, data);
             data = merged;
             knownIds = allIds(data);
-            if (sig(merged) !== sig(other)) save(merged);
+            if (sig(merged) !== sig(other)) {save(merged);}
             drawSpotMarkers();
         } catch (err) {
             console.info('[spotlog] could not read the other tab\'s data', err);
@@ -1385,7 +1385,7 @@
         const p = popup;
         popup = null; // first, so its 'remove' handler knows this was on purpose
         mapShown = null;
-        if (!p) return;
+        if (!p) {return;}
         // fade it out, then take it off the map
         const el: HTMLElement | null = p.getElement?.() || null;
         if (el && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
@@ -1397,7 +1397,7 @@
     }
     function setTemp(lat: number, lon: number) {
         clearTemp();
-        if (typeof L !== 'undefined' && map) tempMarker = new L.Marker({ lat, lng: lon }, { icon: markers?.pulsatingIcon }).addTo(map);
+        if (typeof L !== 'undefined' && map) {tempMarker = new L.Marker({ lat, lng: lon }, { icon: markers?.pulsatingIcon }).addTo(map);}
     }
     /** Zoomed out, spots and sessions become plain dots: a map of everywhere you've been */
     const compactBelow = () => THEME.compactBelow;
@@ -1409,7 +1409,7 @@
             /* no zoom */
         }
         const c = z < compactBelow();
-        if (isMobile && c && mapShown) clearPopup();
+        if (isMobile && c && mapShown) {clearPopup();}
         if (c !== compactMarkers) {
             compactMarkers = c;
             drawSpotMarkers();
@@ -1422,11 +1422,11 @@
             const sp = spotById(se.spotId);
             const lat = se.lat ?? se.track?.points[0]?.[0] ?? sp?.lat;
             const lon = se.lon ?? se.track?.points[0]?.[1] ?? sp?.lon;
-            if (lat === undefined || lon === undefined) continue;
+            if (lat === undefined || lon === undefined) {continue;}
             const k = `${lat.toFixed(3)},${lon.toFixed(3)}`;
             const g = groups.get(k);
-            if (g) g.list.push(se);
-            else groups.set(k, { lat, lon, list: [se] });
+            if (g) {g.list.push(se);}
+            else {groups.set(k, { lat, lon, list: [se] });}
         }
         return [...groups.values()];
     }
@@ -1439,14 +1439,14 @@
     function drawSpotMarkers() {
         spotMarkers.forEach(m => m.remove());
         spotMarkers = [];
-        if (typeof L === 'undefined' || !map) return;
+        if (typeof L === 'undefined' || !map) {return;}
         const st = data.settings;
         const activeId = view === 'spot' ? spot?.id : view === 'log' ? f?.spotId : view === 'snap' ? snap?.spotId : null;
         if (st.mapSessions) {
             // just a glow, no click: many sessions at one place overlap and get brighter (heat map feel); hover for dates
             for (const p of sessionPlaces()) {
                 const mark = sessionMarkStyle(p.list.length);
-                if (!mark) break;
+                if (!mark) {break;}
                 const core = THEME.sessCore && THEME.sessStyle !== 'dot' ? ' core' : '';
                 const icon = L.divIcon({
                     className: 'spotlog-marker',
@@ -1459,7 +1459,7 @@
         }
         for (const s of data.spots) {
             const on = activeId === s.id;
-            if (!st.mapSpots && !on) continue;
+            if (!st.mapSpots && !on) {continue;}
             // the pin sits on top of its own glow, so hovering the pin shows that spot's sessions
             const here = st.mapSessions ? data.sessions.filter(x => x.spotId === s.id).sort((a, b) => b.date - a.date) : [];
             const tip = here.length ? `<div class="spotlog-tip">${sessionTip(here)}</div>` : '';
@@ -1479,7 +1479,7 @@
                 let style = '';
                 let dot = '';
                 if (good && THEME.goodStyle === 'pin') { style = `background:${gb};color:${gf};`; dot = gf; }
-                if (good && THEME.goodStyle === 'dot') dot = gb;
+                if (good && THEME.goodStyle === 'dot') {dot = gb;}
                 if (good && THEME.goodStyle === 'outline') { style = `box-shadow:0 0 0 2px ${gb}, 0 2px 8px rgba(0,0,0,.35);`; dot = gb; }
                 html = `<div class="spotlog-pin${good ? ' good' : ''}" style="${style}"><i${dot ? ` style="background:${dot}"` : ''}></i>${escapeHtml(s.name)}${word}${tip}</div>`;
             }
@@ -1490,11 +1490,11 @@
         }
     }
     // conditions arrive one spot at a time: redraw so good spots light up
-    $: if (nowBySpot && mapReady) drawSpotMarkers();
+    $: if (nowBySpot && mapReady) {drawSpotMarkers();}
     function drawTrack(t: Track | null, fit = false) {
         trackLayers.forEach(l => l.remove());
         trackLayers = [];
-        if (!t || !t.points.length || typeof L === 'undefined' || !map) return;
+        if (!t || !t.points.length || typeof L === 'undefined' || !map) {return;}
         try {
             // route colours and widths come from the theme (a thin line with a faint edge)
             const casing = L.polyline(t.points, { color: THEME.casingColor, weight: THEME.routeWidth + THEME.casingWidth * 2, opacity: THEME.casingWidth > 0 ? THEME.casingAlpha : 0, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(map);
@@ -1521,7 +1521,7 @@
             });
             const lab = new L.Marker({ lat: far[0], lng: far[1] }, { icon: label, interactive: false }).addTo(map);
             trackLayers = [casing, line, start, end, lab];
-            if (fit) map.fitBounds?.(line.getBounds(), { padding: [60, 60], maxZoom: 15 });
+            if (fit) {map.fitBounds?.(line.getBounds(), { padding: [60, 60], maxZoom: 15 });}
         } catch (e) {
             console.info('[spotlog] could not draw the track', e);
         }
@@ -1552,13 +1552,13 @@
         clearPopup();
         mapShown = sp.id;
         centerMap({ lat: sp.lat, lon: sp.lon, zoom: cardZoom() });
-        if (typeof L === 'undefined' || !map || !L.popup) return;
+        if (typeof L === 'undefined' || !map || !L.popup) {return;}
         // open right away (it follows the map while Windy moves it); conditions fill in when they arrive
         const cached = nowOf(sp.id);
         openSpotPopup(sp, cached, !cached);
         if (!cached) {
             const n = await loadNow(sp);
-            if (mapShown === sp.id && popup) popup.setContent(popupHtml(sp, n));
+            if (mapShown === sp.id && popup) {popup.setContent(popupHtml(sp, n));}
         }
     }
     /**
@@ -1566,7 +1566,7 @@
      * From far out, zoom in a little (9: the coast and the towns around). Desktop: as before.
      */
     function cardZoom(): number {
-        if (!isMobile) return 11;
+        if (!isMobile) {return 11;}
         let z = 0;
         try {
             z = map?.getZoom?.() ?? 0;
@@ -1584,9 +1584,9 @@
             popup = p;
             let reopened = 0;
             p.on?.('remove', () => {
-                if (popup !== p || mapShown !== sp.id || reopened > 20) return;
+                if (popup !== p || mapShown !== sp.id || reopened > 20) {return;}
                 reopened++;
-                setTimeout(() => { if (popup === p && mapShown === sp.id) p.openOn(map); }, 60);
+                setTimeout(() => { if (popup === p && mapShown === sp.id) {p.openOn(map);} }, 60);
             });
             p.openOn(map);
             const el: HTMLElement | null = p.getElement?.() || null;
@@ -1594,7 +1594,7 @@
                 el.dataset.slWired = '1';
                 el.addEventListener('click', (e: MouseEvent) => {
                     const b = (e.target as HTMLElement).closest('[data-act]') as HTMLElement | null;
-                    if (!b) return;
+                    if (!b) {return;}
                     e.stopPropagation();
                     cardAction(b.dataset.act || '', sp);
                 });
@@ -1605,9 +1605,9 @@
     }
     /** Phones: the buttons on a spot card */
     function cardAction(act: string, sp: Spot) {
-        if (act === 'snap') saveForecastAt({ lat: sp.lat, lon: sp.lon, spot: sp });
-        else if (act === 'log') startLog({ spot: sp });
-        else if (act === 'open') openSpot(sp);
+        if (act === 'snap') {saveForecastAt({ lat: sp.lat, lon: sp.lon, spot: sp });}
+        else if (act === 'log') {startLog({ spot: sp });}
+        else if (act === 'open') {openSpot(sp);}
         else if (act === 'close') {
             clearPopup();
             drawSpotMarkers();
@@ -1623,7 +1623,7 @@
     }
     /** Phones: open a spot's card on the map (not a switch: tapping a spot always shows it) */
     function showSpotCard(sp: Spot) {
-        if (mapShown === sp.id && popup) return;
+        if (mapShown === sp.id && popup) {return;}
         mapShown = null;
         toggleShowOnMap(sp);
     }
@@ -1631,19 +1631,19 @@
     async function onMapPick(ev: { lat: number; lon: number }, known?: Spot) {
         const { lat, lon } = ev;
         const near = known ? { s: known, d: 0 } : nearestWithin(lat, lon, 1);
-        if (!(known && mapShown === known.id)) clearPopup();
+        if (!(known && mapShown === known.id)) {clearPopup();}
         if (view === 'spotForm' && sf) {
             // move the new spot's pin
             setTemp(lat, lon);
             const old = sf;
             sf = { ...sf, lat, lon };
-            const n = await placeName(lat, lon);
-            if (sf && sf.lat === lat) sf = { ...sf, place: n, name: old.name && old.name !== old.place ? old.name : n };
+            const pn = await placeName(lat, lon);
+            if (sf && sf.lat === lat) {sf = { ...sf, place: pn, name: old.name && old.name !== old.place ? old.name : pn };}
             return;
         }
         if (view === 'pick') {
             const loc: Loc = near ? { lat: near.s.lat, lon: near.s.lon, name: near.s.name } : { lat, lon };
-            if (!near || pickFor === 'spot') loc.name = await placeName(lat, lon);
+            if (!near || pickFor === 'spot') {loc.name = await placeName(lat, lon);}
             actOn(pickFor, loc, pickFor === 'spot' ? undefined : near?.s);
             return;
         }
@@ -1653,7 +1653,7 @@
                 showSpotCard(near.s);
             } else {
                 openSpot(near.s);
-                if (isMobile) showSpotCard(near.s);
+                if (isMobile) {showSpotCard(near.s);}
             }
             return;
         }
@@ -1664,36 +1664,36 @@
         placeLoading = true;
         go('place');
         const n = await placeName(lat, lon);
-        if (n && place && place.lat === lat) place = { ...place, name: n };
+        if (n && place && place.lat === lat) {place = { ...place, name: n };}
         const ts = currentTs();
-        const [w, wv] = await Promise.all([modelValueAt(currentModel(), lat, lon, ts), waveValueAt(lat, lon, ts)]);
+        const [mv, wv] = await Promise.all([modelValueAt(currentModel(), lat, lon, ts), waveValueAt(lat, lon, ts)]);
         if (place && place.lat === lat) {
-            placeNow = w;
+            placeNow = mv;
             placeWaves = trimWaves(wv, data.settings.layers);
             placeLoading = false;
         }
     }
 
     /* ---------- navigation ---------- */
-    function go(v: View, push = true, phonePanel = true) {
-        if (push && view !== v) hist = [...hist, { view, spotId: spot?.id ?? null, snapId: snap?.id ?? null }];
+    function go(v: View, remember = true, phonePanel = true) {
+        if (remember && view !== v) {hist = [...hist, { view, spotId: spot?.id ?? null, snapId: snap?.id ?? null }];}
         view = v;
         showUnits = false;
         unitsOpen = false;
         armed = '';
-        if (v !== 'log') drawTrack(null);
-        if (v !== 'place' && v !== 'spotForm') clearTemp();
-        if (v !== 'spot') clearPopup();
+        if (v !== 'log') {drawTrack(null);}
+        if (v !== 'place' && v !== 'spotForm') {clearTemp();}
+        if (v !== 'spot') {clearPopup();}
         drawSpotMarkers();
         // phones: a page opens the panel over the map (not while waiting for a tap on the map)
-        if (barMode && phonePanel && !waitingForMap && v !== 'home') openModal();
+        if (barMode && phonePanel && !waitingForMap && v !== 'home') {openModal();}
         tick().then(scrollTop);
     }
     function scrollTop() {
-        if (bodyEl && bodyEl.scrollTop > 0) bodyEl.scrollTop = 0;
+        if (bodyEl && bodyEl.scrollTop > 0) {bodyEl.scrollTop = 0;}
         let el: HTMLElement | null = root;
         while (el) {
-            if (el.scrollTop > 0) el.scrollTop = 0;
+            if (el.scrollTop > 0) {el.scrollTop = 0;}
             el = el.parentElement;
         }
     }
@@ -1706,11 +1706,11 @@
         }
         spot = spotById(fr.spotId) || null;
         snap = data.snapshots.find(x => x.id === fr.snapId) || (snap && snap.id === fr.snapId ? snap : null);
-        if (fr.view === 'spot' && !spot) return goHome();
-        if (fr.view === 'snap' && !snap) return back();
-        if (fr.view === 'place' && place) setTemp(place.lat, place.lon);
+        if (fr.view === 'spot' && !spot) {return goHome();}
+        if (fr.view === 'snap' && !snap) {return back();}
+        if (fr.view === 'place' && place) {setTemp(place.lat, place.lon);}
         go(fr.view, false);
-        if (fr.view === 'log' && f?.track) drawTrack(f.track);
+        if (fr.view === 'log' && f?.track) {drawTrack(f.track);}
     }
     function goHome() {
         hist = [];
@@ -1720,16 +1720,16 @@
         loadAllNow();
     }
     function openSpot(s: Spot, center = false, phonePanel = true) {
-        if (mapShown && mapShown !== s.id) clearPopup();
+        if (mapShown && mapShown !== s.id) {clearPopup();}
         spot = s;
         go('spot', true, phonePanel);
-        if (center) centerMap({ lat: s.lat, lon: s.lon, zoom: 10 });
+        if (center) {centerMap({ lat: s.lat, lon: s.lon, zoom: 10 });}
         checkMatch(s);
         loadNow(s);
     }
     const modelsLoading = new Set<string>();
     async function loadModels(s: Spot) {
-        if (modelsBySpot[s.id] || modelsLoading.has(s.id)) return;
+        if (modelsBySpot[s.id] || modelsLoading.has(s.id)) {return;}
         modelsLoading.add(s.id);
         const list = await availableModels(s.lat, s.lon);
         modelsBySpot = { ...modelsBySpot, [s.id]: list };
@@ -1755,12 +1755,12 @@
                     geo.getGPSlocation({ doNotShowFailureMessage: true, getMeFallbackGps: false, enableHighAccuracy: false, timeout: 7000, maximumAge: 120000 }),
                     new Promise<null>(res => setTimeout(() => res(null), 7500)),
                 ]);
-                if (p && typeof p.lat === 'number' && (p.source === 'gps' || p.source === 'last')) return { lat: p.lat, lon: p.lon };
+                if (p && typeof p.lat === 'number' && (p.source === 'gps' || p.source === 'last')) {return { lat: p.lat, lon: p.lon };}
             }
         } catch {
             /* try the browser below */
         }
-        if (!navigator.geolocation) return null;
+        if (!navigator.geolocation) {return null;}
         return new Promise(res =>
             navigator.geolocation.getCurrentPosition(
                 p => res({ lat: p.coords.latitude, lon: p.coords.longitude }),
@@ -1770,13 +1770,13 @@
         );
     }
     async function useMyLocation() {
-        if (locating) return;
+        if (locating) {return;}
         const what = pickFor;
         locating = true;
         locError = '';
         const c = await myPosition();
         locating = false;
-        if (view !== 'pick' || pickFor !== what) return;
+        if (view !== 'pick' || pickFor !== what) {return;}
         if (!c) {
             locError = w('pickMeError');
             return;
@@ -1787,9 +1787,9 @@
     }
     function actOn(what: PickFor, loc: Loc, s?: Spot) {
         waitingForMap = false;
-        if (what === 'snap') saveForecastAt({ lat: loc.lat, lon: loc.lon, spot: s || nearestWithin(loc.lat, loc.lon, 1)?.s });
-        else if (what === 'log') startLog(s ? { spot: s } : { lat: loc.lat, lon: loc.lon });
-        else startSpotForm(loc, null);
+        if (what === 'snap') {saveForecastAt({ lat: loc.lat, lon: loc.lon, spot: s || nearestWithin(loc.lat, loc.lon, 1)?.s });}
+        else if (what === 'log') {startLog(s ? { spot: s } : { lat: loc.lat, lon: loc.lon });}
+        else {startSpotForm(loc, null);}
     }
 
     /* ---------- spots ---------- */
@@ -1804,7 +1804,7 @@
         setTemp(loc.lat, loc.lon);
         if (isPin) {
             const n = await placeName(loc.lat, loc.lon);
-            if (sf && !sf.id && sf.lat === loc.lat && n) sf = { ...sf, place: n, name: sf.name || n };
+            if (sf && !sf.id && sf.lat === loc.lat && n) {sf = { ...sf, place: n, name: sf.name || n };}
         }
     }
     function editSpot(s: Spot) {
@@ -1816,13 +1816,13 @@
         go('spotForm');
     }
     function stepRange(k: 'dMin' | 'dMax', dir: number) {
-        if (!sf) return;
+        if (!sf) {return;}
         const st = windStep(S.wind);
-        if (k === 'dMin') sf = { ...sf, dMin: Math.max(0, Math.min(sf.dMax - st, sf.dMin + dir * st)) };
-        else sf = { ...sf, dMax: Math.max(sf.dMin + st, sf.dMax + dir * st) };
+        if (k === 'dMin') {sf = { ...sf, dMin: Math.max(0, Math.min(sf.dMax - st, sf.dMin + dir * st)) };}
+        else {sf = { ...sf, dMax: Math.max(sf.dMin + st, sf.dMax + dir * st) };}
     }
     function saveSpotForm() {
-        if (!sf || !sf.name.trim()) return;
+        if (!sf || !sf.name.trim()) {return;}
         const s: Spot = {
             id: sf.id || uid(), name: sf.name.trim(), place: sf.place, lat: sf.lat, lon: sf.lon, sports: sf.sports,
             dirs: sf.windUnknown ? [] : sf.dirs, min: Math.round(fromWind(sf.dMin, S.wind) * 10) / 10, max: Math.round(fromWind(sf.dMax, S.wind) * 10) / 10,
@@ -1837,7 +1837,7 @@
         if (isNew && sfReturn === 'log' && f) {
             f = { ...f, spotId: s.id, lat: f.lat ?? s.lat, lon: f.lon ?? s.lon };
             back();
-            if (!f.snapshotId) captureForLog();
+            if (!f.snapshotId) {captureForLog();}
             return;
         }
         if (isNew && sfReturn === 'snap' && snap) {
@@ -1857,7 +1857,7 @@
         checkMatch(s);
     }
     function deleteSpot(s: Spot) {
-        if (!arm('spot')) return;
+        if (!arm('spot')) {return;}
         const before = { spots: data.spots, sessions: data.sessions, snapshots: data.snapshots };
         data.spots = data.spots.filter(x => x.id !== s.id);
         data.sessions = data.sessions.filter(x => x.spotId !== s.id);
@@ -1870,7 +1870,7 @@
         });
     }
     function applySuggestion() {
-        if (!spot || !suggestion) return;
+        if (!spot || !suggestion) {return;}
         const s: Spot = { ...spot, dirs: suggestion.dirs, min: suggestion.min, max: suggestion.max, windUnknown: false };
         data.spots = data.spots.map(x => (x.id === s.id ? s : x));
         spot = s;
@@ -1889,9 +1889,9 @@
         const list = modelsToSave(st);
         const primary = list.includes('ecmwf') ? 'ecmwf' : list[0];
         const day = await captureDay(lat, lon, from ?? Date.now(), primary, list, st.layers);
-        if (!day || !day.models.length) throw new Error(NO_DAY);
+        if (!day || !day.models.length) {throw new Error(NO_DAY);}
         let { models, waves } = day;
-        if (focus !== undefined && covers(day.series, focus)) ({ models, waves } = seriesAt(day.series, focus));
+        if (focus !== undefined && covers(day.series, focus)) {({ models, waves } = seriesAt(day.series, focus));}
         return {
             id: uid(), spotId, lat, lon, ts: models[0]?.ts ?? day.models[0].ts, savedAt: Date.now(), primary: day.primary,
             models, waves, series: day.series,
@@ -1899,7 +1899,7 @@
     }
     /** a forecast for this spot that no session uses yet (there is only one of those per spot) */
     function pendingFor(spotId: string | null, except?: string): Snapshot | null {
-        if (!spotId) return null;
+        if (!spotId) {return null;}
         const used = new Set(data.sessions.map(se => se.snapshotId));
         return data.snapshots.filter(x => x.spotId === spotId && x.id !== except && !used.has(x.id)).sort((a, b) => b.savedAt - a.savedAt)[0] || null;
     }
@@ -1908,7 +1908,7 @@
         capturing = true;
         try {
             const sn = await capture(t.lat, t.lon, t.spot?.id ?? null);
-            if (view === 'pick') view = 'home'; // don't come back to the picker
+            if (view === 'pick') {view = 'home';} // don't come back to the picker
             snapDraft = true;
             snap = sn;
             snapNote = '';
@@ -1925,7 +1925,7 @@
     function removeSnap(id: string) {
         data.snapshots = data.snapshots.filter(x => x.id !== id);
         persist();
-        if (view === 'snap' && snap?.id === id) back();
+        if (view === 'snap' && snap?.id === id) {back();}
     }
     function deleteSnap(sn: Snapshot) {
         removeSnap(sn.id);
@@ -1935,7 +1935,7 @@
         });
     }
     function confirmSnap(replace: boolean) {
-        if (!snap || !snapDraft) return;
+        if (!snap || !snapDraft) {return;}
         const old = pendingFor(snap.spotId, snap.id);
         if (old && !replace) {
             replaceOf = old; // ask first
@@ -1963,7 +1963,7 @@
         markSnapPlace(sn);
     }
     function updateSnap(patch: Partial<Snapshot>) {
-        if (!snap) return;
+        if (!snap) {return;}
         const n: Snapshot = { ...snap, ...patch };
         if (snapDraft) {
             snap = n; // not stored yet
@@ -1975,14 +1975,14 @@
     }
     /** A forecast at one of your spots is shown by that spot's own pin; only a forecast without a spot gets the temporary marker */
     function markSnapPlace(sn: Snapshot) {
-        if (sn.spotId && spotById(sn.spotId)) clearTemp();
-        else setTemp(sn.lat, sn.lon);
+        if (sn.spotId && spotById(sn.spotId)) {clearTemp();}
+        else {setTemp(sn.lat, sn.lon);}
     }
     function linkSnap(spotId: string | null) {
         updateSnap({ spotId });
         replaceOf = null;
-        if (snap) markSnapPlace(snap);
-        if (spotId) showToast(tr('toastLinked', { spot: spotById(spotId)?.name || '' }));
+        if (snap) {markSnapPlace(snap);}
+        if (spotId) {showToast(tr('toastLinked', { spot: spotById(spotId)?.name || '' }));}
     }
     function saveSnapNote() {
         updateSnap({ note: snapNote.trim() });
@@ -2011,7 +2011,7 @@
             // the forecast you saved for this spot, when it covers today
             const today = new Date().toDateString();
             const pend = pendingFor(o.spot.id);
-            if (pend && (covers(pend.series, Date.now()) || new Date(pend.ts).toDateString() === today)) nf.snapshotId = pend.id;
+            if (pend && (covers(pend.series, Date.now()) || new Date(pend.ts).toDateString() === today)) {nf.snapshotId = pend.id;}
         } else if (o.lat !== undefined) {
             nf.lat = o.lat;
             nf.lon = o.lon;
@@ -2021,18 +2021,18 @@
         const p = sn ? primaryOf(sn) : null;
         nf.felt = p?.wind != null ? roundToStep(toWind(p.wind, S.wind)) : null;
         f = nf;
-        if (view === 'pick') view = 'home';
+        if (view === 'pick') {view = 'home';}
         go('log');
-        if (nf.lat !== undefined && !nf.spotId) setTemp(nf.lat, nf.lon ?? 0);
+        if (nf.lat !== undefined && !nf.spotId) {setTemp(nf.lat, nf.lon ?? 0);}
         captureError = '';
-        if (!nf.snapshotId && nf.lat !== undefined) captureForLog();
+        if (!nf.snapshotId && nf.lat !== undefined) {captureForLog();}
     }
     /**
      * Saves the forecast for the session's day (at the session time if it is set, otherwise now).
      * A snapshot this log created itself is replaced; a forecast you saved on purpose is kept and just unlinked.
      */
-    async function captureForLog(force = false) {
-        if (!f || f.lat === undefined) return;
+    async function captureForLog() {
+        if (!f || f.lat === undefined) {return;}
         const focus = sessionFocus(f) ?? (f.dateStr === dateStrOf(Date.now()) ? Date.now() : new Date(`${f.dateStr}T12:00`).getTime());
         capturing = true;
         captureError = '';
@@ -2065,14 +2065,14 @@
     function scheduleRecapture(..._deps: unknown[]) {
         clearTimeout(recaptureTimer);
         recaptureTimer = setTimeout(() => {
-            if (view !== 'log' || !f || f.lat === undefined || capturing) return;
+            if (view !== 'log' || !f || f.lat === undefined || capturing) {return;}
             const sn = data.snapshots.find(x => x.id === f?.snapshotId);
             const focus = sessionFocus(f);
             const day = focus ?? new Date(`${f.dateStr}T12:00`).getTime();
             const auto = !!f.autoSnap && f.autoSnap === f.snapshotId;
-            if (captureError && captureErrorDay !== f.dateStr) captureError = '';
-            if (!sn && !f.id && !captureError) captureForLog();
-            else if (sn && auto && (dateStrOf(sn.ts) !== dateStrOf(day) || (focus !== null && !!sn.series && !covers(sn.series, focus)))) captureForLog(true);
+            if (captureError && captureErrorDay !== f.dateStr) {captureError = '';}
+            if (!sn && !f.id && !captureError) {captureForLog();}
+            else if (sn && auto && (dateStrOf(sn.ts) !== dateStrOf(day) || (focus !== null && !!sn.series && !covers(sn.series, focus)))) {captureForLog();}
         }, 500);
     }
     function openSession(se: Session) {
@@ -2086,30 +2086,30 @@
             start: se.start, end: se.end, notes: se.notes, track: se.track || null,
         };
         go('log');
-        if (f.track) drawTrack(f.track, true);
-        else if (sp) centerMap({ lat: sp.lat, lon: sp.lon, zoom: 10 });
+        if (f.track) {drawTrack(f.track, true);}
+        else if (sp) {centerMap({ lat: sp.lat, lon: sp.lon, zoom: 10 });}
     }
     function assignSpot(s: Spot) {
-        if (!f) return;
+        if (!f) {return;}
         f = { ...f, spotId: s.id, lat: f.lat ?? s.lat, lon: f.lon ?? s.lon };
         clearTemp();
         drawSpotMarkers();
-        if (!f.snapshotId) captureForLog();
+        if (!f.snapshotId) {captureForLog();}
     }
     function newSpotFromLog() {
-        if (!f) return;
+        if (!f) {return;}
         const loc = f.lat !== undefined ? { lat: f.lat, lon: f.lon ?? 0 } : f.track?.points[0] ? { lat: f.track.points[0][0], lon: f.track.points[0][1] } : centre();
         startSpotForm(loc, 'log');
     }
     function saveSession() {
-        if (!f) return;
+        if (!f) {return;}
         const sn = data.snapshots.find(x => x.id === f?.snapshotId);
         let date: number;
-        if (f.start) date = new Date(`${f.dateStr}T${f.start}`).getTime();
-        else if (sn && dateStrOf(sn.ts) === f.dateStr) date = sn.ts;
-        else if (f.track?.start && dateStrOf(f.track.start) === f.dateStr) date = f.track.start;
-        else date = new Date(`${f.dateStr}T12:00`).getTime();
-        if (!isFinite(date)) date = Date.now();
+        if (f.start) {date = new Date(`${f.dateStr}T${f.start}`).getTime();}
+        else if (sn && dateStrOf(sn.ts) === f.dateStr) {date = sn.ts;}
+        else if (f.track?.start && dateStrOf(f.track.start) === f.dateStr) {date = f.track.start;}
+        else {date = new Date(`${f.dateStr}T12:00`).getTime();}
+        if (!isFinite(date)) {date = Date.now();}
         const se: Session = {
             id: f.id || uid(), spotId: f.spotId, lat: f.lat, lon: f.lon, snapshotId: f.snapshotId, date, rating: f.rating,
             felt: f.felt === null ? null : Math.round(fromWind(f.felt, S.wind) * 10) / 10,
@@ -2148,7 +2148,7 @@
     function deleteSession(se: Session, leave = false) {
         data.sessions = data.sessions.filter(x => x.id !== se.id);
         persist();
-        if (leave) back();
+        if (leave) {back();}
         showToast(w('toastSessDeleted'), () => {
             data.sessions = [...data.sessions, se];
             persist();
@@ -2158,17 +2158,17 @@
         const input = e.target as HTMLInputElement;
         const file = input.files?.[0];
         input.value = '';
-        if (!file || !f) return;
+        if (!file || !f) {return;}
         trackError = '';
         try {
             const t = await readTrack(file);
-            if (!f) return;
+            if (!f) {return;}
             const nf: LogForm = { ...f, track: t };
             if (t.start) {
                 nf.dateStr = dateStrOf(t.start);
-                if (!nf.start) nf.start = hhmmOf(t.start);
+                if (!nf.start) {nf.start = hhmmOf(t.start);}
             }
-            if (t.end && !nf.end) nf.end = hhmmOf(t.end + 4 * 60e3);
+            if (t.end && !nf.end) {nf.end = hhmmOf(t.end + 4 * 60e3);}
             if (nf.lat === undefined && t.points[0]) {
                 nf.lat = t.points[0][0];
                 nf.lon = t.points[0][1];
@@ -2182,20 +2182,20 @@
         }
     }
     function removeTrack() {
-        if (!f) return;
+        if (!f) {return;}
         f = { ...f, track: null };
         drawTrack(null);
     }
 
     /* ---------- gear ---------- */
     function addGear() {
-        if (!gearName.trim()) return;
+        if (!gearName.trim()) {return;}
         data.gear = [...data.gear, { id: uid(), name: gearName.trim(), kind: gearKind, sport: gearSport }];
         gearName = '';
         persist();
     }
     function saveTypedGear() {
-        if (!f || !f.gear.trim()) return;
+        if (!f || !f.gear.trim()) {return;}
         const sport = (spotById(f.spotId)?.sports || []).find(x => GEAR_SPORTS.includes(x));
         const g: Gear = { id: uid(), name: f.gear.trim(), kind: 'Other', sport };
         data.gear = [...data.gear, g];
@@ -2207,14 +2207,14 @@
         const g = data.gear.find(x => x.id === id);
         data.gear = data.gear.filter(x => x.id !== id);
         persist();
-        if (g) showToast(tr('toastGearRemoved', { name: g.name }), () => { data.gear = [...data.gear, g]; persist(); });
+        if (g) {showToast(tr('toastGearRemoved', { name: g.name }), () => { data.gear = [...data.gear, g]; persist(); });}
     }
 
     /* ---------- conditions + matches ---------- */
     async function loadNow(s: Spot, model = 'ecmwf'): Promise<Now | null> {
         const k = nowKey(s.id, model);
         const cur = nowBySpot[k];
-        if (cur && cur !== 'loading') return cur;
+        if (cur && cur !== 'loading') {return cur;}
         nowBySpot = { ...nowBySpot, [k]: 'loading' };
         const n = await conditionsNow(s.lat, s.lon, model);
         nowBySpot = { ...nowBySpot, [k]: n };
@@ -2224,7 +2224,7 @@
         data.spots.forEach(s => loadNow(s));
     }
     async function checkMatch(s: Spot) {
-        if (matches[s.id] !== undefined) return;
+        if (matches[s.id] !== undefined) {return;}
         matches = { ...matches, [s.id]: 'loading' };
         const m = await nextMatch(s);
         matches = { ...matches, [s.id]: m };
@@ -2232,7 +2232,7 @@
 
     /* ---------- data ---------- */
     function clearAll() {
-        if (!arm('all')) return;
+        if (!arm('all')) {return;}
         const before = data;
         data = { ...emptyData(), settings: data.settings };
         persist();
@@ -2253,14 +2253,14 @@
      */
     const painted: { el: HTMLElement; bg: string }[] = [];
     function paintPane() {
-        if (!isMobile || !root) return;
+        if (!isMobile || !root) {return;}
         try {
             const r = root.getBoundingClientRect();
             let el = root.parentElement;
             for (let i = 0; el && i < 4 && el !== document.body && el !== document.documentElement; i++, el = el.parentElement) {
                 const b = el.getBoundingClientRect();
                 // stop at anything much bigger than the pane (the whole app)
-                if (b.height > r.height + 120 || b.top < r.top - 80) break;
+                if (b.height > r.height + 120 || b.top < r.top - 80) {break;}
                 painted.push({ el, bg: el.style.background });
                 el.style.background = 'var(--sl-ground, #2e2e2e)';
             }
@@ -2279,54 +2279,54 @@
      */
     function designHook() {
         const win = window as unknown as { __spotlogDesignHost?: { ready?: () => void }; __spotlogDesign?: unknown };
-        if (!win.__spotlogDesignHost) return;
+        if (!win.__spotlogDesignHost) {return;}
         const T = THEME as unknown as Record<string, unknown>;
         win.__spotlogDesign = {
             apply(d: { tokens?: Record<string, unknown>; words?: Record<string, string> }) {
                 if (d.tokens) {
-                    for (const [k, v] of Object.entries(d.tokens)) if (k in T && typeof v === typeof T[k]) T[k] = v;
+                    for (const [k, v] of Object.entries(d.tokens)) {if (k in T && typeof v === typeof T[k]) {T[k] = v;}}
                     const st = document.getElementById('spotlog-theme');
-                    if (st) st.textContent = themeCss();
+                    if (st) {st.textContent = themeCss();}
                     onMapZoom();
                     drawSpotMarkers();
-                    if (view === 'log' && f?.track) drawTrack(f.track);
+                    if (view === 'log' && f?.track) {drawTrack(f.track);}
                 }
-                if (d.words) setWords(d.words);
+                if (d.words) {setWords(d.words);}
                 if (popup && mapShown) {
                     const sp = spotById(mapShown);
-                    if (sp) popup.setContent(popupHtml(sp, nowOf(sp.id)));
+                    if (sp) {popup.setContent(popupHtml(sp, nowOf(sp.id)));}
                 }
                 data = data;
             },
             goto(where: string) {
                 const s0 = data.spots[0];
                 waitingForMap = false;
-                if (where !== 'card') clearPopup();
+                if (where !== 'card') {clearPopup();}
                 if (['spots', 'sessions', 'gear', 'about'].includes(where)) {
                     goHome();
                     tab = asTab(where);
-                    if (barMode) openTab(tab);
+                    if (barMode) {openTab(tab);}
                 } else if (where === 'home') {
                     goHome();
                     tab = 'spots';
                     modalOpen = false;
                 } else if (where === 'units') {
                     goHome();
-                    if (barMode) openUnits(true);
-                    else showUnits = true;
-                } else if (where === 'pick') startPick('snap');
-                else if (where === 'spot' && s0) openSpot(s0, true);
-                else if (where === 'spotForm' && s0) editSpot(s0);
-                else if (where === 'snap' && data.snapshots[0]) openSnap(data.snapshots[0]);
-                else if (where === 'log' && s0) startLog({ spot: s0 });
+                    if (barMode) {openUnits(true);}
+                    else {showUnits = true;}
+                } else if (where === 'pick') {startPick('snap');}
+                else if (where === 'spot' && s0) {openSpot(s0, true);}
+                else if (where === 'spotForm' && s0) {editSpot(s0);}
+                else if (where === 'snap' && data.snapshots[0]) {openSnap(data.snapshots[0]);}
+                else if (where === 'log' && s0) {startLog({ spot: s0 });}
                 else if (where === 'session') {
                     const se = data.sessions.find(x => x.track) || data.sessions[0];
-                    if (se) openSession(se);
+                    if (se) {openSession(se);}
                 } else if (where === 'card' && s0) {
-                    if (barMode) spotOnMap(s0);
+                    if (barMode) {spotOnMap(s0);}
                     else {
                         openSpot(s0, false);
-                        if (mapShown !== s0.id) toggleShowOnMap(s0);
+                        if (mapShown !== s0.id) {toggleShowOnMap(s0);}
                     }
                 }
             },
@@ -2372,7 +2372,7 @@
         mapReady = true;
         drawSpotMarkers();
         loadAllNow();
-        if (wUser) syncNow();
+        if (wUser) {syncNow();}
     });
 
     onDestroy(() => {
@@ -2389,9 +2389,9 @@
             /* no map events */
         }
         window.removeEventListener('storage', onStorage);
-        if (tsListener !== null) store.off(tsListener);
-        if (userListener !== null) store.off(userListener);
-        if (subsListener !== null) store.off(subsListener);
+        if (tsListener !== null) {store.off(tsListener);}
+        if (userListener !== null) {store.off(userListener);}
+        if (subsListener !== null) {store.off(subsListener);}
         spotMarkers.forEach(m => m.remove());
         clearTemp();
         clearPopup();

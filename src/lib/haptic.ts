@@ -8,14 +8,14 @@ let last = 0;
 
 export function haptic(): void {
     const now = Date.now();
-    if (now - last < 30) return; // fast flicks: not a buzz
+    if (now - last < 30) {return;} // fast flicks: not a buzz
     last = now;
     try {
         if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
             navigator.vibrate(8);
             return;
         }
-        if (typeof document === 'undefined') return;
+        if (typeof document === 'undefined') {return;}
         if (!label || !label.isConnected) {
             label = document.createElement('label');
             label.setAttribute('aria-hidden', 'true');

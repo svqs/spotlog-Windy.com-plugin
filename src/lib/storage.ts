@@ -6,7 +6,7 @@ let activeKey = KEY;
 export const storageKey = (): string => activeKey;
 export const useWindyUser = (id: number | string | null | undefined): void => {
     activeKey = id ? `${KEY}:u${id}` : KEY;
-    if (!id) return;
+    if (!id) {return;}
     try {
         // first time for this Windy account: take over a diary made before accounts were linked
         const legacy = localStorage.getItem(KEY);
@@ -51,8 +51,8 @@ const withId = (x: Any) => isObj(x) && typeof x.id === 'string' && x.id.length <
 const DIR8 = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 
 const cleanSpot = (s: Any) => {
-    const la = lat(s.lat), lo = lon(s.lon);
-    if (la === null || lo === null) return null;
+    const la = lat(s.lat); const lo = lon(s.lon);
+    if (la === null || lo === null) {return null;}
     return {
         id: s.id, name: str(s.name, 80) || 'Spot', lat: la, lon: lo, place: str(s.place, 120),
         sports: ids(s.sports).map(x => x.slice(0, 20)).slice(0, 8),
@@ -61,13 +61,13 @@ const cleanSpot = (s: Any) => {
     };
 };
 const cleanSnap = (s: Any) => {
-    const la = lat(s.lat), lo = lon(s.lon);
-    if (la === null || lo === null || !Array.isArray(s.models)) return null;
+    const la = lat(s.lat); const lo = lon(s.lon);
+    if (la === null || lo === null || !Array.isArray(s.models)) {return null;}
     return { ...s, spotId: typeof s.spotId === 'string' ? s.spotId : null, lat: la, lon: lo, ts: numOr(s.ts, 0), savedAt: numOr(s.savedAt, 0),
         primary: str(s.primary, 30), note: str(s.note, 2000), models: s.models.filter(isObj).slice(0, 12) };
 };
 const cleanTrack = (t: Any) => {
-    if (!isObj(t) || !Array.isArray(t.points)) return null;
+    if (!isObj(t) || !Array.isArray(t.points)) {return null;}
     const points = t.points.filter((p: Any) => Array.isArray(p) && lat(p[0]) !== null && lon(p[1]) !== null).slice(0, 2000);
     return { points, start: numOr(t.start, null), end: numOr(t.end, null), distanceKm: numOr(t.distanceKm, 0), durationMin: numOr(t.durationMin, 0),
         maxSpeed: numOr(t.maxSpeed, null), source: str(t.source, 120) };
@@ -86,9 +86,9 @@ const list = <T>(x: Any, fn: (v: Any) => T | null, max: number): T[] =>
 
 export const normalise = (parsed: Any): SpotlogData => {
     const settings = { ...defaultSettings(), ...(isObj(parsed?.settings) ? parsed.settings : {}) };
-    if (!['ms', 'kt', 'kmh', 'mph', 'bft'].includes(settings.wind)) settings.wind = 'ms';
-    if (!['m', 'ft'].includes(settings.height)) settings.height = 'm';
-    if (!['C', 'F'].includes(settings.temp)) settings.temp = 'C';
+    if (!['ms', 'kt', 'kmh', 'mph', 'bft'].includes(settings.wind)) {settings.wind = 'ms';}
+    if (!['m', 'ft'].includes(settings.height)) {settings.height = 'm';}
+    if (!['C', 'F'].includes(settings.temp)) {settings.temp = 'C';}
     settings.layers = ids(settings.layers);
     settings.allModels = settings.allModels !== false;
     settings.mapSpots = settings.mapSpots !== false;
@@ -99,7 +99,7 @@ export const normalise = (parsed: Any): SpotlogData => {
     const deleted: Record<string, number> = {};
     if (isObj(parsed?.deleted)) {
         const cut = Date.now() - 90 * 864e5;
-        Object.entries(parsed.deleted).forEach(([k, v]) => { if (typeof v === 'number' && v > cut && k.length <= 80) deleted[k] = v; });
+        Object.entries(parsed.deleted).forEach(([k, v]) => { if (typeof v === 'number' && v > cut && k.length <= 80) {deleted[k] = v;} });
     }
     return {
         version: 1,
@@ -177,7 +177,7 @@ export const MAX_IMPORT_MB = 25;
 
 /** Merges an exported JSON file into the current data (items with the same id are replaced; imported items are "undeleted") */
 export const importJson = async (file: File, current: SpotlogData): Promise<SpotlogData> => {
-    if (file.size > MAX_IMPORT_MB * 1024 * 1024) throw new Error(`That file is larger than ${MAX_IMPORT_MB} MB`);
+    if (file.size > MAX_IMPORT_MB * 1024 * 1024) {throw new Error(`That file is larger than ${MAX_IMPORT_MB} MB`);}
     const incoming = normalise(JSON.parse(await file.text()));
     const merge = <T extends { id: string }>(a: T[], b: T[]): T[] => {
         const map = new Map(a.map(x => [x.id, x]));
