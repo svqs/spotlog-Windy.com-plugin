@@ -43,6 +43,7 @@ with sync_playwright() as p:
     # someone new: a short welcome first, once
     pg.wait_for_selector('.welcome .btn.primary:has-text("Let\'s start")')
     assert pg.locator('.welcome .beta').count() == 1
+    assert pg.locator('.welcome label:has-text("Have a copy? Upload it") input[type=file]').count() == 1
     shot('00-welcome')
     pg.click('.welcome .btn.primary')
     pg.wait_for_selector('.head .back-menu')
@@ -150,6 +151,10 @@ with sync_playwright() as p:
     ok('felt ruler works with arrow keys')
     pg.click('.chip:has-text("Gusty") >> nth=0')
     pg.click('.chip:has-text("Chop")')
+    pg.click('.chip:has-text("High")')
+    pg.click('.chip:has-text("Rising")')
+    pg.click('.chip:has-text("Mid")')  # one tide level at a time
+    assert pg.locator('.chip.on:has-text("Mid")').count() == 1 and pg.locator('.chip.on:has-text("High")').count() == 0
     pg.fill('input[placeholder^="e.g. Sail"]', 'Sail 5.3')
     pg.click('text=Save to gear')
     pg.wait_for_selector('.chip.on:has-text("Sail 5.3")')
@@ -195,7 +200,10 @@ with sync_playwright() as p:
     pg.wait_for_selector('text=Sessions here')
     se = stored(pg)['sessions'][0]
     assert se['rating'] == 5 and se['track'] and se['gearIds'], se
-    ok('session saved with rating, felt, gear and track')
+    assert se['tide'] == 'Mid' and se['tideMove'] == 'Rising', se
+    ok('session saved with rating, felt, gear, tide and track')
+    pg.wait_for_selector('.today:has-text("Best today")')
+    ok('spot page: "Best today" with the window and what the guess is based on: ' + pg.locator('.today').inner_text().replace('\n', ' '))
     sd = stored(pg)
     sn = next(x for x in sd['snapshots'] if x['id'] == se['snapshotId'])
     import datetime as _dt
@@ -384,6 +392,29 @@ with sync_playwright() as p:
     pg.wait_for_selector('.toast:has-text("isn")')
     assert len(stored(pg)['spots']) == n_spots + 1, 'a wrong file changes nothing'
     ok('upload a copy: adds the spots and sessions from it; a wrong file is refused with a clear message')
+    # the bug from the beta: download, delete everything, upload again (a diary from before 0.11 has no welcome mark)
+    key = pg.evaluate("Object.keys(localStorage).find(k => k.startsWith('windy-plugin-spotlog:v1'))")
+    pg.evaluate("k => { const d = JSON.parse(localStorage.getItem(k)); delete d.settings.welcomed; localStorage.setItem(k, JSON.stringify(d)); }", key)
+    pg.reload()
+    pg.wait_for_selector('.spotlog')
+    assert pg.locator('.welcome').count() == 0, 'someone with a diary is not new'
+    pg.click('.tabs button:has-text("How it works")')
+    with pg.expect_download() as dl:
+        pg.click('.beta-card .btn:has-text("Download")')
+    copy_path = dl.value.path()
+    full = stored(pg)
+    pg.click('.link.danger')
+    pg.click('.link.danger')
+    pg.wait_for_selector('.toast:has-text("All data deleted")')
+    assert len(stored(pg)['spots']) == 0 and pg.locator('.welcome').count() == 0, 'after deleting, How it works stays (no welcome)'
+    pg.set_input_files('.beta-card input[type=file]', copy_path)
+    pg.wait_for_selector('.toast:has-text("Copy uploaded")')
+    back = stored(pg)
+    assert len(back['spots']) == len(full['spots']) and len(back['sessions']) == len(full['sessions']) and not back.get('deleted'), (len(back['spots']), len(full['spots']))
+    pg.reload()
+    pg.wait_for_selector('.spotlog')
+    assert len(stored(pg)['sessions']) == len(full['sessions'])
+    ok(f'download, delete everything, upload: all {len(full["spots"])} spots and {len(full["sessions"])} sessions come back (and stay after a reload)')
 
     # --- two Windy tabs open at once must not overwrite each other
     pg2 = ctx.new_page()
@@ -453,8 +484,10 @@ with sync_playwright() as p:
     pg.click('.maptog:has-text("Sessions on the map")')
     assert pg.locator('.spotlog-heat').count() > h0 and pg.locator('.spotlog-pin').count() == n_pins
     ok('hover a glow for dates and ratings; switches hide/show spots and sessions')
-    assert pg.locator('.tile .tag.ghost:has-text("Rating soon")').count() >= 1
-    ok('tiles without enough sessions say "Rating soon"')
+    tags = pg.locator('.tile .t-tag').all_inner_texts()
+    assert tags and all(t.startswith('Likely') or t == 'Not sure yet' for t in tags), tags
+    assert pg.locator('text=/Probably (flat|meh)/').count() == 0
+    ok('tiles show the best stretch of today ("Likely great · 18:00") or "Not sure yet", never a negative guess: ' + ' | '.join(tags))
     pg.mouse.click(280, 585)
     pg.wait_for_selector('.act:has-text("Add spot")')
     pg.wait_for_selector('.snap .cells', timeout=8000)

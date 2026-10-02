@@ -2,11 +2,13 @@ import { getPointForecastData } from '@windy/fetch';
 
 import { dirMatches } from './wind';
 import type { ModelValue, WaveValue, Spot, DaySeries } from './types';
+import type { Hour } from './predict';
 
 /** Global models that exist almost everywhere, plus regional ones that fail gracefully outside their area */
 export const SNAPSHOT_MODELS = ['ecmwf', 'gfs', 'icon', 'iconEu', 'arome'];
 export const WAVE_MODELS = ['ecmwfWaves', 'gfsWaves'];
 
+const HOUR = 3600e3;
 const num = (v: unknown): number | null => (typeof v === 'number' && isFinite(v) ? v : null);
 
 const nearestIndex = (tsList: number[], ts: number): number => {
@@ -84,6 +86,33 @@ export const conditionsNow = async (lat: number, lon: number, model = 'ecmwf'): 
     return { wind, waves };
 };
 
+/**
+ * The rest of today, hour by hour (as the model gives it: 1- or 3-hourly), with waves where the sea has them.
+ * Daylight comes from Windy (isDay) when it sends it, else 6:00–21:00.
+ */
+export const hoursToday = async (lat: number, lon: number, model = 'ecmwf'): Promise<Hour[]> => {
+    const [d, wd] = await Promise.all([fetchData(model, lat, lon), fetchData(WAVE_MODELS[0], lat, lon)]);
+    if (!d || !Array.isArray(d.ts)) {return [];}
+    const now = Date.now();
+    const end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+    const waveTs: number[] = wd && Array.isArray(wd.ts) && Array.isArray(wd.waves) ? wd.ts : [];
+    const out: Hour[] = [];
+    for (let i = 0; i < d.ts.length; i++) {
+        const ts = d.ts[i];
+        if (ts < now - 3 * HOUR || ts > end.getTime()) {continue;}
+        const h = new Date(ts).getHours();
+        const day = Array.isArray(d.isDay) ? !!d.isDay[i] : h >= 6 && h <= 21;
+        let waves: number | null = null;
+        if (waveTs.length) {
+            const j = nearestIndex(waveTs, ts);
+            if (Math.abs(waveTs[j] - ts) <= 2 * HOUR) {waves = num(wd.waves[j]);}
+        }
+        out.push({ ts, wind: num(d.wind?.[i]), gust: num(d.windGust?.[i]), dir: num(d.windDir?.[i]), waves, day });
+    }
+    return out;
+};
+
 /** Collects every model (in parallel) for one place and time */
 export const captureModels = async (lat: number, lon: number, ts: number, primary: string, allModels: boolean): Promise<ModelValue[]> => {
     const list = allModels ? Array.from(new Set([primary, ...SNAPSHOT_MODELS])) : [primary];
@@ -158,8 +187,6 @@ export const dayWindow = (ts: number): [number, number] => {
     a.setMinutes(0, 0, 0);
     return [a.getTime(), a.getTime() + 24 * 3600e3];
 };
-
-const HOUR = 3600e3;
 
 /** Does the saved day cover this time (with an hour of slack at the ends)? */
 export const covers = (series: DaySeries | undefined | null, ts: number): boolean =>

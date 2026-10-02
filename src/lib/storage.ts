@@ -59,6 +59,7 @@ const cleanSpot = (s: Any) => {
         sports: ids(s.sports).map(x => x.slice(0, 20)).slice(0, 8),
         dirs: ids(s.dirs).filter(d => DIR8.includes(d)),
         min: numOr(s.min, 6), max: numOr(s.max, 12), windUnknown: !!s.windUnknown, created: numOr(s.created, Date.now()),
+        ...(typeof s.tuned === 'number' ? { tuned: s.tuned } : {}),
     };
 };
 const cleanSnap = (s: Any) => {
@@ -77,7 +78,8 @@ const cleanSession = (s: Any) => ({
     id: s.id, spotId: typeof s.spotId === 'string' ? s.spotId : null, lat: lat(s.lat) ?? undefined, lon: lon(s.lon) ?? undefined,
     snapshotId: typeof s.snapshotId === 'string' ? s.snapshotId : null, date: numOr(s.date, Date.now()),
     rating: Math.max(1, Math.min(5, Math.round(numOr(s.rating, 3) as number))), felt: numOr(s.felt, null),
-    gusts: str(s.gusts, 30) || null, water: str(s.water, 30) || null, gearIds: ids(s.gearIds), gear: str(s.gear, 300),
+    gusts: str(s.gusts, 30) || null, water: str(s.water, 30) || null,
+    tide: ['Low', 'Mid', 'High'].includes(s.tide) ? s.tide : null, tideMove: ['Rising', 'Falling'].includes(s.tideMove) ? s.tideMove : null, gearIds: ids(s.gearIds), gear: str(s.gear, 300),
     start: /^\d\d:\d\d$/.test(s.start) ? s.start : '', end: /^\d\d:\d\d$/.test(s.end) ? s.end : '', notes: str(s.notes, 5000),
     track: cleanTrack(s.track), tz: str(s.tz, 60) || undefined,
 });
@@ -96,7 +98,8 @@ export const normalise = (parsed: Any): SpotlogData => {
     settings.mapSessions = settings.mapSessions !== false;
     settings.spotView = settings.spotView === 'list' ? 'list' : 'tiles';
     settings.phoneSheet = settings.phoneSheet === true;
-    settings.welcomed = settings.welcomed === true;
+    // the welcome is for someone new: a diary with anything in it has met spotlog already (diaries from before 0.11 had no mark)
+    settings.welcomed = settings.welcomed === true || ['spots', 'sessions', 'snapshots', 'gear'].some(k => Array.isArray(parsed?.[k]) && parsed[k].length > 0);
     settings.models = ids(settings.models).length ? ids(settings.models) : ['ecmwf'];
     const deleted: Record<string, number> = {};
     if (isObj(parsed?.deleted)) {

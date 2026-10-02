@@ -1,6 +1,6 @@
 {
     "name": "windy-plugin-spotlog",
-    "version": "0.11.0",
+    "version": "0.12.0",
     "description": "Spotlog: session diary for Windy",
     "main": "dist/plugin.min.js",
     "type": "module",
@@ -14,7 +14,10 @@
         "check-words": "python3 scripts/check-words.py",
         "lint": "eslint --ext .ts,.svelte src",
         "publish:windy": "./scripts/publish.sh",
-        "test:e2e": "python3 harness/e2e.py /tmp"
+        "test:e2e": "python3 harness/e2e.py /tmp",
+        "test:predict": "node scripts/test-predict.mjs",
+        "check": "npm run lint && python3 scripts/check-words.py && node scripts/test-predict.mjs && npm run build",
+        "test:scenarios": "python3 harness/scenarios.py /tmp"
     },
     "author": "Sophia Stoltz",
     "license": "ISC",

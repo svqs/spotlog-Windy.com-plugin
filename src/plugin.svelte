@@ -68,6 +68,7 @@
         <p class="p">{@html rich(W.welcomeText)}</p>
         <button class="btn primary wide" on:click={ finishWelcome }>{ W.welcomeStart }</button>
         <button class="link" on:click={ () => { finishWelcome(); openHowItWorks(); } }>{ W.welcomeHow }</button>
+        <label class="link">{ W.welcomeUpload }<input type="file" accept=".json,application/json" on:change={ e => { finishWelcome(); onUpload(e); } } hidden /></label>
     </div>
 {:else}
 
@@ -166,10 +167,10 @@
                             <span class="now"><small>{ W.tileLoading }</small></span>
                         {/if}
                         <span class="t-tag">
-                            {#if predOf(s) !== null}
-                                <span class="tag" style="background: { guessColours(predOf(s) ?? 3)[0] }; color: { guessColours(predOf(s) ?? 3)[1] }">{ guessLbl(predOf(s) ?? 3) }</span>
+                            {#if bestOf(s)}
+                                <span class="tag" style="background: { guessCol(bestOf(s)?.rating ?? null)[0] }; color: { guessCol(bestOf(s)?.rating ?? null)[1] }" title={ guessNote(bestOf(s), s) }>{ bestTag(bestOf(s) ?? NO_BEST) }</span>
                             {:else}
-                                <span class="tag ghost" title={ ratingHint(s) }>{ W.ratingSoon }</span>
+                                <span class="tag ghost" title={ guessNote(guessOf(s), s) || ratingHint(s) }>{ W.guessUnsure }</span>
                             {/if}
                         </span>
                     </button>
@@ -404,10 +405,10 @@
         waves={ spotNow?.waves ?? null }
         loading={ !spotNow }
         u={ S }
-        badge={ spotPred !== null ? guessLbl(spotPred) : ratingHint(spot) }
-        badgeNote={ spotPred !== null ? fill(W.badgeFrom, { n: samplesFor(spot, data.sessions, data.snapshots).length }) : '' }
-        badgeBg={ spotPred !== null ? guessColours(spotPred)[0] : 'var(--sl-dirTile, #e9e8e3)' }
-        badgeFg={ spotPred !== null ? guessColours(spotPred)[1] : 'var(--sl-lightSub, #6b6b6b)' }
+        badge={ spotGuess ? guessLbl(spotPred) : '' }
+        badgeNote={ guessNote(spotGuess, spot) }
+        badgeBg={ guessCol(spotPred)[0] }
+        badgeFg={ guessCol(spotPred)[1] }
     />
 
     {#if spotModels.length > 1}
@@ -442,9 +443,22 @@
                 <span class="arrows">
                     {#each spot.dirs as d}<span class="arrow o" style="transform: rotate({ DIRS.indexOf(d) * 45 + 180 }deg)">▲</span>{/each}
                 </span>
-                <span class="grow"><b>{ fill(W.works, { dirs: dirsLabel(spot.dirs), min: fmtWind0(spot.min, S.wind), max: fmtWind0(spot.max, S.wind), unit: windLabel(S.wind) }) }</b></span>
+                <span class="grow"><b>{ fill(W.works, { dirs: dirsLabel(spot.dirs), min: fmtWind0(spot.min, S.wind), max: fmtWind0(spot.max, S.wind), unit: windLabel(S.wind) }) }</b>{#if spot.tuned}<small>{ W.tunedNote }</small>{/if}</span>
                 <button class="link" on:click={ () => spot && editSpot(spot) }>{ W.edit }</button>
             </div>
+        {/if}
+        <div class="today sep">
+            <span class="lbl">{ W.bestToday }</span>
+            {#if spotBest}
+                <span class="tag" style="background: { guessCol(spotBest.rating)[0] }; color: { guessCol(spotBest.rating)[1] }">{ guessLbl(spotBest.rating) }</span>
+                <b>{ bestRange(spotBest) }</b>
+                <small class="muted">{ guessNote(spotBest, spot) }</small>
+            {:else}
+                <small class="muted">{ dayBySpot[spot.id] ? W.todayNone : W.checking }</small>
+            {/if}
+        </div>
+        {#if spotTide}
+            <small class="muted tidehint">{ fill(W.tideHint, { tide: tideText(spotTide), n: spotTide.of, total: spotTide.total }) }</small>
         {/if}
         <div class="stats sep">
             <div><span class="lbl">{ W.statSessions }</span><span class="big">{ spotSessions.length }</span></div>
@@ -649,6 +663,14 @@
     <div class="field"><span class="lbl">{ W.water }</span>
         <div class="chips">{#each ['Flat', 'Chop', 'Swell', 'Waves'] as wv, i}<button class="chip" class:on={ f.water === wv } on:click={ () => f && (f = { ...f, water: f.water === wv ? null : wv }) }>{ W['water' + (i + 1)] }</button>{/each}</div>
     </div>
+    <!-- tide: no forecast for it, but you know it; your best sessions then show which tide works here -->
+    <div class="field"><span class="lbl">{ W.tide }</span>
+        <div class="chips">
+            {#each TIDES as t}<button class="chip" class:on={ f.tide === t } on:click={ () => f && (f = { ...f, tide: f.tide === t ? null : t }) }>{ W['tide' + t] }</button>{/each}
+            <span class="chip-gap" aria-hidden="true"></span>
+            {#each TIDE_MOVES as t}<button class="chip" class:on={ f.tideMove === t } on:click={ () => f && (f = { ...f, tideMove: f.tideMove === t ? null : t }) }>{ W['tide' + t] }</button>{/each}
+        </div>
+    </div>
 
     <div class="field"><span class="lbl">{ W.gear }</span>
         {#each logGearGroups as grp (grp.sport)}
@@ -719,17 +741,17 @@
 
     import config from './pluginConfig';
     import { load, save, exportJson, importJson, uid, emptyData, normalise, mergeData, storageKey, useWindyUser } from './lib/storage';
-    import { waveValueAt, modelValueAt, nextMatch, conditionsNow, trimWaves, captureDay, seriesAt, covers, availableModels, SNAPSHOT_MODELS } from './lib/forecast';
+    import { waveValueAt, modelValueAt, nextMatch, conditionsNow, hoursToday, trimWaves, captureDay, seriesAt, covers, availableModels, SNAPSHOT_MODELS } from './lib/forecast';
     import { cloudAvailable, pull, push } from './lib/cloud';
     import { FEEDBACK_URL } from './lib/links';
     import { FONT_CSS } from './lib/fonts';
-    import { THEME, THEME_CSS, themeCss, guessColours, guessLevel, lightsUp, sessionMarkStyle } from './lib/theme';
+    import { THEME, THEME_CSS, themeCss, guessColours, lightsUp, sessionMarkStyle } from './lib/theme';
     import {
         DIRS, SPORTS, RATING_BG, RATING_FG, GEAR_SPORTS, GEAR_BY_SPORT, ratingBg, ratingFg, dirName, dirsLabel, windColor, modelLabel,
         distanceKm, modelScores, forecastBias, fmtDay, fmtDayTime, fmtTime,
     } from './lib/wind';
     import { fmtWind, fmtWind0, fmtHeight, fmtTemp, fmtDistance, windLabel, fromWind, toWind, windStep } from './lib/units';
-    import { predictRating, samplesFor, suggestWindow, MIN_SAMPLES } from './lib/predict';
+    import { guess, conditionsOf, samplesFor, suggestWindow, shownLevel, bestToday, learnWindow, bestTide, MIN_SAMPLES } from './lib/predict';
     import { words, w, t as tr, fill, rich, setWords } from './lib/copy';
     import { readTrack } from './lib/gpx';
 
@@ -742,6 +764,7 @@
     import Icon from './ui/Icon.svelte';
     import PixelStar from './ui/PixelStar.svelte';
     import Brand from './ui/Brand.svelte';
+    import type { Guess, DayBest, Hour, Sample } from './lib/predict';
     import type { WindyAuth } from './lib/cloud';
 
     import type { Spot, Snapshot, Session, ModelValue, WaveValue, Dir8, Settings as SettingsT, Track, SpotlogData, Gear } from './lib/types';
@@ -758,6 +781,7 @@
     interface LogForm {
         id?: string; spotId: string | null; lat?: number; lon?: number; snapshotId: string | null;
         dateStr: string; rating: number; felt: number | null; gusts: string | null; water: string | null;
+        tide: string | null; tideMove: string | null;
         gearIds: string[]; gear: string; start: string; end: string; notes: string; track: Track | null;
         /** snapshot this log created by itself (may be replaced when the date changes) */
         autoSnap?: string | null;
@@ -821,7 +845,13 @@
     /* ---------- wording (src/lib/copy.ts; the Style Lab can change any phrase) ---------- */
     $: W = $words;
     $: RATE = [W.rate1, W.rate2, W.rate3, W.rate4, W.rate5];
-    $: guessLbl = (r: number): string => W['guess' + guessLevel(r)];
+    /** only good news gets a word (good, great, epic); anything else is "not sure yet" */
+    $: guessLbl = (r: number | null): string => (shownLevel(r) ? W['guess' + shownLevel(r)] : W.guessUnsure);
+    const UNSURE: [string, string] = ['var(--sl-dirTile, #e9e8e3)', 'var(--sl-lightSub, #6b6b6b)'];
+    const guessCol = (r: number | null): [string, string] => (shownLevel(r) ? guessColours(r as number) : UNSURE);
+    const NO_BEST: DayBest = { start: 0, end: 0, rating: 0, level: 0, similar: 0, fromWindow: false, now: true };
+    const TIDES = ['Low', 'Mid', 'High'];
+    const TIDE_MOVES = ['Rising', 'Falling'];
     $: sportLbl = (sp: string): string => W['sport' + sp] || sp;
     /** a place without a name is stored as 'Dropped pin'; it shows in the chosen wording */
     $: pinName = (n: string | undefined): string => (!n || n === 'Dropped pin' ? W.droppedPin : n);
@@ -1016,6 +1046,8 @@
     let f: LogForm | null = null;
     let trackError = '';
     let matches: Record<string, MatchWindow | null | 'loading'> = {};
+    /** the rest of today per spot (ECMWF, hour by hour) for the best window */
+    let dayBySpot: Record<string, Hour[]> = {};
     let nowBySpot: Record<string, Now | 'loading'> = {};
     let capturing = false;
     let armed: '' | 'spot' | 'all' = '';
@@ -1065,7 +1097,10 @@
         spotModel = 'ecmwf';
     }
     $: if (view === 'spot' && spot) {loadModels(spot);}
-    $: spotPred = spot && spotNow ? predictRating(spot, spotNow.wind, data.sessions, data.snapshots) : null;
+    $: spotGuess = spot && spotNow ? guess(spot, conditionsOf(spotNow.wind, spotNow.waves), samplesOf(spot, sampleMap)) : null;
+    $: spotPred = spotGuess?.rating ?? null;
+    $: spotBest = spot ? bestOf(spot) : null;
+    $: spotTide = spot ? bestTide(data.sessions.filter(x => x.spotId === spot?.id)) : null;
     $: suggestion = spot && spot.windUnknown ? suggestWindow(spot, data.sessions, data.snapshots) : null;
     $: goodCount = spot ? samplesFor(spot, data.sessions, data.snapshots).filter(x => x.rating >= 4).length : 0;
     $: hoursOnWater = Math.round(data.sessions.reduce((a, s) => a + sessionHours(s), 0));
@@ -1186,14 +1221,31 @@
         const n = _dep[id];
         return n && n !== 'loading' ? n : null;
     }
-    $: predOf = (s: Spot): number | null => {
+    /** each spot's sessions with their forecast, worked out once per change of the diary */
+    $: sampleMap = new Map<string, Sample[]>(data.spots.map(s => [s.id, samplesFor(s, data.sessions, data.snapshots)]));
+    const samplesOf = (s: Spot, _dep = sampleMap): Sample[] => _dep.get(s.id) || [];
+    $: guessOf = (s: Spot): Guess | null => {
         const n = nowBySpot[s.id];
-        return n && n !== 'loading' ? predictRating(s, n.wind, data.sessions, data.snapshots) : null;
+        return n && n !== 'loading' ? guess(s, conditionsOf(n.wind, n.waves), samplesOf(s, sampleMap)) : null;
+    };
+    /** the best stretch of the rest of today (ECMWF), so a good evening shows up in the afternoon already */
+    $: bestOf = (s: Spot): DayBest | null => {
+        const h = dayBySpot[s.id];
+        return h ? bestToday(s, h, samplesOf(s, sampleMap)) : null;
     };
     $: ratingHint = (s: Spot): string => {
-        const n = Math.max(1, MIN_SAMPLES - samplesFor(s, data.sessions, data.snapshots).length);
+        const n = Math.max(1, MIN_SAMPLES - samplesOf(s, sampleMap).length);
         return n === 1 ? W.ratingAfterOne : fill(W.ratingAfterMany, { n });
     };
+    /** what a guess is based on: "from 3 similar sessions", "from your wind window" */
+    $: guessNote = (g: { similar: number; fromWindow: boolean } | null, s: Spot | null): string =>
+        !g || !s ? '' : g.similar > 1 ? fill(W.badgeFrom, { n: g.similar }) : g.similar === 1 ? W.badgeFromOne
+            : g.fromWindow ? W.badgeWindow : samplesOf(s, sampleMap).length < MIN_SAMPLES ? ratingHint(s) : W.badgeNone;
+    /** "great · 18:00" for a window later today; just the word when it's on now */
+    $: bestTag = (b: DayBest): string => guessLbl(b.rating) + (b.now ? '' : ' · ' + fmtTime(b.start));
+    $: bestRange = (b: DayBest): string => (b.now ? fill(W.todayUntil, { time: fmtTime(b.end) }) : fmtTime(b.start) + '–' + fmtTime(b.end));
+    $: tideText = (t: { tide: string | null; move: string | null }): string =>
+        [t.tide ? W['tide' + t.tide] : '', t.move ? W['tide' + t.move].toLowerCase() : ''].filter(Boolean).join(', ');
     $: matchOf = (id: string): MatchWindow => {
         const m = matches[id];
         return (m && m !== 'loading' ? m : null) as MatchWindow;
@@ -1493,7 +1545,18 @@
         const rows = list.slice(0, 5).map(se => `<span><i style="background:${ratingBg(se.rating)}"></i>${escapeHtml(fmtDay(se.date))} · ${escapeHtml(w('rate' + se.rating))}</span>`).join('');
         return head + rows + (list.length > 5 ? `<small>${escapeHtml(tr('tipMore', { n: list.length - 5 }))}</small>` : '');
     }
+    /** many changes in one go (conditions arriving for 10 spots) redraw the pins once */
+    let drawQueued = false;
+    let destroyed = false;
     function drawSpotMarkers() {
+        if (drawQueued) {return;}
+        drawQueued = true;
+        queueMicrotask(() => {
+            drawQueued = false;
+            if (!destroyed) {drawSpotMarkersNow();}
+        });
+    }
+    function drawSpotMarkersNow() {
         spotMarkers.forEach(m => m.remove());
         spotMarkers = [];
         if (typeof L === 'undefined' || !map) {return;}
@@ -1521,10 +1584,12 @@
             const here = st.mapSessions ? data.sessions.filter(x => x.spotId === s.id).sort((a, b) => b.date - a.date) : [];
             const tip = here.length ? `<div class="spotlog-tip">${sessionTip(here)}</div>` : '';
             // a spot whose guess reaches the chosen level lights up in the guess colour; otherwise it stays grey
-            const pred = predOf(s);
-            const good = lightsUp(pred);
+            // lights up when the rest of today has a good stretch; "great 18:00" when it's later on
+            const best = bestOf(s);
+            const pred = best?.rating ?? null;
+            const good = lightsUp(pred) && shownLevel(pred) > 0;
             const [gb, gf] = good ? guessColours(pred as number) : ['', ''];
-            const word = good && THEME.goodWord ? `<em>${escapeHtml(w('rate' + guessLevel(pred as number)))}</em>` : '';
+            const word = good && THEME.goodWord ? `<em>${escapeHtml(w('rate' + shownLevel(pred)))}${best && !best.now ? ' ' + escapeHtml(fmtTime(best.start)) : ''}</em>` : '';
             let html: string;
             if (compactMarkers) {
                 // zoomed out: a plain dot, guess colour or grey (outline only if the theme turns it on)
@@ -1547,7 +1612,7 @@
         }
     }
     // conditions arrive one spot at a time: redraw so good spots light up
-    $: if (nowBySpot && mapReady) {drawSpotMarkers();}
+    $: if (nowBySpot && dayBySpot && sampleMap && mapReady) {drawSpotMarkers();}
     function drawTrack(t: Track | null, fit = false) {
         trackLayers.forEach(l => l.remove());
         trackLayers = [];
@@ -1585,7 +1650,8 @@
     }
     function popupHtml(sp: Spot, n: Now | null, loading = false): string {
         const wv = n?.wind;
-        const pred = n ? predictRating(sp, n.wind, data.sessions, data.snapshots) : null;
+        const g = n ? guess(sp, conditionsOf(n.wind, n.waves), samplesOf(sp, sampleMap)) : null;
+        const best = bestOf(sp);
         const tile = (label: string, val: string, bg: string, unit = '') =>
             `<div class="sl-t" style="background:${bg}"><span>${label}</span><b>${val}</b><small>${unit || '&nbsp;'}</small></div>`;
         const many = isMobile && data.spots.length > 1;
@@ -1596,7 +1662,8 @@
         return `<div class="sl-pop"><div class="sl-h"><span><b>${escapeHtml(sp.name)}</b><small>${L('cardNow')}</small></span>${nav}</div>` +
             (wv ? `<div class="sl-tiles">${tile(L('fcWind'), fmtWind0(wv.wind, S.wind), windColor(wv.wind), windLabel(S.wind))}${tile(L('fcGusts'), fmtWind0(wv.gust, S.wind), windColor(wv.gust), windLabel(S.wind))}${tile(L('fcFrom'), dirName(wv.dir), 'var(--sl-dirTile, #e9e8e3)')}${n?.waves ? tile(L('fcWaves'), fmtHeight(n.waves.waves, S.height), 'var(--sl-wavesTile, #dbe6f2)', S.height) : ''}</div>` : loading ? `<small>${L('cardLoading')}</small>` : `<small>${L('fcEmpty')}</small>`) +
             (wv ? `<small>${fmtTemp(wv.temp, S.temp)}</small>` : '') +
-            (pred !== null ? `<span class="sl-b" style="background:${guessColours(pred)[0]};color:${guessColours(pred)[1]}">${escapeHtml(w('guess' + guessLevel(pred)))}</span>` : '') +
+            (g ? `<span class="sl-b" style="background:${guessCol(g.rating)[0]};color:${guessCol(g.rating)[1]}">${escapeHtml(guessLbl(g.rating))}</span>` : '') +
+            (best && !best.now ? `<small class="sl-best">${L('bestToday')}: <b>${escapeHtml(guessLbl(best.rating))}</b> ${escapeHtml(bestRange(best))}</small>` : '') +
             (isMobile ? `<div class="sl-acts"><button data-act="snap">${L('cardSave')}</button><button data-act="log">${L('cardLog')}</button><button data-act="open">${L('cardDetails')}</button></div>` : '') +
             '</div>';
     }
@@ -2051,7 +2118,7 @@
     /* ---------- sessions ---------- */
     function emptyForm(): LogForm {
         return {
-            spotId: null, snapshotId: null, dateStr: dateStrOf(Date.now()), rating: 4, felt: null, gusts: null, water: null,
+            spotId: null, snapshotId: null, dateStr: dateStrOf(Date.now()), rating: 4, felt: null, gusts: null, water: null, tide: null, tideMove: null,
             gearIds: [], gear: '', start: '', end: '', notes: '', track: null,
         };
     }
@@ -2142,7 +2209,7 @@
             id: se.id, spotId: se.spotId, lat: se.lat ?? sp?.lat, lon: se.lon ?? sp?.lon, snapshotId: se.snapshotId,
             dateStr: dateStrOf(se.date), rating: se.rating,
             felt: se.felt === null ? null : roundToStep(toWind(se.felt, S.wind)),
-            gusts: se.gusts, water: se.water, gearIds: [...(se.gearIds || [])], gear: se.gear || '',
+            gusts: se.gusts, water: se.water, tide: se.tide ?? null, tideMove: se.tideMove ?? null, gearIds: [...(se.gearIds || [])], gear: se.gear || '',
             start: se.start, end: se.end, notes: se.notes, track: se.track || null,
         };
         go('log');
@@ -2173,7 +2240,7 @@
         const se: Session = {
             id: f.id || uid(), spotId: f.spotId, lat: f.lat, lon: f.lon, snapshotId: f.snapshotId, date, rating: f.rating,
             felt: f.felt === null ? null : Math.round(fromWind(f.felt, S.wind) * 10) / 10,
-            gusts: f.gusts, water: f.water, gearIds: f.gearIds, gear: f.gear.trim(), start: f.start, end: f.end, notes: f.notes, track: f.track,
+            gusts: f.gusts, water: f.water, tide: f.tide, tideMove: f.tideMove, gearIds: f.gearIds, gear: f.gear.trim(), start: f.start, end: f.end, notes: f.notes, track: f.track,
             tz: deviceTz(),
         };
         data.sessions = f.id ? data.sessions.map(x => (x.id === se.id ? se : x)) : [...data.sessions, se];
@@ -2189,7 +2256,7 @@
             data.snapshots = data.snapshots.map(x => (x.id === sn.id ? upd : x));
         }
         persist();
-        showToast(w(f.id ? 'toastSessUpdated' : 'toastSessSaved'));
+        if (!tuneWindow(se.spotId)) {showToast(w(f.id ? 'toastSessUpdated' : 'toastSessSaved'));}
         const sp = spotById(se.spotId);
         if (!f.id && sp) {
             // land on the spot page, with home underneath
@@ -2276,12 +2343,26 @@
         const cur = nowBySpot[k];
         if (cur && cur !== 'loading') {return cur;}
         nowBySpot = { ...nowBySpot, [k]: 'loading' };
-        const n = await conditionsNow(s.lat, s.lon, model);
+        const [n, hours] = await Promise.all([conditionsNow(s.lat, s.lon, model), model === 'ecmwf' ? hoursToday(s.lat, s.lon) : Promise.resolve(null)]);
+        if (hours) {dayBySpot = { ...dayBySpot, [s.id]: hours };}
         nowBySpot = { ...nowBySpot, [k]: n };
         return n;
     }
+    /** conditions are kept for 20 minutes; after that (Windy left open, the phone back from the pocket) they load again */
+    let nowAt = 0;
     function loadAllNow() {
+        if (Date.now() - nowAt > 20 * 60e3) {
+            if (nowAt) {
+                nowBySpot = {};
+                matches = {};
+                if (view === 'spot' && spot) {checkMatch(spot);}
+            }
+            nowAt = Date.now();
+        }
         data.spots.forEach(s => loadNow(s));
+    }
+    function onVisible() {
+        if (document.visibilityState === 'visible') {loadAllNow();}
     }
     async function checkMatch(s: Spot) {
         if (matches[s.id] !== undefined) {return;}
@@ -2290,11 +2371,30 @@
         matches = { ...matches, [s.id]: m };
     }
 
+    /** after a session: the wind window follows what really worked here (with undo) */
+    function tuneWindow(spotId: string | null): boolean {
+        const sp = spotById(spotId);
+        if (!sp) {return false;}
+        const ch = learnWindow(sp, samplesFor(sp, data.sessions, data.snapshots));
+        if (!ch) {return false;}
+        const before = sp;
+        const after: Spot = { ...sp, dirs: ch.dirs, min: ch.min, max: ch.max, tuned: Date.now() };
+        data.spots = data.spots.map(x => (x.id === sp.id ? after : x));
+        if (spot?.id === sp.id) {spot = after;}
+        persist();
+        showToast(tr('toastTuned', { name: sp.name }), () => {
+            data.spots = data.spots.map(x => (x.id === before.id ? before : x));
+            if (spot?.id === before.id) {spot = before;}
+            persist();
+        });
+        return true;
+    }
+
     /* ---------- data ---------- */
     function clearAll() {
         if (!arm('all')) {return;}
         const before = data;
-        data = { ...emptyData(), settings: data.settings };
+        data = { ...emptyData(), settings: { ...data.settings, welcomed: true } }; // not new: the upload stays right here
         persist();
         showToast(w('toastAllDeleted'), () => { data = before; persist(); });
     }
@@ -2434,6 +2534,7 @@
             /* no map events */
         }
         window.addEventListener('storage', onStorage);
+        document.addEventListener('visibilitychange', onVisible);
         mapReady = true;
         drawSpotMarkers();
         loadAllNow();
@@ -2441,6 +2542,9 @@
     });
 
     onDestroy(() => {
+        destroyed = true;
+        document.removeEventListener('visibilitychange', onVisible);
+        delete (window as unknown as { __spotlogDesign?: unknown }).__spotlogDesign;
         unpaintPane();
         hapticCleanup();
         clearTimeout(kbTimer);
@@ -2527,6 +2631,8 @@
     .macts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
     .mact { height: 42px; padding: 0 6px; border-radius: var(--sl-radiusButton, 12px); border: 1px solid var(--sl-actLine, #5a5a5a); background: var(--sl-actBg, #3c3c3c); color: var(--sl-actText, #f8f8f8) !important; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12.5px !important; font-weight: 600;
         span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } &:disabled { opacity: 0.6; } }
+    /* very narrow phones (iPhone SE 1st gen, 320 px): the words fit without the icons */
+    @media (max-width: 359px) { .mact { padding: 0 4px; :global(svg) { display: none; } } }
     .mtabs { display: flex; gap: 3px; padding: 3px; border-radius: var(--sl-radiusButton, 12px); background: var(--sl-tabsBg, #3c3c3c);
         button { flex: 1 1 auto; height: 30px; border: 0; border-radius: var(--sl-radiusSmall, 9px); background: transparent; color: var(--sl-tabText, #d0d0d0) !important; font-size: 12px !important; padding: 0 5px; white-space: nowrap; }
         button.on { background: var(--sl-sel-bg, #f8f8f8); color: var(--sl-sel-text, #1c1c1c) !important; font-weight: 600; }
@@ -2698,6 +2804,11 @@
     .link-card { text-align: left; align-items: center; }
     .field { display: flex; flex-direction: column; gap: 8px; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip-gap { width: 8px; }
+    /* spot page: the best stretch of today, and the tide your best sessions had */
+    .today { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin-top: 12px; .lbl { margin-right: 2px; } b { font-weight: 600; } small { flex-basis: 100%; } }
+    .tidehint { display: block; margin-top: 8px; }
+    label.link { cursor: pointer; }
     .chip { height: 36px; padding: 0 15px; border-radius: var(--sl-radiusChip, 18px); border: 1px solid var(--sl-chipLine, #5a5a5a); background: transparent; color: var(--sl-chipText, #f8f8f8) !important; display: inline-flex; align-items: center; gap: 6px;
         .k { font-size: 11px; opacity: 0.65; }
         &.on { background: var(--sl-chipOnBg, #f8f8f8); color: var(--sl-chipOnText, #1c1c1c) !important; border-color: var(--sl-chipOnBg, #f8f8f8); }
@@ -2785,5 +2896,6 @@
     :global(.sl-t span) { white-space: nowrap; }
     :global(.sl-t b) { display: block; font: 900 20px 'Doto', ui-monospace, monospace; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: clip; }
     :global(.sl-pop .sl-t small) { display: block; font: 600 10px 'Instrument Sans', system-ui, sans-serif; color: inherit; opacity: 0.7; line-height: 1; white-space: nowrap; }
+    :global(.sl-pop .sl-best b) { font-weight: 600; color: inherit; }
     :global(.sl-b) { align-self: flex-start; padding: 3px 9px; border-radius: 10px; font-size: 12px; font-weight: 600; }
 </style>

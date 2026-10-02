@@ -15,6 +15,8 @@ export interface Spot {
     /** true when the user said "I don't know yet" — Spotlog will suggest dirs/range from sessions */
     windUnknown?: boolean;
     created: number;
+    /** when spotlog last adjusted the wind window from your sessions (ms) */
+    tuned?: number;
 }
 
 /** Value of one forecast model at the snapshot time (all SI: m/s, °C) */
@@ -95,6 +97,10 @@ export interface Session {
     felt: number | null;
     gusts: string | null;
     water: string | null;
+    /** tide at the session (spotlog has no tide forecast, but you know it): Low, Mid, High */
+    tide?: string | null;
+    /** Rising or Falling */
+    tideMove?: string | null;
     gearIds?: string[];
     /** free-text gear */
     gear: string;

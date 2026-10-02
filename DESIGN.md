@@ -95,5 +95,5 @@ The lab itself is built from `harness/stylelab.src.html` + `harness/preview-brid
 All colours, shapes and map marks live in **`src/lib/theme.ts`** (`THEME`, with the saved design from `design.ts` on top). Its keys match the **Style Lab** one to one, and every key is also a CSS variable `--sl-<key>`:
 play there, press *Save design*, then ask Claude to apply it. The plugin turns `THEME` into CSS variables (`--sl-*`, injected once as `<style id="spotlog-theme">`),
 so the panel, the map pins, the zoomed-out dots, session marks, tooltips, route dots and popup all follow it. Ratings come from `r1…r5`; rating guesses from
-`g1…g5` (or the rating colours when `guessLinked`). Spot labels: grey until the guess reaches `lightFrom`; selected = `activeBg` label with the dot in the
+`g1…g5` (or the rating colours when `guessLinked`). Spot labels: grey until today's best guess reaches `lightFrom` (never below good: meh/flat guesses are not shown), with the time when the best stretch is later on; selected = `activeBg` label with the dot in the
 guess colour (or `activeDot`); zoomed out = plain dots (`compactDot` or the guess colour), outline only with `compactRing`.
