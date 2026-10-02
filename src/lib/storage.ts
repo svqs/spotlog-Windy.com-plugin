@@ -87,6 +87,18 @@ const cleanGear = (g: Any) => ({ id: g.id, name: str(g.name, 80) || 'Gear', kind
 const list = <T>(x: Any, fn: (v: Any) => T | null, max: number): T[] =>
     (Array.isArray(x) ? x.filter(withId).slice(0, max).map(fn).filter((v): v is T => !!v) : []);
 
+/** A delete and a later "bring back" (upload, undo) of the same id: the newer one wins */
+const settle = (deleted: Record<string, number>, revived: Record<string, number>): [Record<string, number>, Record<string, number>] => {
+    const d = { ...deleted };
+    Object.entries(revived).forEach(([k, v]) => { if (d[k] !== undefined && v >= d[k]) {delete d[k];} });
+    return [d, revived];
+};
+const latest = (a: Record<string, number> = {}, b: Record<string, number> = {}): Record<string, number> => {
+    const out = { ...a };
+    Object.entries(b).forEach(([k, v]) => (out[k] = Math.max(v, out[k] || 0)));
+    return out;
+};
+
 export const normalise = (parsed: Any): SpotlogData => {
     const settings = { ...defaultSettings(), ...(isObj(parsed?.settings) ? parsed.settings : {}) };
     if (!['ms', 'kt', 'kmh', 'mph', 'bft'].includes(settings.wind)) {settings.wind = 'ms';}
@@ -119,18 +131,6 @@ export const normalise = (parsed: Any): SpotlogData => {
         deleted,
         revived,
     };
-};
-
-/** A delete and a later "bring back" (upload, undo) of the same id: the newer one wins */
-const settle = (deleted: Record<string, number>, revived: Record<string, number>): [Record<string, number>, Record<string, number>] => {
-    const d = { ...deleted };
-    Object.entries(revived).forEach(([k, v]) => { if (d[k] !== undefined && v >= d[k]) {delete d[k];} });
-    return [d, revived];
-};
-const latest = (a: Record<string, number> = {}, b: Record<string, number> = {}): Record<string, number> => {
-    const out = { ...a };
-    Object.entries(b).forEach(([k, v]) => (out[k] = Math.max(v, out[k] || 0)));
-    return out;
 };
 
 /**

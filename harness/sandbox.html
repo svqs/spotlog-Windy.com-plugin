@@ -433,8 +433,8 @@ const __pluginConfig =  {
   "addToContextmenu": true,
   "routerPath": "/spotlog",
   "private": true,
-  "built": 1790950115377,
-  "builtReadable": "2026-10-02T14:08:35.377Z"
+  "built": 1790950159645,
+  "builtReadable": "2026-10-02T14:09:19.645Z"
 };
 
 // transformCode: import bcast from '@windy/broadcast';
@@ -1708,6 +1708,27 @@ const cleanGear = (g)=>({
         sport: str(g.sport, 20) || undefined
     });
 const list = (x, fn, max)=>Array.isArray(x) ? x.filter(withId).slice(0, max).map(fn).filter((v)=>!!v) : [];
+/** A delete and a later "bring back" (upload, undo) of the same id: the newer one wins */ const settle = (deleted, revived)=>{
+    const d = {
+        ...deleted
+    };
+    Object.entries(revived).forEach(([k, v])=>{
+        if (d[k] !== undefined && v >= d[k]) {
+            delete d[k];
+        }
+    });
+    return [
+        d,
+        revived
+    ];
+};
+const latest = (a = {}, b = {})=>{
+    const out = {
+        ...a
+    };
+    Object.entries(b).forEach(([k, v])=>out[k] = Math.max(v, out[k] || 0));
+    return out;
+};
 const normalise = (parsed)=>{
     const settings = {
         ...defaultSettings(),
@@ -1774,27 +1795,6 @@ const normalise = (parsed)=>{
         deleted,
         revived
     };
-};
-/** A delete and a later "bring back" (upload, undo) of the same id: the newer one wins */ const settle = (deleted, revived)=>{
-    const d = {
-        ...deleted
-    };
-    Object.entries(revived).forEach(([k, v])=>{
-        if (d[k] !== undefined && v >= d[k]) {
-            delete d[k];
-        }
-    });
-    return [
-        d,
-        revived
-    ];
-};
-const latest = (a = {}, b = {})=>{
-    const out = {
-        ...a
-    };
-    Object.entries(b).forEach(([k, v])=>out[k] = Math.max(v, out[k] || 0));
-    return out;
 };
 /**
  * Merges two copies of the diary (this device and the account, or an import).
