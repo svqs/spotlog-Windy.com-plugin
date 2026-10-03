@@ -37,7 +37,7 @@ export interface Conditions {
  */
 const SPEC: Record<ParamKey, { circular?: boolean; main: boolean; widen: number; tol: number }> = {
     wind: { main: true, widen: 0.5, tol: 1.5 },
-    gust: { main: true, widen: 0.05, tol: 0.15 },
+    gust: { main: true, widen: 0.5, tol: 1.5 },
     dir: { circular: true, main: true, widen: 0, tol: 30 },
     waves: { main: true, widen: 0.1, tol: 0.25 },
     swell: { main: true, widen: 0.1, tol: 0.25 },
@@ -61,11 +61,11 @@ export const SPORT_PARAMS: Record<string, ParamKey[]> = {
 export const paramsOf = (sport: string): ParamKey[] => SPORT_PARAMS[sport] || SPORT_PARAMS.Other;
 export const sportsOf = (spot: Spot): string[] => (spot.sports.length ? spot.sports : ['Other']);
 
-/** The value of one condition (gusts as a gust factor: gusts ÷ wind; surf uses swell when the forecast has it) */
+/** The value of one condition (gusts in m/s like the wind; surf uses swell when the forecast has it) */
 export const valueOf = (c: Conditions, k: ParamKey): number | null => {
     switch (k) {
         case 'wind': return c.wind;
-        case 'gust': return c.gust !== null && c.wind !== null ? c.gust / Math.max(c.wind, 2) : null;
+        case 'gust': return c.gust;
         case 'dir': return c.dir;
         case 'waves': return c.waves;
         case 'swell': return c.swell ?? c.waves;
@@ -235,7 +235,9 @@ const rangeOf = (spot: Spot, sport: string, key: ParamKey, good: Sample[]): Omit
     const own = spot.ranges?.[sport]?.[key];
     if (own) {
         if (own.dirs?.length) {return { key, centres: own.dirs.map(d => DIRS.indexOf(d) * 45), half: 22.5, from: 'you' };}
-        if (typeof own.lo === 'number' || typeof own.hi === 'number') {return { key, lo: own.lo, hi: own.hi, from: 'you' };}
+        // (gust ranges from 0.14.0 were a gust factor, 1–2: those are skipped)
+        const oldFactor = key === 'gust' && (own.lo ?? 0) < 3 && (own.hi ?? 0) < 3;
+        if (!oldFactor && (typeof own.lo === 'number' || typeof own.hi === 'number')) {return { key, lo: own.lo, hi: own.hi, from: 'you' };}
     }
     const withValue = good.filter(s => valueOf(s, key) !== null);
     const vals = withValue.map(s => valueOf(s, key) as number);

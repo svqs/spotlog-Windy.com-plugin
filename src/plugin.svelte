@@ -482,25 +482,23 @@
     <div class="section">
         <b>{ W.recoTitle }</b>
         <div class="card reco">
-            <div class="reco-row">
-                <span class="r-day">{ W.today }</span>
-                {#if spotBest}
+            {#if spotBest}
+                <div class="reco-row">
+                    <span class="r-day">{ W.today }</span>
                     <span class="tag" style="background: { guessCol(spotBest.rating)[0] }; color: { guessCol(spotBest.rating)[1] }">{ guessLbl(spotBest.rating) }</span>
                     <b class="r-time">{ bestRange(spotBest) }</b>
-                {:else}
-                    <small class="muted r-none">{ dayBySpot[spot.id] ? W.dayNone : W.checking }</small>
-                {/if}
-            </div>
+                </div>
+            {/if}
             {#each spotDays.filter(d => d.best) as d (d.day)}
                 <div class="reco-row">
                     <span class="r-day">{ fmtDay(d.day) }{#if predOfDay(d.day, spotOutlook) !== null}<small class="r-pred" title={ W.predTitle }>{ fill(W.predShort, { p: Math.round(predOfDay(d.day, spotOutlook) ?? 0) }) }</small>{/if}</span>
                     {#if d.best}
                         <span class="tag" style="background: { guessCol(d.best.rating)[0] }; color: { guessCol(d.best.rating)[1] }">{ guessLbl(d.best.rating) }</span>
-                        <b class="r-time">{ fmtTime(d.best.start) }–{ fmtTime(d.best.end) }</b>
+                        <b class="r-time"><span>{ fmtTime(d.best.start) }–</span><span>{ fmtTime(d.best.end) }</span></b>
                     {/if}
                 </div>
             {/each}
-            {#if !spotOutlook}<small class="muted">{ W.checking }</small>{:else if !spotDays.some(d => d.best)}<small class="muted r-later">{ W.daysNone }</small>{/if}
+            {#if !spotOutlook || !dayBySpot[spot.id]}<small class="muted r-later">{ W.checking }</small>{:else if !spotBest && !spotDays.some(d => d.best)}<small class="muted r-later">{ W.daysNone }</small>{/if}
             <small class="muted reco-note">{ spotBest ? guessNote(spotBest, spot) : guessNote(spotGuess, spot) }</small>
         </div>
     </div>
@@ -541,7 +539,7 @@
                                             <input inputmode="decimal" bind:value={ editRows[key].lo } placeholder="–" aria-label={ paramName(key) + ' ' + W.formMin } />
                                             <span>–</span>
                                             <input inputmode="decimal" bind:value={ editRows[key].hi } placeholder="–" aria-label={ paramName(key) + ' ' + W.formMax } />
-                                            <small>{ key === 'wind' ? windLabel(S.wind) : key === 'waves' || key === 'swell' ? S.height : key === 'period' ? 's' : key === 'temp' ? '°' + S.temp : key === 'rain' ? 'mm' : key === 'power' ? 'kW/m' : W.gustFactor }</small>
+                                            <small>{ key === 'wind' || key === 'gust' ? windLabel(S.wind) : key === 'waves' || key === 'swell' ? S.height : key === 'period' ? 's' : key === 'temp' ? '°' + S.temp : key === 'rain' ? 'mm' : key === 'power' ? 'kW/m' : '' }</small>
                                         </div>
                                     {/if}
                                 {/each}
@@ -1386,13 +1384,15 @@
     $: bestTag = (b: DayBest): string => guessLbl(b.rating) + (b.now ? '' : ' · ' + fmtTime(b.start));
     /* ---------- what works here: one row per condition ---------- */
     $: paramName = (k: ParamKey): string => W['param' + k[0].toUpperCase() + k.slice(1)];
-    const gustWord = (x: number): string => (x <= 1.3 ? W.gust1 : x <= 1.6 ? W.gust2 : W.gust3).toLowerCase();
     $: rangeText = (p: ParamModel): string => {
         if (p.centres) {return p.from === 'window' && spot ? dirsLabel(spot.dirs) : dirsLabel(dirsOfParam(p));}
         const lo = p.lo ?? 0;
         const hi = p.hi ?? 0;
-        if (p.key === 'wind') {return `${fmtWind0(lo, S.wind)}–${fmtWind0(hi, S.wind)} ${windLabel(S.wind)}`;}
-        if (p.key === 'gust') {return gustWord(lo) === gustWord(hi) ? gustWord(lo) : `${gustWord(lo)} – ${gustWord(hi)}`;}
+        if (p.key === 'wind' || p.key === 'gust') {
+            if (p.lo === undefined && p.hi !== undefined) {return fill(W.upTo, { v: `${fmtWind0(hi, S.wind)} ${windLabel(S.wind)}` });}
+            if (p.hi === undefined && p.lo !== undefined) {return fill(W.from, { v: `${fmtWind0(lo, S.wind)} ${windLabel(S.wind)}` });}
+            return `${fmtWind0(lo, S.wind)}–${fmtWind0(hi, S.wind)} ${windLabel(S.wind)}`;
+        }
         const fmt = (k: ParamKey, v: number) => (k === 'period' ? `${Math.round(v)}` : k === 'temp' ? fmtTemp(v, S.temp).replace(/\s*°.*/, '') : k === 'rain' || k === 'power' ? `${Math.round(v * 10) / 10}` : fmtHeight(v, S.height));
         const unit = p.key === 'period' ? 's' : p.key === 'temp' ? `°${S.temp}` : p.key === 'rain' ? 'mm' : p.key === 'power' ? 'kW/m' : S.height;
         if (p.lo === undefined && p.hi !== undefined) {return fill(W.upTo, { v: `${fmt(p.key, hi)} ${unit}` });}
@@ -1400,7 +1400,7 @@
         return `${fmt(p.key, lo)}–${fmt(p.key, hi)} ${unit}`;
     };
     $: nowText = (k: ParamKey, v: number): string =>
-        k === 'dir' || k === 'swellDir' ? dirName(v) : k === 'wind' ? `${fmtWind0(v, S.wind)} ${windLabel(S.wind)}` : k === 'gust' ? gustWord(v)
+        k === 'dir' || k === 'swellDir' ? dirName(v) : k === 'wind' || k === 'gust' ? `${fmtWind0(v, S.wind)} ${windLabel(S.wind)}`
             : k === 'period' ? `${Math.round(v)} s` : k === 'temp' ? fmtTemp(v, S.temp) : k === 'rain' ? `${Math.round(v * 10) / 10} mm`
                 : k === 'power' ? `${Math.round(v * 10) / 10} kW/m` : fmtHeight(v, S.height, true);
     /** one line per sport for the folded "What works here": "8–13 m/s · W–SW" */
@@ -2595,10 +2595,10 @@
     }
     /** inputs are in your units; ranges are stored in m/s, m, °C */
     const toUnit = (k: ParamKey, v: number): number =>
-        k === 'wind' ? Math.round(toWind(v, S.wind) * 10) / 10 : (k === 'waves' || k === 'swell') && S.height === 'ft' ? Math.round(v * 3.28084 * 10) / 10
+        k === 'wind' || k === 'gust' ? Math.round(toWind(v, S.wind) * 10) / 10 : (k === 'waves' || k === 'swell') && S.height === 'ft' ? Math.round(v * 3.28084 * 10) / 10
             : k === 'temp' && S.temp === 'F' ? Math.round(v * 1.8 + 32) : Math.round(v * 100) / 100;
     const fromUnit = (k: ParamKey, v: number): number =>
-        k === 'wind' ? fromWind(v, S.wind) : (k === 'waves' || k === 'swell') && S.height === 'ft' ? v / 3.28084 : k === 'temp' && S.temp === 'F' ? (v - 32) / 1.8 : v;
+        k === 'wind' || k === 'gust' ? fromWind(v, S.wind) : (k === 'waves' || k === 'swell') && S.height === 'ft' ? v / 3.28084 : k === 'temp' && S.temp === 'F' ? (v - 32) / 1.8 : v;
     function startEdit(m: SportModel) {
         editSport = m.sport;
         editRows = {};
@@ -3096,13 +3096,13 @@
     .tide-today { font-size: 13px; display: flex; flex-direction: column; gap: 6px; .lbl { margin: 0; } .tide-best { color: var(--sl-text, #f8f8f8); line-height: 1.45; } }
     .tidehint { display: block; margin-top: -4px; }
     /* spot page: the recommendation, today and the next days */
-    .reco { gap: 0; padding-top: 6px; padding-bottom: 12px; }
+    .reco { gap: 0; padding-top: 4px; padding-bottom: 12px; }
     /* one row per day with a match: the day (and how sure Windy is) · the guess · the hours */
     .reco-row { display: grid; grid-template-columns: 104px auto minmax(0, 1fr); align-items: center; column-gap: 12px; padding: 9px 0; border-bottom: 1px solid @line;
         &:last-of-type { border-bottom: 0; }
         .r-day { display: flex; flex-direction: column; gap: 1px; color: @sub; font-size: 13px; white-space: nowrap; line-height: 1.25; }
         .tag { justify-self: start; }
-        .r-time { font-weight: 600; font-size: 13.5px; white-space: nowrap; } .r-none { grid-column: span 2; }
+        .r-time { font-weight: 600; font-size: 13.5px; line-height: 1.3; span { white-space: nowrap; } } .r-none { grid-column: span 2; }
         .r-pred { color: var(--sl-uQuiet, #8a8a8a); font-size: 11px; } }
     .r-later { padding-top: 8px; }
     .chip.notworth { align-self: flex-start; height: 32px; font-size: 13px; }
@@ -3136,7 +3136,8 @@
             &.on { background: var(--sl-chipOnBg, #f8f8f8); color: var(--sl-chipOnText, #1c1c1c) !important; border-color: var(--sl-chipOnBg, #f8f8f8); } }
         .gear-hint { font-size: 12.5px; color: @sub; }
         .btns { margin-top: 0; } }
-    @media (max-width: 380px) { .works .w-grid { column-gap: 9px; font-size: 12.5px; } .reco-row { grid-template-columns: 84px auto minmax(0, 1fr); column-gap: 8px; } }
+    @media (max-width: 480px) { .reco-row { grid-template-columns: 86px auto minmax(0, 1fr); column-gap: 10px; .r-time { font-size: 13px; } } }
+    @media (max-width: 380px) { .works .w-grid { column-gap: 9px; font-size: 12.5px; } .reco-row { grid-template-columns: 78px auto minmax(0, 1fr); column-gap: 8px; } }
     label.link { cursor: pointer; }
     .chip { height: 36px; padding: 0 15px; border-radius: var(--sl-radiusChip, 18px); border: 1px solid var(--sl-chipLine, #5a5a5a); background: transparent; color: var(--sl-chipText, #f8f8f8) !important; display: inline-flex; align-items: center; gap: 6px;
         .k { font-size: 11px; opacity: 0.65; }
