@@ -256,7 +256,7 @@
                     <button class="btn ghost" on:click={ () => exportJson(data) }>{ W.download }</button>
                     <label class="btn ghost">{ W.upload }<input type="file" accept=".json,application/json" on:change={ onUpload } hidden /></label>
                 </div>
-                <small class="muted">{ W.uploadHint }</small>
+                {#if W.uploadHint}<small class="muted">{ W.uploadHint }</small>{/if}
             </div>
             <div class="card">
                 <b class="h3">{@html rich(W.aboutTitle)}</b>
@@ -589,7 +589,7 @@
                 <span class="muted">{@html rich(W.trustEmpty)}</span>
             {:else}
                 {#each scores as sc, i}
-                    <div class="score"><span class="m" class:best={ i === 0 && sc.count >= 3 }>{ modelLabel(sc.model) }</span><span class="missbar"><i style="width: { Math.min(100, sc.miss * 25) }%" class:best={ i === 0 && sc.count >= 3 }></i></span><span>±{ fmtWind(sc.miss, S.wind) } { windLabel(S.wind) }</span></div>
+                    <div class="score"><span class="m" class:best={ i === 0 && sc.count >= 3 }>{ modelLabel(sc.model) }</span><span class="missbar"><i style="width: { closeness(sc.miss, scores) }%" class:best={ i === 0 && sc.count >= 3 }></i></span><span>±{ fmtWind(sc.miss, S.wind) } { windLabel(S.wind) }</span></div>
                 {/each}
                 <small class="muted">{ fill(W.trustNote, { n: scores[0].count }) }</small>
             {/if}
@@ -1440,6 +1440,9 @@
         const g = spotNow ? guessSport(m, conditionsOf(spotNow.wind, spotNow.waves)) : null;
         return m.params.map(p => ({ p, part: g?.parts.find(x => x.key === p.key) || null }));
     };
+    /** how close a model was, as a bar: the closest one is full, one twice as far off is half */
+    const closeness = (miss: number, list: { miss: number }[]): number =>
+        Math.round((100 * Math.max(0.1, Math.min(...list.map(x => x.miss)))) / Math.max(0.1, miss));
     $: bestRange = (b: DayBest): string => (b.now ? fill(W.todayUntil, { time: fmtTime(b.end) }) : fmtTime(b.start) + '–' + fmtTime(b.end));
     $: tideText = (t: { tide: string | null; move: string | null }): string =>
         [t.tide ? W['tide' + t.tide].toLowerCase() : '', t.move ? W['tide' + t.move].toLowerCase() : ''].filter(Boolean).join(', ');
