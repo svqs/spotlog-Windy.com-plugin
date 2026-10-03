@@ -2,7 +2,8 @@ import { THEME } from './theme';
 import type { Dir8, Spot, Session, Snapshot } from './types';
 
 export const DIRS: Dir8[] = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-export const SPORTS = ['Surf', 'Windsurf', 'Kite', 'Wing', 'SUP', 'Other'];
+/** the usual sports (your own ones are typed in under "Other…" and kept by name) */
+export const SPORTS = ['Surf', 'Windsurf', 'Kite', 'Wing'];
 
 /** Degrees (wind FROM) to one of 16 compass names */
 export const dirName = (deg: number | null): string => {

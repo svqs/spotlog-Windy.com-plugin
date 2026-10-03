@@ -154,7 +154,7 @@
                         {#if nowOf(s.id, nowBySpot)}
                             <span class="now">
                                 <span class="sw" style="background: { windColor(nowOf(s.id, nowBySpot)?.wind?.wind ?? null) }">{ fmtWind0(nowOf(s.id, nowBySpot)?.wind?.wind ?? null, S.wind) }</span>
-                                <span class="now-t"><b>{ windLabel(S.wind) }</b><small>{ fill(W.tileGusts, { v: fmtWind0(nowOf(s.id, nowBySpot)?.wind?.gust ?? null, S.wind) }) }</small>{#if nowOf(s.id, nowBySpot)?.waves}<small>{ fill(W.tileWaves, { v: fmtHeight(nowOf(s.id, nowBySpot)?.waves?.waves ?? null, S.height, true) }) }</small>{/if}</span>
+                                <span class="now-t"><b>{ windLabel(S.wind) }</b></span>
                                 {#if nowOf(s.id, nowBySpot)?.wind?.dir != null}
                                     <!-- the arrow points where the wind blows to, like Windy's; the letters say where it comes from -->
                                     <span class="wdir" title="Wind from { dirName(nowOf(s.id, nowBySpot)?.wind?.dir ?? null) }">
@@ -163,12 +163,15 @@
                                     </span>
                                 {/if}
                             </span>
+                            <!-- gusts and waves under the wind: each stays whole, they wrap onto two lines when the tile is narrow -->
+                            <span class="now-sub"><small>{ fill(W.tileGusts, { v: fmtWind0(nowOf(s.id, nowBySpot)?.wind?.gust ?? null, S.wind) }) }</small>{#if nowOf(s.id, nowBySpot)?.waves}<small>{ fill(W.tileWaves, { v: fmtHeight(nowOf(s.id, nowBySpot)?.waves?.waves ?? null, S.height, true) }) }</small>{/if}</span>
                         {:else}
                             <span class="now"><small>{ W.tileLoading }</small></span>
                         {/if}
                         <span class="t-tag">
                             {#if bestOf(s)}
-                                <span class="tag" style="background: { guessCol(bestOf(s)?.rating ?? null)[0] }; color: { guessCol(bestOf(s)?.rating ?? null)[1] }" title={ guessNote(bestOf(s), s) }>{ bestTag(bestOf(s) ?? NO_BEST) }</span>
+                                <span class="tag" style="background: { guessCol(bestOf(s)?.rating ?? null)[0] }; color: { guessCol(bestOf(s)?.rating ?? null)[1] }" title={ guessNote(bestOf(s), s) }>{ guessLbl(bestOf(s)?.rating ?? null, bestOf(s)?.sport) }</span>
+                                {#if !bestOf(s)?.now}<small class="t-when">{ fill(W.from, { v: fmtTime(bestOf(s)?.start ?? 0) }) }</small>{/if}
                             {:else}
                                 <span class="tag ghost" title={ guessNote(guessOf(s), s) || ratingHint(s) }>{ W.guessUnsure }</span>
                             {/if}
@@ -355,10 +358,17 @@
 
     <div class="field"><span class="lbl">{ W.formSport }</span>
         <div class="chips">
-            {#each SPORTS as sp}
+            {#each sportChoices(sf.sports) as sp}
                 <button class="chip" class:on={ sf.sports.includes(sp) } on:click={ () => sf && (sf = { ...sf, sports: toggle(sf.sports, sp) }) }>{ sportLbl(sp) }</button>
             {/each}
+            <button class="chip" class:on={ otherFor === 'spot' } aria-expanded={ otherFor === 'spot' } on:click={ () => openOther('spot') }>{ W.sportAddOther }</button>
         </div>
+        {#if otherFor === 'spot'}
+            <div class="other-sport">
+                <input bind:value={ otherName } maxlength="20" placeholder={ W.sportNameHint } aria-label={ W.sportNameHint } on:keydown={ e => e.key === 'Enter' && addOther() } />
+                <button class="btn primary small" disabled={ !otherName.trim() } on:click={ addOther }>{ W.sportAdd }</button>
+            </div>
+        {/if}
     </div>
 
     <div class="card">
@@ -405,7 +415,7 @@
         waves={ spotNow?.waves ?? null }
         loading={ !spotNow }
         u={ S }
-        badge={ spotGuess ? guessLbl(spotPred) : '' }
+        badge={ spotGuess ? guessLbl(spotPred, spotGuess.sport) : '' }
         badgeNote={ guessNote(spotGuess, spot) }
         badgeBg={ guessCol(spotPred)[0] }
         badgeFg={ guessCol(spotPred)[1] }
@@ -483,7 +493,7 @@
             {#if spotBest}
                 <div class="reco-row">
                     <span class="r-day">{ W.today }</span>
-                    <span class="tag" style="background: { guessCol(spotBest.rating)[0] }; color: { guessCol(spotBest.rating)[1] }">{ guessLbl(spotBest.rating) }</span>
+                    <span class="tag" style="background: { guessCol(spotBest.rating)[0] }; color: { guessCol(spotBest.rating)[1] }">{ guessLbl(spotBest.rating, spotBest.sport) }</span>
                     <b class="r-time">{ bestRange(spotBest) }</b>
                 </div>
             {/if}
@@ -491,13 +501,12 @@
                 <div class="reco-row">
                     <span class="r-day">{ fmtDay(d.day) }{#if predOfDay(d.day, spotOutlook) !== null}<small class="r-pred" title={ W.predTitle }>{ fill(W.predShort, { p: Math.round(predOfDay(d.day, spotOutlook) ?? 0) }) }</small>{/if}</span>
                     {#if d.best}
-                        <span class="tag" style="background: { guessCol(d.best.rating)[0] }; color: { guessCol(d.best.rating)[1] }">{ guessLbl(d.best.rating) }</span>
+                        <span class="tag" style="background: { guessCol(d.best.rating)[0] }; color: { guessCol(d.best.rating)[1] }">{ guessLbl(d.best.rating, d.best.sport) }</span>
                         <b class="r-time"><span>{ fmtTime(d.best.start) }–</span><span>{ fmtTime(d.best.end) }</span></b>
                     {/if}
                 </div>
             {/each}
             {#if !spotOutlook || !dayBySpot[spot.id]}<small class="muted r-later">{ W.checking }</small>{:else if !spotBest && !spotDays.some(d => d.best)}<small class="muted r-later">{ W.daysNone }</small>{/if}
-            <small class="muted reco-note">{ spotBest ? guessNote(spotBest, spot) : guessNote(spotGuess, spot) }</small>
         </div>
     </div>
 
@@ -508,10 +517,8 @@
         </button>
         {#if !S.worksOpen}
             <button class="card works-sum" on:click={ () => setWorksOpen(true) }>
-                {#each spotLearned.filter(m => m.params.length) as m (m.sport)}
-                    <span class="ws-line"><b>{ sportLbl(m.sport) }</b><span>{ worksLine(m) || '–' }</span></span>
-                {:else}
-                    <span class="muted">{ W.fromWindowOnly }</span>
+                {#each spotLearned as m (m.sport)}
+                    <span class="ws-line"><b>{ sportLbl(m.sport) }</b><span class:muted={ !worksLine(m) }>{ worksLine(m) || W.worksUnknown }</span></span>
                 {/each}
                 <small class="muted">{ W.worksOpenHint }</small>
             </button>
@@ -563,7 +570,7 @@
                                 {/each}
                             </div>
                         {:else}
-                            <small class="muted">{ W.fromWindowOnly }</small>
+                            <small class="muted">{ W.worksUnknownLong }</small>
                         {/if}
                     </div>
                 {/each}
@@ -715,13 +722,20 @@
             <span class="grow"><small>{ W.spotLabel }</small><b>{ spotById(f.spotId)?.name || W.noSpotYet }</b></span>
             {#if f.spotId}<button class="link" on:click={ () => f && (f = { ...f, spotId: null }) }>{ W.change }</button>{/if}
         </div>
-        {#if (spotById(f.spotId)?.sports.length ?? 0) > 1}
-            <!-- spots with several sports learn per sport -->
+        {#if f.spotId}
+            <!-- the sport of this session (any sport: a new one is added to the spot); spots learn per sport -->
             <div class="chips sep" role="radiogroup" aria-label={ W.sessionSport }>
-                {#each spotById(f.spotId)?.sports || [] as sp}
-                    <button class="chip" class:on={ (f.sport || spotById(f.spotId)?.sports[0]) === sp } role="radio" aria-checked={ (f.sport || spotById(f.spotId)?.sports[0]) === sp } on:click={ () => f && (f = { ...f, sport: sp }) }>{ sportLbl(sp) }</button>
+                {#each sportChoices(spotById(f.spotId)?.sports || [], f.sport) as sp}
+                    <button class="chip" class:on={ logSport(f) === sp } role="radio" aria-checked={ logSport(f) === sp } on:click={ () => f && (f = { ...f, sport: sp }) }>{ sportLbl(sp) }</button>
                 {/each}
+                <button class="chip" class:on={ otherFor === 'log' } aria-expanded={ otherFor === 'log' } on:click={ () => openOther('log') }>{ W.sportAddOther }</button>
             </div>
+            {#if otherFor === 'log'}
+                <div class="other-sport">
+                    <input bind:value={ otherName } maxlength="20" placeholder={ W.sportNameHint } aria-label={ W.sportNameHint } on:keydown={ e => e.key === 'Enter' && addOther() } />
+                    <button class="btn primary small" disabled={ !otherName.trim() } on:click={ addOther }>{ W.sportAdd }</button>
+                </div>
+            {/if}
         {/if}
         {#if !f.spotId}
             <div class="chips">
@@ -943,10 +957,11 @@
     $: W = $words;
     $: RATE = [W.rate1, W.rate2, W.rate3, W.rate4, W.rate5];
     /** only good news gets a word (good, great, epic); anything else is "not sure yet" */
-    $: guessLbl = (r: number | null): string => (shownLevel(r) ? W['guess' + shownLevel(r)] : W.guessUnsure);
+    /** "Great for windsurf" (the rating is per sport), "Likely great" without a sport, or "Not sure yet" */
+    $: guessLbl = (r: number | null, sport?: string | null): string =>
+        (!shownLevel(r) ? W.guessUnsure : sport ? fill(W['guessFor' + shownLevel(r)], { sport: sportLbl(sport).toLowerCase() }) : W['guess' + shownLevel(r)]);
     const UNSURE: [string, string] = ['var(--sl-dirTile, #e9e8e3)', 'var(--sl-lightSub, #6b6b6b)'];
     const guessCol = (r: number | null): [string, string] => (shownLevel(r) ? guessColours(r as number) : UNSURE);
-    const NO_BEST: DayBest = { start: 0, end: 0, rating: 0, level: 0, sport: '', sessions: 0, learned: false, now: true };
     $: sportLbl = (sp: string): string => W['sport' + sp] || sp;
     /** a place without a name is stored as 'Dropped pin'; it shows in the chosen wording */
     $: pinName = (n: string | undefined): string => (!n || n === 'Dropped pin' ? W.droppedPin : n);
@@ -1238,6 +1253,32 @@
 
     /* ---------- helpers ---------- */
     const toggle = <T,>(list: T[], v: T): T[] => (list.includes(v) ? list.filter(x => x !== v) : [...list, v]);
+
+    /* ---------- sports: the usual ones, plus your own (typed in under "Other…") ---------- */
+    /** your own sports: every sport used on a spot or session that isn't one of the usual ones */
+    $: ownSports = Array.from(new Set([...data.spots.flatMap(x => x.sports), ...data.sessions.map(x => x.sport || '')]))
+        .filter(x => x && !SPORTS.includes(x));
+    /** the sport chips: the ones given first, then the usual ones, then your own */
+    $: sportChoices = (first: string[], extra?: string | null): string[] =>
+        Array.from(new Set([...first, ...(extra ? [extra] : []), ...SPORTS, ...ownSports]));
+    /** the sport a log is for: the one picked, else the spot's first */
+    $: logSport = (lf: LogForm): string | null => lf.sport || spotById(lf.spotId)?.sports[0] || null;
+    let otherFor: 'spot' | 'log' | null = null;
+    let otherName = '';
+    function openOther(where: 'spot' | 'log') {
+        otherFor = otherFor === where ? null : where;
+        otherName = '';
+    }
+    /** adds the typed sport (one you already have, or a usual one, when it's the same name) */
+    function addOther() {
+        const typed = otherName.trim().replace(/\s+/g, ' ').slice(0, 20);
+        if (!typed) {return;}
+        const sp = [...SPORTS, ...ownSports].find(x => x.toLowerCase() === typed.toLowerCase() || sportLbl(x).toLowerCase() === typed.toLowerCase()) || typed;
+        if (otherFor === 'spot' && sf) {sf = { ...sf, sports: sf.sports.includes(sp) ? sf.sports : [...sf.sports, sp] };}
+        if (otherFor === 'log' && f) {f = { ...f, sport: sp };}
+        otherFor = null;
+        otherName = '';
+    }
     const spotById = (id: string | null) => (id ? data.spots.find(s => s.id === id) : undefined);
         const baseMax = (u: string) => ({ ms: 20, kt: 40, kmh: 70, mph: 45, bft: 10 } as Record<string, number>)[u] || 20;
     const roundToStep = (v: number) => Math.round(v / windStep(S.wind)) * windStep(S.wind);
@@ -1368,7 +1409,6 @@
         return sp + (g.learned ? (g.sessions === 1 ? W.badgeFromOne : fill(W.badgeFrom, { n: g.sessions })) : W.badgeWindow);
     };
     /** "great · 18:00" for a window later today; just the word when it's on now */
-    $: bestTag = (b: DayBest): string => guessLbl(b.rating) + (b.now ? '' : ' · ' + fmtTime(b.start));
     /* ---------- what works here: one row per condition ---------- */
     $: paramName = (k: ParamKey): string => W['param' + k[0].toUpperCase() + k.slice(1)];
     $: rangeText = (p: ParamModel): string => {
@@ -1396,9 +1436,6 @@
         const dir = m.params.find(p => p.key === (m.sport === 'Surf' ? 'swellDir' : 'dir'));
         return [wnd && rangeText(wnd), dir && rangeText(dir)].filter(Boolean).join(' · ');
     };
-    /** "✓ wind ✓ wind from ✕ waves" for the map card */
-    $: whyLine = (g: Guess | null): string =>
-        g ? g.parts.slice(0, 4).map(x => `${x.fit >= 0.99 ? '✓' : x.fit > 0 ? '~' : '✕'} ${paramName(x.key).toLowerCase()}`).join('  ') : '';
     $: spotParts = (m: SportModel) => {
         const g = spotNow ? guessSport(m, conditionsOf(spotNow.wind, spotNow.waves)) : null;
         return m.params.map(p => ({ p, part: g?.parts.find(x => x.key === p.key) || null }));
@@ -1821,9 +1858,8 @@
         return `<div class="sl-pop"><div class="sl-h"><span><b>${escapeHtml(sp.name)}</b><small>${L('cardNow')}</small></span>${nav}</div>` +
             (wv ? `<div class="sl-tiles">${tile(L('fcWind'), fmtWind0(wv.wind, S.wind), windColor(wv.wind), windLabel(S.wind))}${tile(L('fcGusts'), fmtWind0(wv.gust, S.wind), windColor(wv.gust), windLabel(S.wind))}${tile(L('fcFrom'), dirName(wv.dir), 'var(--sl-dirTile, #e9e8e3)')}${n?.waves ? tile(L('fcWaves'), fmtHeight(n.waves.waves, S.height), 'var(--sl-wavesTile, #dbe6f2)', S.height) : ''}</div>` : loading ? `<small>${L('cardLoading')}</small>` : `<small>${L('fcEmpty')}</small>`) +
             (wv ? `<small>${fmtTemp(wv.temp, S.temp)}</small>` : '') +
-            (g ? `<span class="sl-b" style="background:${guessCol(g.rating)[0]};color:${guessCol(g.rating)[1]}">${escapeHtml(guessLbl(g.rating))}</span>` : '') +
-            (g && g.parts.length ? `<small class="sl-why" title="${escapeHtml(w('whyTitle'))}">${escapeHtml(whyLine(g))}</small>` : '') +
-            (best && !best.now ? `<small class="sl-best">${L('bestToday')}: <b>${escapeHtml(guessLbl(best.rating))}</b> ${escapeHtml(bestRange(best))}</small>` : '') +
+            (g ? `<span class="sl-b" style="background:${guessCol(g.rating)[0]};color:${guessCol(g.rating)[1]}">${escapeHtml(guessLbl(g.rating, g.sport))}</span>` : '') +
+            (best && !best.now ? `<small class="sl-best">${L('bestToday')}: <b>${escapeHtml(guessLbl(best.rating, best.sport))}</b> ${escapeHtml(bestRange(best))}</small>` : '') +
             (isMobile ? `<div class="sl-acts"><button data-act="snap">${L('cardSave')}</button><button data-act="log">${L('cardLog')}</button><button data-act="open">${L('cardDetails')}</button></div>` : '') +
             '</div>';
     }
@@ -2408,10 +2444,15 @@
             gusts: f.gusts, water: f.water,
             // a tide logged by hand in older diaries stays (new tides come from the saved forecast)
             tide: data.sessions.find(x => x.id === f?.id)?.tide ?? null, tideMove: data.sessions.find(x => x.id === f?.id)?.tideMove ?? null,
-            sport: (spotById(f.spotId)?.sports.includes(f.sport || '') ? f.sport : spotById(f.spotId)?.sports[0]) || null, gearIds: f.gearIds, gear: f.gear.trim(), start: f.start, end: f.end, notes: f.notes, track: f.track,
+            sport: logSport(f) || null, gearIds: f.gearIds, gear: f.gear.trim(), start: f.start, end: f.end, notes: f.notes, track: f.track,
             tz: deviceTz(),
         };
         data.sessions = f.id ? data.sessions.map(x => (x.id === se.id ? se : x)) : [...data.sessions, se];
+        // a sport the spot didn't have yet: the spot gets it (and learns it from now on)
+        const ofSpot = spotById(se.spotId);
+        if (ofSpot && se.sport && !ofSpot.sports.includes(se.sport)) {
+            data.spots = data.spots.map(x => (x.id === ofSpot.id ? { ...x, sports: [...x.sports, se.sport as string].slice(0, 8) } : x));
+        }
         if (sn) {
             // the forecast follows the session: its main time becomes the session time (when that day was saved),
             // and a forecast used for a session belongs to that spot
@@ -3033,6 +3074,8 @@
     .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .tile { text-align: left; min-height: 128px; padding: 14px; border-radius: var(--sl-radiusCard, 18px); background: var(--sl-tileBg, #3c3c3c); border: 1px solid var(--sl-tileLine, #4d4d4d); display: flex; flex-direction: column; gap: 10px; justify-content: space-between; }
     .t-name { font-size: 15px; font-weight: 600; }
+    .t-tag { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; .t-when { color: @sub; font-size: 12px; white-space: nowrap; } }
+    @media (max-width: 360px) { .tiles:not(.list) .t-tag .tag { font-size: 11px; padding: 3px 8px; } }
     /* − / + above the spots: compact list or tiles */
     .viewtog { align-self: flex-end; display: flex; gap: 2px; padding: 2px; margin-bottom: -8px; border-radius: var(--sl-radiusSmall, 9px); background: var(--sl-tabsBg, #3c3c3c);
         button { width: 30px; height: 24px; border: 0; border-radius: 7px; background: transparent; color: @sub !important; font-size: 17px !important; line-height: 1; padding: 0; }
@@ -3041,12 +3084,13 @@
         .tile { min-height: 0; flex-direction: row; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; border-radius: 14px; }
         .t-name { flex: 1; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .now { flex: 0 0 auto; }
-        .now-t { display: none; }
+        .now-t, .now-sub { display: none; }
         .sw { width: 30px; height: 30px; border-radius: 9px; font-size: 13px; }
-        .t-tag { flex: 0 0 auto; }
+        .t-tag { flex: 0 0 auto; .t-when { display: none; } }
         .tag { font-size: 11px; padding: 3px 9px; } }
     .now { display: flex; align-items: center; gap: 8px; min-width: 0; }
-    .now-t { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; b { font-size: 13px; } small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }
+    .now-t { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; b { font-size: 13px; } }
+    .now-sub { display: flex; flex-wrap: wrap; gap: 1px 10px; margin-top: -4px; small { color: @sub; font-size: 12.5px; white-space: nowrap; } }
     .wdir { display: flex; flex-direction: column; align-items: center; gap: 1px; flex-shrink: 0; min-width: 28px; color: @text;
         svg { display: block; } small { font-size: 11px; font-weight: 600; color: @sub; } }
     .tag { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;
@@ -3092,8 +3136,9 @@
         .r-time { font-weight: 600; font-size: 13.5px; line-height: 1.3; span { white-space: nowrap; } }
         .r-pred { color: var(--sl-uQuiet, #8a8a8a); font-size: 11px; } }
     .r-later { padding-top: 8px; }
+    .other-sport { display: flex; gap: 8px; margin-top: 8px; align-items: center;
+        input { flex: 1; min-width: 0; height: 36px; padding: 0 12px; border-radius: var(--sl-radiusSmall, 9px); border: 1px solid var(--sl-inputLine, #5a5a5a); background: var(--sl-inputBg, #2e2e2e); color: var(--sl-inputText, #f8f8f8); font: inherit; } }
     .chip.notworth { align-self: flex-start; height: 32px; font-size: 13px; }
-    .reco-note { margin-top: 8px; }
     /* spot page: what works here for you, folded to one line or open */
     .works-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; border: 0; background: none; padding: 0; color: inherit !important; text-align: left; cursor: pointer;
         .chev { display: inline-block; font-size: 22px; line-height: 1; font-weight: 600; color: @sub; transition: transform 0.2s; } .chev.open { transform: rotate(90deg); } }
@@ -3103,7 +3148,7 @@
         .w-sport { display: flex; flex-direction: column; gap: 10px; }
         .w-sport + .w-sport { border-top: 1px solid @line; padding-top: 14px; }
         .w-head { display: flex; align-items: baseline; gap: 10px; b { font-size: 14px; } .link { padding: 0; } }
-        .w-grid { display: grid; grid-template-columns: minmax(64px, max-content) minmax(0, 1fr) max-content auto; column-gap: 14px; row-gap: 9px; align-items: center; font-size: 13.5px; }
+        .w-grid { display: grid; grid-template-columns: minmax(64px, max-content) max-content max-content minmax(0, 1fr); column-gap: 18px; row-gap: 9px; align-items: center; font-size: 13.5px; }
         .w-h { font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sl-uQuiet, #8a8a8a); }
         .w-r, .w-now { text-align: right; justify-self: end; }
         .w-name { color: @sub; white-space: nowrap; }
@@ -3212,6 +3257,5 @@
     :global(.sl-t b) { display: block; font: 900 20px 'Doto', ui-monospace, monospace; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: clip; }
     :global(.sl-pop .sl-t small) { display: block; font: 600 10px 'Instrument Sans', system-ui, sans-serif; color: inherit; opacity: 0.7; line-height: 1; white-space: nowrap; }
     :global(.sl-pop .sl-best b) { font-weight: 600; color: inherit; }
-    :global(.sl-pop .sl-why) { display: block; font-size: 11.5px; letter-spacing: 0.01em; }
     :global(.sl-b) { align-self: flex-start; padding: 3px 9px; border-radius: 10px; font-size: 12px; font-weight: 600; }
 </style>

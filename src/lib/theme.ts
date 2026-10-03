@@ -25,7 +25,7 @@ export const THEME = {
     // spot labels, zoomed in: selected (the dot takes the guess colour when it looks good)
     activeBg: '#ffffff', activeText: '#1c1c1c', activeDot: '#2e2e2e',
     // zoomed out: plain dots
-    compactBelow: 7, compactSize: 18, compactDot: '#2e2e2e', compactRing: false, compactRingColor: '#3c3c3c', compactRingWidth: 2,
+    compactBelow: 6, compactSize: 10, compactDot: '#1c1c1c', compactRing: true, compactRingColor: '#f8f8f8', compactRingWidth: 1,
     // sessions on the map
     sessStyle: 'glow' as 'glow' | 'dot' | 'ring' | 'off',
     sessColor: '#0081fa', sessCore: true, sessCoreRing: '#0081fa',

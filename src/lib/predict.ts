@@ -55,7 +55,7 @@ export const SPORT_PARAMS: Record<string, ParamKey[]> = {
     Kite: ['wind', 'dir', 'gust', 'waves', 'temp', 'rain'],
     Wing: ['wind', 'dir', 'gust', 'waves', 'temp', 'rain'],
     Surf: ['swell', 'period', 'swellDir', 'power', 'wind', 'dir', 'temp', 'rain'],
-    SUP: ['wind', 'dir', 'waves', 'temp', 'rain'],
+    /** any other sport (your own ones too) */
     Other: ['wind', 'dir', 'waves', 'temp', 'rain'],
 };
 export const paramsOf = (sport: string): ParamKey[] => SPORT_PARAMS[sport] || SPORT_PARAMS.Other;

@@ -44,6 +44,17 @@ def text_problems(pg):
     t = pg.locator('.spotlog').first.inner_text()
     return [w for w in ['NaN', 'undefined', 'null', '[object', 'Infinity'] if w in t]
 
+def cut_text(pg):
+    """values that are cut off with "…" (an ellipsis is fine for long names and notes, not for numbers and tags)"""
+    return pg.evaluate("""() => {
+      const bad = [];
+      for (const el of document.querySelectorAll('.spotlog .now-sub small, .spotlog .tag, .spotlog .w-range, .spotlog .w-now, .spotlog .w-imp, .spotlog .r-time, .spotlog .t-when, .sl-pop .sl-t span, .sl-pop .sl-t small, .sl-pop .sl-b')) {
+        const r = el.getBoundingClientRect(); if (!r.width) continue;
+        if (el.scrollWidth > el.clientWidth + 1) bad.push(el.className + ' ' + el.textContent.trim().slice(0, 30));
+      }
+      return [...new Set(bad)].slice(0, 6);
+    }""")
+
 def overflow(pg):
     return pg.evaluate("""() => {
       const root = document.querySelector('.spotlog'); if (!root) return ['no root'];
@@ -124,7 +135,7 @@ with sync_playwright() as p:
             sel = ('.mtabs button' if mob else '.tabs button') + f':has-text("{tab}")'
             if pg.locator(sel).count() == 0: continue
             pg.locator(sel).first.click(); pg.wait_for_timeout(400)
-            o = overflow(pg); tp = text_problems(pg)
+            o = overflow(pg) + cut_text(pg); tp = text_problems(pg)
             if o or tp: bad[tab] = o + tp
             pg.screenshot(path=f'{OUT}/vp-{vp[0]}-{tab.replace(" ", "")}.png')
         note(not bad and not errs, f'{vp[0]}x{vp[1]}{" phone" if mob else ""}: tabs fit, no odd text {bad} {errs[:2]}')
@@ -181,7 +192,17 @@ with sync_playwright() as p:
     pg.locator('text=Save session').scroll_into_view_if_needed(); pg.click('text=Save session')
     pg.wait_for_timeout(600)
     last = pg.evaluate(f"JSON.parse(localStorage.getItem('{KEY}')).sessions.slice(-1)[0]")
-    note(chips == ['Windsurf', 'Surf'] and last.get('sport') == 'Surf', f'multi-sport spot: the log asks which sport ({chips}), saved {last.get("sport")}')
+    note(chips[:2] == ['Windsurf', 'Surf'] and 'Kite' in chips and 'SUP' not in chips and chips[-1] == 'Other…' and last.get('sport') == 'Surf', f'multi-sport spot: the log asks which sport, the spot\'s first ({chips}), saved {last.get("sport")}')
+    # a sport of your own, typed under "Other…": the session gets it and the spot learns it from now on
+    pg.click('.act:has-text("Log session")'); pg.wait_for_selector('.felt')
+    pg.locator('[role=radiogroup][aria-label="Sport"] .chip:has-text("Other…")').click()
+    pg.fill('.other-sport input', 'Foil'); pg.click('.other-sport button')
+    on = pg.locator('[role=radiogroup][aria-label="Sport"] .chip.on').all_inner_texts()
+    pg.locator('text=Save session').scroll_into_view_if_needed(); pg.click('text=Save session')
+    pg.wait_for_timeout(600)
+    st = pg.evaluate(f"JSON.parse(localStorage.getItem('{KEY}'))")
+    sp0 = next(x for x in st['spots'] if x['id'] == st['sessions'][-1]['spotId'])
+    note(on == ['Foil'] and st['sessions'][-1].get('sport') == 'Foil' and 'Foil' in sp0['sports'], f'own sport under Other…: chip {on}, session {st["sessions"][-1].get("sport")}, spot sports {sp0["sports"]}')
     note(not errs, f'no errors {errs[:2]}')
     ctx.close()
     # 7. checked, not worth it; the why line on the map card; linking earlier sessions; start from own ratings; phone layout
@@ -200,8 +221,7 @@ with sync_playwright() as p:
     note(len(chk) == 1 and chk[0]['rating'] == 2 and chk[0]['snapshotId'] and pg.locator('.stats .big').first.inner_text() == n0 and pg.locator('text=Not worth it, didn\'t go').count() >= 1,
          'log session "Not worth it, didn\'t go": a poor day with the forecast, not counted as a session on the water, labelled in the list')
     pg.click('.act:has-text("Show on map")'); pg.wait_for_selector('.sl-pop', timeout=8000); pg.wait_for_timeout(1200)
-    why = pg.locator('.sl-pop .sl-why').all_inner_texts()
-    note(bool(why) and ('✓' in why[0] or '✕' in why[0] or '~' in why[0]), f'map card shows why: {why[:1]}')
+    note(pg.locator('.sl-pop .sl-b').count() == 1 and pg.locator('.sl-pop .sl-why').count() == 0, 'map card: the rating, no ✓ ✕ list (why is in What works here)')
     pg.click('.act:has-text("Show on map")')
     # a new spot next to a session saved without a spot: offer to link it
     pg.goto(URL); pg.wait_for_selector('.spotlog')

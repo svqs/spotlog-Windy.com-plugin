@@ -2,7 +2,7 @@
 
 Run:  python3 -m http.server 8765  (from the project root), then  python3 harness/e2e.py <screenshot dir>
 """
-import json, sys, os
+import json, sys, os, re
 from playwright.sync_api import sync_playwright
 
 URL = 'http://localhost:8765/harness/index.html'
@@ -129,7 +129,7 @@ with sync_playwright() as p:
     pg.click('.act:has-text("Log session")')
     pg.wait_for_selector('.felt')
     pg.click('.rate:has-text("epic")')
-    pg.locator('.felt').scroll_into_view_if_needed()
+    pg.locator('.felt').evaluate("e => e.scrollIntoView({ block: 'center' })")  # not under the sticky save bar
     box = pg.locator('.felt').bounding_box()
     start_v = int(pg.get_attribute('.felt', 'aria-valuenow'))
     cx, cy = box['x'] + box['width'] / 2, box['y'] + 36
@@ -524,9 +524,9 @@ with sync_playwright() as p:
     assert pg.locator('.spotlog-heat').count() > h0 and pg.locator('.spotlog-pin').count() == n_pins
     ok('hover a glow for dates and ratings; switches hide/show spots and sessions')
     tags = pg.locator('.tile .t-tag').all_inner_texts()
-    assert tags and all(t.startswith('Likely') or t == 'Not sure yet' for t in tags), tags
+    assert tags and all(re.match(r'^(Good|Great|Epic) for \w', t) or t == 'Not sure yet' for t in tags), tags
     assert pg.locator('text=/Probably (flat|meh)/').count() == 0
-    ok('tiles show the best stretch of today ("Likely great · 18:00") or "Not sure yet", never a negative guess: ' + ' | '.join(tags))
+    ok('tiles show the best stretch of today per sport ("Great for windsurf · 18:00") or "Not sure yet", never a negative guess: ' + ' | '.join(tags))
     pg.mouse.click(280, 585)
     pg.wait_for_selector('.act:has-text("Add spot")')
     pg.wait_for_selector('.snap .cells', timeout=8000)
