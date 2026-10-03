@@ -14,6 +14,10 @@ Start with **[AGENTS.md](../AGENTS.md)**. It has what spotlog is, the ground rul
 | [decisions.md](decisions.md) | are about to change something the owner already decided |
 | [review-checklist.md](review-checklist.md) | review a change before it ships |
 
+Work in progress is organized separately:
+- [Reviews](reviews/README.md) — findings from code and product reviews.
+- [Specifications](specifications/README.md) — proposed changes and implementation plans.
+
 Also in the repo:
 - `README.md`: what spotlog does, for users and testers.
 - `docs/rating-logic.xlsx`: the 0.13 learning as a spreadsheet. It's outdated, and `learning.md` is the current source.

@@ -82,7 +82,15 @@ src/lib/cloud.ts       optional account sync client; supabase/ has the server
 harness/               fake Windy (mock-windy.js), test pages, sandbox + Style Lab builders, e2e + scenarios
 scripts/               build-lab, apply-design, check-words, test-predict, publish
 docs/                  the documentation (index: docs/README.md)
+docs/reviews/          dated findings from code and product reviews (index: docs/reviews/README.md)
+docs/specifications/   proposed behavior and implementation plans (index: docs/specifications/README.md)
 ```
+
+## Reviews and specifications
+
+- Start at `docs/reviews/README.md` when investigating known issues. Name new reviews for their subject and date, and add them to that index.
+- Start at `docs/specifications/README.md` when planning a larger change. Put the intended behavior, migration, and acceptance checks in a subject-specific file, then add it to that index.
+- Reviews describe findings; specifications describe proposals. Neither changes the current behavior by itself. For code that has shipped, use the topic docs above and `docs/decisions.md` as the current reference, and update them when implementation lands.
 
 ## How to make a change
 
