@@ -435,7 +435,7 @@ with sync_playwright() as p:
     pg.set_input_files('.beta-card input[type=file]', copy_path)
     pg.wait_for_selector('.toast:has-text("Copy uploaded")')
     back = stored(pg)
-    assert len(back['spots']) == len(full['spots']) and len(back['sessions']) == len(full['sessions']) and not back.get('deleted'), (len(back['spots']), len(full['spots']))
+    assert len(back['spots']) == len(full['spots']) and len(back['sessions']) == len(full['sessions']) and not any(x['id'] in (back.get('deleted') or {}) for k in ('spots', 'sessions', 'snapshots', 'gear') for x in full[k]), (len(back['spots']), len(full['spots']), back.get('deleted'))  # older deletes may stay remembered
     pg.reload()
     pg.wait_for_selector('.spotlog')
     assert len(stored(pg)['sessions']) == len(full['sessions'])
