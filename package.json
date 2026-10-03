@@ -1,6 +1,6 @@
 {
     "name": "windy-plugin-spotlog",
-    "version": "0.14.5",
+    "version": "0.14.6",
     "description": "Spotlog: session diary for Windy",
     "main": "dist/plugin.min.js",
     "type": "module",

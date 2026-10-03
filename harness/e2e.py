@@ -206,9 +206,9 @@ with sync_playwright() as p:
     assert '% sure' in reco, reco
     ok('spot page "When to go": today and the next days, with Windy\'s predictability: ' + reco[:160])
     # what works here: folded to a line, opens to the details (and stays open), adjust a range
-    assert pg.locator('.works-sum').count() == 1 and pg.locator('.works .w-row').count() == 0
+    assert pg.locator('.works-sum').count() == 1 and pg.locator('.works .w-grid').count() == 0
     pg.click('.works-head')
-    pg.wait_for_selector('.works .w-row .w-range')
+    pg.wait_for_selector('.works .w-grid .w-range')
     assert stored(pg)['settings']['worksOpen'] is True
     pg.locator('.works').scroll_into_view_if_needed()
     shot('05b-works-open')
