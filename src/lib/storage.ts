@@ -59,7 +59,6 @@ const cleanSpot = (s: Any) => {
         sports: ids(s.sports).map(x => x.slice(0, 20)).slice(0, 8),
         dirs: ids(s.dirs).filter(d => DIR8.includes(d)),
         min: numOr(s.min, 6), max: numOr(s.max, 12), windUnknown: !!s.windUnknown, created: numOr(s.created, Date.now()),
-        ...(typeof s.tuned === 'number' ? { tuned: s.tuned } : {}),
     };
 };
 const cleanSnap = (s: Any) => {
@@ -79,6 +78,7 @@ const cleanSession = (s: Any) => ({
     snapshotId: typeof s.snapshotId === 'string' ? s.snapshotId : null, date: numOr(s.date, Date.now()),
     rating: Math.max(1, Math.min(5, Math.round(numOr(s.rating, 3) as number))), felt: numOr(s.felt, null),
     gusts: str(s.gusts, 30) || null, water: str(s.water, 30) || null,
+    sport: str(s.sport, 20) || null,
     tide: ['Low', 'Mid', 'High'].includes(s.tide) ? s.tide : null, tideMove: ['Rising', 'Falling'].includes(s.tideMove) ? s.tideMove : null, gearIds: ids(s.gearIds), gear: str(s.gear, 300),
     start: /^\d\d:\d\d$/.test(s.start) ? s.start : '', end: /^\d\d:\d\d$/.test(s.end) ? s.end : '', notes: str(s.notes, 5000),
     track: cleanTrack(s.track), tz: str(s.tz, 60) || undefined,

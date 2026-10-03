@@ -103,12 +103,17 @@ export const hoursToday = async (lat: number, lon: number, model = 'ecmwf'): Pro
         if (ts < now - 3 * HOUR || ts > end.getTime()) {continue;}
         const h = new Date(ts).getHours();
         const day = Array.isArray(d.isDay) ? !!d.isDay[i] : h >= 6 && h <= 21;
-        let waves: number | null = null;
+        const h0: Hour = { ts, wind: num(d.wind?.[i]), gust: num(d.windGust?.[i]), dir: num(d.windDir?.[i]), waves: null, day };
         if (waveTs.length) {
             const j = nearestIndex(waveTs, ts);
-            if (Math.abs(waveTs[j] - ts) <= 2 * HOUR) {waves = num(wd.waves[j]);}
+            if (Math.abs(waveTs[j] - ts) <= 2 * HOUR) {
+                Object.assign(h0, {
+                    waves: num(wd.waves[j]), period: num(wd.wavesPeriod?.[j]), wavesDir: num(wd.wavesDir?.[j]),
+                    swell: num(wd.swell1?.[j]), swellPeriod: num(wd.swell1Period?.[j]), swellDir: num(wd.swell1Dir?.[j]),
+                });
+            }
         }
-        out.push({ ts, wind: num(d.wind?.[i]), gust: num(d.windGust?.[i]), dir: num(d.windDir?.[i]), waves, day });
+        out.push(h0);
     }
     return out;
 };

@@ -157,31 +157,32 @@ with sync_playwright() as p:
         note(day == today and not errs, f'{tz} ({loc}): session logged now is on {day} (today {today}) {errs[:2]}')
         ctx.close()
 
-    # 6. the wind window learns in the app: 4 great sessions from N at a W spot -> toast + N added
+    # 6. learning per spot and sport: great sessions from N (not in the W window) and poor ones from E
     ctx, pg, errs = page()
     d = big_data(1, 0, 0)
-    d['spots'][0].update({'dirs': ['W'], 'min': 6, 'max': 12})
+    d['spots'][0].update({'dirs': ['W'], 'min': 6, 'max': 12, 'sports': ['Windsurf', 'Surf']})
     now = int(time.time() * 1000)
-    for i in range(5):
+    rows = [(9, 0, 5, 'Windsurf'), (10, 10, 5, 'Windsurf'), (8.5, 350, 4, 'Windsurf'), (9, 90, 1, 'Windsurf'), (9.5, 95, 2, 'Windsurf'), (3, 100, 5, 'Surf'), (2, 90, 4, 'Surf')]
+    for i, (wv, dv, rt, sport) in enumerate(rows):
         ts = now - (i + 1) * 86400000 * 3
-        grid = [ts + h * 3600000 for h in range(25)]
         d['snapshots'].append({'id': f'n{i}', 'spotId': 'sp0', 'lat': d['spots'][0]['lat'], 'lon': d['spots'][0]['lon'], 'ts': ts, 'savedAt': ts, 'primary': 'ecmwf',
-            'models': [{'model': 'ecmwf', 'ts': ts, 'wind': 9, 'gust': 11, 'dir': 0 if i < 3 else 270, 'temp': 20}], 'waves': None})
-        if i < 4: d['sessions'].append({'id': f's{i}', 'spotId': 'sp0', 'snapshotId': f'n{i}', 'date': ts, 'rating': 5, 'start': '', 'end': '', 'gearIds': [], 'gear': '', 'notes': '', 'felt': None, 'gusts': None, 'water': None})
+            'models': [{'model': 'ecmwf', 'ts': ts, 'wind': wv, 'gust': wv * 1.3, 'dir': dv, 'temp': 20}], 'waves': {'model': 'ecmwfWaves', 'waves': 0.8, 'wavesPeriod': 9, 'wavesDir': 270, 'swell1': 1.2, 'swell1Period': 11, 'swell1Dir': 275, 'wavesPower': None}})
+        d['sessions'].append({'id': f's{i}', 'spotId': 'sp0', 'snapshotId': f'n{i}', 'date': ts, 'rating': rt, 'sport': sport, 'start': '', 'end': '', 'gearIds': [], 'gear': '', 'notes': '', 'felt': None, 'gusts': None, 'water': None})
     seed(pg, d)
-    pg.click('.tile >> nth=0'); pg.wait_for_selector('.today')
+    pg.click('.tile >> nth=0'); pg.wait_for_selector('.works li')
+    pg.wait_for_timeout(1200)
+    txt = pg.locator('.works').inner_text()
+    note('Windsurf' in txt and 'Surf' in txt and 'Learned from 5 sessions (3 great)' in txt and 'N' in txt, 'what works here, per sport: ' + txt.replace('\n', ' | ')[:300])
+    pg.locator('.works').scroll_into_view_if_needed()
+    pg.screenshot(path=f'{OUT}/works.png')
     pg.click('.act:has-text("Log session")'); pg.wait_for_selector('.felt')
-    pg.locator('.rate >> nth=4').click()
+    chips = pg.locator('[role=radiogroup][aria-label="Sport"] .chip').all_inner_texts()
+    pg.get_by_role('radio', name='Surf', exact=True).click()
     pg.locator('text=Save session').scroll_into_view_if_needed(); pg.click('text=Save session')
-    pg.wait_for_timeout(800)
-    toast = pg.locator('.toast').all_inner_texts()
-    sp = pg.evaluate(f"JSON.parse(localStorage.getItem('{KEY}')).spots[0]")
-    note('N' in sp['dirs'] and sp.get('tuned') and any('adjusted' in t for t in toast), f'window learns: dirs {sp["dirs"]}, toast {toast}')
-    pg.screenshot(path=f'{OUT}/tuned.png')
-    if pg.locator('.toast button').count():
-        pg.locator('.toast button').first.click(); pg.wait_for_timeout(300)
-        sp = pg.evaluate(f"JSON.parse(localStorage.getItem('{KEY}')).spots[0]")
-        note(sp['dirs'] == ['W'], f'undo puts the window back: {sp["dirs"]}')
+    pg.wait_for_timeout(600)
+    last = pg.evaluate(f"JSON.parse(localStorage.getItem('{KEY}')).sessions.slice(-1)[0]")
+    note(chips == ['Windsurf', 'Surf'] and last.get('sport') == 'Surf', f'multi-sport spot: the log asks which sport ({chips}), saved {last.get("sport")}')
+    note(not errs, f'no errors {errs[:2]}')
     ctx.close()
     b.close()
 print('FINDINGS:', json.dumps(findings, indent=1))

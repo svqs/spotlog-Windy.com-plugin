@@ -443,7 +443,7 @@
                 <span class="arrows">
                     {#each spot.dirs as d}<span class="arrow o" style="transform: rotate({ DIRS.indexOf(d) * 45 + 180 }deg)">▲</span>{/each}
                 </span>
-                <span class="grow"><b>{ fill(W.works, { dirs: dirsLabel(spot.dirs), min: fmtWind0(spot.min, S.wind), max: fmtWind0(spot.max, S.wind), unit: windLabel(S.wind) }) }</b>{#if spot.tuned}<small>{ W.tunedNote }</small>{/if}</span>
+                <span class="grow"><b>{ fill(W.works, { dirs: dirsLabel(spot.dirs), min: fmtWind0(spot.min, S.wind), max: fmtWind0(spot.max, S.wind), unit: windLabel(S.wind) }) }</b></span>
                 <button class="link" on:click={ () => spot && editSpot(spot) }>{ W.edit }</button>
             </div>
         {/if}
@@ -457,6 +457,29 @@
                 <small class="muted">{ dayBySpot[spot.id] ? W.todayNone : W.checking }</small>
             {/if}
         </div>
+        {#if spotLearned.some(m => m.params.length)}
+            <div class="works sep">
+                <span class="lbl">{ W.worksTitle }</span>
+                {#each spotLearned as m (m.sport)}
+                    {#if m.params.length}
+                        {#if spotLearned.length > 1}<b class="works-sport">{ sportLbl(m.sport) }</b>{/if}
+                        <ul>
+                            {#each spotParts(m) as row (row.p.key)}
+                                <li>
+                                    <span class="w-name">{ paramName(row.p.key) }</span>
+                                    <b class="w-range">{ rangeText(row.p) }</b>
+                                    <span class="w-imp imp{ importanceLevel(row.p.importance) }" title={ W['matter' + importanceLevel(row.p.importance)] }><i></i><i></i><i></i></span>
+                                    {#if row.part}
+                                        <span class="w-now" class:ok={ row.part.fit >= 0.99 } class:near={ row.part.fit > 0 && row.part.fit < 0.99 }>{ row.part.fit >= 0.99 ? '✓' : row.part.fit > 0 ? '~' : '✕' } { nowText(row.p.key, row.part.value) }</span>
+                                    {/if}
+                                </li>
+                            {/each}
+                        </ul>
+                        <small class="muted">{ m.params.some(p => p.from === 'sessions') ? fill(W.learnedFrom, { n: m.sessions, g: m.great }) : W.fromWindowOnly }</small>
+                    {/if}
+                {/each}
+            </div>
+        {/if}
         {#if spotTide}
             <small class="muted tidehint">{ fill(W.tideHint, { tide: tideText(spotTide), n: spotTide.of, total: spotTide.total }) }</small>
         {/if}
@@ -623,6 +646,14 @@
             <span class="grow"><small>{ W.spotLabel }</small><b>{ spotById(f.spotId)?.name || W.noSpotYet }</b></span>
             {#if f.spotId}<button class="link" on:click={ () => f && (f = { ...f, spotId: null }) }>{ W.change }</button>{/if}
         </div>
+        {#if (spotById(f.spotId)?.sports.length ?? 0) > 1}
+            <!-- spots with several sports learn per sport -->
+            <div class="chips sep" role="radiogroup" aria-label={ W.sessionSport }>
+                {#each spotById(f.spotId)?.sports || [] as sp}
+                    <button class="chip" class:on={ (f.sport || spotById(f.spotId)?.sports[0]) === sp } role="radio" aria-checked={ (f.sport || spotById(f.spotId)?.sports[0]) === sp } on:click={ () => f && (f = { ...f, sport: sp }) }>{ sportLbl(sp) }</button>
+                {/each}
+            </div>
+        {/if}
         {#if !f.spotId}
             <div class="chips">
                 {#each (f.lat !== undefined ? nearestSpots(f.lat, f.lon ?? 0) : data.spots).slice(0, 5) as s (s.id)}
@@ -751,7 +782,7 @@
         distanceKm, modelScores, forecastBias, fmtDay, fmtDayTime, fmtTime,
     } from './lib/wind';
     import { fmtWind, fmtWind0, fmtHeight, fmtTemp, fmtDistance, windLabel, fromWind, toWind, windStep } from './lib/units';
-    import { guess, conditionsOf, samplesFor, suggestWindow, shownLevel, bestToday, learnWindow, bestTide, MIN_SAMPLES } from './lib/predict';
+    import { guess, conditionsOf, samplesFor, suggestWindow, shownLevel, bestToday, bestTide, learnSpot, importanceLevel, dirsOfParam, guessSport, MIN_SAMPLES } from './lib/predict';
     import { words, w, t as tr, fill, rich, setWords } from './lib/copy';
     import { readTrack } from './lib/gpx';
 
@@ -764,7 +795,7 @@
     import Icon from './ui/Icon.svelte';
     import PixelStar from './ui/PixelStar.svelte';
     import Brand from './ui/Brand.svelte';
-    import type { Guess, DayBest, Hour, Sample } from './lib/predict';
+    import type { Guess, DayBest, Hour, SportModel, ParamModel, ParamKey } from './lib/predict';
     import type { WindyAuth } from './lib/cloud';
 
     import type { Spot, Snapshot, Session, ModelValue, WaveValue, Dir8, Settings as SettingsT, Track, SpotlogData, Gear } from './lib/types';
@@ -781,7 +812,7 @@
     interface LogForm {
         id?: string; spotId: string | null; lat?: number; lon?: number; snapshotId: string | null;
         dateStr: string; rating: number; felt: number | null; gusts: string | null; water: string | null;
-        tide: string | null; tideMove: string | null;
+        tide: string | null; tideMove: string | null; sport: string | null;
         gearIds: string[]; gear: string; start: string; end: string; notes: string; track: Track | null;
         /** snapshot this log created by itself (may be replaced when the date changes) */
         autoSnap?: string | null;
@@ -849,7 +880,7 @@
     $: guessLbl = (r: number | null): string => (shownLevel(r) ? W['guess' + shownLevel(r)] : W.guessUnsure);
     const UNSURE: [string, string] = ['var(--sl-dirTile, #e9e8e3)', 'var(--sl-lightSub, #6b6b6b)'];
     const guessCol = (r: number | null): [string, string] => (shownLevel(r) ? guessColours(r as number) : UNSURE);
-    const NO_BEST: DayBest = { start: 0, end: 0, rating: 0, level: 0, similar: 0, fromWindow: false, now: true };
+    const NO_BEST: DayBest = { start: 0, end: 0, rating: 0, level: 0, sport: '', sessions: 0, learned: false, now: true };
     const TIDES = ['Low', 'Mid', 'High'];
     const TIDE_MOVES = ['Rising', 'Falling'];
     $: sportLbl = (sp: string): string => W['sport' + sp] || sp;
@@ -1097,7 +1128,8 @@
         spotModel = 'ecmwf';
     }
     $: if (view === 'spot' && spot) {loadModels(spot);}
-    $: spotGuess = spot && spotNow ? guess(spot, conditionsOf(spotNow.wind, spotNow.waves), samplesOf(spot, sampleMap)) : null;
+    $: spotGuess = spot && spotNow ? guess(modelsOf(spot, modelMap), conditionsOf(spotNow.wind, spotNow.waves)) : null;
+    $: spotLearned = spot ? modelsOf(spot, modelMap) : [];
     $: spotPred = spotGuess?.rating ?? null;
     $: spotBest = spot ? bestOf(spot) : null;
     $: spotTide = spot ? bestTide(data.sessions.filter(x => x.spotId === spot?.id)) : null;
@@ -1222,27 +1254,51 @@
         return n && n !== 'loading' ? n : null;
     }
     /** each spot's sessions with their forecast, worked out once per change of the diary */
-    $: sampleMap = new Map<string, Sample[]>(data.spots.map(s => [s.id, samplesFor(s, data.sessions, data.snapshots)]));
-    const samplesOf = (s: Spot, _dep = sampleMap): Sample[] => _dep.get(s.id) || [];
+    /** what spotlog has learned per spot and sport, worked out once per change of the diary */
+    $: modelMap = new Map<string, SportModel[]>(data.spots.map(s => [s.id, learnSpot(s, samplesFor(s, data.sessions, data.snapshots))]));
+    const modelsOf = (s: Spot, _dep = modelMap): SportModel[] => _dep.get(s.id) || [];
+    const sessionsOf = (s: Spot, _dep = modelMap): number => modelsOf(s, _dep).reduce((a, m) => a + m.sessions, 0);
     $: guessOf = (s: Spot): Guess | null => {
         const n = nowBySpot[s.id];
-        return n && n !== 'loading' ? guess(s, conditionsOf(n.wind, n.waves), samplesOf(s, sampleMap)) : null;
+        return n && n !== 'loading' ? guess(modelsOf(s, modelMap), conditionsOf(n.wind, n.waves)) : null;
     };
     /** the best stretch of the rest of today (ECMWF), so a good evening shows up in the afternoon already */
     $: bestOf = (s: Spot): DayBest | null => {
         const h = dayBySpot[s.id];
-        return h ? bestToday(s, h, samplesOf(s, sampleMap)) : null;
+        return h ? bestToday(modelsOf(s, modelMap), h) : null;
     };
     $: ratingHint = (s: Spot): string => {
-        const n = Math.max(1, MIN_SAMPLES - samplesOf(s, sampleMap).length);
+        const n = Math.max(1, MIN_SAMPLES - sessionsOf(s, modelMap));
         return n === 1 ? W.ratingAfterOne : fill(W.ratingAfterMany, { n });
     };
-    /** what a guess is based on: "from 3 similar sessions", "from your wind window" */
-    $: guessNote = (g: { similar: number; fromWindow: boolean } | null, s: Spot | null): string =>
-        !g || !s ? '' : g.similar > 1 ? fill(W.badgeFrom, { n: g.similar }) : g.similar === 1 ? W.badgeFromOne
-            : g.fromWindow ? W.badgeWindow : samplesOf(s, sampleMap).length < MIN_SAMPLES ? ratingHint(s) : W.badgeNone;
+    /** what a guess is based on: "from 4 sessions here", "from your wind window" (+ the sport at multi-sport spots) */
+    $: guessNote = (g: { sessions: number; learned: boolean; sport: string; rating?: number | null } | null, s: Spot | null): string => {
+        if (!g || !s) {return '';}
+        const sp = s.sports.length > 1 ? sportLbl(g.sport) + ' · ' : '';
+        if (g.rating === null) {return sessionsOf(s, modelMap) < MIN_SAMPLES ? ratingHint(s) : W.badgeNone;}
+        return sp + (g.learned ? (g.sessions === 1 ? W.badgeFromOne : fill(W.badgeFrom, { n: g.sessions })) : W.badgeWindow);
+    };
     /** "great · 18:00" for a window later today; just the word when it's on now */
     $: bestTag = (b: DayBest): string => guessLbl(b.rating) + (b.now ? '' : ' · ' + fmtTime(b.start));
+    /* ---------- what works here: one row per condition ---------- */
+    $: paramName = (k: ParamKey): string => W['param' + k[0].toUpperCase() + k.slice(1)];
+    const gustWord = (x: number): string => (x <= 1.3 ? W.gust1 : x <= 1.6 ? W.gust2 : W.gust3).toLowerCase();
+    $: rangeText = (p: ParamModel): string => {
+        if (p.centres) {return p.from === 'window' && spot ? dirsLabel(spot.dirs) : dirsLabel(dirsOfParam(p));}
+        const lo = p.lo ?? 0;
+        const hi = p.hi ?? 0;
+        if (p.key === 'wind') {return `${fmtWind0(lo, S.wind)}–${fmtWind0(hi, S.wind)} ${windLabel(S.wind)}`;}
+        if (p.key === 'gust') {return gustWord(lo) === gustWord(hi) ? gustWord(lo) : `${gustWord(lo)} – ${gustWord(hi)}`;}
+        if (p.key === 'period') {return `${Math.round(lo)}–${Math.round(hi)} s`;}
+        return `${fmtHeight(lo, S.height)}–${fmtHeight(hi, S.height, true)}`;
+    };
+    $: nowText = (k: ParamKey, v: number): string =>
+        k === 'dir' || k === 'swellDir' ? dirName(v) : k === 'wind' ? `${fmtWind0(v, S.wind)} ${windLabel(S.wind)}` : k === 'gust' ? gustWord(v)
+            : k === 'period' ? `${Math.round(v)} s` : fmtHeight(v, S.height, true);
+    $: spotParts = (m: SportModel) => {
+        const g = spotNow ? guessSport(m, conditionsOf(spotNow.wind, spotNow.waves)) : null;
+        return m.params.map(p => ({ p, part: g?.parts.find(x => x.key === p.key) || null }));
+    };
     $: bestRange = (b: DayBest): string => (b.now ? fill(W.todayUntil, { time: fmtTime(b.end) }) : fmtTime(b.start) + '–' + fmtTime(b.end));
     $: tideText = (t: { tide: string | null; move: string | null }): string =>
         [t.tide ? W['tide' + t.tide] : '', t.move ? W['tide' + t.move].toLowerCase() : ''].filter(Boolean).join(', ');
@@ -1615,7 +1671,7 @@
         }
     }
     // conditions arrive one spot at a time: redraw so good spots light up
-    $: if (nowBySpot && dayBySpot && sampleMap && mapReady) {drawSpotMarkers();}
+    $: if (nowBySpot && dayBySpot && modelMap && mapReady) {drawSpotMarkers();}
     function drawTrack(t: Track | null, fit = false) {
         trackLayers.forEach(l => l.remove());
         trackLayers = [];
@@ -1653,7 +1709,7 @@
     }
     function popupHtml(sp: Spot, n: Now | null, loading = false): string {
         const wv = n?.wind;
-        const g = n ? guess(sp, conditionsOf(n.wind, n.waves), samplesOf(sp, sampleMap)) : null;
+        const g = n ? guess(modelsOf(sp, modelMap), conditionsOf(n.wind, n.waves)) : null;
         const best = bestOf(sp);
         const tile = (label: string, val: string, bg: string, unit = '') =>
             `<div class="sl-t" style="background:${bg}"><span>${label}</span><b>${val}</b><small>${unit || '&nbsp;'}</small></div>`;
@@ -2121,7 +2177,7 @@
     /* ---------- sessions ---------- */
     function emptyForm(): LogForm {
         return {
-            spotId: null, snapshotId: null, dateStr: dateStrOf(Date.now()), rating: 4, felt: null, gusts: null, water: null, tide: null, tideMove: null,
+            spotId: null, snapshotId: null, dateStr: dateStrOf(Date.now()), rating: 4, felt: null, gusts: null, water: null, tide: null, tideMove: null, sport: null,
             gearIds: [], gear: '', start: '', end: '', notes: '', track: null,
         };
     }
@@ -2212,7 +2268,7 @@
             id: se.id, spotId: se.spotId, lat: se.lat ?? sp?.lat, lon: se.lon ?? sp?.lon, snapshotId: se.snapshotId,
             dateStr: dateStrOf(se.date), rating: se.rating,
             felt: se.felt === null ? null : roundToStep(toWind(se.felt, S.wind)),
-            gusts: se.gusts, water: se.water, tide: se.tide ?? null, tideMove: se.tideMove ?? null, gearIds: [...(se.gearIds || [])], gear: se.gear || '',
+            gusts: se.gusts, water: se.water, tide: se.tide ?? null, tideMove: se.tideMove ?? null, sport: se.sport ?? null, gearIds: [...(se.gearIds || [])], gear: se.gear || '',
             start: se.start, end: se.end, notes: se.notes, track: se.track || null,
         };
         go('log');
@@ -2243,7 +2299,8 @@
         const se: Session = {
             id: f.id || uid(), spotId: f.spotId, lat: f.lat, lon: f.lon, snapshotId: f.snapshotId, date, rating: f.rating,
             felt: f.felt === null ? null : Math.round(fromWind(f.felt, S.wind) * 10) / 10,
-            gusts: f.gusts, water: f.water, tide: f.tide, tideMove: f.tideMove, gearIds: f.gearIds, gear: f.gear.trim(), start: f.start, end: f.end, notes: f.notes, track: f.track,
+            gusts: f.gusts, water: f.water, tide: f.tide, tideMove: f.tideMove,
+            sport: (spotById(f.spotId)?.sports.includes(f.sport || '') ? f.sport : spotById(f.spotId)?.sports[0]) || null, gearIds: f.gearIds, gear: f.gear.trim(), start: f.start, end: f.end, notes: f.notes, track: f.track,
             tz: deviceTz(),
         };
         data.sessions = f.id ? data.sessions.map(x => (x.id === se.id ? se : x)) : [...data.sessions, se];
@@ -2259,7 +2316,7 @@
             data.snapshots = data.snapshots.map(x => (x.id === sn.id ? upd : x));
         }
         persist();
-        if (!tuneWindow(se.spotId)) {showToast(w(f.id ? 'toastSessUpdated' : 'toastSessSaved'));}
+        showToast(w(f.id ? 'toastSessUpdated' : 'toastSessSaved'));
         const sp = spotById(se.spotId);
         if (!f.id && sp) {
             // land on the spot page, with home underneath
@@ -2372,25 +2429,6 @@
         matches = { ...matches, [s.id]: 'loading' };
         const m = await nextMatch(s);
         matches = { ...matches, [s.id]: m };
-    }
-
-    /** after a session: the wind window follows what really worked here (with undo) */
-    function tuneWindow(spotId: string | null): boolean {
-        const sp = spotById(spotId);
-        if (!sp) {return false;}
-        const ch = learnWindow(sp, samplesFor(sp, data.sessions, data.snapshots));
-        if (!ch) {return false;}
-        const before = sp;
-        const after: Spot = { ...sp, dirs: ch.dirs, min: ch.min, max: ch.max, tuned: Date.now() };
-        data.spots = data.spots.map(x => (x.id === sp.id ? after : x));
-        if (spot?.id === sp.id) {spot = after;}
-        persist();
-        showToast(tr('toastTuned', { name: sp.name }), () => {
-            data.spots = data.spots.map(x => (x.id === before.id ? before : x));
-            if (spot?.id === before.id) {spot = before;}
-            persist();
-        });
-        return true;
     }
 
     /* ---------- data ---------- */
@@ -2811,6 +2849,17 @@
     /* spot page: the best stretch of today, and the tide your best sessions had */
     .today { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin-top: 12px; .lbl { margin-right: 2px; } b { font-weight: 600; } small { flex-basis: 100%; } }
     .tidehint { display: block; margin-top: 8px; }
+    /* spot page: what works here, one row per condition (range, how much it matters, now) */
+    .works { margin-top: 12px; display: flex; flex-direction: column; gap: 6px;
+        ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+        li { display: grid; grid-template-columns: minmax(0, 1fr) auto 26px minmax(0, 1fr); align-items: center; gap: 8px; font-size: 13px; }
+        .w-name { color: @sub; } .w-range { font-weight: 600; white-space: nowrap; }
+        .w-imp { display: inline-flex; gap: 2px; align-items: flex-end; height: 12px;
+            i { width: 6px; border-radius: 1px; background: @line; } i:nth-child(1) { height: 5px; } i:nth-child(2) { height: 8px; } i:nth-child(3) { height: 12px; } }
+        .imp1 i:nth-child(1), .imp2 i:nth-child(-n+2), .imp3 i { background: var(--sl-linkText, #d49500); }
+        .w-now { text-align: right; color: @sub; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .w-now.ok { color: var(--sl-r4bg, #50b450); } .w-now.near { color: var(--sl-linkText, #d49500); }
+        .works-sport { font-size: 13px; margin-top: 4px; } small { margin-top: 2px; } }
     label.link { cursor: pointer; }
     .chip { height: 36px; padding: 0 15px; border-radius: var(--sl-radiusChip, 18px); border: 1px solid var(--sl-chipLine, #5a5a5a); background: transparent; color: var(--sl-chipText, #f8f8f8) !important; display: inline-flex; align-items: center; gap: 6px;
         .k { font-size: 11px; opacity: 0.65; }
