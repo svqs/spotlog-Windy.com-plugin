@@ -122,7 +122,7 @@ export const COPY_GROUPS: CopyGroup[] = [
         ['badgeNone', 'nothing like this logged here yet'],
         ['bestToday', 'Best today'], ['todayUntil', 'until {time}', 'The best window is on already'],
         ['worksTitle', 'What works here for you'],
-        ['worksUnknown', 'not sure yet'], ['worksUnknownLong', 'Not sure yet. Log a few sessions here and spotlog figures out what works for you.'],
+        ['worksUnknown', 'not sure yet'], ['worksUnknownLong', 'Not sure yet. Adjust your window or log a few sessions here, and spotlog figures out what works for you.'],
         ['learnedFromShort', 'learned from {n} sessions, {g} great'], ['fromWindowShort', 'from your wind window'],
         ['worksOpenHint', 'Tap to see which conditions work for you here and which matter most for today.'],
         ['colWorks', 'Your range'], ['colMatters', 'Matters'], ['colNow', 'Today'],

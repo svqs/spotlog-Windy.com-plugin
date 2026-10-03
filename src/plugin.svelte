@@ -528,7 +528,8 @@
                     <div class="w-sport">
                         <div class="w-head">
                             <b>{ sportLbl(m.sport) }</b>
-                            <small class="muted grow">{ m.params.some(p => p.from === 'sessions') ? fill(W.learnedFromShort, { n: m.sessions, g: m.great }) : W.fromWindowShort }</small>
+                            <!-- where the ranges come from: your sessions, else your wind window or your own ranges; nothing when nothing is known yet -->
+                            <small class="muted grow">{ m.params.some(p => p.from === 'sessions') ? fill(W.learnedFromShort, { n: m.sessions, g: m.great }) : m.params.some(p => p.from === 'window') ? W.fromWindowShort : m.params.some(p => p.from === 'you') ? W.setByYou : '' }</small>
                             {#if editSport !== m.sport}<button class="link" on:click={ () => startEdit(m) }>{ W.adjust }</button>{/if}
                         </div>
                         {#if editSport === m.sport}

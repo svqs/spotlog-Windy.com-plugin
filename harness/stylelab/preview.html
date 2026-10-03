@@ -551,7 +551,7 @@
 <script type="module">
 const __pluginConfig =  {
   "name": "windy-plugin-spotlog",
-  "version": "0.15.2",
+  "version": "0.15.3",
   "icon": "🌊",
   "title": "spotlog ✦",
   "description": "Save forecasts for your spots, log how the session really was, and learn which forecast to trust.",
@@ -563,8 +563,8 @@ const __pluginConfig =  {
   "addToContextmenu": true,
   "routerPath": "/spotlog",
   "private": true,
-  "built": 1791048821170,
-  "builtReadable": "2026-10-03T17:33:41.170Z"
+  "built": 1791049137169,
+  "builtReadable": "2026-10-03T17:38:57.169Z"
 };
 
 // transformCode: import bcast from '@windy/broadcast';
@@ -1674,7 +1674,7 @@ function hapticCleanup() {
 
 const config = {
     name: 'windy-plugin-spotlog',
-    version: '0.15.2',
+    version: '0.15.3',
     title: 'spotlog ✦'};
 
 const KEY = 'windy-plugin-spotlog:v1';
@@ -4856,7 +4856,7 @@ const COPY_GROUPS = [
             ],
             [
                 'worksUnknownLong',
-                'Not sure yet. Log a few sessions here and spotlog figures out what works for you.'
+                'Not sure yet. Adjust your window or log a few sessions here, and spotlog figures out what works for you.'
             ],
             [
                 'learnedFromShort',
@@ -12893,7 +12893,7 @@ function create_if_block_88(ctx) {
 	};
 }
 
-// (678:30) 
+// (679:30) 
 function create_if_block_67(ctx) {
 	let current_block_type_index;
 	let if_block0;
@@ -13925,7 +13925,7 @@ function create_if_block_67(ctx) {
 	};
 }
 
-// (638:34) 
+// (639:34) 
 function create_if_block_62(ctx) {
 	let snapcard;
 	let t0;
@@ -16169,7 +16169,7 @@ function create_if_block_7(ctx) {
 	};
 }
 
-// (694:4) {:else}
+// (695:4) {:else}
 function create_else_block_21(ctx) {
 	let div;
 
@@ -16217,7 +16217,7 @@ function create_else_block_21(ctx) {
 	};
 }
 
-// (679:4) {#if logSnap && logView}
+// (680:4) {#if logSnap && logView}
 function create_if_block_82(ctx) {
 	let snapcard;
 	let t0;
@@ -16330,7 +16330,7 @@ function create_if_block_82(ctx) {
 	};
 }
 
-// (701:12) {:else}
+// (702:12) {:else}
 function create_else_block_22(ctx) {
 	let span;
 	let t_value = /*W*/ ctx[15].logNoPlace + "";
@@ -16357,7 +16357,7 @@ function create_else_block_22(ctx) {
 	};
 }
 
-// (698:42) 
+// (699:42) 
 function create_if_block_86(ctx) {
 	let span;
 	let t0_value = (/*captureError*/ ctx[58] || /*W*/ ctx[15].logNoFc) + "";
@@ -16408,7 +16408,7 @@ function create_if_block_86(ctx) {
 	};
 }
 
-// (696:12) {#if capturing}
+// (697:12) {#if capturing}
 function create_if_block_85(ctx) {
 	let span;
 	let t_value = /*W*/ ctx[15].logSaving + "";
@@ -16434,7 +16434,7 @@ function create_if_block_85(ctx) {
 	};
 }
 
-// (690:8) {#if logView.note}
+// (691:8) {#if logView.note}
 function create_if_block_84(ctx) {
 	let small;
 	let t_value = /*logView*/ ctx[26].note + "";
@@ -16461,7 +16461,7 @@ function create_if_block_84(ctx) {
 	};
 }
 
-// (691:8) {#if logView.otherDay && f.lat !== undefined && !capturing}
+// (692:8) {#if logView.otherDay && f.lat !== undefined && !capturing}
 function create_if_block_83(ctx) {
 	let button;
 
@@ -16508,7 +16508,7 @@ function create_if_block_83(ctx) {
 	};
 }
 
-// (716:8) {#if f.start && f.end && f.end < f.start}
+// (717:8) {#if f.start && f.end && f.end < f.start}
 function create_if_block_81(ctx) {
 	let small;
 	let t_value = /*W*/ ctx[15].nextDay + "";
@@ -16535,7 +16535,7 @@ function create_if_block_81(ctx) {
 	};
 }
 
-// (723:12) {#if f.spotId}
+// (724:12) {#if f.spotId}
 function create_if_block_80(ctx) {
 	let button;
 	let t_value = /*W*/ ctx[15].change + "";
@@ -16572,7 +16572,7 @@ function create_if_block_80(ctx) {
 	};
 }
 
-// (725:8) {#if f.spotId}
+// (726:8) {#if f.spotId}
 function create_if_block_78(ctx) {
 	let div;
 	let t0;
@@ -16702,7 +16702,7 @@ function create_if_block_78(ctx) {
 	};
 }
 
-// (728:16) {#each sportChoices(spotById(f.spotId)?.sports || [], f.sport) as sp}
+// (729:16) {#each sportChoices(spotById(f.spotId)?.sports || [], f.sport) as sp}
 function create_each_block_30(ctx) {
 	let button;
 	let t_value = /*sportLbl*/ ctx[25](/*sp*/ ctx[438]) + "";
@@ -16756,7 +16756,7 @@ function create_each_block_30(ctx) {
 	};
 }
 
-// (733:12) {#if otherFor === 'log'}
+// (734:12) {#if otherFor === 'log'}
 function create_if_block_79(ctx) {
 	let div;
 	let input;
@@ -16833,7 +16833,7 @@ function create_if_block_79(ctx) {
 	};
 }
 
-// (740:8) {#if !f.spotId}
+// (741:8) {#if !f.spotId}
 function create_if_block_77(ctx) {
 	let div;
 	let each_blocks = [];
@@ -16929,7 +16929,7 @@ function create_if_block_77(ctx) {
 	};
 }
 
-// (742:16) {#each (f.lat !== undefined ? nearestSpots(f.lat, f.lon ?? 0) : data.spots).slice(0, 5) as s (s.id)}
+// (743:16) {#each (f.lat !== undefined ? nearestSpots(f.lat, f.lon ?? 0) : data.spots).slice(0, 5) as s (s.id)}
 function create_each_block_29(key_2, ctx) {
 	let button;
 	let t_value = /*s*/ ctx[423].name + "";
@@ -16974,7 +16974,7 @@ function create_each_block_29(key_2, ctx) {
 	};
 }
 
-// (754:12) {#each RATE as r, i}
+// (755:12) {#each RATE as r, i}
 function create_each_block_28(ctx) {
 	let button;
 	let b;
@@ -17042,7 +17042,7 @@ function create_each_block_28(ctx) {
 	};
 }
 
-// (760:8) {#if f.checked}
+// (761:8) {#if f.checked}
 function create_if_block_76(ctx) {
 	let small;
 	let t_value = /*W*/ ctx[15].notWorthNote + "";
@@ -17069,7 +17069,7 @@ function create_if_block_76(ctx) {
 	};
 }
 
-// (766:12) {#if logFc !== null && f.felt !== null}
+// (767:12) {#if logFc !== null && f.felt !== null}
 function create_if_block_75(ctx) {
 	let span;
 
@@ -17106,7 +17106,7 @@ function create_if_block_75(ctx) {
 	};
 }
 
-// (773:12) {#if closest}
+// (774:12) {#if closest}
 function create_if_block_74(ctx) {
 	let small;
 	let t0_value = /*W*/ ctx[15].closest + "";
@@ -17145,7 +17145,7 @@ function create_if_block_74(ctx) {
 	};
 }
 
-// (778:27) {#each ['Steady', 'Gusty', 'Very gusty'] as g, i}
+// (779:27) {#each ['Steady', 'Gusty', 'Very gusty'] as g, i}
 function create_each_block_27(ctx) {
 	let button;
 	let t_value = /*W*/ ctx[15]['gust' + (/*i*/ ctx[450] + 1)] + "";
@@ -17192,7 +17192,7 @@ function create_each_block_27(ctx) {
 	};
 }
 
-// (781:27) {#each ['Flat', 'Chop', 'Swell', 'Waves'] as wv, i}
+// (782:27) {#each ['Flat', 'Chop', 'Swell', 'Waves'] as wv, i}
 function create_each_block_26(ctx) {
 	let button;
 	let t_value = /*W*/ ctx[15]['water' + (/*i*/ ctx[450] + 1)] + "";
@@ -17239,7 +17239,7 @@ function create_each_block_26(ctx) {
 	};
 }
 
-// (785:12) {#if logGearGroups.length > 1}
+// (786:12) {#if logGearGroups.length > 1}
 function create_if_block_73(ctx) {
 	let small;
 	let t_value = /*sportLbl*/ ctx[25](/*grp*/ ctx[429].sport) + "";
@@ -17266,7 +17266,7 @@ function create_if_block_73(ctx) {
 	};
 }
 
-// (787:16) {#each grp.items as g (g.id)}
+// (788:16) {#each grp.items as g (g.id)}
 function create_each_block_25(key_2, ctx) {
 	let button;
 	let span;
@@ -17325,7 +17325,7 @@ function create_each_block_25(key_2, ctx) {
 	};
 }
 
-// (784:8) {#each logGearGroups as grp (grp.sport)}
+// (785:8) {#each logGearGroups as grp (grp.sport)}
 function create_each_block_24(key_2, ctx) {
 	let first;
 	let t;
@@ -17407,7 +17407,7 @@ function create_each_block_24(key_2, ctx) {
 	};
 }
 
-// (794:12) {#if f.gear.trim()}
+// (795:12) {#if f.gear.trim()}
 function create_if_block_72(ctx) {
 	let button;
 	let t_value = /*W*/ ctx[15].saveToGear + "";
@@ -17444,7 +17444,7 @@ function create_if_block_72(ctx) {
 	};
 }
 
-// (803:12) {:else}
+// (804:12) {:else}
 function create_else_block_20(ctx) {
 	let label_1;
 	let t_value = /*W*/ ctx[15].gpsAdd + "";
@@ -17488,7 +17488,7 @@ function create_else_block_20(ctx) {
 	};
 }
 
-// (801:12) {#if f.track}
+// (802:12) {#if f.track}
 function create_if_block_71(ctx) {
 	let button;
 	let t_value = /*W*/ ctx[15].gpsShow + "";
@@ -17525,7 +17525,7 @@ function create_if_block_71(ctx) {
 	};
 }
 
-// (807:8) {#if trackError}
+// (808:8) {#if trackError}
 function create_if_block_70(ctx) {
 	let small;
 	let t;
@@ -17551,7 +17551,7 @@ function create_if_block_70(ctx) {
 	};
 }
 
-// (808:8) {#if f.track}
+// (809:8) {#if f.track}
 function create_if_block_69(ctx) {
 	let div3;
 	let div0;
@@ -17697,7 +17697,7 @@ function create_if_block_69(ctx) {
 	};
 }
 
-// (821:4) {#if f.id}
+// (822:4) {#if f.id}
 function create_if_block_68(ctx) {
 	let button;
 	let t_value = /*W*/ ctx[15].deleteSession + "";
@@ -17734,7 +17734,7 @@ function create_if_block_68(ctx) {
 	};
 }
 
-// (647:8) {#if linkOpen}
+// (648:8) {#if linkOpen}
 function create_if_block_65(ctx) {
 	let div;
 	let each_blocks = [];
@@ -17830,7 +17830,7 @@ function create_if_block_65(ctx) {
 	};
 }
 
-// (649:16) {#each nearestSpots(snap.lat, snap.lon).slice(0, 5) as s (s.id)}
+// (650:16) {#each nearestSpots(snap.lat, snap.lon).slice(0, 5) as s (s.id)}
 function create_each_block_23(key_2, ctx) {
 	let button;
 	let t_value = /*s*/ ctx[423].name + "";
@@ -17880,7 +17880,7 @@ function create_each_block_23(key_2, ctx) {
 	};
 }
 
-// (653:16) {#if snap.spotId}
+// (654:16) {#if snap.spotId}
 function create_if_block_66(ctx) {
 	let button;
 	let t_value = /*W*/ ctx[15].noSpot + "";
@@ -17917,7 +17917,7 @@ function create_if_block_66(ctx) {
 	};
 }
 
-// (671:8) {:else}
+// (672:8) {:else}
 function create_else_block_19(ctx) {
 	let button0;
 	let t0_value = /*W*/ ctx[15].done + "";
@@ -17972,7 +17972,7 @@ function create_else_block_19(ctx) {
 	};
 }
 
-// (668:28) 
+// (669:28) 
 function create_if_block_64(ctx) {
 	let button0;
 	let t0_value = /*W*/ ctx[15].actSaveForecast + "";
@@ -18027,7 +18027,7 @@ function create_if_block_64(ctx) {
 	};
 }
 
-// (659:8) {#if snapDraft && replaceOf}
+// (660:8) {#if snapDraft && replaceOf}
 function create_if_block_63(ctx) {
 	let div1;
 	let b;
@@ -19491,7 +19491,7 @@ function create_if_block_38(ctx) {
 	};
 }
 
-// (532:28) {#if editSport !== m.sport}
+// (533:28) {#if editSport !== m.sport}
 function create_if_block_46(ctx) {
 	let button;
 	let t_value = /*W*/ ctx[15].adjust + "";
@@ -19533,7 +19533,7 @@ function create_if_block_46(ctx) {
 	};
 }
 
-// (572:24) {:else}
+// (573:24) {:else}
 function create_else_block_15(ctx) {
 	let small;
 	let t_value = /*W*/ ctx[15].worksUnknownLong + "";
@@ -19560,7 +19560,7 @@ function create_else_block_15(ctx) {
 	};
 }
 
-// (558:50) 
+// (559:50) 
 function create_if_block_43(ctx) {
 	let div;
 	let span0;
@@ -19646,7 +19646,7 @@ function create_if_block_43(ctx) {
 	};
 }
 
-// (534:24) {#if editSport === m.sport}
+// (535:24) {#if editSport === m.sport}
 function create_if_block_39(ctx) {
 	let div0;
 	let each_blocks = [];
@@ -19778,7 +19778,7 @@ function create_if_block_39(ctx) {
 	};
 }
 
-// (562:81) {#if row.p.from === 'you'}
+// (563:81) {#if row.p.from === 'you'}
 function create_if_block_45(ctx) {
 	let i;
 	let i_title_value;
@@ -19805,7 +19805,7 @@ function create_if_block_45(ctx) {
 	};
 }
 
-// (567:36) {:else}
+// (568:36) {:else}
 function create_else_block_14(ctx) {
 	let span;
 
@@ -19827,7 +19827,7 @@ function create_else_block_14(ctx) {
 	};
 }
 
-// (565:36) {#if row.part}
+// (566:36) {#if row.part}
 function create_if_block_44(ctx) {
 	let span;
 	let t_value = /*nowText*/ ctx[78](/*row*/ ctx[473].p.key, /*row*/ ctx[473].part.value) + "";
@@ -19864,7 +19864,7 @@ function create_if_block_44(ctx) {
 	};
 }
 
-// (561:32) {#each spotParts(m) as row (row.p.key)}
+// (562:32) {#each spotParts(m) as row (row.p.key)}
 function create_each_block_19(key_2, ctx) {
 	let span0;
 	let t0_value = /*paramName*/ ctx[79](/*row*/ ctx[473].p.key) + "";
@@ -19978,7 +19978,7 @@ function create_each_block_19(key_2, ctx) {
 	};
 }
 
-// (542:60) 
+// (543:60) 
 function create_if_block_42(ctx) {
 	let div;
 	let input0;
@@ -20105,7 +20105,7 @@ function create_if_block_42(ctx) {
 	};
 }
 
-// (538:36) {#if isCircular(key)}
+// (539:36) {#if isCircular(key)}
 function create_if_block_41(ctx) {
 	let div;
 	let t;
@@ -20172,7 +20172,7 @@ function create_if_block_41(ctx) {
 	};
 }
 
-// (540:44) {#each DIRS as d}
+// (541:44) {#each DIRS as d}
 function create_each_block_18(ctx) {
 	let button;
 	let t;
@@ -20223,7 +20223,7 @@ function create_each_block_18(ctx) {
 	};
 }
 
-// (536:32) {#each paramsOf(m.sport) as key (key)}
+// (537:32) {#each paramsOf(m.sport) as key (key)}
 function create_each_block_17(key_2, ctx) {
 	let span;
 	let t0_value = /*paramName*/ ctx[79](/*key*/ ctx[468]) + "";
@@ -20291,7 +20291,7 @@ function create_each_block_17(key_2, ctx) {
 	};
 }
 
-// (556:32) {#if spot.ranges?.[m.sport]}
+// (557:32) {#if spot.ranges?.[m.sport]}
 function create_if_block_40(ctx) {
 	let button;
 	let t_value = /*W*/ ctx[15].backToLearned + "";
@@ -20348,7 +20348,11 @@ function create_each_block_16(key_2, ctx) {
 			n: /*m*/ ctx[460].sessions,
 			g: /*m*/ ctx[460].great
 		})
-	: /*W*/ ctx[15].fromWindowShort) + "";
+	: /*m*/ ctx[460].params.some(func_4)
+		? /*W*/ ctx[15].fromWindowShort
+		: /*m*/ ctx[460].params.some(func_5)
+			? /*W*/ ctx[15].setByYou
+			: '') + "";
 
 	let t2;
 	let t3;
@@ -20407,7 +20411,11 @@ function create_each_block_16(key_2, ctx) {
 					n: /*m*/ ctx[460].sessions,
 					g: /*m*/ ctx[460].great
 				})
-			: /*W*/ ctx[15].fromWindowShort) + "")) set_data(t2, t2_value);
+			: /*m*/ ctx[460].params.some(func_4)
+				? /*W*/ ctx[15].fromWindowShort
+				: /*m*/ ctx[460].params.some(func_5)
+					? /*W*/ ctx[15].setByYou
+					: '') + "")) set_data(t2, t2_value);
 
 			if (/*editSport*/ ctx[52] !== /*m*/ ctx[460].sport) {
 				if (if_block0) {
@@ -20445,20 +20453,20 @@ function create_each_block_16(key_2, ctx) {
 	};
 }
 
-// (577:16) {#each spotGear as gh (gh.gearId)}
+// (578:16) {#each spotGear as gh (gh.gearId)}
 function create_each_block_15(key_2, ctx) {
 	let small;
 
 	let t_value = fill(/*W*/ ctx[15].gearHint, {
-		gear: /*data*/ ctx[1].gear.find(func_4)?.name || /*W*/ ctx[15].gear,
+		gear: /*data*/ ctx[1].gear.find(func_6)?.name || /*W*/ ctx[15].gear,
 		range: `${fmtWind0(/*gh*/ ctx[463].lo, /*S*/ ctx[17].wind)}–${fmtWind0(/*gh*/ ctx[463].hi, /*S*/ ctx[17].wind)} ${windLabel(/*S*/ ctx[17].wind)}`,
 		n: /*gh*/ ctx[463].sessions
 	}) + "";
 
 	let t;
 
-	function func_4(...args) {
-		return /*func_4*/ ctx[275](/*gh*/ ctx[463], ...args);
+	function func_6(...args) {
+		return /*func_6*/ ctx[275](/*gh*/ ctx[463], ...args);
 	}
 
 	return {
@@ -20478,7 +20486,7 @@ function create_each_block_15(key_2, ctx) {
 			ctx = new_ctx;
 
 			if (dirty[0] & /*W, data, S*/ 163842 | dirty[3] & /*spotGear*/ 8 && t_value !== (t_value = fill(/*W*/ ctx[15].gearHint, {
-				gear: /*data*/ ctx[1].gear.find(func_4)?.name || /*W*/ ctx[15].gear,
+				gear: /*data*/ ctx[1].gear.find(func_6)?.name || /*W*/ ctx[15].gear,
 				range: `${fmtWind0(/*gh*/ ctx[463].lo, /*S*/ ctx[17].wind)}–${fmtWind0(/*gh*/ ctx[463].hi, /*S*/ ctx[17].wind)} ${windLabel(/*S*/ ctx[17].wind)}`,
 				n: /*gh*/ ctx[463].sessions
 			}) + "")) set_data(t, t_value);
@@ -20540,7 +20548,7 @@ function create_each_block_14(key_2, ctx) {
 	};
 }
 
-// (590:12) {:else}
+// (591:12) {:else}
 function create_else_block_12(ctx) {
 	let t0;
 	let small;
@@ -20612,7 +20620,7 @@ function create_else_block_12(ctx) {
 	};
 }
 
-// (588:12) {#if scores.length === 0}
+// (589:12) {#if scores.length === 0}
 function create_if_block_37(ctx) {
 	let span;
 	let raw_value = rich(/*W*/ ctx[15].trustEmpty) + "";
@@ -20636,7 +20644,7 @@ function create_if_block_37(ctx) {
 	};
 }
 
-// (591:16) {#each scores as sc, i}
+// (592:16) {#each scores as sc, i}
 function create_each_block_13(ctx) {
 	let div;
 	let span0;
@@ -20710,7 +20718,7 @@ function create_each_block_13(ctx) {
 	};
 }
 
-// (603:8) {:else}
+// (604:8) {:else}
 function create_else_block_11(ctx) {
 	let div;
 	let each_blocks = [];
@@ -20761,7 +20769,7 @@ function create_else_block_11(ctx) {
 	};
 }
 
-// (601:8) {#if spotSnapshots.length === 0}
+// (602:8) {#if spotSnapshots.length === 0}
 function create_if_block_36(ctx) {
 	let span;
 	let raw_value = rich(/*W*/ ctx[15].savedEmpty) + "";
@@ -20785,7 +20793,7 @@ function create_if_block_36(ctx) {
 	};
 }
 
-// (605:16) {#each spotSnapshots.slice(0, 8) as sn (sn.id)}
+// (606:16) {#each spotSnapshots.slice(0, 8) as sn (sn.id)}
 function create_each_block_12(key_2, ctx) {
 	let div;
 	let span0;
@@ -20917,7 +20925,7 @@ function create_each_block_12(key_2, ctx) {
 	};
 }
 
-// (621:8) {:else}
+// (622:8) {:else}
 function create_else_block_10(ctx) {
 	let div;
 	let each_blocks = [];
@@ -21004,7 +21012,7 @@ function create_else_block_10(ctx) {
 	};
 }
 
-// (619:8) {#if spotSessions.length === 0}
+// (620:8) {#if spotSessions.length === 0}
 function create_if_block_35(ctx) {
 	let span;
 	let t_value = /*W*/ ctx[15].sessHereEmpty + "";
@@ -21033,7 +21041,7 @@ function create_if_block_35(ctx) {
 	};
 }
 
-// (624:20) <SwipeRow on:open={ () => openSession(se) } on:delete={ () => deleteSession(se) }>
+// (625:20) <SwipeRow on:open={ () => openSession(se) } on:delete={ () => deleteSession(se) }>
 function create_default_slot_1(ctx) {
 	let span0;
 	let t0_value = /*se*/ ctx[426].rating + "";
@@ -21132,7 +21140,7 @@ function create_default_slot_1(ctx) {
 	};
 }
 
-// (623:16) {#each spotSessions as se (se.id)}
+// (624:16) {#each spotSessions as se (se.id)}
 function create_each_block_11(key_2, ctx) {
 	let first;
 	let swiperow;
@@ -24740,7 +24748,7 @@ function create_if_block_3(ctx) {
 	};
 }
 
-// (828:0) {#if toast}
+// (829:0) {#if toast}
 function create_if_block(ctx) {
 	let div;
 	let span;
@@ -24793,7 +24801,7 @@ function create_if_block(ctx) {
 	};
 }
 
-// (831:8) {#if toast.undo}
+// (832:8) {#if toast.undo}
 function create_if_block_1(ctx) {
 	let button;
 	let t_value = (/*toast*/ ctx[61].label || /*W*/ ctx[15].undo) + "";
@@ -25103,6 +25111,8 @@ function durationH(a, b) {
 const func = d => d.best;
 const func_2 = d => d.best;
 const func_3 = p => p.from === 'sessions';
+const func_4 = p => p.from === 'window';
+const func_5 = p => p.from === 'you';
 
 function instance($$self, $$props, $$invalidate) {
 	let barMode;
@@ -28339,7 +28349,7 @@ function instance($$self, $$props, $$invalidate) {
 
 	const click_handler_58 = () => $$invalidate(52, editSport = null);
 	const click_handler_59 = m => resetEdit(m.sport);
-	const func_4 = (gh, g) => g.id === gh.gearId;
+	const func_6 = (gh, g) => g.id === gh.gearId;
 	const click_handler_60 = sn => openSnap(sn);
 	const click_handler_61 = sn => openSnap(sn);
 	const click_handler_62 = sn => deleteSnap(sn);
@@ -29264,7 +29274,7 @@ function instance($$self, $$props, $$invalidate) {
 		input1_input_handler,
 		click_handler_58,
 		click_handler_59,
-		func_4,
+		func_6,
 		click_handler_60,
 		click_handler_61,
 		click_handler_62,
