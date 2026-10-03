@@ -1,12 +1,24 @@
-import { getPointForecastData } from '@windy/fetch';
+import * as wfetch from '@windy/fetch';
+import * as http from '@windy/http';
 
-import { dirMatches } from './wind';
-import type { ModelValue, WaveValue, Spot, DaySeries } from './types';
+import type { ModelValue, WaveValue, DaySeries } from './types';
 import type { Hour } from './predict';
 
-/** Global models that exist almost everywhere, plus regional ones that fail gracefully outside their area */
+/** The models you can pick to save (Settings); "Save every model" also adds the regional ones that cover the spot */
 export const SNAPSHOT_MODELS = ['ecmwf', 'gfs', 'icon', 'iconEu', 'arome'];
 export const WAVE_MODELS = ['ecmwfWaves', 'gfsWaves'];
+
+/** Global point-forecast models, and regional high-resolution ones with the area they cover ([lat min, lat max, lon min, lon max]) */
+const GLOBAL_MODELS = ['ecmwf', 'gfs', 'icon', 'mblue'];
+const REGIONAL: [string, [number, number, number, number]][] = [
+    ['iconEu', [29, 71, -24, 46]], ['arome', [37.5, 55.4, -12, 16]], ['iconD2', [43.2, 58.1, -3.9, 20.3]], ['ukv', [47.5, 61.5, -12.5, 4.5]],
+    ['czeAladin', [45.5, 53.5, 6.5, 24.5]], ['hrrrConus', [21, 53, -135, -60]], ['canHrdps', [38, 75, -150, -50]], ['jmaMsm', [20, 48, 118, 150]],
+    ['bomAccess', [-45, -9, 110, 156]], ['aromeAntilles', [10, 20, -66, -57]], ['aromeReunion', [-24, -18, 52, 58]], ['namHawaii', [17, 24, -162, -153]],
+];
+/** Every model worth asking for at a place: the global ones plus the regional ones whose area covers it */
+export const modelsFor = (lat: number, lon: number): string[] =>
+    [...GLOBAL_MODELS, ...REGIONAL.filter(([, [a, b, c, d]]) => lat >= a && lat <= b && lon >= c && lon <= d).map(([m]) => m)];
+export const ALL_MODELS = [...GLOBAL_MODELS, ...REGIONAL.map(([m]) => m)];
 
 const HOUR = 3600e3;
 const num = (v: unknown): number | null => (typeof v === 'number' && isFinite(v) ? v : null);
@@ -24,16 +36,21 @@ const nearestIndex = (tsList: number[], ts: number): number => {
 const cache = new Map<string, { at: number; p: Promise<any | null> }>();
 const TTL = 20 * 60e3;
 
+/**
+ * One point forecast: hourly steps where the model has them, plus (for weather models) Windy's daily summary
+ * with its predictability % and the sunrise/sunset of the place.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const fetchData = (model: string, lat: number, lon: number): Promise<any | null> => {
+const fetchPayload = (model: string, lat: number, lon: number): Promise<any | null> => {
     const key = `${model}|${lat.toFixed(3)}|${lon.toFixed(3)}`;
     const hit = cache.get(key);
     if (hit && Date.now() - hit.at < TTL) {return hit.p;}
     const p = (async () => {
         try {
+            const extra = model.endsWith('Waves') ? null : { summary: true, celestial: true };
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const res: any = await getPointForecastData(model as any, { lat, lon });
-            return res?.data?.data ?? null;
+            const res: any = await wfetch.getPointForecastData(model as any, { lat, lon, step: 1 }, extra);
+            return res?.data?.data ? res.data : null;
         } catch (e) {
             console.info(`[spotlog] ${model} not available here`, e);
             return null;
@@ -41,6 +58,32 @@ const fetchData = (model: string, lat: number, lon: number): Promise<any | null>
     })();
     cache.set(key, { at: Date.now(), p });
     return p;
+};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const fetchData = async (model: string, lat: number, lon: number): Promise<any | null> => (await fetchPayload(model, lat, lon))?.data ?? null;
+
+/** Windy's predictability of each day (0–100 %, by the day's midnight), when Windy sends it */
+export const predictability = async (lat: number, lon: number, model = 'ecmwf'): Promise<Record<string, number>> => {
+    const p = await fetchPayload(model, lat, lon);
+    const out: Record<string, number> = {};
+    (Array.isArray(p?.summary) ? p.summary : []).forEach((d: { timestamp?: number; predictability?: number }) => {
+        if (typeof d?.timestamp === 'number' && typeof d.predictability === 'number') {out[new Date(d.timestamp).toDateString()] = d.predictability;}
+    });
+    return out;
+};
+
+/** Daylight for an hour: Windy's day flag, else sunrise–sunset of the place, else 6:00–21:00 */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const daylight = (p: any, i: number, ts: number): boolean => {
+    const d = p?.data;
+    if (Array.isArray(d?.isDay) && typeof d.isDay[i] === 'number') {return d.isDay[i] > 0;}
+    const c = p?.celestial;
+    if (c && typeof c.sunriseTs === 'number' && typeof c.sunsetTs === 'number') {
+        const shift = Math.round((ts - c.sunriseTs) / 864e5) * 864e5;
+        return ts >= c.sunriseTs + shift - 1800e3 && ts <= c.sunsetTs + shift + 1800e3;
+    }
+    const h = new Date(ts).getHours();
+    return h >= 6 && h <= 21;
 };
 
 export const modelValueAt = async (model: string, lat: number, lon: number, ts: number): Promise<ModelValue | null> => {
@@ -56,6 +99,7 @@ export const modelValueAt = async (model: string, lat: number, lon: number, ts: 
         gust: num(d.windGust?.[i]),
         dir: num(d.windDir?.[i]),
         temp: tempK === null ? null : Math.round((tempK - 273.15) * 10) / 10,
+        rain: num(d.precipAmount?.[i]),
     };
 };
 
@@ -79,7 +123,7 @@ export const waveValueAt = async (lat: number, lon: number, ts: number): Promise
     return null;
 };
 
-/** Wind + waves right now at a place (ECMWF), for tiles and the spot header */
+/** Wind + waves right now at a place (the spot's model, ECMWF by default), for tiles and the spot header */
 export const conditionsNow = async (lat: number, lon: number, model = 'ecmwf'): Promise<{ wind: ModelValue | null; waves: WaveValue | null }> => {
     const now = Date.now();
     const [wind, waves] = await Promise.all([modelValueAt(model, lat, lon, now), waveValueAt(lat, lon, now)]);
@@ -87,28 +131,28 @@ export const conditionsNow = async (lat: number, lon: number, model = 'ecmwf'): 
 };
 
 /**
- * The rest of today, hour by hour (as the model gives it: 1- or 3-hourly), with waves where the sea has them.
- * Daylight comes from Windy (isDay) when it sends it, else 6:00–21:00.
+ * The forecast hour by hour between two times (hourly where the model has it), with waves where the sea has them.
  */
-export const hoursToday = async (lat: number, lon: number, model = 'ecmwf'): Promise<Hour[]> => {
-    const [d, wd] = await Promise.all([fetchData(model, lat, lon), fetchData(WAVE_MODELS[0], lat, lon)]);
+export const hoursBetween = async (lat: number, lon: number, from: number, to: number, model = 'ecmwf'): Promise<Hour[]> => {
+    const [p, wp] = await Promise.all([fetchPayload(model, lat, lon), fetchPayload(WAVE_MODELS[0], lat, lon)]);
+    const d = p?.data;
+    const wd = wp?.data;
     if (!d || !Array.isArray(d.ts)) {return [];}
-    const now = Date.now();
-    const end = new Date(now);
-    end.setHours(23, 59, 59, 999);
     const waveTs: number[] = wd && Array.isArray(wd.ts) && Array.isArray(wd.waves) ? wd.ts : [];
     const out: Hour[] = [];
     for (let i = 0; i < d.ts.length; i++) {
         const ts = d.ts[i];
-        if (ts < now - 3 * HOUR || ts > end.getTime()) {continue;}
-        const h = new Date(ts).getHours();
-        const day = Array.isArray(d.isDay) ? !!d.isDay[i] : h >= 6 && h <= 21;
-        const h0: Hour = { ts, wind: num(d.wind?.[i]), gust: num(d.windGust?.[i]), dir: num(d.windDir?.[i]), waves: null, day };
+        if (ts < from || ts > to) {continue;}
+        const tempK = num(d.temperature?.[i]);
+        const h0: Hour = {
+            ts, wind: num(d.wind?.[i]), gust: num(d.windGust?.[i]), dir: num(d.windDir?.[i]), waves: null, day: daylight(p, i, ts),
+            temp: tempK === null ? null : Math.round((tempK - 273.15) * 10) / 10, rain: num(d.precipAmount?.[i]),
+        };
         if (waveTs.length) {
             const j = nearestIndex(waveTs, ts);
             if (Math.abs(waveTs[j] - ts) <= 2 * HOUR) {
                 Object.assign(h0, {
-                    waves: num(wd.waves[j]), period: num(wd.wavesPeriod?.[j]), wavesDir: num(wd.wavesDir?.[j]),
+                    waves: num(wd.waves[j]), period: num(wd.wavesPeriod?.[j]), wavesDir: num(wd.wavesDir?.[j]), power: num(wd.wavesPower?.[j]),
                     swell: num(wd.swell1?.[j]), swellPeriod: num(wd.swell1Period?.[j]), swellDir: num(wd.swell1Dir?.[j]),
                 });
             }
@@ -117,6 +161,68 @@ export const hoursToday = async (lat: number, lon: number, model = 'ecmwf'): Pro
     }
     return out;
 };
+
+/** The rest of today */
+export const hoursToday = (lat: number, lon: number, model = 'ecmwf'): Promise<Hour[]> => {
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    return hoursBetween(lat, lon, Date.now() - 3 * HOUR, end.getTime(), model);
+};
+
+/* ---------- tide (experimental: Windy's own tide forecast, not documented for plugins) ---------- */
+
+export interface TideDay { highs: number[]; lows: number[] }
+let tideLogged = false;
+/** Today's high and low tides at a place, when Windy has a tide forecast there (null when not, or when the answer can't be read) */
+export const tideToday = async (lat: number, lon: number): Promise<TideDay | null> => {
+    try {
+        const url = (wfetch as unknown as { getTideForecastUrl?: (ll: { lat: number; lon: number }) => string }).getTideForecastUrl?.({ lat, lon });
+        if (!url || !http?.get) {return null;}
+        const res = await http.get<unknown>(url);
+        const body = (res as { data?: unknown })?.data;
+        if (!tideLogged) {
+            tideLogged = true;
+            console.info('[spotlog] tide answer (for reading it right):', body && typeof body === 'object' ? Object.keys(body as object) : typeof body);
+        }
+        return readTides(body);
+    } catch (e) {
+        console.info('[spotlog] no tide forecast here', e);
+        return null;
+    }
+};
+
+/** Reads highs and lows from the shapes a tide answer usually has (a list of extremes, or times + heights) */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function readTides(body: any): TideDay | null {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = start.getTime() + 864e5;
+    const toMs = (t: unknown): number | null => (typeof t === 'number' ? (t < 1e12 ? t * 1000 : t) : typeof t === 'string' && !isNaN(Date.parse(t)) ? Date.parse(t) : null);
+    const highs: number[] = [];
+    const lows: number[] = [];
+    const list = [body?.extremes, body?.data?.extremes, body?.tides, body?.data?.tides, Array.isArray(body) ? body : null].find(Array.isArray);
+    if (list) {
+        for (const e of list) {
+            const t = toMs(e?.ts ?? e?.time ?? e?.timestamp ?? e?.date);
+            const type = String(e?.type ?? e?.state ?? '').toLowerCase();
+            if (t === null || t < start.getTime() || t >= end) {continue;}
+            if (type.startsWith('h')) {highs.push(t);} else if (type.startsWith('l')) {lows.push(t);}
+        }
+    } else {
+        const d = body?.data ?? body;
+        const ts = Array.isArray(d?.ts) ? d.ts : null;
+        const hv = [d?.height, d?.tide, d?.level, d?.values].find(Array.isArray);
+        if (ts && hv && ts.length === hv.length) {
+            for (let i = 1; i < ts.length - 1; i++) {
+                const t = toMs(ts[i]);
+                if (t === null || t < start.getTime() || t >= end) {continue;}
+                if (hv[i] > hv[i - 1] && hv[i] >= hv[i + 1]) {highs.push(t);}
+                if (hv[i] < hv[i - 1] && hv[i] <= hv[i + 1]) {lows.push(t);}
+            }
+        }
+    }
+    return highs.length || lows.length ? { highs, lows } : null;
+}
 
 /** Collects every model (in parallel) for one place and time */
 export const captureModels = async (lat: number, lon: number, ts: number, primary: string, allModels: boolean): Promise<ModelValue[]> => {
@@ -136,50 +242,6 @@ export const trimWaves = (w: WaveValue | null, layers: string[]): WaveValue | nu
     if (!layers.includes('wavesPower')) {out.wavesPower = null;}
     const any = [out.waves, out.swell1, out.wavesPeriod, out.wavesPower].some(v => v !== null);
     return any ? out : null;
-};
-
-export interface MatchWindow {
-    start: number;
-    end: number;
-    avgWind: number;
-    dir: number;
-}
-
-/** Next window of at least `minHours` of daylight where the forecast fits the spot's directions and strength */
-export const nextMatch = async (spot: Spot, model = 'ecmwf', minHours = 2): Promise<MatchWindow | null> => {
-    if (spot.windUnknown && !spot.dirs.length) {return null;}
-    const d = await fetchData(model, spot.lat, spot.lon);
-    if (!d || !Array.isArray(d.ts)) {return null;}
-    const now = Date.now();
-    let run: number[] = [];
-    const close = (): MatchWindow | null => {
-        if (!run.length) {return null;}
-        const first = run[0];
-        const last = run[run.length - 1];
-        if ((d.ts[last] - d.ts[first]) / 3600e3 + 1 < minHours) {return null;}
-        const winds = run.map(i => d.wind[i]);
-        return {
-            start: d.ts[first],
-            end: d.ts[last],
-            avgWind: winds.reduce((a: number, b: number) => a + b, 0) / winds.length,
-            dir: d.windDir[run[Math.floor(run.length / 2)]],
-        };
-    };
-    for (let i = 0; i < d.ts.length; i++) {
-        if (d.ts[i] < now) {continue;}
-        const w = num(d.wind?.[i]);
-        const dir = num(d.windDir?.[i]);
-        const daylight = d.isDay ? !!d.isDay[i] : true;
-        const ok = w !== null && dir !== null && daylight && w >= spot.min && w <= spot.max && dirMatches(dir, spot.dirs);
-        if (ok) {
-            run.push(i);
-        } else {
-            const found = close();
-            if (found) {return found;}
-            run = [];
-        }
-    }
-    return close();
 };
 
 /* ------------------------------------------------------------------ */
@@ -202,7 +264,7 @@ export const seriesAt = (series: DaySeries, ts: number): { models: ModelValue[];
     const i = nearestIndex(series.ts, ts);
     const t = series.ts[i];
     const models: ModelValue[] = Object.entries(series.models)
-        .map(([model, v]) => ({ model, ts: t, wind: v.wind[i] ?? null, gust: v.gust[i] ?? null, dir: v.dir[i] ?? null, temp: v.temp[i] ?? null }))
+        .map(([model, v]) => ({ model, ts: t, wind: v.wind[i] ?? null, gust: v.gust[i] ?? null, dir: v.dir[i] ?? null, temp: v.temp[i] ?? null, rain: v.rain?.[i] ?? null }))
         .filter(m => m.wind !== null);
     const w = series.waves;
     const waves: WaveValue | null = w
@@ -224,7 +286,7 @@ export const captureDay = async (
     lat: number, lon: number, focusTs: number, primary: string, models: string[], layers: string[],
 ): Promise<{ series: DaySeries; models: ModelValue[]; waves: WaveValue | null; primary: string } | null> => {
     const [from, to] = dayWindow(focusTs);
-    const list = Array.from(new Set([primary, ...(models.length ? models : SNAPSHOT_MODELS)]));
+    const list = Array.from(new Set([primary, ...(models.length ? models : modelsFor(lat, lon))]));
     const datas = await Promise.all(list.map(m => fetchData(m, lat, lon)));
     const grid: number[] = [];
     for (let t = from; t <= to; t += HOUR) {grid.push(t);}
@@ -248,6 +310,7 @@ export const captureDay = async (
                 const k2 = pick(d, 'temperature', t);
                 return keepTemp && k2 !== null ? Math.round((k2 - 273.15) * 10) / 10 : null;
             }),
+            rain: grid.map(t => pick(d, 'precipAmount', t)),
         };
     });
     if (!Object.keys(out).length) {return null;}
@@ -274,6 +337,7 @@ export const captureDay = async (
 /** Which of the snapshot models have a forecast at this place (regional ones don't cover everywhere) */
 export const availableModels = async (lat: number, lon: number): Promise<string[]> => {
     const now = Date.now();
-    const got = await Promise.all(SNAPSHOT_MODELS.map(m => modelValueAt(m, lat, lon, now)));
-    return SNAPSHOT_MODELS.filter((_, i) => got[i] && got[i]?.wind !== null);
+    const list = modelsFor(lat, lon);
+    const got = await Promise.all(list.map(m => modelValueAt(m, lat, lon, now)));
+    return list.filter((_, i) => got[i] && got[i]?.wind !== null);
 };

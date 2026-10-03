@@ -1,21 +1,20 @@
-import { DIRS } from './wind';
+import { DIRS, distanceKm } from './wind';
 import type { Dir8, Session, Snapshot, Spot, ModelValue, WaveValue } from './types';
 
 /*
  * How spotlog learns what works at a spot
  * ---------------------------------------
- * 1. Every sport has its own conditions that matter (windsurf: wind, direction, gusts, waves;
- *    surf: swell, period, swell direction, wind, direction; …).
- * 2. Per spot and sport, each condition gets an ideal range: from your wind window at first,
- *    then from the forecasts of your great sessions (ECMWF at the session time).
- * 3. Each condition also learns how much it matters here: if your poor sessions were outside the
- *    range and your great ones inside, it matters a lot; if poor sessions were inside too, it matters little.
- * 4. The guess = how well the conditions fit the ranges (important ones count more; one that matters and is
- *    clearly off pulls the day down), times how good your sessions in fitting conditions were.
- *    Only good, great and epic are shown.
+ * 1. Every sport has its own conditions (windsurf: wind, direction, gusts, waves, temperature, rain;
+ *    surf: swell, period, swell direction, wave energy, wind, direction, temperature, rain; …).
+ * 2. Per spot and sport, each condition gets an ideal range: your wind window at first, then the forecast
+ *    of your great sessions (the spot's model at the session time). You can also set a range yourself.
+ * 3. Each condition learns how much it matters here: great sessions inside its range and poor ones outside
+ *    = it decides the day. Main conditions start at "matters", extras (temperature, rain, wave energy) at "matters little".
+ * 4. The guess = how well the conditions fit (important ones count more; one that matters and is clearly off
+ *    pulls the day down), times how your sessions went when conditions fitted. Only good, great, epic are shown.
  */
 
-export type ParamKey = 'wind' | 'gust' | 'dir' | 'waves' | 'swell' | 'period' | 'swellDir';
+export type ParamKey = 'wind' | 'gust' | 'dir' | 'waves' | 'swell' | 'period' | 'swellDir' | 'power' | 'temp' | 'rain';
 
 export interface Conditions {
     wind: number | null;
@@ -24,21 +23,41 @@ export interface Conditions {
     waves: number | null;
     period?: number | null;
     wavesDir?: number | null;
+    power?: number | null;
     swell?: number | null;
     swellPeriod?: number | null;
     swellDir?: number | null;
+    temp?: number | null;
+    rain?: number | null;
 }
 
-/** The conditions that matter per sport, most important first (before anything is learned they all count the same) */
-export const SPORT_PARAMS: Record<string, ParamKey[]> = {
-    Windsurf: ['wind', 'dir', 'gust', 'waves'],
-    Kite: ['wind', 'dir', 'gust', 'waves'],
-    Wing: ['wind', 'dir', 'gust', 'waves'],
-    Surf: ['swell', 'period', 'swellDir', 'wind', 'dir'],
-    SUP: ['wind', 'dir', 'waves'],
-    Other: ['wind', 'dir', 'waves'],
+/**
+ * Per condition: circular (a direction), main or extra (where importance starts),
+ * the least a learned range is widened by, and how far beyond the edge the fit has dropped to 0 (at least).
+ */
+const SPEC: Record<ParamKey, { circular?: boolean; main: boolean; widen: number; tol: number }> = {
+    wind: { main: true, widen: 0.5, tol: 1.5 },
+    gust: { main: true, widen: 0.05, tol: 0.15 },
+    dir: { circular: true, main: true, widen: 0, tol: 30 },
+    waves: { main: true, widen: 0.1, tol: 0.25 },
+    swell: { main: true, widen: 0.1, tol: 0.25 },
+    period: { main: true, widen: 1, tol: 2 },
+    swellDir: { circular: true, main: true, widen: 0, tol: 30 },
+    power: { main: false, widen: 0.5, tol: 2 },
+    temp: { main: false, widen: 2, tol: 5 },
+    rain: { main: false, widen: 0.5, tol: 1 },
 };
-const CIRCULAR: ParamKey[] = ['dir', 'swellDir'];
+export const isCircular = (k: ParamKey): boolean => !!SPEC[k].circular;
+
+/** The conditions that matter per sport */
+export const SPORT_PARAMS: Record<string, ParamKey[]> = {
+    Windsurf: ['wind', 'dir', 'gust', 'waves', 'temp', 'rain'],
+    Kite: ['wind', 'dir', 'gust', 'waves', 'temp', 'rain'],
+    Wing: ['wind', 'dir', 'gust', 'waves', 'temp', 'rain'],
+    Surf: ['swell', 'period', 'swellDir', 'power', 'wind', 'dir', 'temp', 'rain'],
+    SUP: ['wind', 'dir', 'waves', 'temp', 'rain'],
+    Other: ['wind', 'dir', 'waves', 'temp', 'rain'],
+};
 export const paramsOf = (sport: string): ParamKey[] => SPORT_PARAMS[sport] || SPORT_PARAMS.Other;
 export const sportsOf = (spot: Spot): string[] => (spot.sports.length ? spot.sports : ['Other']);
 
@@ -52,34 +71,35 @@ export const valueOf = (c: Conditions, k: ParamKey): number | null => {
         case 'swell': return c.swell ?? c.waves;
         case 'period': return c.swellPeriod ?? c.period ?? null;
         case 'swellDir': return c.swellDir ?? c.wavesDir ?? null;
+        case 'power': return c.power ?? null;
+        case 'temp': return c.temp ?? null;
+        case 'rain': return c.rain ?? null;
     }
 };
 
 export const conditionsOf = (m: ModelValue | null | undefined, wv?: WaveValue | null): Conditions | null =>
     m ? {
-        wind: m.wind, gust: m.gust, dir: m.dir, waves: wv?.waves ?? null, period: wv?.wavesPeriod ?? null, wavesDir: wv?.wavesDir ?? null,
+        wind: m.wind, gust: m.gust, dir: m.dir, temp: m.temp, rain: m.rain ?? null,
+        waves: wv?.waves ?? null, period: wv?.wavesPeriod ?? null, wavesDir: wv?.wavesDir ?? null, power: wv?.wavesPower ?? null,
         swell: wv?.swell1 ?? null, swellPeriod: wv?.swell1Period ?? null, swellDir: wv?.swell1Dir ?? null,
     } : null;
 
 export interface Sample extends Conditions {
     rating: number;
     sport: string;
+    /** 1 = counts fully; 0.5 = the forecast was far off how it felt, or the session is from a spot next door */
+    weight: number;
+    gearIds: string[];
     tide: string | null;
     tideMove: string | null;
 }
 
-/** When the session happened: its day plus the middle of start–end (or the start), else the day itself */
+/** When the session happened: its start plus half the time out (the date already is the start time when one was set) */
 export const sessionTime = (s: Session): number => {
-    const day = new Date(s.date);
-    const at = (hm: string) => { const [h, m] = hm.split(':').map(Number); const d = new Date(day); d.setHours(h, m, 0, 0); return d.getTime(); };
-    if (/^\d\d:\d\d$/.test(s.start)) {
-        const a = at(s.start);
-        if (/^\d\d:\d\d$/.test(s.end)) {
-            let b = at(s.end);
-            if (b < a) {b += 864e5;}
-            return a + (b - a) / 2;
-        }
-        return a;
+    const mins = (hm: string) => { const [h, m] = hm.split(':').map(Number); return h * 60 + m; };
+    if (/^\d\d:\d\d$/.test(s.start) && /^\d\d:\d\d$/.test(s.end)) {
+        const dur = (mins(s.end) - mins(s.start) + 1440) % 1440;
+        return s.date + (dur / 2) * 60e3;
     }
     return s.date;
 };
@@ -91,75 +111,85 @@ const nearest = (list: number[], ts: number): number => {
 };
 
 /**
- * The forecast of a snapshot at the time of the session. ECMWF when it was saved (today's guesses use ECMWF too,
- * so like is compared with like), else the model that was on the map.
+ * The forecast of a saved day at the session time, from the spot's model (ECMWF unless another one has been
+ * more accurate here). A session outside the saved hours has no forecast to compare with: left out.
  */
-const forecastFor = (sn: Snapshot, ts: number): Conditions | null => {
+const forecastFor = (sn: Snapshot, ts: number, model: string): Conditions | null => {
     const sr = sn.series;
-    if (sr && sr.ts.length && ts >= sr.ts[0] - 3600e3 && ts <= sr.ts[sr.ts.length - 1] + 3600e3) {
+    if (sr && sr.ts.length) {
+        if (ts < sr.ts[0] - 3600e3 || ts > sr.ts[sr.ts.length - 1] + 3600e3) {return null;}
         const i = nearest(sr.ts, ts);
-        const m = sr.models.ecmwf || sr.models[sn.primary] || Object.values(sr.models)[0];
+        const m = sr.models[model] || sr.models.ecmwf || sr.models[sn.primary] || Object.values(sr.models)[0];
         const w = sr.waves;
-        if (m && m.wind[i] != null && m.dir[i] != null) {
-            return {
-                wind: m.wind[i], gust: m.gust[i] ?? null, dir: m.dir[i], waves: w?.waves[i] ?? null, period: w?.wavesPeriod[i] ?? null,
-                wavesDir: w?.wavesDir[i] ?? null, swell: w?.swell1[i] ?? null, swellPeriod: w?.swell1Period[i] ?? null, swellDir: w?.swell1Dir[i] ?? null,
-            };
-        }
+        if (!m || m.wind[i] == null || m.dir[i] == null) {return null;}
+        return {
+            wind: m.wind[i], gust: m.gust[i] ?? null, dir: m.dir[i], temp: m.temp[i] ?? null, rain: m.rain?.[i] ?? null,
+            waves: w?.waves[i] ?? null, period: w?.wavesPeriod[i] ?? null, wavesDir: w?.wavesDir[i] ?? null, power: w?.wavesPower[i] ?? null,
+            swell: w?.swell1[i] ?? null, swellPeriod: w?.swell1Period[i] ?? null, swellDir: w?.swell1Dir[i] ?? null,
+        };
     }
-    const p = sn.models.find(m => m.model === 'ecmwf') || sn.models.find(m => m.model === sn.primary) || sn.models[0];
+    // older saves without the whole day: only when saved for (about) the session time
+    if (Math.abs(sn.ts - ts) > 1.5 * 3600e3) {return null;}
+    const p = sn.models.find(m => m.model === model) || sn.models.find(m => m.model === 'ecmwf') || sn.models[0];
     return p ? conditionsOf(p, sn.waves) : null;
 };
 
-/** Sessions at a spot that have a forecast attached (the forecast is what we can compare against) */
-export const samplesFor = (spot: Spot, sessions: Session[], snapshots: Snapshot[]): Sample[] =>
+/** Sessions at a spot that have a forecast for their time (the forecast is what we compare against) */
+export const samplesFor = (spot: Spot, sessions: Session[], snapshots: Snapshot[], model = 'ecmwf', weight = 1): Sample[] =>
     sessions
         .filter(s => s.spotId === spot.id && s.snapshotId)
         .map(s => {
             const sn = snapshots.find(x => x.id === s.snapshotId);
-            const c = sn ? forecastFor(sn, sessionTime(s)) : null;
+            const c = sn ? forecastFor(sn, sessionTime(s), model) : null;
+            if (!c || c.wind === null || c.dir === null) {return null;}
             const sport = s.sport && spot.sports.includes(s.sport) ? s.sport : sportsOf(spot)[0];
-            return c && c.wind !== null && c.dir !== null
-                ? { ...c, rating: s.rating, sport, tide: s.tide ?? null, tideMove: s.tideMove ?? null }
-                : null;
+            // the forecast was far off how it felt: that day says less about the forecast
+            const off = s.felt !== null && c.wind > 1 && Math.abs(s.felt - c.wind) > c.wind / 3;
+            return { ...c, rating: s.rating, sport, weight: weight * (off ? 0.5 : 1), gearIds: s.gearIds || [], tide: s.tide ?? null, tideMove: s.tideMove ?? null };
         })
         .filter((x): x is Sample => !!x);
 
+/** Spots next door (within 3 km) learn from each other at half weight */
+export const nearbySpots = (spot: Spot, spots: Spot[], km = 3): Spot[] =>
+    spots.filter(o => o.id !== spot.id && distanceKm(spot, o) <= km);
+
 /* ---------- learning ---------- */
 
-/** the settings of the learning, in one place (see docs/rating-logic.xlsx) */
+/** the settings of the learning, in one place */
 export const LEARN = {
     /** great sessions needed before a range is learned from sessions */
     minGood: 2,
-    /** from this many great sessions, the outer 10 % on each side are ignored (one odd day doesn't stretch the range) */
+    /** from this many, the outer 10 % on each side are ignored (one odd day doesn't stretch the range) */
     trimFrom: 6,
-    /** a learned range is widened by this share on each side */
+    /** a learned range is widened by this share on each side (at least the condition's own minimum) */
     margin: 0.1,
     /** half-width around each great session's direction */
     dirHalf: 20,
-    /** how fast the fit drops outside a range: 25 % beyond the edge (directions: 30°) = no fit */
+    /** the fit drops to 0 this far beyond the edge (25 %, at least the condition's own minimum) */
     tolerance: 0.25,
-    dirTolerance: 30,
-    /** importance before poor sessions say otherwise, and how many poor sessions that start counts as */
-    baseImportance: 0.5,
+    /** importance before poor sessions say otherwise: main conditions, extras; and how many poor sessions that counts as */
+    baseMain: 0.5,
+    baseExtra: 0.25,
     baseWeight: 2,
-    /** the rating a perfect fit means when nothing is learned yet (between good and great), and how many sessions it counts as */
+    /** the rating a perfect fit means before your sessions say (between good and great), and how many sessions that counts as */
     startRating: 3.4,
     startWeight: 2,
+    /** how much a range you set yourself matters (at least) */
+    yours: 0.8,
     /** a session "fits" from this score */
     fitFrom: 0.85,
 };
 
 export interface ParamModel {
     key: ParamKey;
-    /** linear range (wind m/s, gust factor, m, s) */
+    /** linear range (wind m/s, gust factor, m, s, kW/m, °C, mm) */
     lo?: number;
     hi?: number;
     /** directions: centres and the half-width around each */
     centres?: number[];
     half?: number;
-    /** where the range comes from */
-    from: 'window' | 'sessions';
+    /** where the range comes from: your wind window, your sessions, or set by you */
+    from: 'window' | 'sessions' | 'you';
     /** 0–1: how much this condition decides a good day here */
     importance: number;
 }
@@ -170,57 +200,53 @@ export interface SportModel {
     sessions: number;
     great: number;
     poor: number;
-    /** how your sessions went when the conditions fitted (1–5; starts at 3.4) */
+    /** how your sessions went when the conditions fitted (1–5) */
     fitRating: number;
+    /** felt − forecast at this spot (m/s), used when comparing with your wind window */
+    bias: number | null;
 }
+
+/** Your own range for a condition (spot.ranges[sport][key]) */
+export interface OwnRange { lo?: number; hi?: number; dirs?: Dir8[] }
 
 const angDiff = (a: number, b: number): number => Math.abs((((a - b) % 360) + 540) % 360 - 180);
 const pct = (sorted: number[], q: number) => sorted[Math.min(sorted.length - 1, Math.max(0, Math.round(q * (sorted.length - 1))))];
+const wsum = (list: Sample[]) => list.reduce((a, s) => a + s.weight, 0);
 
-/** 0–1: how well one value fits one learned range (1 inside, falling to 0 just beyond it) */
+/** 0–1: how well one value fits one range (1 inside, falling to 0 beyond it) */
 export const fitOf = (p: ParamModel, v: number): number => {
+    const spec = SPEC[p.key];
     if (p.centres) {
         const excess = Math.min(...p.centres.map(c => angDiff(c, v))) - (p.half ?? 0);
-        return excess <= 0 ? 1 : Math.max(0, 1 - excess / LEARN.dirTolerance);
+        return excess <= 0 ? 1 : Math.max(0, 1 - excess / spec.tol);
     }
     const lo = p.lo ?? -Infinity;
     const hi = p.hi ?? Infinity;
     if (v >= lo && v <= hi) {return 1;}
-    const d = v < lo ? (lo - v) / Math.max(Math.abs(lo), 0.5) : (v - hi) / Math.max(Math.abs(hi), 0.5);
-    return Math.max(0, 1 - d / LEARN.tolerance);
+    const edge = v < lo ? lo : hi;
+    const beyond = Math.abs(v - edge);
+    return Math.max(0, 1 - beyond / Math.max(LEARN.tolerance * Math.abs(edge), spec.tol));
 };
 
-export interface Part { key: ParamKey; value: number; fit: number; param: ParamModel }
+/** Your wind window is in "how it feels"; the forecast is shifted by this spot's bias before comparing with it */
+const adjusted = (p: ParamModel, v: number, bias: number | null): number => (p.from === 'window' && p.key === 'wind' && bias ? v + bias : v);
 
-/** 0–1: how well conditions fit what works (important conditions count more), with the part each condition plays */
-export const scoreOf = (m: SportModel, c: Conditions): { score: number; parts: Part[] } | null => {
-    let wSum = 0;
-    let sSum = 0;
-    // something that matters clearly off (no fit at all) pulls the whole day down by how much it matters
-    let off = 1;
-    const parts: Part[] = [];
-    for (const p of m.params) {
-        const v = valueOf(c, p.key);
-        if (v === null) {continue;}
-        const fit = fitOf(p, v);
-        wSum += p.importance;
-        sSum += p.importance * fit;
-        if (fit === 0) {off *= 1 - p.importance;}
-        parts.push({ key: p.key, value: v, fit, param: p });
+const rangeOf = (spot: Spot, sport: string, key: ParamKey, good: Sample[]): Omit<ParamModel, 'importance'> | null => {
+    const own = spot.ranges?.[sport]?.[key];
+    if (own) {
+        if (own.dirs?.length) {return { key, centres: own.dirs.map(d => DIRS.indexOf(d) * 45), half: 22.5, from: 'you' };}
+        if (typeof own.lo === 'number' || typeof own.hi === 'number') {return { key, lo: own.lo, hi: own.hi, from: 'you' };}
     }
-    return wSum > 0 ? { score: (sSum / wSum) * off, parts } : null;
-};
-
-/** The range of one condition: from your great sessions once there are enough, else from the wind window (wind, direction only) */
-const rangeOf = (spot: Spot, key: ParamKey, good: Sample[]): Omit<ParamModel, 'importance'> | null => {
-    const vals = good.map(s => valueOf(s, key)).filter((v): v is number => v !== null);
-    if (vals.length >= LEARN.minGood) {
-        if (CIRCULAR.includes(key)) {return { key, centres: vals, half: LEARN.dirHalf, from: 'sessions' };}
+    const withValue = good.filter(s => valueOf(s, key) !== null);
+    const vals = withValue.map(s => valueOf(s, key) as number);
+    if (vals.length && wsum(withValue) >= LEARN.minGood) {
+        if (isCircular(key)) {return { key, centres: vals, half: LEARN.dirHalf, from: 'sessions' };}
         const sorted = [...vals].sort((a, b) => a - b);
         const trim = sorted.length >= LEARN.trimFrom;
         const lo = trim ? pct(sorted, 0.1) : sorted[0];
         const hi = trim ? pct(sorted, 0.9) : sorted[sorted.length - 1];
-        return { key, lo: lo * (1 - LEARN.margin), hi: hi * (1 + LEARN.margin), from: 'sessions' };
+        const w = (x: number) => Math.max(LEARN.margin * Math.abs(x), SPEC[key].widen);
+        return { key, lo: key === 'temp' ? lo - w(lo) : Math.max(0, lo - w(lo)), hi: hi + w(hi), from: 'sessions' };
     }
     if (spot.windUnknown) {return null;}
     if (key === 'wind') {return { key, lo: spot.min, hi: spot.max, from: 'window' };}
@@ -228,50 +254,82 @@ const rangeOf = (spot: Spot, key: ParamKey, good: Sample[]): Omit<ParamModel, 'i
     return null;
 };
 
+export interface LearnOptions {
+    /** felt − forecast at this spot, when known */
+    bias?: number | null;
+    /** start from your own average rating instead of 3.4 (when you chose it for this spot) */
+    startRating?: number;
+}
+
 /** What spotlog has learned about one sport at one spot */
-export const learnSport = (spot: Spot, sport: string, all: Sample[]): SportModel => {
+export const learnSport = (spot: Spot, sport: string, all: Sample[], o: LearnOptions = {}): SportModel => {
     const samples = all.filter(s => s.sport === sport);
+    const bias = o.bias ?? null;
     let good = samples.filter(s => s.rating >= 4);
-    if (good.length < LEARN.minGood) {good = samples.filter(s => s.rating >= 3);}
+    if (wsum(good) < LEARN.minGood) {good = samples.filter(s => s.rating >= 3);}
     const poor = samples.filter(s => s.rating <= 2);
     const params: ParamModel[] = [];
     for (const key of paramsOf(sport)) {
-        const r = rangeOf(spot, key, good);
+        const r = rangeOf(spot, sport, key, good);
         if (!r) {continue;}
-        // how much it matters: great sessions inside the range and poor ones outside it = it decides the day
-        const inside = (s: Sample) => { const v = valueOf(s, key); return v === null ? null : fitOf(r as ParamModel, v) >= 0.99; };
-        const g = good.map(inside).filter((x): x is boolean => x !== null);
-        const p = poor.map(inside).filter((x): x is boolean => x !== null);
-        const goodIn = g.length ? g.filter(Boolean).length / g.length : 1;
-        const poorOut = p.length ? p.filter(x => !x).length / p.length : 0;
-        const sep = Math.max(0, goodIn + poorOut - 1);
-        const importance = Math.max(0.05, (LEARN.baseWeight * LEARN.baseImportance + p.length * sep) / (LEARN.baseWeight + p.length));
+        // how much it matters: great sessions inside and poor ones outside = it decides the day
+        const inside = (s: Sample) => { const v = valueOf(s, key); return v === null ? null : fitOf(r as ParamModel, adjusted(r as ParamModel, v, bias)) >= 0.99; };
+        const share = (list: Sample[], want: boolean) => {
+            const known = list.filter(s => inside(s) !== null);
+            const w = wsum(known);
+            return { w, share: w ? wsum(known.filter(s => inside(s) === want)) / w : null };
+        };
+        const g = share(good, true);
+        const p = share(poor, false);
+        const sep = Math.max(0, (g.share ?? 1) + (p.share ?? 0) - 1);
+        const base = SPEC[key].main ? LEARN.baseMain : LEARN.baseExtra;
+        const learned = Math.max(0.05, (LEARN.baseWeight * base + p.w * sep) / (LEARN.baseWeight + p.w));
+        // a range you set yourself is something you know matters
+        const importance = r.from === 'you' ? Math.max(learned, LEARN.yours) : learned;
         params.push({ ...r, importance });
     }
-    const model: SportModel = { sport, params, sessions: samples.length, great: samples.filter(s => s.rating >= 4).length, poor: poor.length, fitRating: LEARN.startRating };
-    // how your sessions went when the conditions fitted
+    const start = o.startRating ?? LEARN.startRating;
+    const model: SportModel = { sport, params, sessions: samples.length, great: samples.filter(s => s.rating >= 4).length, poor: poor.length, fitRating: start, bias };
     const fitting = samples.filter(s => (scoreOf(model, s)?.score ?? 0) >= LEARN.fitFrom);
-    model.fitRating = (fitting.reduce((a, s) => a + s.rating, 0) + LEARN.startRating * LEARN.startWeight) / (fitting.length + LEARN.startWeight);
+    model.fitRating = (fitting.reduce((a, s) => a + s.rating * s.weight, 0) + start * LEARN.startWeight) / (wsum(fitting) + LEARN.startWeight);
     return model;
 };
 
 /** Everything learned about a spot: one model per sport */
-export const learnSpot = (spot: Spot, samples: Sample[]): SportModel[] => sportsOf(spot).map(sp => learnSport(spot, sp, samples));
+export const learnSpot = (spot: Spot, samples: Sample[], o: LearnOptions = {}): SportModel[] => sportsOf(spot).map(sp => learnSport(spot, sp, samples, o));
+
+export interface Part { key: ParamKey; value: number; fit: number; param: ParamModel }
+
+/** 0–1: how well conditions fit what works (important conditions count more), with the part each condition plays */
+export function scoreOf(m: SportModel, c: Conditions): { score: number; parts: Part[] } | null {
+    let wSum = 0;
+    let sSum = 0;
+    // something that matters and is clearly off pulls the whole day down by how much it matters
+    let off = 1;
+    const parts: Part[] = [];
+    for (const p of m.params) {
+        const v = valueOf(c, p.key);
+        if (v === null) {continue;}
+        const fit = fitOf(p, adjusted(p, v, m.bias));
+        wSum += p.importance;
+        sSum += p.importance * fit;
+        if (fit === 0) {off *= 1 - p.importance;}
+        parts.push({ key: p.key, value: v, fit, param: p });
+    }
+    return wSum > 0 ? { score: (sSum / wSum) * off, parts } : null;
+}
 
 export interface Guess {
     /** 1–5, or null = not sure yet */
     rating: number | null;
     sport: string;
-    /** 0–1 fit */
     score: number;
-    /** sessions this sport has here */
     sessions: number;
     /** your sessions here took part (else only the wind window) */
     learned: boolean;
     parts: Part[];
 }
 
-/** The guess for one sport: fit × how good your fitting days were */
 export const guessSport = (m: SportModel, c: Conditions | null): Guess | null => {
     if (!c || c.wind === null) {return null;}
     const s = scoreOf(m, c);
@@ -296,7 +354,7 @@ export const shownLevel = (r: number | null): number => (r === null ? 0 : r >= 4
 /** "matters a lot" (3), "matters" (2), "matters little" (1) */
 export const importanceLevel = (x: number): number => (x >= 0.65 ? 3 : x >= 0.35 ? 2 : 1);
 
-/* ---------- the best window of the day ---------- */
+/* ---------- best windows: today and the next days ---------- */
 
 export interface Hour extends Conditions { ts: number; day: boolean }
 
@@ -312,15 +370,10 @@ export interface DayBest {
     now: boolean;
 }
 
-/**
- * The best stretch of the rest of today: consecutive daylight hours that look good or better (for the same sport),
- * the one with the best guess wins (the earlier one on a tie).
- */
-export const bestToday = (models: SportModel[], hours: Hour[], now = Date.now()): DayBest | null => {
-    const end = new Date(now);
-    end.setHours(23, 59, 59, 999);
-    const step = hours.length > 1 ? Math.min(...hours.slice(1).map((h, i) => h.ts - hours[i].ts)) : 3600e3;
-    const list = hours.filter(h => h.ts + step / 2 > now && h.ts <= end.getTime());
+/** The best stretch between two times: back-to-back daylight hours that look good or better (one sport), best average wins */
+export const bestIn = (models: SportModel[], hours: Hour[], from: number, to: number, now = Date.now()): DayBest | null => {
+    const step = hours.length > 1 ? Math.max(3600e3, Math.min(...hours.slice(1).map((h, i) => h.ts - hours[i].ts))) : 3600e3;
+    const list = hours.filter(h => h.ts + step / 2 > Math.max(from, now) && h.ts <= to);
     let best: DayBest | null = null;
     for (const m of models) {
         let run: { h: Hour; g: Guess }[] = [];
@@ -343,7 +396,32 @@ export const bestToday = (models: SportModel[], hours: Hour[], now = Date.now())
     return best;
 };
 
-/* ---------- "I don't know yet" spots ---------- */
+/** The rest of today */
+export const bestToday = (models: SportModel[], hours: Hour[], now = Date.now()): DayBest | null => {
+    const end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+    return bestIn(models, hours, now, end.getTime(), now);
+};
+
+export interface DayOutlook { day: number; best: DayBest | null }
+
+/** The next days (tomorrow on), each with its best stretch */
+export const nextDays = (models: SportModel[], hours: Hour[], days = 5, now = Date.now()): DayOutlook[] => {
+    const out: DayOutlook[] = [];
+    const d0 = new Date(now);
+    d0.setHours(0, 0, 0, 0);
+    for (let k = 1; k <= days; k++) {
+        const a = new Date(d0);
+        a.setDate(a.getDate() + k);
+        const b = new Date(a);
+        b.setHours(23, 59, 59, 999);
+        if (!hours.some(h => h.ts >= a.getTime() && h.ts <= b.getTime())) {break;}
+        out.push({ day: a.getTime(), best: bestIn(models, hours, a.getTime(), b.getTime(), now) });
+    }
+    return out;
+};
+
+/* ---------- "I don't know yet" spots, and "use what spotlog learned" ---------- */
 
 const dirOf = (deg: number): Dir8 => DIRS[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
 
@@ -354,7 +432,7 @@ export interface WindSuggestion {
     basedOn: number;
 }
 
-/** "I don't know yet" spots: the wind window your sessions rated great or epic had */
+/** "I don't know yet" spots: the wind your great sessions had */
 export const suggestWindow = (spot: Spot, sessions: Session[], snapshots: Snapshot[]): WindSuggestion | null => {
     const good = samplesFor(spot, sessions, snapshots).filter(s => s.rating >= 4 && s.wind !== null && s.dir !== null);
     if (good.length < 2) {return null;}
@@ -368,13 +446,44 @@ export const suggestWindow = (spot: Spot, sessions: Session[], snapshots: Snapsh
     };
 };
 
-/** Directions of a learned range, as compass sectors (for "W–SW") */
+/** Directions of a range, as compass sectors (for "W–SW") */
 export const dirsOfParam = (p: ParamModel): Dir8[] => {
     const set = new Set((p.centres || []).map(dirOf));
     return DIRS.filter(d => set.has(d));
 };
 
-/* ---------- tide: spotlog can't forecast it, but you know it; your best sessions show which tide works ---------- */
+/** The wind window as learned (first sport), when it differs from yours: for "Use what spotlog learned" */
+export const learnedWindow = (spot: Spot, m: SportModel | undefined): WindSuggestion | null => {
+    const w = m?.params.find(p => p.key === 'wind' && p.from === 'sessions');
+    const d = m?.params.find(p => p.key === 'dir' && p.from === 'sessions');
+    if (!m || (!w && !d)) {return null;}
+    const out = {
+        dirs: d ? dirsOfParam(d) : spot.dirs,
+        min: w ? Math.round((w.lo ?? spot.min) * 2) / 2 : spot.min,
+        max: w ? Math.round((w.hi ?? spot.max) * 2) / 2 : spot.max,
+        basedOn: m.sessions,
+    };
+    const same = out.dirs.length === spot.dirs.length && out.dirs.every(x => spot.dirs.includes(x)) && Math.abs(out.min - spot.min) < 0.5 && Math.abs(out.max - spot.max) < 0.5;
+    return same ? null : out;
+};
+
+/* ---------- gear: after many sessions with one piece of gear here, the wind it was great in ---------- */
+
+export const GEAR_MIN_SESSIONS = 8;
+export interface GearHint { gearId: string; lo: number; hi: number; sessions: number }
+
+export const gearHints = (samples: Sample[]): GearHint[] => {
+    const ids = new Set(samples.flatMap(s => s.gearIds));
+    const out: GearHint[] = [];
+    ids.forEach(id => {
+        const used = samples.filter(s => s.gearIds.includes(id));
+        const great = used.filter(s => s.rating >= 4 && s.wind !== null).map(s => s.wind as number);
+        if (used.length >= GEAR_MIN_SESSIONS && great.length >= 3) {out.push({ gearId: id, lo: Math.min(...great), hi: Math.max(...great), sessions: used.length });}
+    });
+    return out;
+};
+
+/* ---------- tide: you know it; your best sessions show which tide works ---------- */
 
 export interface TideHint { tide: string | null; move: string | null; of: number; total: number }
 
@@ -392,6 +501,12 @@ export const bestTide = (samples: { rating: number; tide?: string | null; tideMo
     const m = top('tideMove');
     if (!t && !m) {return null;}
     return { tide: t?.v ?? null, move: m?.v ?? null, of: Math.min(t?.c ?? Infinity, m?.c ?? Infinity), total: good.length };
+};
+
+/** Your average rating everywhere (for "start from my own ratings"), from 5 sessions */
+export const ownAverage = (sessions: Session[]): number | null => {
+    const list = sessions.filter(s => !s.checked);
+    return list.length >= 5 ? list.reduce((a, s) => a + s.rating, 0) / list.length : null;
 };
 
 export const MIN_SAMPLES = 2;

@@ -51,6 +51,33 @@ export const fromWind = (v: number, u: WindUnit): number => {
     }
 };
 
+/** Beaufort centre speed of force f (m/s) */
+const bftCentre = (f: number): number => {
+    const i = Math.max(0, Math.min(12, f));
+    const lo = i === 0 ? 0 : BFT[i - 1];
+    const hi = i >= 12 ? 36 : BFT[i];
+    return (lo + hi) / 2;
+};
+/**
+ * "It felt like": like toWind/fromWind, but Beaufort in half steps (between the centres of two forces),
+ * so a felt value in Beaufort is as exact as the ruler allows.
+ */
+export const feltTo = (ms: number, u: WindUnit): number => {
+    if (u !== 'bft') {return toWind(ms, u);}
+    for (let f = 0; f < 12; f++) {
+        const a = bftCentre(f);
+        const b = bftCentre(f + 1);
+        if (ms <= b) {return Math.max(0, f + (ms - a) / (b - a));}
+    }
+    return 12;
+};
+export const feltFrom = (v: number, u: WindUnit): number => {
+    if (u !== 'bft') {return fromWind(v, u);}
+    const f = Math.max(0, Math.min(12, v));
+    const i = Math.min(11, Math.floor(f));
+    return bftCentre(i) + (f - i) * (bftCentre(i + 1) - bftCentre(i));
+};
+
 /** Rounded wind in the display unit, as a number (0 decimals, 1 for m/s under 10) */
 export const windNum = (ms: number | null, u: WindUnit): number | null => {
     if (ms === null || ms === undefined || !isFinite(ms)) {return null;}

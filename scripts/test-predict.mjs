@@ -19,7 +19,7 @@ const P = require('./predict.js');
 
 const spot = { id: 's', name: 'Spot', lat: 0, lon: 0, sports: ['Windsurf'], dirs: ['W', 'SW'], min: 6, max: 12, created: 0 };
 const c = (wind, dir, gust = null, waves = null, extra = {}) => ({ wind, dir, gust, waves, ...extra });
-const smp = (wind, dir, rating, gust = null, waves = null, sport = 'Windsurf', extra = {}) => ({ ...c(wind, dir, gust, waves, extra), rating, sport, tide: null, tideMove: null });
+const smp = (wind, dir, rating, gust = null, waves = null, sport = 'Windsurf', extra = {}) => ({ ...c(wind, dir, gust, waves, extra), rating, sport, weight: 1, gearIds: [], tide: null, tideMove: null });
 const learn = (samples, s = spot) => P.learnSpot(s, samples);
 const lvl = g => P.shownLevel(g?.rating ?? null);
 let n = 0;
@@ -39,9 +39,9 @@ const wind = m[0].params.find(p => p.key === 'wind');
 assert.equal(wind.from, 'sessions'); assert.ok(wind.lo > 7.5 && wind.hi < 13, wind);
 ok(`wind range learned from the great sessions: ${wind.lo.toFixed(1)}–${wind.hi.toFixed(1)} m/s`);
 
-// 3. which conditions matter: all 3 poor days had waves outside the range, 2 the wind, 1 the direction
+// 3. which conditions matter: 2 of 3 poor days had wind and waves outside the range, 1 the direction
 const imp = Object.fromEntries(m[0].params.map(p => [p.key, +p.importance.toFixed(2)]));
-assert.ok(imp.waves > 0.7 && imp.wind > 0.5 && imp.dir < imp.waves, imp);
+assert.ok(imp.waves >= 0.6 && imp.wind >= 0.6 && imp.dir < imp.waves, imp);
 ok('importance learned from poor vs great sessions: ' + JSON.stringify(imp));
 
 // 4. a day like the great ones is great or epic; a day like the poor ones is not shown
@@ -74,7 +74,30 @@ const best = P.bestToday(learn([]), hours, now.getTime());
 assert.ok(best && new Date(best.start).getHours() === 18 && !best.now, best);
 ok('best window today: found at 18:00 when now is too light');
 
-// 8. tide hint
+// 8. your own range wins over the learned one
+const own = { ...spot, ranges: { Windsurf: { waves: { hi: 0.5 } } } };
+const mo = learn(hist, own);
+assert.equal(mo[0].params.find(p => p.key === 'waves').from, 'you');
+assert.equal(lvl(P.guess(mo, c(10, 262, 13, 1.4))), 0);
+ok('a range you set yourself (waves up to 0.5 m) wins over the learned one');
+
+// 9. the forecast far off how it felt: half weight; a session outside the saved hours: left out
+const t0 = Date.UTC(2026, 8, 12, 12);
+const sn = { id: 'n', spotId: 's', lat: 0, lon: 0, ts: t0, savedAt: t0, primary: 'ecmwf', models: [], waves: null,
+    series: { ts: [0, 1, 2, 3].map(h => t0 + h * 3600e3), models: { ecmwf: { wind: [10, 10, 10, 10], gust: [12, 12, 12, 12], dir: [270, 270, 270, 270], temp: [20, 20, 20, 20] } }, waves: null } };
+const ses = (id, date, felt, start = '', end = '') => ({ id, spotId: 's', snapshotId: 'n', date, rating: 5, felt, gusts: null, water: null, gear: '', gearIds: [], start, end, notes: '' });
+const ss = P.samplesFor(spot, [ses('a', t0 + 3600e3, 10), ses('b', t0 + 3600e3, 5), ses('c', t0 + 30 * 3600e3, 10)], [sn]);
+assert.deepEqual(ss.map(x => x.weight), [1, 0.5]);
+ok('felt 5 m/s on a 10 m/s forecast counts half; a session a day after the saved hours is left out');
+
+// 10. the next days
+const d0 = new Date(); d0.setHours(0, 0, 0, 0);
+const days = Array.from({ length: 24 * 4 }, (_, i) => ({ ts: d0.getTime() + i * 3600e3, ...c(i >= 24 + 14 && i <= 24 + 17 ? 9 : 3, 260), day: (i % 24) >= 8 && (i % 24) <= 20 }));
+const outlook = P.nextDays(learn([]), days, 5, d0.getTime() + 10 * 3600e3);
+assert.ok(outlook[0].best && new Date(outlook[0].best.start).getHours() === 14 && !outlook[1].best, outlook);
+ok('next days: tomorrow 14:00 is good, the day after nothing stands out');
+
+// 11. tide hint
 const th = P.bestTide([{ rating: 5, tide: 'High', tideMove: 'Rising' }, { rating: 4, tide: 'High', tideMove: 'Falling' }, { rating: 2, tide: 'Low' }]);
 assert.equal(th.tide, 'High'); assert.equal(th.move, null);
 ok('tide: the tide most great sessions had');

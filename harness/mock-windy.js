@@ -227,14 +227,28 @@
             out.wavesPower.push(Math.round((w / 8) * 10) / 10);
             out.wavesDir.push(levante ? 95 : 265);
             out.swell1.push(0.4); out.swell1Period.push(8); out.swell1Dir.push(250);
+            (out.precipAmount = out.precipAmount || []).push(day === 2 && h > 12 ? 1.2 : 0);
         }
         return out;
     };
-    const getPointForecastData = async (model, { lat, lon }) => {
+    // like Windy: daily summary with predictability, and the place's sunrise/sunset
+    const summaryOf = d => Array.from({ length: 8 }, (_, k) => ({ timestamp: d.ts[0] + k * 864e5, day: new Date(d.ts[0] + k * 864e5).getDate(), predictability: Math.max(20, 92 - k * 9) }));
+    const getPointForecastData = async (model, { lat, lon }, include) => {
         await new Promise(r => setTimeout(r, 250 + Math.random() * 350));
         if (model === 'arome' && lat < 41) throw new Error('AROME covers France only');
-        return { data: { data: series(model.replace('Waves', ''), lat, lon), header: { model } } };
+        if (!['ecmwf', 'gfs', 'icon', 'iconEu', 'arome', 'mblue', 'ecmwfWaves', 'gfsWaves'].includes(model)) throw new Error(model + ' does not cover this place');
+        const d = series(model.replace('Waves', ''), lat, lon);
+        const sr = new Date(); sr.setHours(7, 40, 0, 0); const ss = new Date(); ss.setHours(19, 25, 0, 0);
+        return { data: { data: d, header: { model }, ...(include?.summary ? { summary: summaryOf(d) } : {}), ...(include?.celestial ? { celestial: { sunriseTs: +sr, sunsetTs: +ss } } : {}) } };
     };
+    // Windy's tide forecast (undocumented): the mock answers with a list of extremes
+    const getTideForecastUrl = ({ lat, lon }) => `mock://tides/${lat.toFixed(2)}/${lon.toFixed(2)}`;
+    const http = { get: async url => {
+        if (!url.startsWith('mock://tides')) throw new Error('offline');
+        const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+        const ex = []; for (let k = 0; k < 4; k++) ex.push({ ts: +t0 + (2.3 + k * 6.2) * 3600e3, type: k % 2 ? 'low' : 'high', height: k % 2 ? 0.3 : 1.6 });
+        return { data: { extremes: ex } };
+    } };
 
     // ---- reverse geocoding ----
     const PLACES = [
@@ -298,7 +312,8 @@
         store,
         reverseName,
         rootScope: { isMobileOrTablet: typeof matchMedia !== 'undefined' && matchMedia('(max-width: 760px)').matches },
-        fetch: { getPointForecastData },
+        fetch: { getPointForecastData, getTideForecastUrl },
+        http,
         // "Your current location": the mock phone stands where the map is centred
         geolocation: { getGPSlocation: async () => { const c = leafletMap.getCenter(); await new Promise(r => setTimeout(r, 150)); return { lat: c.lat, lon: c.lng, source: 'gps' }; } },
         __mock: { project, unproject, store, singleclick, PLACES, INIT, onMove: f => moveSubs.push(f), setView, view },

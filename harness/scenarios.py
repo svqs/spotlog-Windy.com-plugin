@@ -84,8 +84,8 @@ with sync_playwright() as p:
     t = pg.evaluate("() => { const t = performance.now(); for (let i = 0; i < 20; i++) window.dispatchEvent(new Event('resize')); return performance.now() - t; }")
     pg.click('.tabs button:has-text("Sessions")'); t1 = time.time(); pg.wait_for_selector('.sw .front'); 
     note(time.time() - t1 < 2, f'Sessions tab with 500 sessions opens in {time.time()-t1:.2f}s')
-    pg.click('.tabs button:has-text("Spots")'); pg.click('.tile >> nth=1'); t1 = time.time(); pg.wait_for_selector('.today'); 
-    note(time.time() - t1 < 2, f'spot page with ~17 sessions opens in {time.time()-t1:.2f}s; best today: ' + pg.locator('.today').inner_text().replace('\n', ' '))
+    pg.click('.tabs button:has-text("Spots")'); pg.click('.tile >> nth=1'); t1 = time.time(); pg.wait_for_selector('.reco'); 
+    note(time.time() - t1 < 2, f'spot page with ~17 sessions opens in {time.time()-t1:.2f}s; best today: ' + pg.locator('.reco').inner_text().replace('\n', ' '))
     pg.screenshot(path=f'{OUT}/big-spot.png')
     tags = pg.evaluate("[...document.querySelectorAll('.spotlog-pin em')].map(e => e.textContent)")
     note(not any(x.startswith(('flat', 'meh')) for x in tags), f'map pins only good words: {sorted(set(tags))[:6]}')
@@ -136,7 +136,7 @@ with sync_playwright() as p:
     for wu in ['kt', 'kmh', 'mph', 'bft']:
         d['settings'].update({'wind': wu, 'height': 'ft', 'temp': 'F'})
         seed(pg, d); pg.wait_for_timeout(1500)
-        pg.click('.tile >> nth=0'); pg.wait_for_selector('.today'); pg.wait_for_timeout(800)
+        pg.click('.tile >> nth=0'); pg.wait_for_selector('.reco'); pg.wait_for_timeout(800)
         tp = text_problems(pg)
         note(not tp and not errs, f'units {wu}/ft/°F: spot page reads fine {tp} {errs[:2]}')
     pg.screenshot(path=f'{OUT}/units-bft.png')
@@ -146,7 +146,7 @@ with sync_playwright() as p:
     for tz, loc in [('Pacific/Kiritimati', 'de-DE'), ('America/Los_Angeles', 'en-US'), ('Asia/Kolkata', 'en-IN')]:
         ctx, pg, errs = page(tz=tz, locale=loc)
         seed(pg, big_data(1, 0, 0))
-        pg.click('.tile >> nth=0'); pg.wait_for_selector('.today')
+        pg.click('.tile >> nth=0'); pg.wait_for_selector('.reco')
         pg.click('.act:has-text("Log session")')
         pg.wait_for_selector('.felt', timeout=8000)
         today = pg.evaluate("new Date().toLocaleDateString('sv')")
@@ -169,10 +169,10 @@ with sync_playwright() as p:
             'models': [{'model': 'ecmwf', 'ts': ts, 'wind': wv, 'gust': wv * 1.3, 'dir': dv, 'temp': 20}], 'waves': {'model': 'ecmwfWaves', 'waves': 0.8, 'wavesPeriod': 9, 'wavesDir': 270, 'swell1': 1.2, 'swell1Period': 11, 'swell1Dir': 275, 'wavesPower': None}})
         d['sessions'].append({'id': f's{i}', 'spotId': 'sp0', 'snapshotId': f'n{i}', 'date': ts, 'rating': rt, 'sport': sport, 'start': '', 'end': '', 'gearIds': [], 'gear': '', 'notes': '', 'felt': None, 'gusts': None, 'water': None})
     seed(pg, d)
-    pg.click('.tile >> nth=0'); pg.wait_for_selector('.works li')
+    pg.click('.tile >> nth=0'); pg.wait_for_selector('.works-head'); pg.click('.works-head'); pg.wait_for_selector('.works .w-grid')
     pg.wait_for_timeout(1200)
     txt = pg.locator('.works').inner_text()
-    note('Windsurf' in txt and 'Surf' in txt and 'Learned from 5 sessions (3 great)' in txt and 'N' in txt, 'what works here, per sport: ' + txt.replace('\n', ' | ')[:300])
+    note('Windsurf' in txt and 'Surf' in txt and 'learned from 5 sessions, 3 great' in txt and 'N' in txt, 'what works here, per sport: ' + txt.replace('\n', ' | ')[:300])
     pg.locator('.works').scroll_into_view_if_needed()
     pg.screenshot(path=f'{OUT}/works.png')
     pg.click('.act:has-text("Log session")'); pg.wait_for_selector('.felt')
@@ -183,6 +183,55 @@ with sync_playwright() as p:
     last = pg.evaluate(f"JSON.parse(localStorage.getItem('{KEY}')).sessions.slice(-1)[0]")
     note(chips == ['Windsurf', 'Surf'] and last.get('sport') == 'Surf', f'multi-sport spot: the log asks which sport ({chips}), saved {last.get("sport")}')
     note(not errs, f'no errors {errs[:2]}')
+    ctx.close()
+    # 7. checked, not worth it; the why line on the map card; linking earlier sessions; start from own ratings; phone layout
+    ctx, pg, errs = page()
+    d = big_data(2, 8, 4)
+    d['sessions'].append({'id': 'loose', 'spotId': None, 'lat': d['spots'][0]['lat'] + 0.03, 'lon': d['spots'][0]['lon'], 'snapshotId': None, 'date': int(time.time() * 1000) - 864e5, 'rating': 4, 'felt': None, 'gusts': None, 'water': None, 'gearIds': [], 'gear': '', 'start': '', 'end': '', 'notes': ''})
+    seed(pg, d)
+    pg.click('.tile >> nth=0'); pg.wait_for_selector('.reco')
+    n0 = pg.locator('.stats .big').first.inner_text()
+    pg.click('.checked-btn'); pg.wait_for_selector('.toast:has-text("not worth it")', timeout=10000)
+    st = pg.evaluate(f"JSON.parse(localStorage.getItem('{KEY}'))")
+    chk = [x for x in st['sessions'] if x.get('checked')]
+    note(len(chk) == 1 and chk[0]['rating'] == 2 and chk[0]['snapshotId'] and pg.locator('.stats .big').first.inner_text() == n0 and pg.locator('text=Checked, not worth it').count() >= 1,
+         'checked, not worth it: saves the forecast and a poor day; not counted as a session on the water, shown as "Checked" in the list')
+    pg.click('.act:has-text("Show on map")'); pg.wait_for_selector('.sl-pop', timeout=8000); pg.wait_for_timeout(1200)
+    why = pg.locator('.sl-pop .sl-why').all_inner_texts()
+    note(bool(why) and ('✓' in why[0] or '✕' in why[0] or '~' in why[0]), f'map card shows why: {why[:1]}')
+    pg.click('.act:has-text("Show on map")')
+    # a new spot next to a session saved without a spot: offer to link it
+    pg.goto(URL); pg.wait_for_selector('.spotlog')
+    pg.evaluate("([la, lo]) => window.W.singleclick.singleclick.emit('windy-plugin-spotlog', { lat: la, lon: lo, source: 'singleclick' })", [d['spots'][0]['lat'] + 0.03, d['spots'][0]['lon']])
+    try:
+        pg.wait_for_selector('.act:has-text("Add spot")', timeout=6000)
+    except Exception:
+        pg.screenshot(path=f'{OUT}/no-place.png')
+    if pg.locator('.act:has-text("Add spot")').count():
+        pg.click('.act:has-text("Add spot")')
+        own = pg.locator('.maptog:has-text("Start from how you usually rate")').count()
+        pg.fill('.field input', 'Next door'); pg.click('text=Save spot')
+        pg.wait_for_selector('.toast:has-text("earlier session")', timeout=5000)
+        pg.click('.toast .undo'); pg.wait_for_timeout(300)
+        st = pg.evaluate(f"JSON.parse(localStorage.getItem('{KEY}'))")
+        nd = [x for x in st['spots'] if x['name'] == 'Next door'][0]
+        note([x for x in st['sessions'] if x['id'] == 'loose'][0]['spotId'] == nd['id'] and own == 1, 'new spot: offers to link the earlier session nearby, and suggests starting from your own ratings')
+    else:
+        note(False, 'could not open the place card for a new spot')
+    note(not errs, f'no errors {errs[:2]}')
+    ctx.close()
+    ctx, pg, errs = page((390, 844), mobile=True, touch=True)
+    seed(pg, big_data(2, 30, 12), URL.replace('index.html', 'index.html?m'))
+    pg.wait_for_timeout(1200)
+    pg.locator('.mtabs button:has-text("Spots")').first.click(); pg.wait_for_timeout(400)
+    pg.locator('.tile').first.click(); pg.wait_for_timeout(600)
+    if pg.locator('.sl-acts button:has-text("Details")').count(): pg.locator('.sl-acts button:has-text("Details")').first.click()
+    pg.wait_for_selector('.reco', timeout=8000)
+    pg.locator('.works-head').click(); pg.wait_for_selector('.works .w-grid')
+    pg.locator('.works').scroll_into_view_if_needed(); pg.wait_for_timeout(300)
+    pg.screenshot(path=f'{OUT}/phone-works.png')
+    o = overflow(pg)
+    note(not o and not errs, f'phone: spot page with what works open fits {o} {errs[:2]}')
     ctx.close()
     b.close()
 print('FINDINGS:', json.dumps(findings, indent=1))

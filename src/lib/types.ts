@@ -15,6 +15,10 @@ export interface Spot {
     /** true when the user said "I don't know yet" — Spotlog will suggest dirs/range from sessions */
     windUnknown?: boolean;
     created: number;
+    /** ranges you set yourself, per sport and condition (they win over what spotlog learns) */
+    ranges?: Record<string, Partial<Record<string, { lo?: number; hi?: number; dirs?: Dir8[] }>>>;
+    /** start this spot from your own average rating instead of the general start */
+    startOwn?: boolean;
 }
 
 /** Value of one forecast model at the snapshot time (all SI: m/s, °C) */
@@ -25,6 +29,8 @@ export interface ModelValue {
     gust: number | null;
     dir: number | null;
     temp: number | null;
+    /** rain in mm for the time step (newer forecasts only) */
+    rain?: number | null;
 }
 
 export interface WaveValue {
@@ -62,7 +68,7 @@ export interface Snapshot {
 export interface DaySeries {
     ts: number[];
     /** per model: arrays aligned with ts (m/s, degrees, °C) */
-    models: Record<string, { wind: (number | null)[]; gust: (number | null)[]; dir: (number | null)[]; temp: (number | null)[] }>;
+    models: Record<string, { wind: (number | null)[]; gust: (number | null)[]; dir: (number | null)[]; temp: (number | null)[]; rain?: (number | null)[] }>;
     waves: {
         model: string;
         waves: (number | null)[]; wavesPeriod: (number | null)[]; wavesPower: (number | null)[]; wavesDir: (number | null)[];
@@ -95,6 +101,8 @@ export interface Session {
     felt: number | null;
     gusts: string | null;
     water: string | null;
+    /** "Checked, not worth it": a quick log of a day you didn't go (teaches spotlog what doesn't work) */
+    checked?: boolean;
     /** which of the spot's sports this session was (spots with one sport: that one) */
     sport?: string | null;
     /** tide at the session (spotlog has no tide forecast, but you know it): Low, Mid, High */
@@ -142,6 +150,8 @@ export interface Settings {
     phoneSheet: boolean;
     /** the welcome for new users was seen (it shows once) */
     welcomed: boolean;
+    /** "What works here for you" folded open on spot pages */
+    worksOpen: boolean;
 }
 
 export interface SpotlogData {

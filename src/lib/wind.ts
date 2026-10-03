@@ -135,9 +135,17 @@ export const modelScores = (spot: Spot, sessions: Session[], snapshots: Snapshot
                 acc[m.model].count += 1;
             });
         });
+    // a model needs 3+ sessions to rank first, and few sessions count a little against it
+    const rank = (x: ModelScore) => (x.count >= 3 ? 0 : 1e6) + x.miss * (1 + 1 / x.count);
     return Object.entries(acc)
         .map(([model, v]) => ({ model, miss: v.sum / v.count, count: v.count }))
-        .sort((a, b) => a.miss - b.miss);
+        .sort((a, b) => rank(a) - rank(b));
+};
+
+/** The model to use at a spot: the most accurate one there once it has 3+ sessions with "felt like", else ECMWF */
+export const trustedModel = (spot: Spot, sessions: Session[], snapshots: Snapshot[]): string => {
+    const best = modelScores(spot, sessions, snapshots)[0];
+    return best && best.count >= 3 ? best.model : 'ecmwf';
 };
 
 /** Average of felt minus forecast (primary model) — negative means it usually feels lighter */

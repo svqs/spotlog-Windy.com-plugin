@@ -202,8 +202,33 @@ with sync_playwright() as p:
     assert se['rating'] == 5 and se['track'] and se['gearIds'], se
     assert se['tide'] == 'Mid' and se['tideMove'] == 'Rising', se
     ok('session saved with rating, felt, gear, tide and track')
-    pg.wait_for_selector('.today:has-text("Best today")')
-    ok('spot page: "Best today" with the window and what the guess is based on: ' + pg.locator('.today').inner_text().replace('\n', ' '))
+    pg.wait_for_selector('.reco .reco-row:has-text("Today")')
+    pg.wait_for_function("document.querySelectorAll('.reco .reco-row').length >= 3", timeout=10000)
+    reco = pg.locator('.reco').inner_text().replace('\n', ' ')
+    assert '% sure' in reco, reco
+    ok('spot page "When to go": today and the next days, with Windy\'s predictability: ' + reco[:160])
+    # what works here: folded to a line, opens to the details (and stays open), adjust a range
+    assert pg.locator('.works-sum').count() == 1 and pg.locator('.works .w-grid').count() == 0
+    pg.click('.works-head')
+    pg.wait_for_selector('.works .w-grid .w-range')
+    assert stored(pg)['settings']['worksOpen'] is True
+    pg.locator('.works').scroll_into_view_if_needed()
+    shot('05b-works-open')
+    pg.click('.works .w-head .link:has-text("Adjust")')
+    pg.wait_for_selector('.w-grid.edit input')
+    waves = pg.locator('.w-grid.edit .w-name:text-is("Waves") + .w-inputs input').nth(1)
+    waves.fill('0.4')
+    pg.click('.works .btn.primary:has-text("Save")')
+    pg.wait_for_selector('.toast:has-text("Your ranges are saved")')
+    sp = stored(pg)['spots'][0]
+    assert abs(sp['ranges'][sp['sports'][0]]['waves']['hi'] - 0.4) < 0.01, sp.get('ranges')
+    assert pg.locator('.works .w-you').count() >= 1
+    ok('what works here: folded line, opens with ranges, how much each matters and today; your own range is saved and marked')
+    pg.click('.works .w-head .link:has-text("Adjust")')
+    pg.click('.works .link:has-text("Back to learned")')
+    pg.wait_for_selector('.toast:has-text("Back to what spotlog learned")')
+    assert not stored(pg)['spots'][0].get('ranges'), stored(pg)['spots'][0].get('ranges')
+    ok('"Back to learned" removes your own ranges')
     sd = stored(pg)
     sn = next(x for x in sd['snapshots'] if x['id'] == se['snapshotId'])
     import datetime as _dt

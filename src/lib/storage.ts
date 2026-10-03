@@ -33,6 +33,7 @@ export const defaultSettings = (): Settings => ({
     spotView: 'tiles',
     phoneSheet: false,
     welcomed: false,
+    worksOpen: false,
 });
 
 export const emptyData = (): SpotlogData => ({
@@ -51,6 +52,24 @@ const ids = (x: Any): string[] => (Array.isArray(x) ? x.filter(i => typeof i ===
 const withId = (x: Any) => isObj(x) && typeof x.id === 'string' && x.id.length <= 80;
 const DIR8 = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 
+/** your own ranges: sport -> condition -> {lo, hi} or {dirs} (numbers and directions only) */
+const cleanRanges = (r: Any) => {
+    const out: Record<string, Record<string, { lo?: number; hi?: number; dirs?: string[] }>> = {};
+    Object.entries(r).slice(0, 8).forEach(([sport, conds]) => {
+        if (!isObj(conds) || sport.length > 20) {return;}
+        const c: Record<string, { lo?: number; hi?: number; dirs?: string[] }> = {};
+        Object.entries(conds as Any).slice(0, 12).forEach(([k, v]: [string, Any]) => {
+            if (!isObj(v) || k.length > 12) {return;}
+            const x: { lo?: number; hi?: number; dirs?: string[] } = {};
+            if (typeof v.lo === 'number' && isFinite(v.lo)) {x.lo = v.lo;}
+            if (typeof v.hi === 'number' && isFinite(v.hi)) {x.hi = v.hi;}
+            if (Array.isArray(v.dirs)) {x.dirs = ids(v.dirs).filter(d => DIR8.includes(d));}
+            if (Object.keys(x).length) {c[k] = x;}
+        });
+        if (Object.keys(c).length) {out[sport] = c;}
+    });
+    return out;
+};
 const cleanSpot = (s: Any) => {
     const la = lat(s.lat); const lo = lon(s.lon);
     if (la === null || lo === null) {return null;}
@@ -59,6 +78,7 @@ const cleanSpot = (s: Any) => {
         sports: ids(s.sports).map(x => x.slice(0, 20)).slice(0, 8),
         dirs: ids(s.dirs).filter(d => DIR8.includes(d)),
         min: numOr(s.min, 6), max: numOr(s.max, 12), windUnknown: !!s.windUnknown, created: numOr(s.created, Date.now()),
+        ...(isObj(s.ranges) ? { ranges: cleanRanges(s.ranges) } : {}), ...(s.startOwn === true ? { startOwn: true } : {}),
     };
 };
 const cleanSnap = (s: Any) => {
@@ -78,7 +98,7 @@ const cleanSession = (s: Any) => ({
     snapshotId: typeof s.snapshotId === 'string' ? s.snapshotId : null, date: numOr(s.date, Date.now()),
     rating: Math.max(1, Math.min(5, Math.round(numOr(s.rating, 3) as number))), felt: numOr(s.felt, null),
     gusts: str(s.gusts, 30) || null, water: str(s.water, 30) || null,
-    sport: str(s.sport, 20) || null,
+    sport: str(s.sport, 20) || null, ...(s.checked === true ? { checked: true } : {}),
     tide: ['Low', 'Mid', 'High'].includes(s.tide) ? s.tide : null, tideMove: ['Rising', 'Falling'].includes(s.tideMove) ? s.tideMove : null, gearIds: ids(s.gearIds), gear: str(s.gear, 300),
     start: /^\d\d:\d\d$/.test(s.start) ? s.start : '', end: /^\d\d:\d\d$/.test(s.end) ? s.end : '', notes: str(s.notes, 5000),
     track: cleanTrack(s.track), tz: str(s.tz, 60) || undefined,
@@ -110,6 +130,7 @@ export const normalise = (parsed: Any): SpotlogData => {
     settings.mapSessions = settings.mapSessions !== false;
     settings.spotView = settings.spotView === 'list' ? 'list' : 'tiles';
     settings.phoneSheet = settings.phoneSheet === true;
+    settings.worksOpen = settings.worksOpen === true;
     // the welcome is for someone new: a diary with anything in it has met spotlog already (diaries from before 0.11 had no mark)
     settings.welcomed = settings.welcomed === true || ['spots', 'sessions', 'snapshots', 'gear'].some(k => Array.isArray(parsed?.[k]) && parsed[k].length > 0);
     settings.models = ids(settings.models).length ? ids(settings.models) : ['ecmwf'];
