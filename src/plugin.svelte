@@ -423,7 +423,6 @@
         <button class="act" on:click={ () => spot && startLog({ spot }) }><Icon name="pen" /><b>{ W.actLogSession }</b><small>{ W.spotLogSub }</small></button>
         <button class="act" class:on={ mapShown === spot.id } aria-pressed={ mapShown === spot.id } on:click={ () => spot && toggleShowOnMap(spot) }><Icon name="map" /><b>{ W.showOnMap }</b>{#if mapShown === spot.id}<small>{ W.showOnMapHide }</small>{/if}</button>
     </div>
-    <button class="link checked-btn" disabled={ capturing } on:click={ () => spot && checkedNotWorth(spot) }>{ W.checkedBtn }</button>
 
     {#if !savedToday}
         <small class="muted nudge">{ W.saveNudge }</small>
@@ -492,19 +491,16 @@
                     <small class="muted r-none">{ dayBySpot[spot.id] ? W.dayNone : W.checking }</small>
                 {/if}
             </div>
-            {#each spotDays as d (d.day)}
+            {#each spotDays.filter(d => d.best) as d (d.day)}
                 <div class="reco-row">
-                    <span class="r-day">{ fmtDay(d.day) }</span>
+                    <span class="r-day">{ fmtDay(d.day) }{#if predOfDay(d.day, spotOutlook) !== null}<small class="r-pred" title={ W.predTitle }>{ fill(W.predShort, { p: Math.round(predOfDay(d.day, spotOutlook) ?? 0) }) }</small>{/if}</span>
                     {#if d.best}
                         <span class="tag" style="background: { guessCol(d.best.rating)[0] }; color: { guessCol(d.best.rating)[1] }">{ guessLbl(d.best.rating) }</span>
                         <b class="r-time">{ fmtTime(d.best.start) }–{ fmtTime(d.best.end) }</b>
-                    {:else}
-                        <small class="muted r-none">{ W.dayNone }</small>
                     {/if}
-                    {#if predOfDay(d.day, spotOutlook) !== null}<small class="r-pred" title={ W.predTitle }>{ fill(W.predShort, { p: Math.round(predOfDay(d.day, spotOutlook) ?? 0) }) }</small>{/if}
                 </div>
             {/each}
-            {#if !spotOutlook}<small class="muted">{ W.checking }</small>{/if}
+            {#if !spotOutlook}<small class="muted">{ W.checking }</small>{:else if !spotDays.some(d => d.best)}<small class="muted r-later">{ W.daysNone }</small>{/if}
             <small class="muted reco-note">{ spotBest ? guessNote(spotBest, spot) : guessNote(spotGuess, spot) }</small>
         </div>
     </div>
@@ -746,9 +742,12 @@
         <b class="h2">{ W.howWas }</b>
         <div class="ratings">
             {#each RATE as r, i}
-                <button class="rate" class:on={ f.rating === i + 1 } style={ f.rating === i + 1 ? `background: ${ RATING_BG[i] }; border-color: ${ RATING_BG[i] }; color: ${ RATING_FG[i] }` : '' } on:click={ () => f && (f = { ...f, rating: i + 1 }) }><b>{ i + 1 }</b><span>{ r }</span></button>
+                <button class="rate" class:on={ !f.checked && f.rating === i + 1 } style={ !f.checked && f.rating === i + 1 ? `background: ${ RATING_BG[i] }; border-color: ${ RATING_BG[i] }; color: ${ RATING_FG[i] }` : '' } on:click={ () => f && (f = { ...f, rating: i + 1, checked: false }) }><b>{ i + 1 }</b><span>{ r }</span></button>
             {/each}
         </div>
+        <!-- a day you checked and didn't go: it teaches spotlog what doesn't work, but isn't a session on the water -->
+        <button class="chip notworth" class:on={ f.checked } aria-pressed={ !!f.checked } on:click={ () => f && (f = { ...f, checked: !f.checked }) }>{ W.notWorth }</button>
+        {#if f.checked}<small class="muted">{ W.notWorthNote }</small>{/if}
     </div>
 
     <div class="card felt-card">
@@ -892,7 +891,7 @@
     interface LogForm {
         id?: string; spotId: string | null; lat?: number; lon?: number; snapshotId: string | null;
         dateStr: string; rating: number; felt: number | null; gusts: string | null; water: string | null;
-        tide: string | null; tideMove: string | null; sport: string | null;
+        tide: string | null; tideMove: string | null; sport: string | null; checked?: boolean;
         gearIds: string[]; gear: string; start: string; end: string; notes: string; track: Track | null;
         /** snapshot this log created by itself (may be replaced when the date changes) */
         autoSnap?: string | null;
@@ -1836,7 +1835,7 @@
             (wv ? `<div class="sl-tiles">${tile(L('fcWind'), fmtWind0(wv.wind, S.wind), windColor(wv.wind), windLabel(S.wind))}${tile(L('fcGusts'), fmtWind0(wv.gust, S.wind), windColor(wv.gust), windLabel(S.wind))}${tile(L('fcFrom'), dirName(wv.dir), 'var(--sl-dirTile, #e9e8e3)')}${n?.waves ? tile(L('fcWaves'), fmtHeight(n.waves.waves, S.height), 'var(--sl-wavesTile, #dbe6f2)', S.height) : ''}</div>` : loading ? `<small>${L('cardLoading')}</small>` : `<small>${L('fcEmpty')}</small>`) +
             (wv ? `<small>${fmtTemp(wv.temp, S.temp)}</small>` : '') +
             (g ? `<span class="sl-b" style="background:${guessCol(g.rating)[0]};color:${guessCol(g.rating)[1]}">${escapeHtml(guessLbl(g.rating))}</span>` : '') +
-            (g && g.parts.length ? `<small class="sl-why">${escapeHtml(whyLine(g))}</small>` : '') +
+            (g && g.parts.length ? `<small class="sl-why" title="${escapeHtml(w('whyTitle'))}">${escapeHtml(whyLine(g))}</small>` : '') +
             (best && !best.now ? `<small class="sl-best">${L('bestToday')}: <b>${escapeHtml(guessLbl(best.rating))}</b> ${escapeHtml(bestRange(best))}</small>` : '') +
             (isMobile ? `<div class="sl-acts"><button data-act="snap">${L('cardSave')}</button><button data-act="log">${L('cardLog')}</button><button data-act="open">${L('cardDetails')}</button></div>` : '') +
             '</div>';
@@ -2387,7 +2386,7 @@
             id: se.id, spotId: se.spotId, lat: se.lat ?? sp?.lat, lon: se.lon ?? sp?.lon, snapshotId: se.snapshotId,
             dateStr: dateStrOf(se.date), rating: se.rating,
             felt: se.felt === null ? null : roundToStep(feltTo(se.felt, S.wind)),
-            gusts: se.gusts, water: se.water, tide: se.tide ?? null, tideMove: se.tideMove ?? null, sport: se.sport ?? null, gearIds: [...(se.gearIds || [])], gear: se.gear || '',
+            gusts: se.gusts, water: se.water, tide: se.tide ?? null, tideMove: se.tideMove ?? null, sport: se.sport ?? null, checked: !!se.checked, gearIds: [...(se.gearIds || [])], gear: se.gear || '',
             start: se.start, end: se.end, notes: se.notes, track: se.track || null,
         };
         go('log');
@@ -2416,7 +2415,8 @@
         else {date = new Date(`${f.dateStr}T12:00`).getTime();}
         if (!isFinite(date)) {date = Date.now();}
         const se: Session = {
-            id: f.id || uid(), spotId: f.spotId, lat: f.lat, lon: f.lon, snapshotId: f.snapshotId, date, rating: f.rating,
+            id: f.id || uid(), spotId: f.spotId, lat: f.lat, lon: f.lon, snapshotId: f.snapshotId, date, rating: f.checked ? 2 : f.rating,
+            ...(f.checked ? { checked: true } : {}),
             felt: f.felt === null ? null : Math.round(feltFrom(f.felt, S.wind) * 10) / 10,
             gusts: f.gusts, water: f.water, tide: f.tide, tideMove: f.tideMove,
             sport: (spotById(f.spotId)?.sports.includes(f.sport || '') ? f.sport : spotById(f.spotId)?.sports[0]) || null, gearIds: f.gearIds, gear: f.gear.trim(), start: f.start, end: f.end, notes: f.notes, track: f.track,
@@ -2657,30 +2657,6 @@
         const row = editRows[key];
         row.dirs = row.dirs.includes(d) ? row.dirs.filter(x => x !== d) : [...row.dirs, d];
         editRows = editRows;
-    }
-    /** "Checked, not worth it": saves the forecast now and a poor day, so spotlog learns what doesn't work */
-    async function checkedNotWorth(s: Spot) {
-        if (capturing) {return;}
-        capturing = true;
-        try {
-            const sn = await capture(s.lat, s.lon, s.id);
-            const se: Session = {
-                id: uid(), spotId: s.id, lat: s.lat, lon: s.lon, snapshotId: sn.id, date: Date.now(), rating: 2, felt: null, gusts: null, water: null,
-                gearIds: [], gear: '', start: '', end: '', notes: '', checked: true, sport: s.sports[0] ?? null, tz: deviceTz(),
-            };
-            data.snapshots = [...data.snapshots, sn];
-            data.sessions = [...data.sessions, se];
-            persist();
-            showToast(w('toastChecked'), () => {
-                data.sessions = data.sessions.filter(x => x.id !== se.id);
-                data.snapshots = data.snapshots.filter(x => x.id !== sn.id);
-                persist();
-            });
-        } catch (e) {
-            showToast((e as Error).message === NO_DAY ? w('toastNoDay') : w('toastNoFc'));
-        } finally {
-            capturing = false;
-        }
     }
     function setWorksOpen(open: boolean) {
         if (data.settings.worksOpen !== open) {setSettings({ ...data.settings, worksOpen: open });}
@@ -3117,16 +3093,19 @@
     .chip-gap { width: 8px; }
     /* spot page: save nudge, "checked, not worth it", today's tides */
     .nudge { display: block; margin: -2px 2px 0; font-size: 12px; line-height: 1.45; }
-    .link.checked-btn { color: @sub !important; font-weight: 500; font-size: 13px; padding: 2px 2px; margin-top: -4px; }
     .tide-today { font-size: 13px; display: flex; flex-direction: column; gap: 6px; .lbl { margin: 0; } .tide-best { color: var(--sl-text, #f8f8f8); line-height: 1.45; } }
     .tidehint { display: block; margin-top: -4px; }
     /* spot page: the recommendation, today and the next days */
     .reco { gap: 0; padding-top: 6px; padding-bottom: 12px; }
-    .reco-row { display: grid; grid-template-columns: 96px auto minmax(0, 1fr) auto; align-items: center; column-gap: 10px; min-height: 40px; border-bottom: 1px solid @line;
+    /* one row per day with a match: the day (and how sure Windy is) · the guess · the hours */
+    .reco-row { display: grid; grid-template-columns: 104px auto minmax(0, 1fr); align-items: center; column-gap: 12px; padding: 9px 0; border-bottom: 1px solid @line;
         &:last-of-type { border-bottom: 0; }
-        .r-day { color: @sub; font-size: 13px; white-space: nowrap; } .tag { justify-self: start; }
+        .r-day { display: flex; flex-direction: column; gap: 1px; color: @sub; font-size: 13px; white-space: nowrap; line-height: 1.25; }
+        .tag { justify-self: start; }
         .r-time { font-weight: 600; font-size: 13.5px; white-space: nowrap; } .r-none { grid-column: span 2; }
-        .r-pred { color: var(--sl-uQuiet, #8a8a8a); font-size: 11.5px; white-space: nowrap; text-align: right; } }
+        .r-pred { color: var(--sl-uQuiet, #8a8a8a); font-size: 11px; } }
+    .r-later { padding-top: 8px; }
+    .chip.notworth { align-self: flex-start; height: 32px; font-size: 13px; }
     .reco-note { margin-top: 8px; }
     /* spot page: what works here for you, folded to one line or open */
     .works-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; border: 0; background: none; padding: 0; color: inherit !important; text-align: left; cursor: pointer;
@@ -3157,7 +3136,7 @@
             &.on { background: var(--sl-chipOnBg, #f8f8f8); color: var(--sl-chipOnText, #1c1c1c) !important; border-color: var(--sl-chipOnBg, #f8f8f8); } }
         .gear-hint { font-size: 12.5px; color: @sub; }
         .btns { margin-top: 0; } }
-    @media (max-width: 380px) { .works .w-grid { column-gap: 9px; font-size: 12.5px; } .reco-row { grid-template-columns: 78px auto minmax(0, 1fr) auto; column-gap: 8px; } }
+    @media (max-width: 380px) { .works .w-grid { column-gap: 9px; font-size: 12.5px; } .reco-row { grid-template-columns: 84px auto minmax(0, 1fr); column-gap: 8px; } }
     label.link { cursor: pointer; }
     .chip { height: 36px; padding: 0 15px; border-radius: var(--sl-radiusChip, 18px); border: 1px solid var(--sl-chipLine, #5a5a5a); background: transparent; color: var(--sl-chipText, #f8f8f8) !important; display: inline-flex; align-items: center; gap: 6px;
         .k { font-size: 11px; opacity: 0.65; }

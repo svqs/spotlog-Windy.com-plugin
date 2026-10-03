@@ -191,11 +191,14 @@ with sync_playwright() as p:
     seed(pg, d)
     pg.click('.tile >> nth=0'); pg.wait_for_selector('.reco')
     n0 = pg.locator('.stats .big').first.inner_text()
-    pg.click('.checked-btn'); pg.wait_for_selector('.toast:has-text("not worth it")', timeout=10000)
+    pg.click('.act:has-text("Log session")'); pg.wait_for_selector('.chip.notworth', timeout=10000)
+    pg.click('.chip.notworth'); pg.wait_for_selector('text=Saved as a poor day')
+    pg.wait_for_function("!document.querySelector('.snapless')", timeout=10000)  # the forecast for the session is saved first
+    pg.locator('text=Save session').scroll_into_view_if_needed(); pg.click('text=Save session'); pg.wait_for_selector('.reco', timeout=8000)
     st = pg.evaluate(f"JSON.parse(localStorage.getItem('{KEY}'))")
     chk = [x for x in st['sessions'] if x.get('checked')]
-    note(len(chk) == 1 and chk[0]['rating'] == 2 and chk[0]['snapshotId'] and pg.locator('.stats .big').first.inner_text() == n0 and pg.locator('text=Checked, not worth it').count() >= 1,
-         'checked, not worth it: saves the forecast and a poor day; not counted as a session on the water, shown as "Checked" in the list')
+    note(len(chk) == 1 and chk[0]['rating'] == 2 and chk[0]['snapshotId'] and pg.locator('.stats .big').first.inner_text() == n0 and pg.locator('text=Not worth it, didn\'t go').count() >= 1,
+         'log session "Not worth it, didn\'t go": a poor day with the forecast, not counted as a session on the water, labelled in the list')
     pg.click('.act:has-text("Show on map")'); pg.wait_for_selector('.sl-pop', timeout=8000); pg.wait_for_timeout(1200)
     why = pg.locator('.sl-pop .sl-why').all_inner_texts()
     note(bool(why) and ('✓' in why[0] or '✕' in why[0] or '~' in why[0]), f'map card shows why: {why[:1]}')
