@@ -173,8 +173,8 @@ export const hoursToday = (lat: number, lon: number, model = 'ecmwf'): Promise<H
 
 export interface TideDay { highs: number[]; lows: number[] }
 let tideLogged = false;
-/** Today's high and low tides at a place, when Windy has a tide forecast there (null when not, or when the answer can't be read) */
-export const tideToday = async (lat: number, lon: number): Promise<TideDay | null> => {
+/** High and low tides at a place between two times, when Windy has a tide forecast there (null when not, or when the answer can't be read) */
+export const tideBetween = async (lat: number, lon: number, from: number, to: number): Promise<TideDay | null> => {
     try {
         const url = (wfetch as unknown as { getTideForecastUrl?: (ll: { lat: number; lon: number }) => string }).getTideForecastUrl?.({ lat, lon });
         if (!url || !http?.get) {return null;}
@@ -184,19 +184,22 @@ export const tideToday = async (lat: number, lon: number): Promise<TideDay | nul
             tideLogged = true;
             console.info('[spotlog] tide answer (for reading it right):', body && typeof body === 'object' ? Object.keys(body as object) : typeof body);
         }
-        return readTides(body);
+        return readTides(body, from, to);
     } catch (e) {
         console.info('[spotlog] no tide forecast here', e);
         return null;
     }
 };
-
-/** Reads highs and lows from the shapes a tide answer usually has (a list of extremes, or times + heights) */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function readTides(body: any): TideDay | null {
+/** Today's high and low tides */
+export const tideToday = (lat: number, lon: number): Promise<TideDay | null> => {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
-    const end = start.getTime() + 864e5;
+    return tideBetween(lat, lon, start.getTime(), start.getTime() + 864e5);
+};
+
+/** Reads highs and lows (from..to) from the shapes a tide answer usually has (a list of extremes, or times + heights) */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function readTides(body: any, from: number, to: number): TideDay | null {
     const toMs = (t: unknown): number | null => (typeof t === 'number' ? (t < 1e12 ? t * 1000 : t) : typeof t === 'string' && !isNaN(Date.parse(t)) ? Date.parse(t) : null);
     const highs: number[] = [];
     const lows: number[] = [];
@@ -205,7 +208,7 @@ export function readTides(body: any): TideDay | null {
         for (const e of list) {
             const t = toMs(e?.ts ?? e?.time ?? e?.timestamp ?? e?.date);
             const type = String(e?.type ?? e?.state ?? '').toLowerCase();
-            if (t === null || t < start.getTime() || t >= end) {continue;}
+            if (t === null || t < from || t >= to) {continue;}
             if (type.startsWith('h')) {highs.push(t);} else if (type.startsWith('l')) {lows.push(t);}
         }
     } else {
@@ -215,7 +218,7 @@ export function readTides(body: any): TideDay | null {
         if (ts && hv && ts.length === hv.length) {
             for (let i = 1; i < ts.length - 1; i++) {
                 const t = toMs(ts[i]);
-                if (t === null || t < start.getTime() || t >= end) {continue;}
+                if (t === null || t < from || t >= to) {continue;}
                 if (hv[i] > hv[i - 1] && hv[i] >= hv[i + 1]) {highs.push(t);}
                 if (hv[i] < hv[i - 1] && hv[i] <= hv[i + 1]) {lows.push(t);}
             }
@@ -329,7 +332,9 @@ export const captureDay = async (
         };
         break;
     }
-    const series: DaySeries = { ts: grid, models: out, waves };
+    // the tides around the saved day (a few hours either side, so every hour sits between a high and a low)
+    const tide = await tideBetween(lat, lon, from - 8 * HOUR, to + 8 * HOUR);
+    const series: DaySeries = { ts: grid, models: out, waves, ...(tide ? { tide } : {}) };
     const at = seriesAt(series, focusTs);
     return { series, ...at, primary: out[primary] ? primary : Object.keys(out)[0] };
 };

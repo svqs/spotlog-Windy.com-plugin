@@ -151,10 +151,7 @@ with sync_playwright() as p:
     ok('felt ruler works with arrow keys')
     pg.click('.chip:has-text("Gusty") >> nth=0')
     pg.click('.chip:has-text("Chop")')
-    pg.click('.chip:has-text("High")')
-    pg.click('.chip:has-text("Rising")')
-    pg.click('.chip:has-text("Mid")')  # one tide level at a time
-    assert pg.locator('.chip.on:has-text("Mid")').count() == 1 and pg.locator('.chip.on:has-text("High")').count() == 0
+    assert pg.locator('.chip:has-text("Rising")').count() == 0  # no tide to log: it comes from the forecast
     pg.fill('input[placeholder^="e.g. Sail"]', 'Sail 5.3')
     pg.click('text=Save to gear')
     pg.wait_for_selector('.chip.on:has-text("Sail 5.3")')
@@ -200,8 +197,9 @@ with sync_playwright() as p:
     pg.wait_for_selector('text=Sessions here')
     se = stored(pg)['sessions'][0]
     assert se['rating'] == 5 and se['track'] and se['gearIds'], se
-    assert se['tide'] == 'Mid' and se['tideMove'] == 'Rising', se
-    ok('session saved with rating, felt, gear, tide and track')
+    sn = next(x for x in stored(pg)['snapshots'] if x['id'] == se['snapshotId'])
+    assert sn['series'].get('tide', {}).get('highs'), 'tides saved with the day'
+    ok('session saved with rating, felt, gear and track; the tide is saved with the forecast')
     pg.wait_for_selector('.reco .reco-row:has-text("Today")')
     pg.wait_for_function("document.querySelectorAll('.reco .reco-row').length >= 3", timeout=10000)
     reco = pg.locator('.reco').inner_text().replace('\n', ' ')

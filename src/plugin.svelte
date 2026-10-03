@@ -464,8 +464,6 @@
                 <div class="row"><span class="lbl grow">{ W.tideToday }</span><span>{ tideList(spotOutlook.tide) }</span></div>
                 {#if spotTide}
                     <small class="tide-best">{ fill(W.tideBestToday, { tide: tideText(spotTide), n: spotTide.of, total: spotTide.total, when: tideWhen(spotOutlook.tide, spotTide) || '–' }) }</small>
-                {:else}
-                    <small class="muted">{ W.tideLogHint }</small>
                 {/if}
             </div>
         {:else if spotTide}
@@ -770,15 +768,6 @@
     <div class="field"><span class="lbl">{ W.water }</span>
         <div class="chips">{#each ['Flat', 'Chop', 'Swell', 'Waves'] as wv, i}<button class="chip" class:on={ f.water === wv } on:click={ () => f && (f = { ...f, water: f.water === wv ? null : wv }) }>{ W['water' + (i + 1)] }</button>{/each}</div>
     </div>
-    <!-- tide: no forecast for it, but you know it; your best sessions then show which tide works here -->
-    <div class="field"><span class="lbl">{ W.tide }</span>
-        <div class="chips">
-            {#each TIDES as t}<button class="chip" class:on={ f.tide === t } on:click={ () => f && (f = { ...f, tide: f.tide === t ? null : t }) }>{ W['tide' + t] }</button>{/each}
-            <span class="chip-gap" aria-hidden="true"></span>
-            {#each TIDE_MOVES as t}<button class="chip" class:on={ f.tideMove === t } on:click={ () => f && (f = { ...f, tideMove: f.tideMove === t ? null : t }) }>{ W['tide' + t] }</button>{/each}
-        </div>
-    </div>
-
     <div class="field"><span class="lbl">{ W.gear }</span>
         {#each logGearGroups as grp (grp.sport)}
             {#if logGearGroups.length > 1}<small class="muted">{ sportLbl(grp.sport) }</small>{/if}
@@ -859,7 +848,7 @@
     } from './lib/wind';
     import { fmtWind, fmtWind0, fmtHeight, fmtTemp, fmtDistance, windLabel, fromWind, toWind, windStep, feltTo, feltFrom } from './lib/units';
     import {
-        guess, conditionsOf, samplesFor, suggestWindow, shownLevel, bestToday, bestTide, learnSpot, dirsOfParam, guessSport,
+        guess, conditionsOf, samplesFor, suggestWindow, shownLevel, bestToday, bestTide, sessionTide, learnSpot, dirsOfParam, guessSport,
         nextDays, learnedWindow, gearHints, ownAverage, nearbySpots, isCircular, paramsOf, MIN_SAMPLES,
     } from './lib/predict';
     import { words, w, t as tr, fill, rich, setWords } from './lib/copy';
@@ -891,7 +880,7 @@
     interface LogForm {
         id?: string; spotId: string | null; lat?: number; lon?: number; snapshotId: string | null;
         dateStr: string; rating: number; felt: number | null; gusts: string | null; water: string | null;
-        tide: string | null; tideMove: string | null; sport: string | null; checked?: boolean;
+        sport: string | null; checked?: boolean;
         gearIds: string[]; gear: string; start: string; end: string; notes: string; track: Track | null;
         /** snapshot this log created by itself (may be replaced when the date changes) */
         autoSnap?: string | null;
@@ -960,8 +949,6 @@
     const UNSURE: [string, string] = ['var(--sl-dirTile, #e9e8e3)', 'var(--sl-lightSub, #6b6b6b)'];
     const guessCol = (r: number | null): [string, string] => (shownLevel(r) ? guessColours(r as number) : UNSURE);
     const NO_BEST: DayBest = { start: 0, end: 0, rating: 0, level: 0, sport: '', sessions: 0, learned: false, now: true };
-    const TIDES = ['Low', 'Mid', 'High'];
-    const TIDE_MOVES = ['Rising', 'Falling'];
     $: sportLbl = (sp: string): string => W['sport' + sp] || sp;
     /** a place without a name is stored as 'Dropped pin'; it shows in the chosen wording */
     $: pinName = (n: string | undefined): string => (!n || n === 'Dropped pin' ? W.droppedPin : n);
@@ -1219,7 +1206,7 @@
     $: spotLearned = spot ? modelsOf(spot, modelMap) : [];
     $: spotPred = spotGuess?.rating ?? null;
     $: spotBest = spot ? bestOf(spot) : null;
-    $: spotTide = spot ? bestTide(data.sessions.filter(x => x.spotId === spot?.id)) : null;
+    $: spotTide = spot ? bestTide(spotReal.map(x => ({ rating: x.rating, ...sessionTide(x, data.snapshots) }))) : null;
     $: spotLearnedWindow = spot && !spot.windUnknown ? learnedWindow(spot, spotLearned[0]) : null;
     $: spotGear = spot ? gearHints(samplesFor(spot, data.sessions, data.snapshots, modelFor(spot, trustMap))) : [];
     $: spotOutlook = spot ? outlookOf(spot.id, outlookBySpot) : null;
@@ -2304,7 +2291,7 @@
     /* ---------- sessions ---------- */
     function emptyForm(): LogForm {
         return {
-            spotId: null, snapshotId: null, dateStr: dateStrOf(Date.now()), rating: 4, felt: null, gusts: null, water: null, tide: null, tideMove: null, sport: null,
+            spotId: null, snapshotId: null, dateStr: dateStrOf(Date.now()), rating: 4, felt: null, gusts: null, water: null, sport: null,
             gearIds: [], gear: '', start: '', end: '', notes: '', track: null,
         };
     }
@@ -2395,7 +2382,7 @@
             id: se.id, spotId: se.spotId, lat: se.lat ?? sp?.lat, lon: se.lon ?? sp?.lon, snapshotId: se.snapshotId,
             dateStr: dateStrOf(se.date), rating: se.rating,
             felt: se.felt === null ? null : roundToStep(feltTo(se.felt, S.wind)),
-            gusts: se.gusts, water: se.water, tide: se.tide ?? null, tideMove: se.tideMove ?? null, sport: se.sport ?? null, checked: !!se.checked, gearIds: [...(se.gearIds || [])], gear: se.gear || '',
+            gusts: se.gusts, water: se.water, sport: se.sport ?? null, checked: !!se.checked, gearIds: [...(se.gearIds || [])], gear: se.gear || '',
             start: se.start, end: se.end, notes: se.notes, track: se.track || null,
         };
         go('log');
@@ -2427,7 +2414,9 @@
             id: f.id || uid(), spotId: f.spotId, lat: f.lat, lon: f.lon, snapshotId: f.snapshotId, date, rating: f.checked ? 2 : f.rating,
             ...(f.checked ? { checked: true } : {}),
             felt: f.felt === null ? null : Math.round(feltFrom(f.felt, S.wind) * 10) / 10,
-            gusts: f.gusts, water: f.water, tide: f.tide, tideMove: f.tideMove,
+            gusts: f.gusts, water: f.water,
+            // a tide logged by hand in older diaries stays (new tides come from the saved forecast)
+            tide: data.sessions.find(x => x.id === f?.id)?.tide ?? null, tideMove: data.sessions.find(x => x.id === f?.id)?.tideMove ?? null,
             sport: (spotById(f.spotId)?.sports.includes(f.sport || '') ? f.sport : spotById(f.spotId)?.sports[0]) || null, gearIds: f.gearIds, gear: f.gear.trim(), start: f.start, end: f.end, notes: f.notes, track: f.track,
             tz: deviceTz(),
         };
@@ -3098,7 +3087,6 @@
     .link-card { text-align: left; align-items: center; }
     .field { display: flex; flex-direction: column; gap: 8px; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-    .chip-gap { width: 8px; }
     /* spot page: save nudge, "checked, not worth it", today's tides */
     .nudge { display: block; margin: -2px 2px 0; font-size: 12px; line-height: 1.45; }
     .tide-today { font-size: 13px; display: flex; flex-direction: column; gap: 6px; .lbl { margin: 0; } .tide-best { color: var(--sl-text, #f8f8f8); line-height: 1.45; } }
@@ -3127,7 +3115,7 @@
         .w-grid { display: grid; column-gap: 14px; align-items: center; font-size: 13.5px; }
         .w-group { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sl-uQuiet, #8a8a8a); margin-bottom: -4px; }
         .w-list { display: flex; flex-direction: column; }
-        .w-row { display: grid; grid-template-columns: 16px 96px minmax(0, 1fr) auto; column-gap: 10px; align-items: baseline; padding: 7px 0; font-size: 13.5px; border-bottom: 1px solid @line;
+        .w-row { display: grid; grid-template-columns: 16px 116px minmax(0, 1fr) auto; column-gap: 10px; align-items: baseline; padding: 7px 0; font-size: 13.5px; border-bottom: 1px solid @line;
             &:last-child { border-bottom: 0; } }
         .w-mark { font-weight: 700; color: @sub; text-align: center; &.ok { color: var(--sl-r4bg, #50b450); } &.near { color: var(--sl-linkText, #d49500); } &.off { color: var(--sl-danger, #ff9a9a); } }
         .w-also { color: @sub; font-size: 12.5px; line-height: 1.5; span { color: var(--sl-uQuiet, #8a8a8a); } }
@@ -3146,7 +3134,7 @@
         .gear-hint { font-size: 12.5px; color: @sub; }
         .btns { margin-top: 0; } }
     @media (max-width: 480px) { .reco-row { grid-template-columns: 86px auto minmax(0, 1fr); column-gap: 10px; .r-time { font-size: 13px; } } }
-    @media (max-width: 380px) { .works .w-row { column-gap: 7px; font-size: 12.5px; } .reco-row { grid-template-columns: 78px auto minmax(0, 1fr); column-gap: 8px; } }
+    @media (max-width: 380px) { .works .w-row { grid-template-columns: 14px 104px minmax(0, 1fr) auto; column-gap: 7px; font-size: 12.5px; } .reco-row { grid-template-columns: 78px auto minmax(0, 1fr); column-gap: 8px; } }
     label.link { cursor: pointer; }
     .chip { height: 36px; padding: 0 15px; border-radius: var(--sl-radiusChip, 18px); border: 1px solid var(--sl-chipLine, #5a5a5a); background: transparent; color: var(--sl-chipText, #f8f8f8) !important; display: inline-flex; align-items: center; gap: 6px;
         .k { font-size: 11px; opacity: 0.65; }
@@ -3232,7 +3220,7 @@
     :global(.sl-h b) { font-size: 14px; }
     :global(.sl-tiles) { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
     :global(.sl-t) { display: flex; flex-direction: column; justify-content: space-between; gap: 6px; min-height: 58px; padding: 7px 8px; border-radius: 9px; font-size: 11px; color: var(--sl-windText, #1c1c1c); box-sizing: border-box; }
-    :global(.sl-t span) { white-space: nowrap; }
+    :global(.sl-t span) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     :global(.sl-t b) { display: block; font: 900 20px 'Doto', ui-monospace, monospace; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: clip; }
     :global(.sl-pop .sl-t small) { display: block; font: 600 10px 'Instrument Sans', system-ui, sans-serif; color: inherit; opacity: 0.7; line-height: 1; white-space: nowrap; }
     :global(.sl-pop .sl-best b) { font-weight: 600; color: inherit; }

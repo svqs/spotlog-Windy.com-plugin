@@ -145,7 +145,7 @@ export const samplesFor = (spot: Spot, sessions: Session[], snapshots: Snapshot[
             const sport = s.sport && spot.sports.includes(s.sport) ? s.sport : sportsOf(spot)[0];
             // the forecast was far off how it felt: that day says less about the forecast
             const off = s.felt !== null && c.wind > 1 && Math.abs(s.felt - c.wind) > c.wind / 3;
-            return { ...c, rating: s.rating, sport, weight: weight * (off ? 0.5 : 1), gearIds: s.gearIds || [], tide: s.tide ?? null, tideMove: s.tideMove ?? null };
+            return { ...c, rating: s.rating, sport, weight: weight * (off ? 0.5 : 1), gearIds: s.gearIds || [], ...sessionTide(s, snapshots) };
         })
         .filter((x): x is Sample => !!x);
 
@@ -485,11 +485,30 @@ export const gearHints = (samples: Sample[]): GearHint[] => {
     return out;
 };
 
-/* ---------- tide: you know it; your best sessions show which tide works ---------- */
+/* ---------- tide: from Windy's tide forecast saved with the day; your best sessions show which tide works ---------- */
+
+/** The tide at a time from high and low tide times: Low / Mid / High (the third of the way nearest a high or low) and Rising / Falling */
+export function tideAt(t: { highs: number[]; lows: number[] } | undefined | null, ts: number): { tide: string | null; move: string | null } | null {
+    if (!t) {return null;}
+    const ev = [...t.highs.map(x => ({ x, hi: true })), ...t.lows.map(x => ({ x, hi: false }))].sort((a, b) => a.x - b.x);
+    const before = ev.filter(e => e.x <= ts).pop();
+    const after = ev.find(e => e.x > ts);
+    if (!before || !after || before.hi === after.hi || after.x - before.x > 9 * 3600e3) {return null;}
+    const f = (ts - before.x) / (after.x - before.x);
+    const near = f < 1 / 3 ? before : f > 2 / 3 ? after : null;
+    return { tide: near ? (near.hi ? 'High' : 'Low') : 'Mid', move: before.hi ? 'Falling' : 'Rising' };
+}
+
+/** A session's tide: from the tides saved with its forecast, or (older diaries) the one logged by hand */
+export function sessionTide(s: Session, snapshots: Snapshot[]): { tide: string | null; tideMove: string | null } {
+    const sn = s.snapshotId ? snapshots.find(x => x.id === s.snapshotId) : null;
+    const t = tideAt(sn?.series?.tide, sessionTime(s));
+    return t ? { tide: t.tide, tideMove: t.move } : { tide: s.tide ?? null, tideMove: s.tideMove ?? null };
+}
 
 export interface TideHint { tide: string | null; move: string | null; of: number; total: number }
 
-/** The tide most of your great sessions here had (needs 2+ great sessions with a tide logged) */
+/** The tide most of your great sessions here had (needs 2+ great sessions with a known tide) */
 export const bestTide = (samples: { rating: number; tide?: string | null; tideMove?: string | null }[]): TideHint | null => {
     const good = samples.filter(s => s.rating >= 4 && (s.tide || s.tideMove));
     if (good.length < 2) {return null;}

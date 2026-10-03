@@ -245,8 +245,9 @@
     const getTideForecastUrl = ({ lat, lon }) => `mock://tides/${lat.toFixed(2)}/${lon.toFixed(2)}`;
     const http = { get: async url => {
         if (!url.startsWith('mock://tides')) throw new Error('offline');
+        // a high at 2:18 today, then a low or high every 6.2 hours, from 3 days back to 7 days ahead
         const t0 = new Date(); t0.setHours(0, 0, 0, 0);
-        const ex = []; for (let k = 0; k < 4; k++) ex.push({ ts: +t0 + (2.3 + k * 6.2) * 3600e3, type: k % 2 ? 'low' : 'high', height: k % 2 ? 0.3 : 1.6 });
+        const ex = []; for (let k = -12; k < 28; k++) ex.push({ ts: +t0 + (2.3 + k * 6.2) * 3600e3, type: (k + 100) % 2 ? 'low' : 'high', height: (k + 100) % 2 ? 0.3 : 1.6 });
         return { data: { extremes: ex } };
     } };
 

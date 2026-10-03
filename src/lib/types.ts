@@ -74,6 +74,8 @@ export interface DaySeries {
         waves: (number | null)[]; wavesPeriod: (number | null)[]; wavesPower: (number | null)[]; wavesDir: (number | null)[];
         swell1: (number | null)[]; swell1Period: (number | null)[]; swell1Dir: (number | null)[];
     } | null;
+    /** high and low tide times around the saved day, when Windy has a tide forecast there */
+    tide?: { highs: number[]; lows: number[] };
 }
 
 export interface Track {
@@ -105,7 +107,7 @@ export interface Session {
     checked?: boolean;
     /** which of the spot's sports this session was (spots with one sport: that one) */
     sport?: string | null;
-    /** tide at the session (spotlog has no tide forecast, but you know it): Low, Mid, High */
+    /** tide at the session, from older diaries where it was logged by hand (now it comes from the saved forecast): Low, Mid, High */
     tide?: string | null;
     /** Rising or Falling */
     tideMove?: string | null;
