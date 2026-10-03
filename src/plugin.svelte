@@ -494,7 +494,7 @@
                 <div class="reco-row">
                     <span class="r-day">{ W.today }</span>
                     <span class="tag" style="background: { guessCol(spotBest.rating)[0] }; color: { guessCol(spotBest.rating)[1] }">{ guessLbl(spotBest.rating, spotBest.sport) }</span>
-                    <b class="r-time">{ bestRange(spotBest) }</b>
+                    <b class="r-time">{#if spotBest.now}<span>{ bestRange(spotBest) }</span>{:else}<span>{ fmtTime(spotBest.start) }–</span><span>{ fmtTime(spotBest.end) }</span>{/if}</b>
                 </div>
             {/if}
             {#each spotDays.filter(d => d.best) as d (d.day)}
@@ -3167,7 +3167,7 @@
         .gear-hint { font-size: 12.5px; color: @sub; }
         .btns { margin-top: 0; } }
     @media (max-width: 480px) { .reco-row { grid-template-columns: 86px auto minmax(0, 1fr); column-gap: 10px; .r-time { font-size: 13px; } } }
-    @media (max-width: 380px) { .works .w-grid { column-gap: 9px; font-size: 12.5px; } .reco-row { grid-template-columns: 78px auto minmax(0, 1fr); column-gap: 8px; } }
+    @media (max-width: 380px) { .works .w-grid { column-gap: 9px; font-size: 12.5px; } .reco-row { grid-template-columns: 74px auto minmax(0, 1fr); column-gap: 8px; .tag { font-size: 11px; padding: 3px 8px; } .r-time { font-size: 12.5px; } } }
     label.link { cursor: pointer; }
     .chip { height: 36px; padding: 0 15px; border-radius: var(--sl-radiusChip, 18px); border: 1px solid var(--sl-chipLine, #5a5a5a); background: transparent; color: var(--sl-chipText, #f8f8f8) !important; display: inline-flex; align-items: center; gap: 6px;
         .k { font-size: 11px; opacity: 0.65; }

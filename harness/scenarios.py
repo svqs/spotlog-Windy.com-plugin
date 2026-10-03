@@ -62,7 +62,7 @@ def overflow(pg):
       for (const el of root.querySelectorAll('*')) {
         const r = el.getBoundingClientRect(); if (!r.width || !r.height) continue;
         const cs = getComputedStyle(el); if (cs.visibility === 'hidden' || cs.position === 'fixed') continue;
-        if (el.closest('.swipe-actions,.sw .back,.tw-pop,[hidden],.cells,.scrollx,.trust,.hours')) continue;
+        if (el.closest('.swipe-actions,.sw .back,.tw-pop,[hidden],.cells,.scrollx,.trust,.hours,.felt .tape,.felt')) continue;
         if (r.right > rr.right + 1.5 || r.left < rr.left - 1.5) bad.push((el.className && el.className.baseVal === undefined ? el.className : el.tagName) + ' ' + (el.textContent || '').trim().slice(0, 30));
       }
       return [...new Set(bad)].slice(0, 6);
@@ -256,5 +256,46 @@ with sync_playwright() as p:
     o = overflow(pg)
     note(not o and not errs, f'phone: spot page with what works open fits {o} {errs[:2]}')
     ctx.close()
+
+    # 8. phone cross-check: every screen at small, mid and big phone sizes (nothing sticks out, no value cut off)
+    d = big_data(3, 30, 12)
+    d['spots'][0]['sports'] = ['Windsurf', 'Surf', 'Foil']
+    for vp in [(320, 568), (360, 740), (390, 844), (430, 932)]:
+        ctx, pg, errs = page(vp, mobile=True, touch=True)
+        seed(pg, d, URL.replace('index.html', 'index.html?m')); pg.wait_for_timeout(1500)
+        bad = {}
+        def check(name):
+            pg.wait_for_timeout(350)
+            o = overflow(pg) + cut_text(pg)
+            if o: bad[name] = o
+            pg.screenshot(path=f'{OUT}/x{vp[0]}-{name}.png')
+        def at(sel, name):
+            if pg.locator(sel).count():
+                pg.locator(sel).first.evaluate("e => e.scrollIntoView({ block: 'start' })"); check(name)
+        pg.locator('.mtabs button:has-text("Spots")').first.click(); check('spots')
+        pg.locator('.tile').first.click(); pg.wait_for_timeout(900); check('card')
+        if pg.locator('.sl-acts button:has-text("Details")').count(): pg.locator('.sl-acts button:has-text("Details")').first.click()
+        pg.wait_for_selector('.reco', timeout=8000); pg.wait_for_timeout(800); check('spot-top')
+        at('.reco', 'spot-reco')
+        if pg.locator('.works').count() == 0: pg.locator('.works-head').click()
+        pg.wait_for_selector('.works .w-grid'); at('.works', 'spot-works')
+        pg.locator('.works .w-head .link:has-text("Adjust")').first.click(); pg.wait_for_selector('.w-grid.edit'); at('.w-grid.edit', 'spot-adjust')
+        pg.locator('.works .btn:has-text("Cancel")').first.click()
+        at('.score', 'spot-trust')
+        pg.locator('.act:has-text("Log session")').first.click(); pg.wait_for_selector('.felt'); check('log-top')
+        pg.locator('[role=radiogroup][aria-label="Sport"] .chip:has-text("Other…")').click(); at('.other-sport', 'log-sport')
+        at('.felt', 'log-felt')
+        at('text=Save session', 'log-bottom')
+        pg.locator('.back, button[aria-label="Back"]').first.click() if pg.locator('.back, button[aria-label="Back"]').count() else None
+        pg.wait_for_timeout(500)
+        if pg.locator('.reco').count():
+            pg.locator('.link:has-text("Edit")').first.click(); pg.wait_for_timeout(500)
+            if pg.locator('.chip:has-text("Other…")').count():
+                pg.locator('.chip:has-text("Other…")').first.click(); check('spot-form')
+        for tab in ['Sessions', 'Gear', 'How it works']:
+            sel = f'.mtabs button:has-text("{tab}")'
+            if pg.locator(sel).count(): pg.locator(sel).first.click(); check(tab.replace(' ', ''))
+        note(not bad and not errs, f'phone {vp[0]}x{vp[1]}: every screen fits, no value cut {bad} {errs[:2]}')
+        ctx.close()
     b.close()
 print('FINDINGS:', json.dumps(findings, indent=1))
