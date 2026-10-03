@@ -233,7 +233,7 @@ with sync_playwright() as p:
     sn = next(x for x in sd['snapshots'] if x['id'] == se['snapshotId'])
     import datetime as _dt
     hr = _dt.datetime.fromtimestamp(sn['ts'] / 1000).hour
-    assert sn.get('series') and hr in (15, 16), (hr, bool(sn.get('series')))
+    assert sn.get('series') and 12 <= hr <= 18, (hr, bool(sn.get('series')))  # middle of the GPX start and the 17:xx end (moves with the clock)
     ok(f'saved forecast moved to the session time ({hr}:00) and keeps the 24 hours')
 
     # --- open session from list, back, then swipe-left delete + undo

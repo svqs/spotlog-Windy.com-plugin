@@ -113,7 +113,6 @@ export const COPY_GROUPS: CopyGroup[] = [
         ['formUnknownText', 'No problem. Log a few sessions here. After two great ones, {spotlog} suggests the wind directions and strength from your own days.'],
         ['formWindFrom', 'Wind from'], ['formStrength', 'Strength'], ['formMin', 'min'], ['formMax', 'max'],
         ['formGuessNote', 'A rough guess is fine. You can change it any time.'],
-        ['startOwnTitle', 'Start from how you usually rate'], ['startOwnText', 'Until this spot has its own sessions, guesses start from your average elsewhere ({avg}) instead of "likely good".'],
         ['formSaveNew', 'Save spot'], ['formSaveEdit', 'Save changes'],
     ] },
     { id: 'spot', title: 'Spot page', items: [
@@ -136,6 +135,9 @@ export const COPY_GROUPS: CopyGroup[] = [
         ['recoTitle', 'When to go'], ['today', 'Today'], ['dayNone', 'nothing stands out'],
         ['predShort', '{p} % sure'], ['predTitle', 'Windy\'s forecast predictability for that day'],
         ['tideToday', 'Tide today'],
+        ['tideBestToday', 'Your best sessions here had {tide} tide ({n} of {total}). Today: {when}'],
+        ['tideAround', 'around {time}'],
+        ['tideLogHint', 'Log the tide on your sessions and spotlog shows which tide works here, and when it is today.'],
         ['saveNudge', 'Going out today? Save the forecast first, so the session teaches spotlog.'],
         ['checkedBtn', 'Checked, not worth it today'], ['checkedLabel', 'Checked, not worth it'],
         ['matter1', 'matters little'], ['matter2', 'matters'], ['matter3', 'matters a lot'],

@@ -393,15 +393,6 @@
         {/if}
     </div>
 
-    {#if ownAvg !== null && !sf.windUnknown}
-        <!-- a suggestion, off unless you choose it: start this spot from how you usually rate -->
-        <div class="card">
-            <button class="maptog" role="switch" aria-checked={ !!sf.startOwn } on:click={ () => sf && (sf = { ...sf, startOwn: !sf.startOwn }) }>
-                <span class="grow"><b>{ W.startOwnTitle }</b><small>{ fill(W.startOwnText, { avg: (ownAvg ?? 0).toFixed(1) }) }</small></span>
-                <span class="switch" class:on={ sf.startOwn }><i></i></span>
-            </button>
-        </div>
-    {/if}
     <button class="btn primary wide" disabled={ !sf.name.trim() } on:click={ saveSpotForm }>{ sf.id ? W.formSaveEdit : W.formSaveNew }</button>
 
 <!-- ================= SPOT ================= -->
@@ -469,12 +460,16 @@
             {/if}
         {/if}
         {#if spotOutlook?.tide}
-            <div class="row sep tide-today">
-                <span class="lbl grow">{ W.tideToday }</span>
-                <span>{ [...spotOutlook.tide.highs.map(t => `${W.tideHigh} ${fmtTime(t)}`), ...spotOutlook.tide.lows.map(t => `${W.tideLow} ${fmtTime(t)}`)].sort((a, b) => a.slice(-5).localeCompare(b.slice(-5))).join(' · ') }</span>
+            <!-- today's tides, and when today matches the tide your best sessions had -->
+            <div class="sep tide-today">
+                <div class="row"><span class="lbl grow">{ W.tideToday }</span><span>{ tideList(spotOutlook.tide) }</span></div>
+                {#if spotTide}
+                    <small class="tide-best">{ fill(W.tideBestToday, { tide: tideText(spotTide), n: spotTide.of, total: spotTide.total, when: tideWhen(spotOutlook.tide, spotTide) || '–' }) }</small>
+                {:else}
+                    <small class="muted">{ W.tideLogHint }</small>
+                {/if}
             </div>
-        {/if}
-        {#if spotTide}
+        {:else if spotTide}
             <small class="muted tidehint">{ fill(W.tideHint, { tide: tideText(spotTide), n: spotTide.of, total: spotTide.total }) }</small>
         {/if}
         <div class="stats sep">
@@ -1424,7 +1419,7 @@
     };
     $: bestRange = (b: DayBest): string => (b.now ? fill(W.todayUntil, { time: fmtTime(b.end) }) : fmtTime(b.start) + '–' + fmtTime(b.end));
     $: tideText = (t: { tide: string | null; move: string | null }): string =>
-        [t.tide ? W['tide' + t.tide] : '', t.move ? W['tide' + t.move].toLowerCase() : ''].filter(Boolean).join(', ');
+        [t.tide ? W['tide' + t.tide].toLowerCase() : '', t.move ? W['tide' + t.move].toLowerCase() : ''].filter(Boolean).join(', ');
     function primaryOf(sn: Snapshot): ModelValue | null {
         return sn.models.find(m => m.model === sn.primary) || sn.models[0] || null;
     }
@@ -2561,6 +2556,28 @@
         outlookBySpot = { ...outlookBySpot, [s.id]: { hours, pred, tide } };
     }
     const predOfDay = (day: number, o: Outlook | null): number | null => o?.pred[new Date(day).toDateString()] ?? null;
+    /** "High 2:18 · Low 8:30 · High 14:42" */
+    $: tideList = (t: TideDay): string =>
+        [...t.highs.map(x => ({ x, k: W.tideHigh })), ...t.lows.map(x => ({ x, k: W.tideLow }))].sort((a, b) => a.x - b.x).map(e => `${e.k} ${fmtTime(e.x)}`).join(' · ');
+    /** when today has the tide your best sessions had: around a high or low, or between them for rising/falling/mid */
+    $: tideWhen = (t: TideDay, h: { tide: string | null; move: string | null }): string => {
+        const ev = [...t.highs.map(x => ({ x, hi: true })), ...t.lows.map(x => ({ x, hi: false }))].sort((a, b) => a.x - b.x);
+        const around = (list: number[]) => list.map(x => fill(W.tideAround, { time: fmtTime(x) })).join(', ');
+        const between = (fromHigh: boolean, mid: boolean) => {
+            const out: string[] = [];
+            for (let i = 0; i < ev.length - 1; i++) {
+                if (ev[i].hi !== fromHigh || ev[i + 1].hi === fromHigh) {continue;}
+                out.push(mid ? fill(W.tideAround, { time: fmtTime((ev[i].x + ev[i + 1].x) / 2) }) : `${fmtTime(ev[i].x)}–${fmtTime(ev[i + 1].x)}`);
+            }
+            return out.join(', ');
+        };
+        if (h.tide === 'High') {return around(t.highs);}
+        if (h.tide === 'Low') {return around(t.lows);}
+        if (h.move === 'Rising') {return between(false, h.tide === 'Mid');}
+        if (h.move === 'Falling') {return between(true, h.tide === 'Mid');}
+        if (h.tide === 'Mid') {return [between(false, true), between(true, true)].filter(Boolean).join(', ');}
+        return '';
+    };
 
     /* ---------- what works here: "Use what spotlog learned", your own ranges, checked days ---------- */
     function useLearnedWindow() {
@@ -3101,7 +3118,7 @@
     /* spot page: save nudge, "checked, not worth it", today's tides */
     .nudge { display: block; margin: -2px 2px 0; font-size: 12px; line-height: 1.45; }
     .link.checked-btn { color: @sub !important; font-weight: 500; font-size: 13px; padding: 2px 2px; margin-top: -4px; }
-    .tide-today { font-size: 13px; .lbl { margin: 0; } }
+    .tide-today { font-size: 13px; display: flex; flex-direction: column; gap: 6px; .lbl { margin: 0; } .tide-best { color: var(--sl-text, #f8f8f8); line-height: 1.45; } }
     .tidehint { display: block; margin-top: -4px; }
     /* spot page: the recommendation, today and the next days */
     .reco { gap: 0; padding-top: 6px; padding-bottom: 12px; }

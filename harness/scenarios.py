@@ -215,7 +215,7 @@ with sync_playwright() as p:
         pg.click('.toast .undo'); pg.wait_for_timeout(300)
         st = pg.evaluate(f"JSON.parse(localStorage.getItem('{KEY}'))")
         nd = [x for x in st['spots'] if x['name'] == 'Next door'][0]
-        note([x for x in st['sessions'] if x['id'] == 'loose'][0]['spotId'] == nd['id'] and own == 1, 'new spot: offers to link the earlier session nearby, and suggests starting from your own ratings')
+        note([x for x in st['sessions'] if x['id'] == 'loose'][0]['spotId'] == nd['id'] and own == 0, 'new spot: offers to link the earlier session nearby (no "start from your own ratings" option for now)')
     else:
         note(False, 'could not open the place card for a new spot')
     note(not errs, f'no errors {errs[:2]}')
