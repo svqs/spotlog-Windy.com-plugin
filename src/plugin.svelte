@@ -551,19 +551,21 @@
                                 {#if spot.ranges?.[m.sport]}<button class="link" on:click={ () => resetEdit(m.sport) }>{ W.backToLearned }</button>{/if}
                             </div>
                         {:else if m.params.length}
-                            <div class="w-grid">
-                                <span class="w-h"></span><span class="w-h">{ W.colWorks }</span><span class="w-h">{ W.colMatters }</span><span class="w-h w-r">{ W.colNow }</span>
-                                {#each spotParts(m) as row (row.p.key)}
-                                    <span class="w-name">{ paramName(row.p.key) }{#if row.p.from === 'you'}<i class="w-you" title={ W.setByYou }></i>{/if}</span>
-                                    <b class="w-range">{ rangeText(row.p) }</b>
-                                    <span class="w-imp imp{ importanceLevel(row.p.importance) }" title={ W['matter' + importanceLevel(row.p.importance)] }><i></i><i></i><i></i></span>
-                                    {#if row.part}
-                                        <span class="w-now" class:ok={ row.part.fit >= 0.99 } class:near={ row.part.fit > 0 && row.part.fit < 0.99 }><i>{ row.part.fit >= 0.99 ? '✓' : row.part.fit > 0 ? '~' : '✕' }</i>{ nowText(row.p.key, row.part.value) }</span>
-                                    {:else}
-                                        <span class="w-now">–</span>
-                                    {/if}
+                            <!-- what decides the day here first (ranges from your great days, today next to it); the rest in one quiet line -->
+                            <span class="w-group">{ W.decidesTitle }</span>
+                            <div class="w-list">
+                                {#each spotGroups(m).decides as row (row.p.key)}
+                                    <div class="w-row">
+                                        <span class="w-mark" class:ok={ row.part && row.part.fit >= 0.99 } class:near={ row.part && row.part.fit > 0 && row.part.fit < 0.99 } class:off={ row.part && row.part.fit === 0 } title={ W.whyTitle }>{ !row.part ? '·' : row.part.fit >= 0.99 ? '✓' : row.part.fit > 0 ? '~' : '✕' }</span>
+                                        <span class="w-name">{ paramName(row.p.key) }{#if row.p.from === 'you'}<i class="w-you" title={ W.setByYou }></i>{/if}</span>
+                                        <b class="w-range">{ rangeText(row.p) }</b>
+                                        <span class="w-now">{ row.part ? fill(W.todayVal, { v: nowText(row.p.key, row.part.value) }) : '' }</span>
+                                    </div>
                                 {/each}
                             </div>
+                            {#if spotGroups(m).also.length}
+                                <small class="w-also"><span>{ W.alsoChecked }</span> { spotGroups(m).also.map(row => `${row.part ? (row.part.fit >= 0.99 ? '✓' : row.part.fit > 0 ? '~' : '✕') + ' ' : ''}${paramName(row.p.key)} ${rangeText(row.p)}`).join(' · ') }</small>
+                            {/if}
                         {:else}
                             <small class="muted">{ W.fromWindowOnly }</small>
                         {/if}
@@ -857,7 +859,7 @@
     } from './lib/wind';
     import { fmtWind, fmtWind0, fmtHeight, fmtTemp, fmtDistance, windLabel, fromWind, toWind, windStep, feltTo, feltFrom } from './lib/units';
     import {
-        guess, conditionsOf, samplesFor, suggestWindow, shownLevel, bestToday, bestTide, learnSpot, importanceLevel, dirsOfParam, guessSport,
+        guess, conditionsOf, samplesFor, suggestWindow, shownLevel, bestToday, bestTide, learnSpot, dirsOfParam, guessSport,
         nextDays, learnedWindow, gearHints, ownAverage, nearbySpots, isCircular, paramsOf, MIN_SAMPLES,
     } from './lib/predict';
     import { words, w, t as tr, fill, rich, setWords } from './lib/copy';
@@ -1415,6 +1417,13 @@
     $: spotParts = (m: SportModel) => {
         const g = spotNow ? guessSport(m, conditionsOf(spotNow.wind, spotNow.waves)) : null;
         return m.params.map(p => ({ p, part: g?.parts.find(x => x.key === p.key) || null }));
+    };
+    /** what decides the day here (matters or more, most first; at least two) and what is only checked too */
+    $: spotGroups = (m: SportModel) => {
+        const rows = [...spotParts(m)].sort((a, b) => b.p.importance - a.p.importance);
+        let n = rows.filter(r => r.p.importance >= 0.35).length;
+        if (n < Math.min(2, rows.length)) {n = Math.min(2, rows.length);}
+        return { decides: rows.slice(0, n), also: rows.slice(n) };
     };
     $: bestRange = (b: DayBest): string => (b.now ? fill(W.todayUntil, { time: fmtTime(b.end) }) : fmtTime(b.start) + '–' + fmtTime(b.end));
     $: tideText = (t: { tide: string | null; move: string | null }): string =>
@@ -3061,7 +3070,6 @@
     .wdir { display: flex; flex-direction: column; align-items: center; gap: 1px; flex-shrink: 0; min-width: 28px; color: @text;
         svg { display: block; } small { font-size: 11px; font-weight: 600; color: @sub; } }
     .tag { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;
-        &.green { background: var(--sl-match, #34985a); color: var(--sl-matchText, #ffffff); }
         &.ghost { border: 1px solid var(--sl-ghostTagLine, #5a5a5a); color: @sub; font-weight: 400; font-size: 11px; } }
     .empty { padding: 20px; border: 1px dashed @outline; border-radius: 14px; color: @sub; text-align: center; line-height: 1.45; }
     .list { display: flex; flex-direction: column; }
@@ -3102,7 +3110,7 @@
         &:last-of-type { border-bottom: 0; }
         .r-day { display: flex; flex-direction: column; gap: 1px; color: @sub; font-size: 13px; white-space: nowrap; line-height: 1.25; }
         .tag { justify-self: start; }
-        .r-time { font-weight: 600; font-size: 13.5px; line-height: 1.3; span { white-space: nowrap; } } .r-none { grid-column: span 2; }
+        .r-time { font-weight: 600; font-size: 13.5px; line-height: 1.3; span { white-space: nowrap; } }
         .r-pred { color: var(--sl-uQuiet, #8a8a8a); font-size: 11px; } }
     .r-later { padding-top: 8px; }
     .chip.notworth { align-self: flex-start; height: 32px; font-size: 13px; }
@@ -3116,17 +3124,18 @@
         .w-sport { display: flex; flex-direction: column; gap: 10px; }
         .w-sport + .w-sport { border-top: 1px solid @line; padding-top: 14px; }
         .w-head { display: flex; align-items: baseline; gap: 10px; b { font-size: 14px; } .link { padding: 0; } }
-        .w-grid { display: grid; grid-template-columns: minmax(64px, max-content) minmax(0, 1fr) 24px auto; column-gap: 14px; row-gap: 9px; align-items: center; font-size: 13.5px; }
-        .w-h { font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sl-uQuiet, #8a8a8a); }
-        .w-r, .w-now { text-align: right; justify-self: end; }
+        .w-grid { display: grid; column-gap: 14px; align-items: center; font-size: 13.5px; }
+        .w-group { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sl-uQuiet, #8a8a8a); margin-bottom: -4px; }
+        .w-list { display: flex; flex-direction: column; }
+        .w-row { display: grid; grid-template-columns: 16px 96px minmax(0, 1fr) auto; column-gap: 10px; align-items: baseline; padding: 7px 0; font-size: 13.5px; border-bottom: 1px solid @line;
+            &:last-child { border-bottom: 0; } }
+        .w-mark { font-weight: 700; color: @sub; text-align: center; &.ok { color: var(--sl-r4bg, #50b450); } &.near { color: var(--sl-linkText, #d49500); } &.off { color: var(--sl-danger, #ff9a9a); } }
+        .w-also { color: @sub; font-size: 12.5px; line-height: 1.5; span { color: var(--sl-uQuiet, #8a8a8a); } }
+        .w-now { text-align: right; justify-self: end; }
         .w-name { color: @sub; white-space: nowrap; }
         .w-you { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--sl-linkText, #d49500); margin-left: 6px; vertical-align: 2px; }
         .w-range { font-weight: 600; justify-self: start; line-height: 1.3; }
-        .w-imp { display: inline-flex; gap: 2px; align-items: flex-end; height: 12px;
-            i { width: 5px; border-radius: 1px; background: @line; } i:nth-child(1) { height: 5px; } i:nth-child(2) { height: 8px; } i:nth-child(3) { height: 12px; } }
-        .imp1 i:nth-child(1), .imp2 i:nth-child(-n+2), .imp3 i { background: var(--sl-linkText, #d49500); }
-        .w-now { color: @sub; white-space: nowrap; i { font-style: normal; display: inline-block; width: 16px; text-align: left; } }
-        .w-now.ok { color: var(--sl-r4bg, #50b450); } .w-now.near { color: var(--sl-linkText, #d49500); }
+        .w-now { color: @sub; white-space: nowrap; font-size: 12.5px; }
         .w-grid.edit { grid-template-columns: minmax(0, 96px) minmax(0, 1fr); row-gap: 8px; }
         .w-inputs { display: flex; align-items: center; gap: 6px; color: @sub;
             input { width: 64px; height: 34px; padding: 0 8px; border-radius: var(--sl-radiusSmall, 9px); border: 1px solid var(--sl-inputLine, #5a5a5a); background: var(--sl-inputBg, #2e2e2e); color: var(--sl-inputText, #f8f8f8); font: inherit; }
@@ -3137,7 +3146,7 @@
         .gear-hint { font-size: 12.5px; color: @sub; }
         .btns { margin-top: 0; } }
     @media (max-width: 480px) { .reco-row { grid-template-columns: 86px auto minmax(0, 1fr); column-gap: 10px; .r-time { font-size: 13px; } } }
-    @media (max-width: 380px) { .works .w-grid { column-gap: 9px; font-size: 12.5px; } .reco-row { grid-template-columns: 78px auto minmax(0, 1fr); column-gap: 8px; } }
+    @media (max-width: 380px) { .works .w-row { column-gap: 7px; font-size: 12.5px; } .reco-row { grid-template-columns: 78px auto minmax(0, 1fr); column-gap: 8px; } }
     label.link { cursor: pointer; }
     .chip { height: 36px; padding: 0 15px; border-radius: var(--sl-radiusChip, 18px); border: 1px solid var(--sl-chipLine, #5a5a5a); background: transparent; color: var(--sl-chipText, #f8f8f8) !important; display: inline-flex; align-items: center; gap: 6px;
         .k { font-size: 11px; opacity: 0.65; }
