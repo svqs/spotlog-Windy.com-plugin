@@ -554,7 +554,7 @@
                                 {#each spotParts(m) as row (row.p.key)}
                                     <span class="w-name">{ paramName(row.p.key) }{#if row.p.from === 'you'}<i class="w-you" title={ W.setByYou }></i>{/if}</span>
                                     <b class="w-range">{ rangeText(row.p) }</b>
-                                    <span class="w-imp imp{ importanceLevel(row.p.importance) }" title={ W['matter' + importanceLevel(row.p.importance)] }><i></i><i></i><i></i></span>
+                                    <span class="w-imp imp{ importanceLevel(row.p.importance) }">{ W['matter' + importanceLevel(row.p.importance)] }</span>
                                     {#if row.part}
                                         <span class="w-now" class:ok={ row.part.fit >= 0.99 } class:near={ row.part.fit > 0 && row.part.fit < 0.99 }>{ nowText(row.p.key, row.part.value) }</span>
                                     {:else}
@@ -3109,9 +3109,7 @@
         .w-name { color: @sub; white-space: nowrap; }
         .w-you { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--sl-linkText, #d49500); margin-left: 6px; vertical-align: 2px; }
         .w-range { font-weight: 600; justify-self: start; line-height: 1.3; }
-        .w-imp { display: inline-flex; gap: 2px; align-items: flex-end; height: 12px;
-            i { width: 5px; border-radius: 1px; background: @line; } i:nth-child(1) { height: 5px; } i:nth-child(2) { height: 8px; } i:nth-child(3) { height: 12px; } }
-        .imp1 i:nth-child(1), .imp2 i:nth-child(-n+2), .imp3 i { background: var(--sl-linkText, #d49500); }
+        .w-imp { color: @sub; white-space: nowrap; font-size: 12.5px; &.imp3 { color: @text; font-weight: 600; } }
         .w-now { color: @sub; white-space: nowrap; }
         .w-now.ok { color: var(--sl-r4bg, #50b450); } .w-now.near { color: var(--sl-linkText, #d49500); }
         .w-grid.edit { grid-template-columns: minmax(0, 96px) minmax(0, 1fr); row-gap: 8px; }
