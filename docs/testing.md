@@ -151,6 +151,14 @@ and the extracted Style Lab screens with live copy overrides.
 malformed/null JSON and the shared byte-bounded streaming body reader, including multibyte oversize bodies.
 The retained backend-neutral sync controller is tested with injected transports and the harness mock.
 
+`npm run test:learning` adds 46 synthetic diary scenarios through validation, direct learning and the application's
+cached controller: four-log reconciliation, excluded forecasts, multiple sports/spots, sequential saves/edits/undo,
+reload/import/merge, legacy/DST coverage, gear/model gates and up to 600 long-term outings. It also characterizes
+the known equal-distance order sensitivity. JSON evidence and browser fixtures go to `/tmp/spotlog-learning`.
+After it, `npm run test:learning:browser` checks eight desktop/phone and actual-form cases with screenshots in
+`/tmp/spotlog-learning-browser` (requires :8765). Both are included in the fast/browser commands respectively.
+Findings and documentation cleanup suggestions: [session learning review](reviews/learning-scenarios-and-documentation-2026-10-04.md).
+
 The optional tide worker also has its own type check:
 
 ```sh

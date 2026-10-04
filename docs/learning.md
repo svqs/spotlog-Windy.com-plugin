@@ -58,6 +58,10 @@ distance² = Σ weight × (difference / SCALE)² / Σ weight   over the sport's 
 
 One example per session at a spot. A session **teaches only when all of these hold**:
 
+The “learned from … sessions, … great” line counts eligible actual outings **for that sport**, across its whole
+local history; great includes ratings 4 and 5. Excluded sessions stay in the diary. It is separate from the ten
+neighbors used for a prediction. Tests and a reproduced log-flow explanation: [session learning review](reviews/learning-scenarios-and-documentation-2026-10-04.md).
+
 | Rule | Why | Skip reason |
 |---|---|---|
 | rating 1–5 | the outcome | `rating` |
@@ -252,4 +256,6 @@ apart, starting from "some" (core) or "a little" (extras).
   tests once real diaries are big enough.
 - **No time-of-day learning:** spotlog finds good upcoming stretches but doesn't learn that you prefer mornings.
 - **No decay:** old seasons count as much as new ones.
+- **Equal-distance neighbors keep diary order:** only ten are used, so reordering equally similar outings can
+  change a tag. A preference-change fixture reproduces Epic versus Not sure yet; see the session learning review.
 - **Forecast quality limits everything:** if the forecast was wrong that day, the example is too.

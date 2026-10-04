@@ -39,3 +39,5 @@ jobs:
                       /tmp/spotlog-e2e
                       /tmp/spotlog-scenarios
                       /tmp/spotlog-regressions
+                      /tmp/spotlog-learning
+                      /tmp/spotlog-learning-browser
