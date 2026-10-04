@@ -3023,14 +3023,18 @@
     .viewtog { align-self: flex-end; display: flex; gap: 2px; padding: 2px; margin-bottom: -8px; border-radius: var(--sl-radiusSmall, 9px); background: var(--sl-tabsBg, #3c3c3c);
         button { width: 30px; height: 24px; border: 0; border-radius: 7px; background: transparent; color: @sub !important; font-size: 17px !important; line-height: 1; padding: 0; }
         button.on { background: var(--sl-sel-bg, #f8f8f8); color: var(--sl-sel-text, #1c1c1c) !important; font-weight: 600; } }
-    .tiles.list { grid-template-columns: minmax(0, 1fr); gap: 6px;
-        .tile { min-height: 0; flex-direction: row; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; border-radius: 14px; }
+    /* the list rows share the list's columns (subgrid): name · wind · tag, so the wind boxes line up whatever the tag */
+    .tiles.list { display: grid; grid-template-columns: minmax(0, 1fr) auto max-content; gap: 6px 10px;
+        .tile { grid-column: ~"1 / -1"; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-columns: subgrid; min-height: 0; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; border-radius: 14px; }
         .t-name { flex: 1; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .now { flex: 0 0 auto; }
+        .wdir { min-width: 34px; }
         .now-t, .now-sub { display: none; }
         .sw { width: 30px; height: 30px; border-radius: 9px; font-size: 13px; }
-        .t-tag { flex: 0 0 auto; .t-when { display: none; } }
+        .t-tag { flex: 0 0 auto; justify-self: start; .t-when { display: none; } }
         .tag { font-size: 11px; padding: 3px 9px; } }
+    /* small phones: a long tag takes two lines, so the spot names keep their room */
+    @media (max-width: 380px) { .tiles.list .tag { max-width: 86px; line-height: 1.2; text-align: center; } }
     .now { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .now-t { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; b { font-size: 13px; } }
     .now-sub { display: flex; flex-wrap: wrap; gap: 1px 10px; margin-top: -4px; small { color: @sub; font-size: 12.5px; white-space: nowrap; } }

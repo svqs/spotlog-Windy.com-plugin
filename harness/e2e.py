@@ -493,8 +493,11 @@ with sync_playwright() as p:
     top()
     pg.click('.tabs button:has-text("Spots")')
     heat = pg.locator('.spotlog-heat').last  # the one just logged, in view
+    # a spot that lights up today (time-of-day dependent) can draw its mark on top of the glow: let the hover through
+    pg.add_style_tag(content='.mock-marker:not(:has(.spotlog-heat)) { pointer-events: none !important; }')
     heat.hover()
     pg.wait_for_selector('.spotlog-tip:visible')
+    pg.evaluate("document.querySelectorAll('style').forEach(s => s.textContent.includes(':has(.spotlog-heat)') && s.remove())")
     shot('12b-heat-tip')
     pg.mouse.move(5, 5)
     pg.click('.maptog:has-text("Sessions on the map")')
