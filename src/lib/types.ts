@@ -17,8 +17,6 @@ export interface Spot {
     created: number;
     /** ranges you set yourself, per sport and condition (they win over what spotlog learns) */
     ranges?: Record<string, Partial<Record<string, { lo?: number; hi?: number; dirs?: Dir8[] }>>>;
-    /** (legacy, 0.14.0) start this spot from your own average rating; no longer used */
-    startOwn?: boolean;
     /** the model this spot learns and recommends from when ECMWF has no forecast here (chosen once); unset = ECMWF */
     recommendationModel?: string;
 }
@@ -105,10 +103,6 @@ export interface Session {
     checked?: boolean;
     /** which of the spot's sports this session was (spots with one sport: that one) */
     sport?: string | null;
-    /** tide at the session, from older diaries where it was logged by hand (now it comes from the saved forecast): Low, Mid, High */
-    tide?: string | null;
-    /** Rising or Falling */
-    tideMove?: string | null;
     gearIds?: string[];
     /** free-text gear */
     gear: string;

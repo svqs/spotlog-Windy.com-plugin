@@ -194,7 +194,12 @@ const ok = m => { n++; console.log('✓', m); };
     const skill = P.modelSkill(sp, data.sessions, data.snaps);
     assert.deepEqual(skill.map(s => s.model), ['ecmwf', 'gfs']);
     assert.ok(skill[0].miss < skill[1].miss && skill[0].count === 10);
-    ok(`which forecast to trust: ECMWF foretold your sessions best (${skill[0].miss.toFixed(1)} vs ${skill[1].miss.toFixed(1)} off)`);
+    assert.equal(P.learningModel(sp, data.sessions, data.snaps), 'ecmwf');
+    // swap them: now GFS foretold the sessions; after 10 of them it becomes the model the spot learns from
+    data.snaps.forEach(sn => { const { ecmwf, gfs } = sn.series.models; sn.series.models = { ecmwf: gfs, gfs: ecmwf }; });
+    assert.equal(P.learningModel(sp, data.sessions, data.snaps), 'gfs');
+    assert.equal(P.learningModel(sp, data.sessions.slice(0, 8), data.snaps), 'ecmwf', 'not before 10 sessions');
+    ok(`which forecast to trust: ECMWF foretold your sessions best (${skill[0].miss.toFixed(1)} vs ${skill[1].miss.toFixed(1)} off); a clearly better one becomes the learning model after 10 sessions`);
 }
 
 /* ---------- 3. when to go: two-hour windows, no gaps, per sport ---------- */
@@ -202,8 +207,9 @@ const ok = m => { n++; console.log('✓', m); };
     const sp = spot({ sports: ['Windsurf', 'Surf'] });
     const m = learn(sp, { snaps: [], sessions: [] });
     const h = (i, wind, dir = 260, more = {}) => ({ ts: DAY0 + i * H, day: true, wind, gust: wind, dir, waves: 0.8, period: 6, ...more });
-    // one good hour alone is no window
-    assert.equal(P.bestIn(m, [h(10, 3), h(11, 9), h(12, 3)], DAY0, DAY0 + 864e5, DAY0), null);
+    // one good hour is a stretch of its own (hourly granularity)
+    const one = P.bestIn(m, [h(10, 3), h(11, 9), h(12, 3)], DAY0, DAY0 + 864e5, DAY0);
+    assert.deepEqual([(one.start - DAY0) / H, (one.end - DAY0) / H], [11, 12]);
     // 10–12 and 13–15, the hour between missing: two stretches, never 10–15
     const gap = P.bestIn(m, [h(10, 9), h(11, 9), h(13, 9), h(14, 9)], DAY0, DAY0 + 864e5, DAY0);
     assert.deepEqual([(gap.start - DAY0) / H, (gap.end - DAY0) / H], [10, 12]);
@@ -214,7 +220,7 @@ const ok = m => { n++; console.log('✓', m); };
     assert.equal(long.sport, 'Windsurf');
     assert.equal(P.rate(m[1], F.toFeatures(h(11, 9, 260, { waves: null, period: null }))).level, 0);
     assert.equal(P.rate(m[0], F.toFeatures(h(11, 9, 260, { waves: null, period: null }))).level, 3);
-    ok('windows: no one-hour stretches, no bridged gaps, a longer near-equal stretch wins, the matching sport is named');
+    ok('windows: hour by hour, no bridged gaps, a longer near-equal stretch wins, the matching sport is named');
 }
 {
     const sp = spot();

@@ -593,6 +593,7 @@
                     <div class="score"><span class="m" class:best={ i === 0 }>{ modelLabel(sc.model) }</span><span class="missbar"><i style="width: { closeness(sc.miss, trust) }%" class:best={ i === 0 }></i></span><span>{ fill(W.trustMiss, { v: sc.miss.toFixed(1) }) }</span></div>
                 {/each}
                 <small class="muted">{ fill(W.trustNote, { n: trust[0].count }) }</small>
+                <small class="muted">{ fill(W.trustUsing, { model: modelLabel(modelFor(spot)) }) }</small>
             {/if}
         </div>
     </div>
@@ -842,7 +843,7 @@
     } from './lib/wind';
     import { fmtWind, fmtWind0, fmtHeight, fmtTemp, fmtDistance, windLabel, fromWind, toWind, windStep } from './lib/units';
     import {
-        rateBest, conditionsOf, toFeatures, suggestWindow, bestToday, bestTide, sessionTide, learnSpot, trainTreesInBackground, recommendationModel,
+        rateBest, conditionsOf, toFeatures, suggestWindow, bestToday, bestTide, sessionTide, learnSpot, trainTreesInBackground, learningModel,
         nextDays, learnedWindow, gearHints, isCircular, allFeatures, fitRange, mattersLevel, modelSkill,
     } from './lib/predict';
     import { words, w, t as tr, fill, rich, setWords } from './lib/copy';
@@ -868,7 +869,7 @@
     interface Now { wind: ModelValue | null; waves: WaveValue | null }
     interface SpotForm {
         id?: string; name: string; place: string; lat: number; lon: number; sports: string[];
-        dirs: Dir8[]; dMin: number; dMax: number; windUnknown: boolean; created?: number; startOwn?: boolean;
+        dirs: Dir8[]; dMin: number; dMax: number; windUnknown: boolean; created?: number;
     }
     interface LogForm {
         id?: string; spotId: string | null; lat?: number; lon?: number; snapshotId: string | null;
@@ -1343,8 +1344,22 @@
             : w('logOld');
         return { ts: sn.ts, models: sn.models, waves: sn.waves, matches: false, otherDay: otherDay || outside, note };
     }
-    /** the model each spot learns and recommends from: ECMWF, or the one fallback chosen once where ECMWF has no forecast */
-    const modelFor = (s: Spot): string => recommendationModel(s);
+    /** the model each spot learns and recommends from: ECMWF (or a fallback), until another one foretold your sessions there better */
+    $: learnModels = new Map<string, string>(data.spots.map(s => [s.id, learningModel(s, data.sessions, data.snapshots)]));
+    const modelFor = (s: Spot, _dep = learnModels): string => _dep?.get(s.id) || learningModel(s, data.sessions, data.snapshots);
+    // a spot whose learning model changed (another one foretold your sessions better) loads its conditions again
+    $: reloadFor(learnModels);
+    let lastModels = new Map<string, string>();
+    function reloadFor(models: Map<string, string>) {
+        const changed = data.spots.filter(s => lastModels.has(s.id) && lastModels.get(s.id) !== models.get(s.id));
+        lastModels = models;
+        changed.forEach(s => {
+            delete outlookBySpot[s.id];
+            outlookBySpot = outlookBySpot;
+            loadNow(s);
+            if (view === 'spot' && spot?.id === s.id) {loadOutlook(s);}
+        });
+    }
     /** conditions-now cache: the spot's own model under the spot id (tiles, map), other models as id:model (spot page) */
     const nowKey = (id: string, model: string) => (model === modelFor(spotById(id) as Spot) ? id : `${id}:${model}`);
     const outlookOf = (id: string, _dep = outlookBySpot): Outlook | null => { const o = _dep[id]; return o && o !== 'loading' ? o : null; };
@@ -1354,8 +1369,9 @@
     }
     /** what spotlog has learned per spot and sport, worked out once per change of the diary (and when trees are ready) */
     let treesReady = 0;
-    const learnAll = (d: SpotlogData, _ready: number) => new Map<string, SportModel[]>(d.spots.map(s => [s.id, learnSpot(s, d.spots, d.sessions, d.snapshots)]));
-    $: modelMap = learnAll(data, treesReady);
+    const learnAll = (d: SpotlogData, models: Map<string, string>, _ready: number) =>
+        new Map<string, SportModel[]>(d.spots.map(s => [s.id, learnSpot(s, d.spots, d.sessions, d.snapshots, models.get(s.id))]));
+    $: modelMap = learnAll(data, learnModels, treesReady);
     // boosted trees train in the background where a spot has lots of outings; the spots are learned again when they're ready
     $: trainLater(modelMap);
     function trainLater(learned: Map<string, SportModel[]>) {
@@ -2076,7 +2092,7 @@
         const isPin = !loc.name || loc.name === 'Dropped pin';
         sf = {
             name: isPin ? '' : loc.name || '', place: isPin ? '' : loc.name || '', lat: loc.lat, lon: loc.lon,
-            sports: ['Windsurf'], dirs: [], dMin: Math.round(toWind(7, S.wind)), dMax: Math.round(toWind(12, S.wind)), windUnknown: false, startOwn: false,
+            sports: ['Windsurf'], dirs: [], dMin: Math.round(toWind(7, S.wind)), dMax: Math.round(toWind(12, S.wind)), windUnknown: false,
         };
         go('spotForm');
         setTemp(loc.lat, loc.lon);
@@ -2089,7 +2105,7 @@
         sfReturn = null;
         sf = {
             id: s.id, name: s.name, place: s.place || '', lat: s.lat, lon: s.lon, sports: [...s.sports], dirs: [...s.dirs],
-            dMin: Math.round(toWind(s.min, S.wind)), dMax: Math.round(toWind(s.max, S.wind)), windUnknown: !!s.windUnknown, created: s.created, startOwn: !!s.startOwn,
+            dMin: Math.round(toWind(s.min, S.wind)), dMax: Math.round(toWind(s.max, S.wind)), windUnknown: !!s.windUnknown, created: s.created,
         };
         go('spotForm');
     }
@@ -2105,7 +2121,6 @@
             id: sf.id || uid(), name: sf.name.trim(), place: sf.place, lat: sf.lat, lon: sf.lon, sports: sf.sports,
             dirs: sf.windUnknown ? [] : sf.dirs, min: Math.round(fromWind(sf.dMin, S.wind) * 10) / 10, max: Math.round(fromWind(sf.dMax, S.wind) * 10) / 10,
             windUnknown: sf.windUnknown, created: sf.created || Date.now(),
-            ...(sf.startOwn ? { startOwn: true } : {}),
         };
         const isNew = !sf.id;
         const old = data.spots.find(x => x.id === s.id);
@@ -2384,12 +2399,9 @@
         else if (f.track?.start && dateStrOf(f.track.start) === f.dateStr) {date = f.track.start;}
         else {date = new Date(`${f.dateStr}T12:00`).getTime();}
         if (!isFinite(date)) {date = Date.now();}
-        // a tide logged by hand in older diaries stays (new tides come from the saved forecast)
-        const was = data.sessions.find(x => x.id === f?.id);
         const se: Session = {
             id: f.id || uid(), spotId: f.spotId, lat: f.lat, lon: f.lon, snapshotId: f.snapshotId, date, rating: f.checked ? 2 : f.rating,
             ...(f.checked ? { checked: true } : {}),
-            tide: was?.tide ?? null, tideMove: was?.tideMove ?? null,
             sport: logSport(f) || null, gearIds: f.gearIds, gear: f.gear.trim(), start: f.start, end: f.end, notes: f.notes, track: f.track,
             tz: deviceTz(),
         };

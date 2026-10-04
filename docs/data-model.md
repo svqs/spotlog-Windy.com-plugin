@@ -17,11 +17,10 @@ SpotlogData {
   spots:     Spot[]       // id, name, lat, lon, place?, sports[], dirs[] (forecast wind FROM), min/max (forecast m/s), windUnknown?, created,
                           // recommendationModel? (fallback when ECMWF has no forecast here; unset = ECMWF),
                           // ranges?: { [sport]: { [condition]: { lo?, hi?, dirs? } } }  (your own ranges, from Adjust)
-                          // startOwn? (legacy, no UI)
   snapshots: Snapshot[]   // id, spotId|null, lat, lon, ts (focus), savedAt, primary, models: ModelValue[], waves, note?,
                           // series?: { ts[], models: {[m]: {wind[], gust[], dir[], temp[], rain?[]}}, waves|null, tide?: {highs[], lows[]} }
   sessions:  Session[]    // id, spotId|null, lat?, lon?, snapshotId|null, date (= start instant), rating 1–5,
-                          // checked? (Not worth it, didn't go), sport?, tide?/tideMove? (legacy, hand-logged),
+                          // checked? (Not worth it, didn't go), sport?,
                           // gearIds[], gear (free text), start/end "HH:MM", notes, track?, tz
   gear:      Gear[]       // id, name, kind, sport?
   settings:  Settings     // units, models/layers to save, map toggles, spotView, phoneSheet, welcomed, worksOpen
@@ -81,7 +80,6 @@ A broken document loads as an empty diary (the welcome shows) instead of crashin
 
 | Field | Since | Now |
 |---|---|---|
-| `session.tide`, `session.tideMove` | 0.12 | Only read when the saved forecast has no tides. The UI never asks for them. |
-| `spot.startOwn` | 0.14.0 | No UI and no effect any more (v2 has no start rating). |
+| `session.tide`, `tideMove`, `spot.startOwn` | 0.12–0.14 | **Dropped in 0.16.2.** Tides come from the saved forecast. |
 | `session.felt`, `gusts`, `water` | ≤ 0.15 | **Dropped in 0.16.1** (nobody used the plugin yet): `normalise()` leaves them out, so they disappear at the next save. The sessions themselves stay. |
 | snapshots without `series` | ≤ 0.2 | Single-hour snapshots; used only within 1.5 h of a session. |

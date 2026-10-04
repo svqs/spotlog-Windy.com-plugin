@@ -87,8 +87,8 @@ asserts behaviour, not numbers to the decimal:
   missing surf data exclude;
 - **similar sessions:** nothing without a window; the saved window gives Good from your range; poor-only outings never give Good; mixed outcomes; Great/Epic evidence; spots next door are never
   evidence; each logged session counts, also several on one day; distances wrap round north, and a missing extra never looks closer;
-- **which forecast to trust:** the model whose forecasts foretold the sessions best ranks first;
-- **windows:** no one-hour stretches, no bridged gaps, a longer near-equal stretch wins, per sport, calm days stay
+- **which forecast to trust:** the model whose forecasts foretold the sessions best ranks first, and becomes the learning model after 10 sessions;
+- **windows:** hour by hour (a single good hour is a stretch), no bridged gaps, a longer near-equal stretch wins, per sport, calm days stay
   empty;
 - **trees:** not eligible with little data; deterministic with lots; picked up after background training, dropped
   after a diary change;

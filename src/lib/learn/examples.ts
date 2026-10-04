@@ -123,7 +123,7 @@ export function exampleOf(spot: Spot, s: Session, snapshots: Snapshot[], model: 
     return {
         sessionId: s.id, spotId: spot.id, sport, rating: s.rating, kind: s.checked ? 'checked' : 'outing', start, day: dayKey(start, s.tz), x,
         from: { snapshotId: sn.id, model, hours, limited: limited || end === null || !sn.series },
-        gearIds: s.gearIds || [], tide: tide?.tide ?? s.tide ?? null, tideMove: tide?.move ?? s.tideMove ?? null,
+        gearIds: s.gearIds || [], tide: tide?.tide ?? null, tideMove: tide?.move ?? null,
     };
 }
 
@@ -131,10 +131,10 @@ export function exampleOf(spot: Spot, s: Session, snapshots: Snapshot[], model: 
 export const examplesFor = (spot: Spot, sessions: Session[], snapshots: Snapshot[], model: string): Example[] =>
     sessions.filter(s => s.spotId === spot.id).map(s => exampleOf(spot, s, snapshots, model)).filter((e): e is Example => typeof e !== 'string');
 
-/** A session's tide: from the tides saved with its forecast (the middle of the outing), or (older diaries) the one logged by hand */
+/** A session's tide, from the tides saved with its forecast (the middle of the outing) */
 export function sessionTide(s: Session, snapshots: Snapshot[]): { tide: string | null; tideMove: string | null } {
     const sn = s.snapshotId ? snapshots.find(x => x.id === s.snapshotId) : null;
     const { start, end } = outingTimes(s);
     const t = tideAt(sn?.series?.tide, end ? (start + end) / 2 : start);
-    return t ? { tide: t.tide, tideMove: t.move } : { tide: s.tide ?? null, tideMove: s.tideMove ?? null };
+    return { tide: t?.tide ?? null, tideMove: t?.move ?? null };
 }

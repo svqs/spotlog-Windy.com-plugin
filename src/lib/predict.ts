@@ -12,10 +12,11 @@
  * All numbers live in learn/config.ts. docs/learning.md explains the method.
  */
 import { DIRS, distanceKm } from './wind';
-import { ALGORITHM_VERSION, SIMILAR } from './learn/config';
+import { ALGORITHM_VERSION, SIMILAR, TRUST } from './learn/config';
 import { examplesFor, sportOf, type Example } from './learn/examples';
 import { priorOf, type Range } from './learn/ranges';
 import { sportModel, type SportModel } from './learn/model';
+import { modelSkill, type ModelSkill } from './learn/skill';
 import { trainTrees, treesEligible, type TreeModel } from './learn/trees';
 import type { Conditions } from './learn/features';
 import type { Dir8, Session, Snapshot, Spot, ModelValue, WaveValue } from './types';
@@ -26,10 +27,22 @@ export { rate, rateBest, type Result, type SportModel } from './learn/model';
 export { bestIn, bestToday, nextDays, type DayBest } from './learn/windows';
 export { bestTide, tideAt, type TideHint } from './learn/tide';
 export { exampleOf, examplesFor, outingTimes, sessionTide, type Example } from './learn/examples';
-export { modelSkill, type ModelSkill } from './learn/skill';
+export { modelSkill, type ModelSkill };
 
-/** The model a spot learns and recommends from: ECMWF, or the one fallback chosen once where ECMWF has no forecast */
+/** The spot's base model: ECMWF, or the one fallback chosen once where ECMWF has no forecast */
 export const recommendationModel = (spot: Spot): string => spot.recommendationModel || 'ecmwf';
+
+/**
+ * The model a spot learns and recommends from: its base model, until another one has foretold your sessions
+ * there clearly better on enough of them ("Which forecast to trust here"); then that one.
+ */
+export function learningModel(spot: Spot, sessions: Session[], snapshots: Snapshot[], skill: ModelSkill[] = modelSkill(spot, sessions, snapshots)): string {
+    const base = recommendationModel(spot);
+    const best = skill[0];
+    const current = skill.find(m => m.model === base);
+    const better = best && best.model !== base && best.count >= TRUST.switchAfter && (!current || best.miss <= current.miss - TRUST.switchMargin);
+    return better ? best.model : base;
+}
 
 export const conditionsOf = (m: ModelValue | null | undefined, wv?: WaveValue | null): Conditions | null =>
     m ? {
@@ -53,8 +66,7 @@ const treeKey = (m: SportModel): string => {
 };
 
 /** Everything spotlog knows about a spot: one model per sport (examples here + outings at spots next door) */
-export function learnSpot(spot: Spot, spots: Spot[], sessions: Session[], snapshots: Snapshot[]): SportModel[] {
-    const model = recommendationModel(spot);
+export function learnSpot(spot: Spot, spots: Spot[], sessions: Session[], snapshots: Snapshot[], model = learningModel(spot, sessions, snapshots)): SportModel[] {
     const local = examplesFor(spot, sessions, snapshots, model);
     const near = nearbySpots(spot, spots).flatMap(o => examplesFor(o, sessions, snapshots, model)).filter(e => e.kind === 'outing');
     return (spot.sports.length ? spot.sports : ['Other']).map(sport => {

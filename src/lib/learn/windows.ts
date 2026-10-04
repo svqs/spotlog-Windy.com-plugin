@@ -1,7 +1,6 @@
 /**
- * When to go: rolling two-hour windows over the coming forecast, per sport. A window counts only when every
- * hour in it rates Good or better on its own (so one good hour never stands for a longer outing) and the window
- * as a whole does too.
+ * When to go: windows of WINDOW.hours (1 = every hour on its own) rolling over the coming forecast, per sport.
+ * A window counts only when every hour in it rates Good or better on its own and the window as a whole does too.
  * Qualifying windows next to each other merge into one stretch; a forecast gap is never bridged.
  */
 import { WINDOW } from './config';

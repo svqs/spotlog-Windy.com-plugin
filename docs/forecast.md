@@ -58,10 +58,12 @@ spotlog's tag says how good the conditions would be **for you**, and Windy's % s
 
 - Learning and recommendations use **one model per spot**: ECMWF, which is global. Only where ECMWF has no forecast is
   one covering model chosen once and saved as `spot.recommendationModel` (`plugin.svelte → chooseFallbackModel`).
+- **That changes when another model has clearly foretold your sessions there better** on 10+ sessions ("Which forecast
+  to trust here", `predict.ts → learningModel`). The spot then learns from it, and the section says so.
 - A saved forecast without that model can't teach that spot.
 - The spot page's model switch only changes what you **look at**, never what spotlog learns from.
 - **Which forecast to trust here** ranks the models by how well their forecasts foretold your session ratings
-  (`learn/skill.ts`, see docs/learning.md §8). It only informs. The old felt-wind ranking and bias were retired in
+  (`learn/skill.ts`, see docs/learning.md §8). The old felt-wind ranking and bias were retired in
   0.16, because felt wind was often prefilled and shared saved days skewed it.
 
 ## Tides (experimental)

@@ -17,7 +17,7 @@ src/lib/learn/examples.ts sessions → training examples (the only way data ente
 src/lib/learn/similar.ts  weighted similar sessions + your ranges + the evidence gates
 src/lib/learn/trees.ts    gradient-boosted regression trees and their walk-forward check
 src/lib/learn/model.ts    one sport at one spot (SportModel) and rate() = similar sessions, blended with trees when earned
-src/lib/learn/windows.ts  when to go: two-hour windows → stretches → the best one
+src/lib/learn/windows.ts  when to go: good hours → stretches → the best one
 src/lib/learn/ranges.ts   your ranges (the prior) and the descriptive "What works here" rows
 src/lib/learn/tide.ts     tide state from saved highs/lows, the tide your best outings had
 src/lib/learn/skill.ts    which forecast to trust here: how well each model's forecasts foretold your sessions
@@ -80,7 +80,7 @@ One example per session at a spot. A session **teaches only when all of these ho
 - **Kinds:** an outing, or a **"Not worth it, didn't go"** day (`checked`). Didn't-go days are a weak preference signal:
   weight 0.25, and they never count as evidence for a tag.
 - **Provenance:** `from = {snapshotId, model, hours, limited}` lives only on the derived example, never in the diary.
-- **Tide:** from the tides saved with the day, else a hand-logged tide from an older diary.
+- **Tide:** from the tides saved with the day.
 
 The sport is the session's own sport when the spot lists it, else the spot's first. Logging a new sport adds it to the
 spot.
@@ -168,12 +168,11 @@ spot, sport, data and algorithm version, and a failure falls back to similar ses
 
 - **Runs:** daylight forecast hours split wherever an hour is missing. A gap is longer than 1.5 × the hours' own step,
   so a model's native 3-hour steps aren't gaps.
-- **Windows:** two hours long, rolling.
-  - A window counts when **every hour in it rates Good or better on its own** and the window's summed-up forecast does
-    too.
-  - One good hour never stands for a longer outing.
-- **Stretches:** qualifying windows next to each other merge into one stretch. Its rating is the windows' mean score,
-  and its level is capped by the weakest window's evidence.
+- **Hours:** each forecast hour is rated on its own, like a session (`WINDOW.hours = 1`, the owner's choice for the
+  finest times). Longer windows are one setting away; then every hour in them must be Good and so must the window as
+  a whole.
+- **Stretches:** good hours next to each other merge into one stretch, so a single good hour is a one-hour stretch.
+  Its rating is the hours' mean score, and its level is capped by the weakest hour's evidence.
 - **Best:**
   - the highest mean;
   - within 0.2: the longer stretch, then the earlier one.
@@ -210,14 +209,17 @@ apart, starting from "some" (core) or "a little" (extras).
   - Its bar is full and yellow; one twice as far off gets half a bar.
   - The number is the average miss in rating points.
   - A model is ranked once it was checked on 3 sessions (`TRUST.minSessions`).
-- **It only informs.** Learning and tags keep using the spot's recommendation model (ECMWF), so a ranking never
-  silently changes them.
+- **The best one becomes the learning model** (`learningModel` in predict.ts, the owner's decision): once it was
+  checked on 10+ sessions (`TRUST.switchAfter`) and beats the spot's current model by at least 0.1 rating points.
+  Until then the spot learns from ECMWF (or its fallback). The section always says which model spotlog learns from
+  there, so the switch is never silent. Conditions, tags and When to go then use that model too.
 
 ## Where this differs from the specification, and why
 
-- **Every hour of a window must be Good on its own.** The spec gates each hour only on features and evidence. With that
-  rule, a 2-hour window of one calm and one good hour could pass on its median. The stricter rule meets the spec's
-  acceptance test ("isolated one-hour matches") and its intent.
+- **One-hour windows** (owner's decision, 0.16.2) instead of the spec's two-hour default, for finer times. A single
+  good hour shows as a one-hour stretch.
+- **The best-foretelling model becomes the learning model** after 10+ sessions (owner's decision, 0.16.2). The spec
+  says one stable model; the switch is shown, never silent.
 - **No per-day cap; each log is evidence** (owner's decision, 0.16.1). Sessions on one day can go differently, for
   example with the tide. The cap stays in config.ts, switched off.
 - **A saved wind window counts as yours** (owner's decision, 0.16.1). There is no separate "confirmed" state, and

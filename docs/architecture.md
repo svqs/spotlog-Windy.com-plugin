@@ -82,7 +82,7 @@ your way around:
 |---|---|
 | `data: SpotlogData` | The diary. Every change goes through `persist()`: tombstones/revived stamps, `updatedAt`, the local `save()`, then a debounced account push. |
 | `view`, `hist`, `spot`, `snap`, `f` (log form), `sf` (spot form) | Navigation: `go(view)` pushes onto `hist`, and back pops it. |
-| `modelFor(s)` | the spot's recommendation model: ECMWF, or a fallback chosen once and saved as `spot.recommendationModel` (`chooseFallbackModel`). |
+| `learnModels` / `modelFor(s)` | the model each spot learns from (`learningModel`): ECMWF or its saved fallback, until another model foretold the sessions there clearly better on 10+ sessions. A change reloads that spot's conditions. |
 | `modelMap` | spot id → `SportModel[]` from `learnSpot` (examples here + outings at spots next door, your ranges, the "What works" rows, trees when trained). Recomputed when the diary changes or trees finish training (`treesReady`). |
 | `nowBySpot` | Conditions now per spot (key `id`, or `id:model` for other models), 20-minute lifetime. |
 | `dayBySpot` | Today's hours per spot (for the best stretch of today). |
@@ -105,7 +105,7 @@ Log session ────► Session { date (= start), start/end, rating, sport, 
 Learning ───────► examplesFor(spot, sessions, snapshots, model) → Example[] (forecast saved BEFORE the outing, summed up
                   over it, + rating); learnSpot → SportModel[] (examples, your ranges, "What works" rows, trees)
                   rateBest(models, conditionsNow) → Result {score, level, sport, source, support, reasons}
-                  bestToday / nextDays(models, hours) → DayBest (two-hour windows → stretches: tags, When to go, pins)
+                  bestToday / nextDays(models, hours) → DayBest (good hours → stretches: tags, When to go, pins)
 
 ```
 

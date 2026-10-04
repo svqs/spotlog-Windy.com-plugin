@@ -159,6 +159,7 @@ export const COPY_GROUPS: CopyGroup[] = [
         ['trustEmpty', 'Log a few sessions here with the forecast saved before you go, and {spotlog} compares the models.'],
         ['trustNote', 'How well each forecast foretold how your sessions here went ({n} sessions): the longer the bar, the better. The number is how far its guesses were off on average, on the 1–5 rating scale.'],
         ['trustMiss', '{v} off'],
+        ['trustUsing', 'spotlog learns from {model} here. Once another forecast has foretold 10+ of your sessions here clearly better, it learns from that one.'],
         ['checking', 'Checking the forecast…'],
         ['savedTitle', 'Saved forecasts'], ['savedEmpty', 'None yet. Press “Save forecast” before you go: it keeps the next 24 hours.'],
         ['modelsN', '{n} model(s)'], ['delete', 'Delete'],

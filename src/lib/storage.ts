@@ -78,7 +78,7 @@ const cleanSpot = (s: Any) => {
         sports: ids(s.sports).map(x => x.slice(0, 20)).slice(0, 8),
         dirs: ids(s.dirs).filter(d => DIR8.includes(d)),
         min: numOr(s.min, 6), max: numOr(s.max, 12), windUnknown: !!s.windUnknown, created: numOr(s.created, Date.now()),
-        ...(isObj(s.ranges) ? { ranges: cleanRanges(s.ranges) } : {}), ...(s.startOwn === true ? { startOwn: true } : {}),
+        ...(isObj(s.ranges) ? { ranges: cleanRanges(s.ranges) } : {}),
         ...(typeof s.recommendationModel === 'string' && /^[A-Za-z0-9]{2,30}$/.test(s.recommendationModel) ? { recommendationModel: s.recommendationModel } : {}),
     };
 };
@@ -99,7 +99,7 @@ const cleanSession = (s: Any) => ({
     snapshotId: typeof s.snapshotId === 'string' ? s.snapshotId : null, date: numOr(s.date, Date.now()),
     rating: Math.max(1, Math.min(5, Math.round(numOr(s.rating, 3) as number))), 
     sport: str(s.sport, 20) || null, ...(s.checked === true ? { checked: true } : {}),
-    tide: ['Low', 'Mid', 'High'].includes(s.tide) ? s.tide : null, tideMove: ['Rising', 'Falling'].includes(s.tideMove) ? s.tideMove : null, gearIds: ids(s.gearIds), gear: str(s.gear, 300),
+    gearIds: ids(s.gearIds), gear: str(s.gear, 300),
     start: /^\d\d:\d\d$/.test(s.start) ? s.start : '', end: /^\d\d:\d\d$/.test(s.end) ? s.end : '', notes: str(s.notes, 5000),
     track: cleanTrack(s.track), tz: str(s.tz, 60) || undefined,
 });

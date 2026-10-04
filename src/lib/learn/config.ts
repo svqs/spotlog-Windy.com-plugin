@@ -64,14 +64,18 @@ export const GATES = {
 
 /** Upcoming forecast stretches (windows.ts) */
 export const WINDOW = {
-    /** shortest stretch worth recommending (hours) */
-    hours: 2,
+    /** shortest stretch worth recommending (hours): 1 = every good hour counts, for the finest times */
+    hours: 1,
     /** stretches whose mean ratings differ by at most this are a tie: the longer, then the earlier wins */
     tie: 0.2,
 };
 
-/** Which forecast to trust here (skill.ts): a model is ranked once it was checked on this many outings */
-export const TRUST = { minSessions: 3 };
+/**
+ * Which forecast to trust here (skill.ts): a model is ranked once it was checked on `minSessions` outings.
+ * The best one becomes the spot's learning model once it was checked on `switchAfter` outings and beats the
+ * current one by at least `switchMargin` rating points.
+ */
+export const TRUST = { minSessions: 3, switchAfter: 10, switchMargin: 0.1 };
 
 /** "What works here" ranges (ranges.ts) */
 export const RANGES = { minGood: 3, low: 0.1, high: 0.9, goodFrom: 4, poorTo: 2 };
