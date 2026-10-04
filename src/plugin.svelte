@@ -418,6 +418,7 @@
         badgeNote={ guessNote(spotGuess) }
         badgeBg={ guessCol(spotGuess?.level ?? 0)[0] }
         badgeFg={ guessCol(spotGuess?.level ?? 0)[1] }
+        tide={ spotOutlook?.tide ? tideList(spotOutlook.tide) : '' }
     />
 
     {#if spotModels.length > 1}
@@ -467,17 +468,6 @@
                     <button class="btn primary small" on:click={ useLearnedWindow }>{ W.useLearned }</button>
                 </div>
             {/if}
-        {/if}
-        {#if spotOutlook?.tide}
-            <!-- today's tides, and when today matches the tide your best sessions had -->
-            <div class="sep tide-today">
-                <div class="row"><span class="lbl grow">{ W.tideToday }</span><span>{ tideList(spotOutlook.tide) }</span></div>
-                {#if spotTide}
-                    <small class="tide-best">{ fill(W.tideBestToday, { tide: tideText(spotTide), n: spotTide.of, total: spotTide.total, when: tideWhen(spotOutlook.tide, spotTide) || '–' }) }</small>
-                {/if}
-            </div>
-        {:else if spotTide}
-            <small class="muted tidehint">{ fill(W.tideHint, { tide: tideText(spotTide), n: spotTide.of, total: spotTide.total }) }</small>
         {/if}
         <div class="stats sep">
             <div><span class="lbl">{ W.statSessions }</span><span class="big">{ spotReal.length }</span></div>
@@ -843,7 +833,7 @@
     } from './lib/wind';
     import { fmtWind, fmtWind0, fmtHeight, fmtTemp, fmtDistance, windLabel, fromWind, toWind, windStep } from './lib/units';
     import {
-        rateBest, conditionsOf, toFeatures, suggestWindow, bestToday, bestTide, sessionTide, learnSpot, trainTreesInBackground, learningModel,
+        rateBest, conditionsOf, toFeatures, suggestWindow, bestToday, learnSpot, trainTreesInBackground, learningModel,
         nextDays, learnedWindow, gearHints, isCircular, allFeatures, fitRange, mattersLevel, modelSkill,
     } from './lib/predict';
     import { words, w, t as tr, fill, rich, setWords } from './lib/copy';
@@ -1200,7 +1190,6 @@
     $: spotGuess = spot && spotNow ? rateBest(modelsOf(spot, modelMap), conditionsOf(spotNow.wind, spotNow.waves)) : null;
     $: spotLearned = spot ? modelsOf(spot, modelMap) : [];
     $: spotBest = spot ? bestOf(spot) : null;
-    $: spotTide = spot ? bestTide(spotReal.map(x => ({ rating: x.rating, ...sessionTide(x, data.snapshots) }))) : null;
     $: spotLearnedWindow = spot && !spot.windUnknown ? learnedWindow(spot, spotLearned[0]) : null;
     $: spotGear = gearHints(spotLearned);
     $: trust = spot ? modelSkill(spot, data.sessions, data.snapshots) : [];
@@ -1427,8 +1416,6 @@
     const closeness = (miss: number, list: { miss: number }[]): number =>
         Math.round((100 * Math.max(0.05, Math.min(...list.map(x => x.miss)))) / Math.max(0.05, miss));
     $: bestRange = (b: DayBest): string => (b.now ? fill(W.todayUntil, { time: fmtTime(b.end) }) : fmtTime(b.start) + '–' + fmtTime(b.end));
-    $: tideText = (t: { tide: string | null; move: string | null }): string =>
-        [t.tide ? W['tide' + t.tide].toLowerCase() : '', t.move ? W['tide' + t.move].toLowerCase() : ''].filter(Boolean).join(', ');
     function primaryOf(sn: Snapshot): ModelValue | null {
         return sn.models.find(m => m.model === sn.primary) || sn.models[0] || null;
     }
@@ -2558,25 +2545,6 @@
     /** "High 2:18 · Low 8:30 · High 14:42" */
     $: tideList = (t: TideDay): string =>
         [...t.highs.map(x => ({ x, k: W.tideHigh })), ...t.lows.map(x => ({ x, k: W.tideLow }))].sort((a, b) => a.x - b.x).map(e => `${e.k} ${fmtTime(e.x)}`).join(' · ');
-    /** when today has the tide your best sessions had: around a high or low, or between them for rising/falling/mid */
-    $: tideWhen = (t: TideDay, h: { tide: string | null; move: string | null }): string => {
-        const ev = [...t.highs.map(x => ({ x, hi: true })), ...t.lows.map(x => ({ x, hi: false }))].sort((a, b) => a.x - b.x);
-        const around = (list: number[]) => list.map(x => fill(W.tideAround, { time: fmtTime(x) })).join(', ');
-        const between = (fromHigh: boolean, mid: boolean) => {
-            const out: string[] = [];
-            for (let i = 0; i < ev.length - 1; i++) {
-                if (ev[i].hi !== fromHigh || ev[i + 1].hi === fromHigh) {continue;}
-                out.push(mid ? fill(W.tideAround, { time: fmtTime((ev[i].x + ev[i + 1].x) / 2) }) : `${fmtTime(ev[i].x)}–${fmtTime(ev[i + 1].x)}`);
-            }
-            return out.join(', ');
-        };
-        if (h.tide === 'High') {return around(t.highs);}
-        if (h.tide === 'Low') {return around(t.lows);}
-        if (h.move === 'Rising') {return between(false, h.tide === 'Mid');}
-        if (h.move === 'Falling') {return between(true, h.tide === 'Mid');}
-        if (h.tide === 'Mid') {return [between(false, true), between(true, true)].filter(Boolean).join(', ');}
-        return '';
-    };
 
     /* ---------- what works here: "Use what spotlog learned", your own ranges, checked days ---------- */
     function useLearnedWindow() {
@@ -3095,10 +3063,8 @@
     .link-card { text-align: left; align-items: center; }
     .field { display: flex; flex-direction: column; gap: 8px; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-    /* spot page: save nudge, "checked, not worth it", today's tides */
+    /* spot page: save nudge, "checked, not worth it" */
     .nudge { display: block; margin: -2px 2px 0; font-size: 12px; line-height: 1.45; }
-    .tide-today { font-size: 13px; display: flex; flex-direction: column; gap: 6px; .lbl { margin: 0; } .tide-best { color: var(--sl-text, #f8f8f8); line-height: 1.45; } }
-    .tidehint { display: block; margin-top: -4px; }
     /* spot page: the recommendation, today and the next days */
     .reco { gap: 0; padding-top: 4px; padding-bottom: 12px; }
     /* one row per day with a match: the day (and how sure Windy is) · the guess · the hours */

@@ -10,7 +10,6 @@ used |= set(re.findall(r"\bkey: '(\w+)'", src)) | set(re.findall(r"'(title(?:Spo
 dyn = {'good': (1, 3), 'rate': (1, 5), 'guess': (3, 5), 'guessFor': (3, 5), 'matter': (1, 3)}
 for pre, (a, n) in dyn.items():
     for i in range(a, n + 1): used.add(f'{pre}{i}')
-used |= {'tide' + t for t in ['Low', 'Mid', 'High', 'Rising', 'Falling']}
 used |= {'param' + t for t in ['Wind', 'Gust', 'Dir', 'Waves', 'Swell', 'Period', 'SwellDir', 'Power', 'Temp', 'Rain']}
 for pre in ('step1Title', 'step2Title', 'step3Title', 'step4Title', 'step1Text', 'step2Text', 'step3Text', 'step4Text'): used.add(pre)
 used |= {'why' + r for r in ['Few', 'Poor', 'Below', 'Missing', 'Outside']}

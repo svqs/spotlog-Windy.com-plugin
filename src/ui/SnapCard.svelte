@@ -20,6 +20,7 @@
         {#if full}
             <div class="rows">
                 <div><span>{ $words.fcTemp }</span><b>{ fmtTemp(wind.temp, u.temp) }</b></div>
+                {#if tide}<div><span>{ $words.fcTide }</span><b>{ tide }</b></div>{/if}
                 {#if waves}
                     <div><span>{ $words.fcSwell }</span><b>{ fmtHeight(waves.swell1, u.height, true) } · { waves.swell1Period === null ? '–' : Math.round(waves.swell1Period) + ' s' }</b></div>
                     <div><span>{ $words.fcPeriod }</span><b>{ waves.wavesPeriod === null ? '–' : Math.round(waves.wavesPeriod) + ' s' } · { waves.wavesPower === null ? '–' : waves.wavesPower.toFixed(1) + ' kW/m' }</b></div>
@@ -51,6 +52,8 @@
     export let waves: WaveValue | null = null;
     export let models: ModelValue[] = [];
     export let best: string | null = null;
+    /** today's high and low tides, when Windy has them here ("High 2:18 · Low 8:30") */
+    export let tide = '';
     export let loading = false;
     export let empty = '';
     export let full = false;

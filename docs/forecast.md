@@ -74,7 +74,8 @@ spotlog's tag says how good the conditions would be **for you**, and Windy's % s
   turning points). The first answer's shape is logged once (`[spotlog] tide answer`) so the parser can be fixed against
   real data.
 - **On screen:**
-  - "Tide today" (times of highs/lows) shows only when parsing works.
+  - "Tide today" (times of highs/lows) shows as a row in the forecast card's full snapshot on the spot page, only when
+    parsing works. The spot page has no separate tide block (owner's decision, 0.16.3).
   - The session tide is computed from the saved highs/lows (`learn/tide.ts → tideAt`). **Users never enter the tide.**
 - **Open:** where the tide data should come from long-term (Windy's tide feed vs another source) still needs research.
   It's parked for now.
