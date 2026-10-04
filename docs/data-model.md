@@ -18,7 +18,7 @@ SpotlogData {
                           // recommendationModel? (fallback when ECMWF has no forecast here; unset = ECMWF),
                           // ranges?: { [sport]: { [condition]: { lo?, hi?, dirs? } } }  (your own ranges, from Adjust)
   snapshots: Snapshot[]   // id, spotId|null, lat, lon, ts (focus), savedAt, primary, models: ModelValue[], waves, note?,
-                          // series?: { ts[], models: {[m]: {wind[], gust[], dir[], temp[], rain?[]}}, waves|null, tide?: {highs[], lows[]} }
+                          // series?: { ts[], models: {[m]: {wind[], gust[], dir[], temp[], rain?[]}}, waves|null, tide?: {highs[], lows[], highsM?[], lowsM?[]} }
   sessions:  Session[]    // id, spotId|null, lat?, lon?, snapshotId|null, date (= start instant), rating 1–5,
                           // checked? (Not worth it, didn't go), sport?,
                           // gearIds[], gear (free text), start/end "HH:MM", notes, track?, tz

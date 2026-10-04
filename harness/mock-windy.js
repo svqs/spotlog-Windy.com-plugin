@@ -241,15 +241,29 @@
         const sr = new Date(); sr.setHours(7, 40, 0, 0); const ss = new Date(); ss.setHours(19, 25, 0, 0);
         return { data: { data: d, header: { model }, ...(include?.summary ? { summary: summaryOf(d) } : {}), ...(include?.celestial ? { celestial: { sunriseTs: +sr, sunsetTs: +ss } } : {}) } };
     };
-    // Windy's tide forecast (undocumented): the mock answers with a list of extremes
+    // Windy's tide forecast (undocumented, Premium): the real answer's shape, 7 days from 00:00 UTC today,
+    // hourly levels plus each high and low: { header: { copyright }, data: { hours, types, heights } }
     const getTideForecastUrl = ({ lat, lon }) => `mock://tides/${lat.toFixed(2)}/${lon.toFixed(2)}`;
     const http = { get: async url => {
         if (!url.startsWith('mock://tides')) throw new Error('offline');
-        // a high at 2:18 today, then a low or high every 6.2 hours, from 3 days back to 7 days ahead
+        if (!store.get('subscription')) { const e = new Error('Unauthorized'); e.status = 401; throw e; }
+        const day0 = Math.floor(Date.now() / 864e5) * 864e5, H = 3600e3, P = 12.4 * H;
+        // a high at 2:18 local today, then a low or high every 6.2 hours (local midnight, like the old mock)
         const t0 = new Date(); t0.setHours(0, 0, 0, 0);
-        const ex = []; for (let k = -12; k < 28; k++) ex.push({ ts: +t0 + (2.3 + k * 6.2) * 3600e3, type: (k + 100) % 2 ? 'low' : 'high', height: (k + 100) % 2 ? 0.3 : 1.6 });
-        return { data: { extremes: ex } };
+        const firstHigh = +t0 + 2.3 * H;
+        const level = t => 0.95 + 0.65 * Math.cos(2 * Math.PI * (t - firstHigh) / P);
+        const pts = [];
+        for (let t = day0; t <= day0 + 7 * 864e5; t += H) pts.push({ t, type: null });
+        for (let k = -6; k < 30; k++) { const t = firstHigh + k * P / 2; if (t > day0 && t < day0 + 7 * 864e5) pts.push({ t: Math.round(t), type: k % 2 ? 'Low' : 'High' }); }
+        pts.sort((x, y) => x.t - y.t);
+        const uniq = pts.filter((p, i) => i === 0 || p.t !== pts[i - 1].t);
+        return { status: 200, data: {
+            header: { copyright: 'Tidal data retrieved from www.worldtides.info (mock).' },
+            data: { hours: uniq.map(p => p.t), types: uniq.map(p => p.type), heights: uniq.map(p => Math.round(level(p.t) * 1000) / 1000) },
+        } };
     } };
+    // Windy Premium: the mock user has it (store 'subscription'); try store.set('subscription', null)
+    const subscription = { hasAny: () => !!store.get('subscription') };
 
     // ---- reverse geocoding ----
     const PLACES = [
@@ -315,6 +329,7 @@
         rootScope: { isMobileOrTablet: typeof matchMedia !== 'undefined' && matchMedia('(max-width: 760px)').matches },
         fetch: { getPointForecastData, getTideForecastUrl },
         http,
+        subscription,
         // "Your current location": the mock phone stands where the map is centred
         geolocation: { getGPSlocation: async () => { const c = leafletMap.getCenter(); await new Promise(r => setTimeout(r, 150)); return { lat: c.lat, lon: c.lng, source: 'gps' }; } },
         __mock: { project, unproject, store, singleclick, PLACES, INIT, onMove: f => moveSubs.push(f), setView, view },

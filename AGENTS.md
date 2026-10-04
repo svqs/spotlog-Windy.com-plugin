@@ -73,6 +73,7 @@ src/ui/*.svelte        small components: SnapCard, TimeWheel, SwipeRow, Calendar
 src/lib/predict.ts     the recommendation's public face; the engine is in src/lib/learn/ (config, features,
                        examples, similar, trees, model, windows, ranges, tide)                     → docs/learning.md
 src/lib/forecast.ts    Windy forecast fetching, whole-day snapshots, models per region, tides         → docs/forecast.md
+src/lib/tides/         Windy's tide forecast (Premium only): request, strict reading, error reports    → docs/forecast.md
 src/lib/storage.ts     load / save / validate / merge / import / export                               → docs/data-model.md
 src/lib/types.ts       the data model
 src/lib/wind.ts        directions, colours, sports, gear presets, date formats
@@ -81,6 +82,7 @@ src/lib/copy.ts        every phrase (grouped by screen)                         
 src/lib/theme.ts       every colour, shape and map mark (Style Lab tokens)
 src/lib/design.ts      a Style Lab design applied on top (normally empty: designs are folded into theme.ts / copy.ts)
 src/lib/cloud.ts       optional account sync client; supabase/ has the server
+tide-worker/           optional Cloudflare Worker that receives tide error reports (its README says how to deploy)
 harness/               fake Windy (mock-windy.js), test pages, sandbox + Style Lab builders, e2e + scenarios
 scripts/               build-lab, apply-design, check-words, test-predict, publish
 docs/                  the documentation (index: docs/README.md)

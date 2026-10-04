@@ -20,7 +20,7 @@
         {#if full}
             <div class="rows">
                 <div><span>{ $words.fcTemp }</span><b>{ fmtTemp(wind.temp, u.temp) }</b></div>
-                {#if tide}<div><span>{ $words.fcTide }</span><b>{ tide }</b></div>{/if}
+                {#if tide}<div><span>{ $words.fcTide }</span><b>{ tide }</b></div>{:else if tidePremium}<div title={ tidePremium }><span>{ $words.fcTide }</span><b class="quiet">{ $words.fcTidePremium }</b></div>{/if}
                 {#if waves}
                     <div><span>{ $words.fcSwell }</span><b>{ fmtHeight(waves.swell1, u.height, true) } · { waves.swell1Period === null ? '–' : Math.round(waves.swell1Period) + ' s' }</b></div>
                     <div><span>{ $words.fcPeriod }</span><b>{ waves.wavesPeriod === null ? '–' : Math.round(waves.wavesPeriod) + ' s' } · { waves.wavesPower === null ? '–' : waves.wavesPower.toFixed(1) + ' kW/m' }</b></div>
@@ -54,6 +54,8 @@
     export let best: string | null = null;
     /** today's high and low tides, when Windy has them here ("High 2:18 · Low 8:30") */
     export let tide = '';
+    /** set (to the explanation) when tide needs Windy Premium: the row says so */
+    export let tidePremium = '';
     export let loading = false;
     export let empty = '';
     export let full = false;
@@ -78,7 +80,7 @@
     .dirv { height: 26px; display: flex; align-items: center; .arrow { display: inline-block; font-size: 20px; font-weight: 700; line-height: 1; } }
     .badge-row { display: flex; align-items: center; gap: 8px; padding: 0 14px 12px; flex-wrap: wrap; }
     .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
-    .rows { padding: 0 14px 6px; > div { display: flex; justify-content: space-between; gap: 10px; height: 34px; align-items: center; border-top: 1px solid var(--sl-lightLine, #e5e5e5); span { color: var(--sl-lightSub, #6b6b6b); } } }
+    .rows { padding: 0 14px 6px; > div { display: flex; justify-content: space-between; gap: 10px; height: 34px; align-items: center; border-top: 1px solid var(--sl-lightLine, #e5e5e5); span { color: var(--sl-lightSub, #6b6b6b); } b.quiet { font-weight: 400; color: var(--sl-lightSub, #6b6b6b); } } }
     .models-t { padding: 10px 14px 8px; border-top: 1px solid var(--sl-lightLine, #e5e5e5); font-size: 12px; color: var(--sl-lightSub, #6b6b6b); }
     .models { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 0 14px 12px;
         > div { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 0; border-radius: 10px; background: var(--sl-dirTile, #e9e8e3); font-size: 11px; b { font-size: 15px; } }

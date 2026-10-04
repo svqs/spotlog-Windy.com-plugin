@@ -28,7 +28,7 @@ export const THEME = {
     compactBelow: 6, compactSize: 10, compactDot: '#1c1c1c', compactRing: true, compactRingColor: '#f8f8f8', compactRingWidth: 1,
     // sessions on the map
     sessStyle: 'glow' as 'glow' | 'dot' | 'ring' | 'off',
-    sessColor: '#0081fa', sessCore: true, sessCoreRing: '#0081fa',
+    sessColor: '#ffffff', sessCore: true, sessCoreRing: '#f8f8f8',
     sessSize: 25, sessGrow: 1, sessAlpha: 0.35, sessAlphaGrow: 0.08,
     tipBg: '#2e2e2e', tipText: '#f8f8f8',
     // GPS route

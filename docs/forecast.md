@@ -29,7 +29,7 @@ hourly points.
 
 - **Per model:** wind, gust, dir, temp (if the temp layer is on), rain.
 - **Waves:** waves/dir, period, power, swell 1 (height/period/dir), each one if its layer is on.
-- **Tides:** high/low times from 8 h before to 8 h after the window (when Windy has them).
+- **Tides:** high/low times (and heights) in the window, plus the one before and after (Windy Premium only, see Tides below).
 
 The snapshot keeps `ts`/`models`/`waves` for the focus hour plus the whole `series`. Logging a session moves the focus to
 the middle of the session without refetching (`seriesAt`).
@@ -66,16 +66,38 @@ spotlog's tag says how good the conditions would be **for you**, and Windy's % s
   (`learn/skill.ts`, see docs/learning.md §8). The old felt-wind ranking and bias were retired in
   0.16, because felt wind was often prefilled and shared saved days skewed it.
 
-## Tides (experimental)
+## Tides (experimental, Windy Premium only)
 
-- **Source:** `tideBetween(lat, lon, from, to)` uses Windy's `getTideForecastUrl` + `http.get`. This is undocumented for
-  plugins.
-- **Reading:** `readTides` accepts a list of extremes (`{ts|time, type: high|low}`) or `ts` + heights (it finds the
-  turning points). The first answer's shape is logged once (`[spotlog] tide answer`) so the parser can be fixed against
-  real data.
-- **On screen:**
-  - "Tide today" (times of highs/lows) shows as a row in the forecast card's full snapshot on the spot page, only when
-    parsing works. The spot page has no separate tide block (owner's decision, 0.16.3).
-  - The session tide is computed from the saved highs/lows (`learn/tide.ts → tideAt`). **Users never enter the tide.**
-- **Open:** where the tide data should come from long-term (Windy's tide feed vs another source) still needs research.
-  It's parked for now.
+The tide comes from **Windy's own tide forecast only** (WorldTides data, FES2022 model), through `src/lib/tides/`
+(from the tide research, 0.17):
+
+- `tides/tides.ts`: the Premium check (`@windy/subscription → hasAny`), the request (`getTideForecastUrl` + `http.get`,
+  10 s timeout, one retry), the error handling and the error reports. Never throws.
+- `tides/tideCore.ts`: pure logic, unit-tested in `scripts/test-predict.mjs`. It reads Windy's answer strictly
+  (`{ header: { copyright }, data: { hours, types: 'High'|'Low'|null, heights } }`, 7 days from 00:00 UTC), drops
+  micro-tide wiggles under 5 cm, and `highsAndLows()` turns it into the saved day's highs and lows.
+- `forecast.ts → tideBetween / tideToday` ask once per place every 10 minutes and return `{ day, needsPremium }`.
+
+**Who gets tide:**
+
+| User | Result |
+|---|---|
+| Windy Premium | Tide is saved with every forecast; "Tide today" shows in the forecast card's full snapshot |
+| Not Premium | No tide, no request. The full snapshot says "Tide today: with Windy Premium" (the tooltip explains why) |
+| Premium, but Windy fails | The forecast is saved without tide, and a small error report is sent (below) |
+
+**What's saved:** `series.tide = { highs, lows, highsM, lowsM }` (times and heights in m) from the saved window, plus
+the high/low just before and after it (estimated by mirroring when Windy's window starts later), so every hour sits
+between a high and a low. The session's tide is worked out from these (`learn/tide.ts → tideAt`). **Users never enter
+the tide.** The heights are kept so spring and neap tides can be learned later.
+
+**Error reports** (`TIDE_REPORT_URL` in `src/lib/links.ts`; empty = off). For Premium users only, when Windy's endpoint
+times out, fails, moves or changes its answer: the kind of error, the HTTP status, the answer's structure without any
+values, the plugin version and the time. No coordinates, no user id, at most one per error kind per day per browser.
+The endpoint is the Cloudflare Worker in `tide-worker/` (see its README for deploying it and reading reports).
+
+**Credits:** the data licence asks for attribution, so `tideCredits` is shown at the bottom of How it works.
+
+**Before publishing publicly:** `getTideForecastUrl` is internal to Windy (`@ignore` in their typings), so ask Windy
+first. Windy says the tide data is licensed per end user: keep it in each user's own diary, as now. Predictions are
+astronomical only (no storm surge or wave setup).

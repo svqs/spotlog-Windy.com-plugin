@@ -1,0 +1,13 @@
+name = "spotlog-tide-errors"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+# Create the namespace once with:  npx wrangler kv namespace create REPORTS
+# then paste the id it prints below.
+[[kv_namespaces]]
+binding = "REPORTS"
+id = "PASTE_KV_NAMESPACE_ID_HERE"
+
+# Secrets (not in this file):
+#   npx wrangler secret put REPORTS_TOKEN   # any long random string; used to read /reports
+#   npx wrangler secret put NOTIFY_URL      # optional, e.g. https://ntfy.sh/<your-private-topic>

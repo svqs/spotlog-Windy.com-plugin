@@ -41,7 +41,7 @@ the owner, then update this page.
 | **Map card:** forecast tiles, the rating tag and the best stretch of today. **No reason list with symbols**; the why is in What works here. | 0.15 |
 | **Sports:** Surf, Windsurf, Kite, Wing, plus your own under "Other…" (typed name, used everywhere). **No SUP.** Any sport can be picked when logging; a new one is added to the spot. In Log session, opening "Other…" leaves only "Other…" selected. | 0.15 |
 | **Tiles:** gusts and waves under the wind and never cut off; they wrap on narrow tiles. The tag sits at the bottom, so the wind boxes line up across tiles; in the list view the rows share columns (name · wind · tag), so the wind boxes line up whatever the tag | 0.15, 0.16.4, 0.16.6 |
-| **Tide:** the user never enters it. It comes from the forecast (saved highs/lows → the session's tide → the tide your best sessions had). Where tide data should come from long-term still needs research. | 0.14.5 |
+| **Tide:** the user never enters it. It comes from Windy's own tide forecast, **for Windy Premium users only** (others see "with Windy Premium"), saved with the forecast (highs/lows → the session's tide → the tide your best sessions had). Windy errors are reported without coordinates or user. Credits on How it works. | 0.14.5, 0.17 |
 | **Units:** everything follows the units pill (wind incl. Beaufort half steps, height, temperature) | 0.10 |
 | **Name:** "spotlog" lowercase + pixel star in text; the wordmark SPOTLOG | 0.10 |
 | **Dark background;** don't change the desktop UI unless asked | standing |

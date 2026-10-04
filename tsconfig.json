@@ -31,6 +31,6 @@
         }
     },
     "include": ["**/*.ts", "**/*.svelte"],
-    // the sync server runs on Supabase (Deno), not in Windy: it has its own types there
-    "exclude": ["node_modules", "dist", "supabase"],
+    // the sync server runs on Supabase (Deno) and the tide error endpoint on Cloudflare, not in Windy: they have their own types there
+    "exclude": ["node_modules", "dist", "supabase", "tide-worker"],
 }

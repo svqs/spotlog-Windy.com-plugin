@@ -1,5 +1,7 @@
 import * as wfetch from '@windy/fetch';
-import * as http from '@windy/http';
+import { takeTideSnapshot, isPremium } from './tides/tides';
+import { highsAndLows } from './tides/tideCore';
+import type { TideSnapshotResult } from './tides/tides';
 
 import type { ModelValue, WaveValue, DaySeries } from './types';
 import type { Hour } from './predict';
@@ -169,63 +171,40 @@ export const hoursToday = (lat: number, lon: number, model = 'ecmwf'): Promise<H
     return hoursBetween(lat, lon, Date.now() - 3 * HOUR, end.getTime(), model);
 };
 
-/* ---------- tide (experimental: Windy's own tide forecast, not documented for plugins) ---------- */
+/* ---------- tide (experimental: Windy's own tide forecast, Premium only; see src/lib/tides/) ---------- */
 
-export interface TideDay { highs: number[]; lows: number[] }
-let tideLogged = false;
-/** High and low tides at a place between two times, when Windy has a tide forecast there (null when not, or when the answer can't be read) */
-export const tideBetween = async (lat: number, lon: number, from: number, to: number): Promise<TideDay | null> => {
-    try {
-        const url = (wfetch as unknown as { getTideForecastUrl?: (ll: { lat: number; lon: number }) => string }).getTideForecastUrl?.({ lat, lon });
-        if (!url || !http?.get) {return null;}
-        const res = await http.get<unknown>(url);
-        const body = (res as { data?: unknown })?.data;
-        if (!tideLogged) {
-            tideLogged = true;
-            console.info('[spotlog] tide answer (for reading it right):', body && typeof body === 'object' ? Object.keys(body as object) : typeof body);
-        }
-        return readTides(body, from, to);
-    } catch (e) {
-        console.info('[spotlog] no tide forecast here', e);
-        return null;
-    }
+/** High and low tide times (and heights in m, when known) in a stretch of time */
+export interface TideDay { highs: number[]; lows: number[]; highsM?: number[]; lowsM?: number[] }
+export interface TideResult { day: TideDay | null; needsPremium: boolean }
+
+/** One answer per place for a few minutes: the spot page and Save forecast often ask for the same place */
+const tideCache = new Map<string, { at: number; res: Promise<TideSnapshotResult> }>();
+const snapshotFor = (lat: number, lon: number): Promise<TideSnapshotResult> => {
+    const key = `${lat.toFixed(3)},${lon.toFixed(3)},${isPremium()}`;
+    const hit = tideCache.get(key);
+    if (hit && Date.now() - hit.at < 10 * 60e3) {return hit.res;}
+    const res = takeTideSnapshot(lat, lon);
+    tideCache.set(key, { at: Date.now(), res });
+    return res;
 };
-/** Today's high and low tides */
-export const tideToday = (lat: number, lon: number): Promise<TideDay | null> => {
+
+/** High and low tides at a place between two times. Never throws; `needsPremium` when the user has no Windy Premium */
+export const tideBetween = async (lat: number, lon: number, from: number, to: number): Promise<TideResult> => {
+    const res = await snapshotFor(lat, lon);
+    if (res.status === 'premium-required') {return { day: null, needsPremium: true };}
+    if (res.status !== 'ok') {return { day: null, needsPremium: false };}
+    return { day: highsAndLows(res.snapshot.extremes, from, to), needsPremium: false };
+};
+/** Today's high and low tides (only those of today) */
+export const tideToday = async (lat: number, lon: number): Promise<TideResult> => {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
-    return tideBetween(lat, lon, start.getTime(), start.getTime() + 864e5);
+    const res = await tideBetween(lat, lon, start.getTime(), start.getTime() + 864e5);
+    if (!res.day) {return res;}
+    const inDay = (t: number) => t >= start.getTime() && t < start.getTime() + 864e5;
+    const d = res.day;
+    return { ...res, day: { highs: d.highs.filter(inDay), lows: d.lows.filter(inDay) } };
 };
-
-/** Reads highs and lows (from..to) from the shapes a tide answer usually has (a list of extremes, or times + heights) */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function readTides(body: any, from: number, to: number): TideDay | null {
-    const toMs = (t: unknown): number | null => (typeof t === 'number' ? (t < 1e12 ? t * 1000 : t) : typeof t === 'string' && !isNaN(Date.parse(t)) ? Date.parse(t) : null);
-    const highs: number[] = [];
-    const lows: number[] = [];
-    const list = [body?.extremes, body?.data?.extremes, body?.tides, body?.data?.tides, Array.isArray(body) ? body : null].find(Array.isArray);
-    if (list) {
-        for (const e of list) {
-            const t = toMs(e?.ts ?? e?.time ?? e?.timestamp ?? e?.date);
-            const type = String(e?.type ?? e?.state ?? '').toLowerCase();
-            if (t === null || t < from || t >= to) {continue;}
-            if (type.startsWith('h')) {highs.push(t);} else if (type.startsWith('l')) {lows.push(t);}
-        }
-    } else {
-        const d = body?.data ?? body;
-        const ts = Array.isArray(d?.ts) ? d.ts : null;
-        const hv = [d?.height, d?.tide, d?.level, d?.values].find(Array.isArray);
-        if (ts && hv && ts.length === hv.length) {
-            for (let i = 1; i < ts.length - 1; i++) {
-                const t = toMs(ts[i]);
-                if (t === null || t < from || t >= to) {continue;}
-                if (hv[i] > hv[i - 1] && hv[i] >= hv[i + 1]) {highs.push(t);}
-                if (hv[i] < hv[i - 1] && hv[i] <= hv[i + 1]) {lows.push(t);}
-            }
-        }
-    }
-    return highs.length || lows.length ? { highs, lows } : null;
-}
 
 /** Collects every model (in parallel) for one place and time */
 export const captureModels = async (lat: number, lon: number, ts: number, primary: string, allModels: boolean): Promise<ModelValue[]> => {
@@ -333,7 +312,7 @@ export const captureDay = async (
         break;
     }
     // the tides around the saved day (a few hours either side, so every hour sits between a high and a low)
-    const tide = await tideBetween(lat, lon, from - 8 * HOUR, to + 8 * HOUR);
+    const tide = (await tideBetween(lat, lon, from, to)).day;
     const series: DaySeries = { ts: grid, models: out, waves, ...(tide ? { tide } : {}) };
     const at = seriesAt(series, focusTs);
     return { series, ...at, primary: out[primary] ? primary : Object.keys(out)[0] };

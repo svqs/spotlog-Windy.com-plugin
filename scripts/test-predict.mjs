@@ -11,7 +11,7 @@ const out = path.join(root, 'node_modules/.cache/spotlog-predict');
 mkdirSync(out, { recursive: true });
 try {
     execFileSync(path.join(root, 'node_modules/.bin/tsc'), ['--outDir', out, '--module', 'commonjs', '--target', 'es2020', '--skipLibCheck', '--noEmitOnError', 'false',
-        path.join(root, 'src/lib/predict.ts')], { stdio: 'pipe' });
+        path.join(root, 'src/lib/predict.ts'), path.join(root, 'src/lib/tides/tideCore.ts')], { stdio: 'pipe' });
 } catch { /* type noise from Windy's types: the JS is still written */ }
 writeFileSync(path.join(out, 'package.json'), '{"type":"commonjs"}');
 const require = createRequire(path.join(out, 'x.js'));
@@ -19,6 +19,7 @@ const P = require('./predict.js');
 const F = require('./learn/features.js');
 const S = require('./learn/similar.js');
 const T = require('./learn/trees.js');
+const TC = require('./tides/tideCore.js');
 
 
 /* ---------- builders: a spot, a saved day of forecast, a session (all in UTC so clocks are plain) ---------- */
@@ -274,5 +275,33 @@ const ok = m => { n++; console.log('✓', m); };
     assert.deepEqual(P.tideAt(tz, 7 * H), { tide: 'Low', move: 'Rising' });
     assert.equal(P.tideAt(tz, 20 * H), null);
     ok('tide: the tide most great outings had; the tide at a time from saved highs and lows');
+}
+
+/* ---------- 6. Windy's tide answer (src/lib/tides/tideCore.ts) ---------- */
+{
+    // Windy's shape: hourly levels plus each high and low, from 00:00 UTC
+    const hours = [], types = [], heights = [];
+    const lvl = t => 1 + Math.cos(2 * Math.PI * (t - 3.3 * H) / (12.4 * H));
+    const ex = [3.3 * H, 9.5 * H, 15.7 * H, 21.9 * H, 28.1 * H].map((t, i) => [DAY0 + t, i % 2 ? 'Low' : 'High']);
+    const pts = [...Array.from({ length: 48 }, (_, i) => [DAY0 + i * H, null]), ...ex].sort((a, b) => a[0] - b[0]);
+    for (const [t, ty] of pts) { hours.push(t); types.push(ty); heights.push(lvl(t - DAY0)); }
+    const body = { header: { copyright: 'x' }, data: { hours, types, heights } };
+    const r = TC.parseWindyTides(body, 1, 2, DAY0 + 5 * H);
+    assert.ok(r.ok); assert.equal(r.snapshot.extremes.length, 5); assert.equal(r.snapshot.extremes[0].type, 'high');
+    assert.equal(TC.parseWindyTides({ data: { hours: [1] } }, 1, 2, DAY0).problem, 'shape', 'an odd answer is a shape problem');
+    const onTheHour = { data: { hours: [...hours, DAY0 + 47 * H], types: [...types, 'High'], heights: [...heights, 1.5] } };
+    assert.ok(TC.parseWindyTides(onTheHour, 1, 2, DAY0 + 5 * H).ok, 'a high exactly on the hour (listed twice) is fine');
+    assert.equal(TC.parseWindyTides(body, 1, 2, DAY0 + 30 * 864e5).problem, 'stale-window', 'a window that misses now is stale');
+    assert.ok(!/\d\.\d/.test(TC.parseWindyTides({ data: { hours: [1.5] } }, 1, 2, DAY0).signature), 'the error report carries no values');
+    // micro-tides: a 2 cm wiggle is dropped
+    const w = TC.dropTinyWiggles([{ t: 0, type: 'high', h: 1 }, { t: 1, type: 'low', h: 0.99 }, { t: 2, type: 'high', h: 1.01 }, { t: 6, type: 'low', h: 0.2 }]);
+    assert.deepEqual(w.map(e => e.type), ['high', 'low']);
+    // the saved day: highs and lows in it, plus the one before (estimated before the window starts) and after
+    const hl = TC.highsAndLows(r.snapshot.extremes, DAY0 + 1 * H, DAY0 + 25 * H);
+    assert.equal(hl.highs[0], DAY0 + 3.3 * H); assert.ok(hl.lows[0] < DAY0 + 1 * H, 'an estimated low before the first high');
+    assert.equal(hl.highs.length + hl.lows.length, 6); assert.equal(hl.highsM.length, hl.highs.length);
+    // and the learning reads it: at 4:00 the tide is falling from the 3:18 high
+    assert.deepEqual(P.tideAt(hl, DAY0 + 4 * H), { tide: 'High', move: 'Falling' });
+    ok('tide answer: Windy\'s shape is read strictly, micro-tides cleaned, odd answers reported without values; the saved day covers every hour');
 }
 console.log(`${n} learning checks passed`);

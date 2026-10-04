@@ -274,6 +274,7 @@
                     <button class="link danger" on:click={ clearAll }>{ armed === 'all' ? W.deleteAllArmed : W.deleteAll }</button>
                 </div>
             </div>
+            <small class="muted credits">{ W.tideCredits }</small>
             <div class="sig">
                 <PixelStar size={ 14 } />
                 <small class="ver">{ fill(W.version, { v: version }) }</small>
@@ -418,7 +419,8 @@
         badgeNote={ guessNote(spotGuess) }
         badgeBg={ guessCol(spotGuess?.level ?? 0)[0] }
         badgeFg={ guessCol(spotGuess?.level ?? 0)[1] }
-        tide={ spotOutlook?.tide ? tideList(spotOutlook.tide) : '' }
+        tide={ spotOutlook?.tide?.day && (spotOutlook.tide.day.highs.length || spotOutlook.tide.day.lows.length) ? tideList(spotOutlook.tide.day) : '' }
+        tidePremium={ spotOutlook?.tide?.needsPremium ? fill(W.tidePremium) : '' }
     />
 
     {#if spotModels.length > 1}
@@ -823,7 +825,8 @@
     import { load, save, exportJson, importJson, uid, emptyData, normalise, mergeData, storageKey, useWindyUser } from './lib/storage';
     import { waveValueAt, modelValueAt, conditionsNow, hoursToday, hoursBetween, predictability, tideToday, trimWaves, captureDay, seriesAt, covers, availableModels, ALL_MODELS } from './lib/forecast';
     import { cloudAvailable, pull, push } from './lib/cloud';
-    import { FEEDBACK_URL } from './lib/links';
+    import { FEEDBACK_URL, TIDE_REPORT_URL } from './lib/links';
+    import { configureTides } from './lib/tides/tides';
     import { FONT_CSS } from './lib/fonts';
     import { THEME, THEME_CSS, themeCss, guessColours, lightsUp, sessionMarkStyle } from './lib/theme';
     import {
@@ -847,7 +850,10 @@
     import PixelStar from './ui/PixelStar.svelte';
     import Brand from './ui/Brand.svelte';
     import WindArrow from './ui/WindArrow.svelte';
-    import type { TideDay } from './lib/forecast';
+
+    // tide errors from Windy are reported (no coordinates, no user) once the endpoint in links.ts is set
+    configureTides({ reportUrl: TIDE_REPORT_URL, pluginVersion: config.version });
+    import type { TideDay, TideResult } from './lib/forecast';
     import type { Result, DayBest, Hour, SportModel, RangeRow, Feature } from './lib/predict';
     import type { WindyAuth } from './lib/cloud';
 
@@ -1130,7 +1136,7 @@
     let f: LogForm | null = null;
     let trackError = '';
     /** the next days per spot (the spot's model, hour by hour), Windy's predictability per day and today's tides */
-    type Outlook = { hours: Hour[]; pred: Record<string, number>; tide: TideDay | null };
+    type Outlook = { hours: Hour[]; pred: Record<string, number>; tide: TideResult };
     let outlookBySpot: Record<string, Outlook | 'loading'> = {};
     /** adjusting "What works here" for one sport: the inputs, in your units */
     let editSport: string | null = null;
@@ -2987,6 +2993,7 @@
     .step { display: flex; gap: 12px; align-items: flex-start; b { font-size: 14px; } small { line-height: 1.45; font-size: 12.5px; } }
     .n { width: 24px; height: 24px; flex-shrink: 0; border-radius: 12px; border: 1px solid @outline; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: @sub; }
     .data-links { gap: 18px; .link { font-size: 13px; padding: 2px 0; } }
+    .credits { display: block; text-align: center; font-size: 11px; line-height: 1.45; padding: 4px 10px 0; }
     .sig { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0 4px; .coffee { margin-top: 6px; } }
     .data-links { flex-wrap: wrap; }
     /* one forecast per spot: saving another asks before replacing */

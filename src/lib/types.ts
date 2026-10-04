@@ -75,7 +75,7 @@ export interface DaySeries {
         swell1: (number | null)[]; swell1Period: (number | null)[]; swell1Dir: (number | null)[];
     } | null;
     /** high and low tide times around the saved day, when Windy has a tide forecast there */
-    tide?: { highs: number[]; lows: number[] };
+    tide?: { highs: number[]; lows: number[]; highsM?: number[]; lowsM?: number[] };
 }
 
 export interface Track {
