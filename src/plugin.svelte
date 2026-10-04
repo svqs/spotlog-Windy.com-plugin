@@ -456,7 +456,7 @@
         {:else}
             <div class="row start">
                 <span class="arrows">
-                    {#each spot.dirs as d}<span class="arrow o" style="transform: rotate({ DIRS.indexOf(d) * 45 + 180 }deg)">▲</span>{/each}
+                    {#each spot.dirs as d}<span class="arrow o"><WindArrow from={ DIRS.indexOf(d) * 45 } size={ 18 } /></span>{/each}
                 </span>
                 <span class="grow"><b>{ fill(W.works, { dirs: dirsLabel(spot.dirs), min: fmtWind0(spot.min, S.wind), max: fmtWind0(spot.max, S.wind), unit: windLabel(S.wind) }) }</b></span>
                 <button class="link" on:click={ () => spot && editSpot(spot) }>{ W.edit }</button>
@@ -846,6 +846,7 @@
     import Icon from './ui/Icon.svelte';
     import PixelStar from './ui/PixelStar.svelte';
     import Brand from './ui/Brand.svelte';
+    import WindArrow from './ui/WindArrow.svelte';
     import type { TideDay } from './lib/forecast';
     import type { Result, DayBest, Hour, SportModel, RangeRow, Feature } from './lib/predict';
     import type { WindyAuth } from './lib/cloud';
@@ -3118,7 +3119,7 @@
     .dir { height: 50px; border-radius: var(--sl-radiusButton, 12px); border: 1px solid var(--sl-chipLine, #5a5a5a); color: var(--sl-chipText, #f8f8f8) !important; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px;
         &.on { background: var(--sl-chipOnBg, #f8f8f8); color: var(--sl-chipOnText, #1c1c1c) !important; border-color: var(--sl-chipOnBg, #f8f8f8); } }
     .stepper { display: flex; align-items: center; gap: 4px; small { margin-right: 2px; } .round { width: 34px; height: 34px; } }
-    .arrow { display: inline-block; font-size: 11px; line-height: 1; &.o { color: @orange; font-size: 16px; margin-right: 2px; } }
+    .arrow { display: inline-block; font-size: 11px; line-height: 1; &.o { display: inline-flex; color: @orange; margin-right: 2px; } }
     .arrows { display: flex; }
     .suggest { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: calc(var(--sl-radiusButton, 12px) + 2px); background: var(--sl-lightBg, #f8f8f8); color: var(--sl-lightText, #1c1c1c); small { color: var(--sl-lightSub, #6b6b6b); } }
     .section { display: flex; flex-direction: column; gap: 8px; }
