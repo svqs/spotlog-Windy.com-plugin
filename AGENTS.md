@@ -8,9 +8,10 @@ Read this page first, then the doc in `docs/` that matches your task.
 A session diary inside Windy for wind and wave sports:
 
 1. You **save the forecast** before you go out. Spotlog keeps the next 24 hours from every model that covers the place, plus waves and tides.
-2. You **log the session** afterwards: rating 1–5, how strong the wind felt, gear, an optional GPS track.
-3. Spotlog **learns, per spot and sport, what works for you**. It then rates today and the next days ("Great for windsurf"),
-   ranks which forecast model to trust at each spot, and lights up spots on the map.
+2. You **log the session** afterwards: when, rating 1–5, gear, an optional GPS track.
+3. Spotlog **learns, per spot and sport, what works for you** from the forecasts saved before your outings (weighted
+   similar sessions; boosted trees once a spot has lots of data). It then rates today and the next days ("Great for
+   windsurf") and lights up spots on the map.
 
 It is a client-side Svelte 4 + TypeScript plugin built with Windy's plugin template (`@windycom/plugin-devtools`).
 There is no backend of its own yet. The diary lives in the browser's `localStorage` on windy.com, and an optional sync
@@ -58,7 +59,7 @@ These rules come from the owner (Sophia, a designer at Windy). Breaking one is a
 | Every phrase exists and is used | `python3 scripts/check-words.py` |
 | Learning unit checks | `node scripts/test-predict.mjs` |
 | Svelte/TS type check | `npx -y svelte-check@3 --workspace . --threshold warning` |
-| End-to-end (52 steps, needs a server on :8765) | `python3 -m http.server 8765 &` then `python3 harness/e2e.py /tmp/shots` |
+| End-to-end (51 steps, needs a server on :8765) | `python3 -m http.server 8765 &` then `python3 harness/e2e.py /tmp/shots` |
 | Scenarios (data sizes, units, time zones, viewports, phone cross-check) | `python3 harness/scenarios.py /tmp/scen` |
 
 Playwright for Python is needed for the e2e tests and scenarios, and Chromium must be installed for it. All checks must
@@ -68,12 +69,13 @@ pass before a commit. `docs/testing.md` explains each one and what to do when on
 
 ```
 src/plugin.svelte      the whole app: screens, navigation, map, actions (big; see docs/architecture.md for its anatomy)
-src/ui/*.svelte        small components: SnapCard, FeltSlider, TimeWheel, SwipeRow, Calendar, Settings, Icon, Brand, PixelStar
-src/lib/predict.ts     the learning: what works per spot and sport, the rating guess, best windows   → docs/learning.md
+src/ui/*.svelte        small components: SnapCard, TimeWheel, SwipeRow, Calendar, Settings, Icon, Brand, PixelStar
+src/lib/predict.ts     the recommendation's public face; the engine is in src/lib/learn/ (config, features,
+                       examples, similar, trees, model, windows, ranges, tide)                     → docs/learning.md
 src/lib/forecast.ts    Windy forecast fetching, whole-day snapshots, models per region, tides         → docs/forecast.md
 src/lib/storage.ts     load / save / validate / merge / import / export                               → docs/data-model.md
 src/lib/types.ts       the data model
-src/lib/wind.ts        directions, colours, sports, gear presets, model ranking (which forecast to trust)
+src/lib/wind.ts        directions, colours, sports, gear presets, date formats
 src/lib/units.ts       unit conversion and formatting
 src/lib/copy.ts        every phrase (grouped by screen)                                              → docs/ui-and-copy.md
 src/lib/theme.ts       every colour, shape and map mark (Style Lab tokens)
@@ -116,7 +118,9 @@ docs/specifications/   proposed behavior and implementation plans (index: docs/s
 - Lint forbids shadowing. Watch out for names like `name`, `spot`, `f` and `data`, which already exist in the outer scope.
 - Windy's global CSS leaks into the pane. The plugin's classes are Svelte-scoped, but generic properties can still be
   inherited. Check the real look in Windy.
-- The e2e felt-ruler drag needs the ruler centred on screen (the sticky Save bar can cover it).
+- New sessions need a start time (Save stays disabled). Tests set one with `set_start(pg)` in e2e.py and scenarios.py.
+- Every number of the recommendation lives in `src/lib/learn/config.ts`. Change it there, bump `ALGORITHM_VERSION`,
+  and explain it in the commit.
 - Don't run `pkill` inside chained shell commands in this environment. Start the test server with
   `(curl -s localhost:8765 >/dev/null || (python3 -m http.server 8765 >/dev/null 2>&1 &))`.
 - Parts that are **unverified in real Windy** (they're experimental and fail quietly):

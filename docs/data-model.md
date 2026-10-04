@@ -14,12 +14,15 @@
 ```ts
 SpotlogData {
   version: 1,
-  spots:     Spot[]       // id, name, lat, lon, place?, sports[], dirs[] (wind FROM), min/max (m/s), windUnknown?, created,
+  spots:     Spot[]       // id, name, lat, lon, place?, sports[], dirs[] (forecast wind FROM), min/max (forecast m/s), windUnknown?, created,
+                          // windowConfirmed? (you changed or confirmed the window; a preset counts less),
+                          // recommendationModel? (fallback when ECMWF has no forecast here; unset = ECMWF),
                           // ranges?: { [sport]: { [condition]: { lo?, hi?, dirs? } } }  (your own ranges, from Adjust)
                           // startOwn? (legacy, no UI)
   snapshots: Snapshot[]   // id, spotId|null, lat, lon, ts (focus), savedAt, primary, models: ModelValue[], waves, note?,
                           // series?: { ts[], models: {[m]: {wind[], gust[], dir[], temp[], rain?[]}}, waves|null, tide?: {highs[], lows[]} }
-  sessions:  Session[]    // id, spotId|null, lat?, lon?, snapshotId|null, date, rating 1–5, felt (m/s)|null, gusts, water,
+  sessions:  Session[]    // id, spotId|null, lat?, lon?, snapshotId|null, date (= start instant), rating 1–5,
+                          // felt|null, gusts, water (legacy: read-only, kept; new sessions save null),
                           // checked? (Not worth it, didn't go), sport?, tide?/tideMove? (legacy, hand-logged),
                           // gearIds[], gear (free text), start/end "HH:MM", notes, track?, tz
   gear:      Gear[]       // id, name, kind, sport?
@@ -81,6 +84,8 @@ A broken document loads as an empty diary (the welcome shows) instead of crashin
 | Field | Since | Now |
 |---|---|---|
 | `session.tide`, `session.tideMove` | 0.12 | Only read when the saved forecast has no tides. The UI never asks for them. |
-| `spot.startOwn` | 0.14.0 | No UI; the learning still honours it. |
+| `spot.startOwn` | 0.14.0 | No UI and no effect any more (v2 has no start rating). |
+| `session.felt`, `gusts`, `water` | ≤ 0.15 | Not asked any more (0.16). Shown read-only on the session, kept unchanged through edit, import, export and sync. Not used by the learning. |
+| `spot.windowConfirmed` absent | ≤ 0.15 | Loads as `false`: a window counts as yours once you change or confirm it. |
 | gust own ranges < 3 | 0.14.0 | Were a gust factor; skipped by the learning. |
 | snapshots without `series` | ≤ 0.2 | Single-hour snapshots; used only within 1.5 h of a session. |

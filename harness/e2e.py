@@ -20,6 +20,14 @@ def ok(msg):
     print('✓', msg, flush=True)
 
 
+def set_start(pg, hour='10'):
+    """pick a start time with the time wheel (new sessions need one)"""
+    pg.locator('.tw .field-btn').first.click()
+    pg.wait_for_selector('.tw .tw-pop')
+    pg.locator('.tw .tw-pop .col >> nth=0').locator('.it', has_text=hour).first.click()
+    pg.click('.tw .tw-pop .done')
+
+
 def stored(pg):
     return pg.evaluate("JSON.parse(localStorage.getItem('windy-plugin-spotlog:v1:u12345') || localStorage.getItem('windy-plugin-spotlog:v1') || '{}')")
 
@@ -68,7 +76,7 @@ with sync_playwright() as p:
     pg.click('.act:has-text("Add spot")')
     pg.wait_for_selector('text=Click on the map')
     pg.click('.label:has-text("Valdevaqueros")')
-    pg.wait_for_selector('text=Which wind works here?')
+    pg.wait_for_selector('text=Which forecast wind works here?')
     assert pg.input_value('.field input') == 'Valdevaqueros'
     pg.click('.dir >> nth=2')
     pg.click('.dir >> nth=3')
@@ -125,32 +133,14 @@ with sync_playwright() as p:
     ok('show on map opens a popup right away, it stays, tapping again closes it')
     shot('04-show-on-map')
 
-    # --- Log a session: rating, magnetic slider drag, gear, time wheel, GPX
+    # --- Log a session: when, rating, gear, GPX (no felt-wind ruler, gust or water chips any more)
     pg.click('.act:has-text("Log session")')
-    pg.wait_for_selector('.felt')
+    pg.wait_for_selector('.ratings')
     pg.click('.rate:has-text("epic")')
-    pg.locator('.felt').evaluate("e => e.scrollIntoView({ block: 'center' })")  # not under the sticky save bar
-    box = pg.locator('.felt').bounding_box()
-    start_v = int(pg.get_attribute('.felt', 'aria-valuenow'))
-    cx, cy = box['x'] + box['width'] / 2, box['y'] + 36
-    pg.mouse.move(cx, cy)
-    pg.mouse.down()
-    for i in range(1, 11):  # slow drag of the whole ruler to the right = lighter wind (2.3 ticks)
-        pg.mouse.move(cx + i * 3.7, cy)
-        pg.wait_for_timeout(25)
-    pg.wait_for_timeout(120)
-    pg.mouse.up()
-    pg.wait_for_timeout(450)
-    felt = int(pg.get_attribute('.felt', 'aria-valuenow'))
-    assert felt == start_v - 2, (start_v, felt)
-    ok(f'felt ruler drags with the mouse and snaps to a whole value ({start_v} -> {felt} m/s)')
-    pg.locator('.felt').focus()
-    pg.keyboard.press('ArrowRight')
-    assert int(pg.get_attribute('.felt', 'aria-valuenow')) == felt + 1
-    pg.keyboard.press('ArrowLeft')
-    ok('felt ruler works with arrow keys')
-    pg.click('.chip:has-text("Gusty") >> nth=0')
-    pg.click('.chip:has-text("Chop")')
+    assert pg.locator('.felt').count() == 0 and pg.locator('.chip:has-text("Gusty")').count() == 0 and pg.locator('.chip:has-text("Chop")').count() == 0
+    assert pg.locator('.btn:has-text("Save session")').is_disabled(), 'a new session needs its start time'
+    pg.wait_for_selector('text=Add when you started')
+    ok('log form: when, rating, gear, track and notes; Save waits for the start time')
     assert pg.locator('.chip:has-text("Rising")').count() == 0  # no tide to log: it comes from the forecast
     pg.fill('input[placeholder^="e.g. Sail"]', 'Sail 5.3')
     pg.click('text=Save to gear')
@@ -161,7 +151,8 @@ with sync_playwright() as p:
     pg.wait_for_selector('.mock-line polyline')
     start_txt = pg.locator('.tw .field-btn >> nth=0').inner_text()
     assert pg.locator('.mock-line [stroke="#ff3d8b"]').count() >= 1, 'route is not the thin pink line'
-    ok(f'GPX track attached, drawn on map as a thin pink line, start time filled ({start_txt})')
+    assert pg.locator('.btn:has-text("Save session")').is_enabled()
+    ok(f'GPX track attached, drawn on map as a thin pink line, start time filled ({start_txt}), Save ready')
     shot('05-log-track')
     # time wheel: open end time and pick a value by clicking an hour
     pg.click('.tw .field-btn >> nth=1')
@@ -180,26 +171,15 @@ with sync_playwright() as p:
         use.click()
     pg.wait_for_selector('.snap:has-text("Forecast for your session time")', timeout=8000)
     ok('snapshot card follows the session time')
-    # a normal mouse-wheel scroll over the ruler scrolls the panel instead of getting stuck
-    pg.locator('.felt').scroll_into_view_if_needed()
-    fb = pg.locator('.felt').bounding_box()
-    before_scroll = pane.evaluate('el => el.scrollTop')
-    felt_before = pg.get_attribute('.felt', 'aria-valuenow')
-    pg.mouse.move(fb['x'] + fb['width'] / 2, fb['y'] + 30)
-    pg.mouse.wheel(0, 300)
-    pg.wait_for_timeout(300)
-    assert pane.evaluate('el => el.scrollTop') > before_scroll, 'panel did not scroll over the ruler'
-    assert pg.get_attribute('.felt', 'aria-valuenow') == felt_before
-    ok('scrolling over the ruler scrolls the page')
     pg.fill('textarea', 'Gusty inside until 3 pm, then clean.')
     bottom()
     pg.click('text=Save session')
     pg.wait_for_selector('text=Sessions here')
     se = stored(pg)['sessions'][0]
-    assert se['rating'] == 5 and se['track'] and se['gearIds'], se
+    assert se['rating'] == 5 and se['track'] and se['gearIds'] and se['felt'] is None and se['gusts'] is None and se['water'] is None, se
     sn = next(x for x in stored(pg)['snapshots'] if x['id'] == se['snapshotId'])
     assert sn['series'].get('tide', {}).get('highs'), 'tides saved with the day'
-    ok('session saved with rating, felt, gear and track; the tide is saved with the forecast')
+    ok('session saved with rating, gear and track (no felt wind, gusts or water); the tide is saved with the forecast')
     pg.wait_for_selector('.reco .reco-row:has-text("Today")')
     pg.wait_for_function("document.querySelectorAll('.reco .reco-row').length >= 3", timeout=10000)
     reco = pg.locator('.reco').inner_text().replace('\n', ' ')
@@ -336,7 +316,7 @@ with sync_playwright() as p:
     pg.wait_for_selector('.opt:has-text("Your last saved forecast")')
     shot('09b-log-pick')
     pg.click('.opt:has-text("Your last saved forecast")')
-    pg.wait_for_selector('.felt')
+    pg.wait_for_selector('.ratings')
     ok('log session: "Your last saved forecast" opens the log with that forecast')
     top()
     pg.click('button[aria-label="Back"]')
@@ -350,6 +330,7 @@ with sync_playwright() as p:
     pg.click('.opt:has-text("Without a place")')
     pg.wait_for_selector('text=No spot yet')
     pg.click('.rate:has-text("meh")')
+    set_start(pg)
     bottom()
     pg.click('text=Save session')
     pg.wait_for_selector('.tabs button.on:has-text("Sessions")')
@@ -501,7 +482,8 @@ with sync_playwright() as p:
     h0 = pg.locator('.spotlog-heat').count()
     assert h0 >= 1, h0
     pg.click('.act:has-text("Log session")')
-    pg.wait_for_selector('.felt')
+    pg.wait_for_selector('.ratings')
+    set_start(pg)
     bottom()
     pg.click('text=Save session')
     pg.wait_for_function(f"document.querySelectorAll('.spotlog-heat').length > {h0}")
@@ -574,16 +556,13 @@ with sync_playwright() as p:
     pg.click('.mock-popup .sl-nav button[data-act="next"]')
     pg.wait_for_function(f"document.querySelector('.mock-popup .sl-h b') && document.querySelector('.mock-popup .sl-h b').textContent !== {first!r}", timeout=5000)
     pg.click('.mock-popup .sl-acts button:has-text("Log session")')
-    pg.wait_for_selector('.mwrap.open .felt', timeout=5000)
+    pg.wait_for_selector('.mwrap.open .ratings', timeout=5000)
     ok('phone: spot card on the map, next spot, Log session opens in the panel')
     # Log session on a phone: date, start and end on one line; the header stays put; nothing scrolls sideways
     pg.wait_for_timeout(300)
     tops = pg.evaluate("[...document.querySelectorAll('.mwrap.open .when.one > input, .mwrap.open .when.one .field-btn')].map(e => Math.round(e.getBoundingClientRect().top))")
     assert len(tops) == 3 and max(tops) - min(tops) <= 2, tops
     assert pg.locator('.mgrab').count() == 0, 'no drag line'
-    # the felt knob sits fully inside the ruler
-    kn = pg.evaluate("(() => { const k = document.querySelector('.mwrap.open .felt .knob').getBoundingClientRect(); const f = document.querySelector('.mwrap.open .felt').getBoundingClientRect(); return [k.top - 4 - f.top, k.height]; })()")
-    assert kn[0] >= 0, kn
     pg.click('.mwrap.open .times .tw:last-child .field-btn')
     pg.wait_for_selector('.mwrap.open .tw-pop.end')
     pop = pg.evaluate("(() => { const p = document.querySelector('.mwrap.open .tw-pop').getBoundingClientRect(); const w = document.querySelector('.mwrap.open').getBoundingClientRect(); return [p.left - w.left, w.right - p.right]; })()")
@@ -597,7 +576,7 @@ with sync_playwright() as p:
     tb = pg.evaluate("(() => { const t = document.querySelector('.mwrap.open .topbar').getBoundingClientRect(); const w = document.querySelector('.mwrap.open').getBoundingClientRect(); return t.top - w.top; })()")
     assert abs(tb) < 2, tb
     shot('14e-phone-log-scrolled')
-    ok('phone log: date/start/end on one line, header stays, no sideways scroll, knob not cut')
+    ok('phone log: date/start/end on one line, header stays, no sideways scroll, no felt ruler any more')
     # the ✕ in the header closes the panel
     pg.click('.mwrap.open .topbar .mclose')
     pg.wait_for_timeout(250)
@@ -649,7 +628,7 @@ with sync_playwright() as p:
     tp.tap('.mact:has-text("Log session")')
     tp.wait_for_selector('.mwrap.open .section .opt')
     tp.locator('.mwrap.open .section .opt').first.tap()
-    tp.wait_for_selector('.mwrap.open .felt', timeout=8000)
+    tp.wait_for_selector('.mwrap.open .ratings', timeout=8000)
     tp.wait_for_timeout(400)
     title = lambda: tp.locator('.mwrap.open .topbar .title').inner_text()
     t0 = title()
@@ -672,10 +651,12 @@ with sync_playwright() as p:
     tap_type(notes, 'Clean and steady', 'notes')
     tap_type(gear, ' mast', 'gear field again')
     # chips and the rating still react to a tap after typing, and the page stays
-    tp.locator('.mwrap.open .chip:has-text("Gusty")').first.tap()
+    tp.locator('.mwrap.open .chip.notworth').first.tap()
+    tp.wait_for_timeout(200)
+    assert tp.locator('.mwrap.open .chip.notworth.on').count() == 1
     tp.locator('.mwrap.open .rate').nth(3).tap()
     tp.wait_for_timeout(200)
-    assert tp.locator('.mwrap.open .chip.on:has-text("Gusty")').count() == 1 and tp.locator('.mwrap.open .rate.on').count() == 1
+    assert tp.locator('.mwrap.open .chip.notworth.on').count() == 0 and tp.locator('.mwrap.open .rate.on').count() == 1
     assert title() == t0
     tp.screenshot(path=f'{OUT}/14g-phone-tap-type.png')
     # typing a new spot's name

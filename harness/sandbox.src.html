@@ -117,7 +117,7 @@
 { // sandbox scope: keeps these names apart from the plugin bundle
 
 const SB_KEY = 'windy-plugin-spotlog:v1:u12345'; // the mock Windy user's diary
-const SEED = 'spotlog-sandbox-seed-v5';
+const SEED = 'spotlog-sandbox-seed-v6';
 const NAME = 'windy-plugin-spotlog';
 const { project, unproject, singleclick, store, PLACES } = W.__mock;
 const mapEl = document.getElementById('map');
@@ -127,8 +127,20 @@ window.confirm = () => true; // the viewer blocks dialogs; the sandbox just goes
 function exampleData() {
   const day = 864e5, today = new Date(); today.setHours(0, 0, 0, 0);
   const t = (d, h) => +today - d * day + h * 3600e3;
+  // a saved day: the forecast from 8 hours before the session time, hourly for 24 hours, saved before the day started
+  const H = 3600e3;
+  const series = (ts, w, dir) => {
+    const hours = Array.from({ length: 25 }, (_, i) => ts - 8 * H + i * H);
+    const at = (k) => hours.map((h, i) => +(k * (w + 1.2 * Math.sin((i - 8) / 4))).toFixed(1));
+    const same = (v) => hours.map(() => v);
+    return {
+      ts: hours,
+      models: Object.fromEntries([['ecmwf', 1, 0], ['gfs', 0.87, -6], ['icon', 1.07, 4], ['iconEu', 1.03, -2]].map(([m, k, d]) => [m, { wind: at(k), gust: at(k * 1.35), dir: same(dir + d), temp: same(23), rain: same(0) }])),
+      waves: { model: 'ecmwfWaves', waves: same(0.7), wavesPeriod: same(6), wavesPower: same(1.3), wavesDir: same(95), swell1: same(0.4), swell1Period: same(8), swell1Dir: same(250) },
+    };
+  };
   const snap = (id, spotId, lat, lon, ts, w, dir = 104) => ({
-    id, spotId, lat, lon, ts, savedAt: ts - 7 * 3600e3, primary: 'ecmwf',
+    id, spotId, lat, lon, ts, savedAt: ts - 9 * H, primary: 'ecmwf', series: series(ts, w, dir),
     models: [
       { model: 'ecmwf', ts, wind: w, gust: +(w * 1.35).toFixed(1), dir, temp: 23 },
       { model: 'gfs', ts, wind: +(w - 1.6).toFixed(1), gust: +((w - 1.6) * 1.3).toFixed(1), dir: dir - 6, temp: 22 },
@@ -167,7 +179,7 @@ function exampleData() {
   return {
     version: 1,
     spots: [
-      { id: 'ex-valde', name: 'Valdevaqueros', place: 'Tarifa', lat: 36.068, lon: -5.697, sports: ['Windsurf'], dirs: ['E', 'SE'], min: 8, max: 13, created: t(40, 9) },
+      { id: 'ex-valde', name: 'Valdevaqueros', place: 'Tarifa', lat: 36.068, lon: -5.697, sports: ['Windsurf'], dirs: ['E', 'SE'], min: 8, max: 13, windowConfirmed: true, created: t(40, 9) },
       { id: 'ex-bolonia', name: 'Bolonia', place: 'Tarifa', lat: 36.089, lon: -5.772, sports: ['Surf', 'Windsurf'], dirs: [], min: 6, max: 12, windUnknown: true, created: t(30, 9) },
     ],
     snapshots: [
@@ -186,12 +198,12 @@ function exampleData() {
       { id: 'ex-g5', name: "9'2 longboard", kind: 'Board', sport: 'Surf' },
     ],
     sessions: [
-      { id: 'ex-x1', spotId: 'ex-valde', snapshotId: 'ex-s1', date: t(1, 14.5), rating: 4, felt: 9, gusts: 'Gusty', water: 'Chop', gearIds: ['ex-g1', 'ex-g2'], gear: '', start: '14:30', end: '17:05', notes: 'Gusty inside until 3 pm, then clean.', track },
-      { id: 'ex-x2', spotId: 'ex-valde', snapshotId: 'ex-s2', date: t(4, 13), rating: 5, felt: 10, gusts: 'Steady', water: 'Chop', gearIds: ['ex-g1', 'ex-g3'], gear: '', start: '13:00', end: '16:00', notes: 'Clean and steady, mid tide.' },
-      { id: 'ex-x3', spotId: 'ex-valde', snapshotId: 'ex-s3', date: t(9, 14), rating: 2, felt: 10, gusts: 'Very gusty', water: 'Waves', gearIds: ['ex-g3'], gear: '', start: '14:00', end: '15:00', notes: 'Too gusty, went in early.' },
+      { id: 'ex-x1', spotId: 'ex-valde', snapshotId: 'ex-s1', date: t(1, 14.5), rating: 4, felt: null, gusts: null, water: null, gearIds: ['ex-g1', 'ex-g2'], gear: '', start: '14:30', end: '17:05', notes: 'Gusty inside until 3 pm, then clean.', track },
+      { id: 'ex-x2', spotId: 'ex-valde', snapshotId: 'ex-s2', date: t(4, 13), rating: 5, felt: null, gusts: null, water: null, gearIds: ['ex-g1', 'ex-g3'], gear: '', start: '13:00', end: '16:00', notes: 'Clean and steady, mid tide.' },
+      { id: 'ex-x3', spotId: 'ex-valde', snapshotId: 'ex-s3', date: t(9, 14), rating: 2, felt: null, gusts: null, water: null, gearIds: ['ex-g3'], gear: '', start: '14:00', end: '15:00', notes: 'Too gusty, went in early.' },
       { id: 'ex-x4', spotId: 'ex-valde', snapshotId: 'ex-s4', date: t(15, 15), rating: 3, felt: 8, gusts: 'Steady', water: 'Flat', gearIds: ['ex-g2'], gear: '', start: '15:00', end: '17:30', notes: 'A bit light but fun.' },
-      { id: 'ex-x5', spotId: 'ex-bolonia', snapshotId: 'ex-s5', date: t(6, 10), rating: 4, felt: 6, gusts: null, water: 'Waves', gearIds: ['ex-g4'], gear: 'Longboard 9\'2', start: '10:00', end: '12:00', notes: 'Clean waist-high sets.' },
-      { id: 'ex-x7', spotId: 'ex-bolonia', snapshotId: 'ex-s6', date: t(12, 9), rating: 5, felt: 8, gusts: 'Steady', water: 'Waves', gearIds: ['ex-g4'], gear: '', start: '09:00', end: '11:30', notes: 'Best surf this month, offshore breeze.' },
+      { id: 'ex-x5', spotId: 'ex-bolonia', snapshotId: 'ex-s5', date: t(6, 10), rating: 4, felt: null, gusts: null, water: null, gearIds: ['ex-g4'], gear: 'Longboard 9\'2', start: '10:00', end: '12:00', notes: 'Clean waist-high sets.' },
+      { id: 'ex-x7', spotId: 'ex-bolonia', snapshotId: 'ex-s6', date: t(12, 9), rating: 5, felt: null, gusts: null, water: null, gearIds: ['ex-g4'], gear: '', start: '09:00', end: '11:30', notes: 'Best surf this month, offshore breeze.' },
       { id: 'ex-x6', spotId: null, snapshotId: null, date: t(22, 12), rating: 1, felt: null, gusts: null, water: 'Flat', gearIds: [], gear: '', start: '', end: '', notes: 'Drove to the coast, nothing. Add the spot later.' },
     ],
     settings: { wind: 'ms', height: 'm', temp: 'C', allModels: true, layers: ['temp', 'waves', 'swell1', 'wavesPeriod', 'wavesPower'] },

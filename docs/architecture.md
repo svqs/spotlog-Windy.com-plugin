@@ -22,14 +22,14 @@
 |---|---|---|
 | `src/plugin.svelte` | All screens, navigation, map drawing, actions, sync triggers, derived state | everything below |
 | `src/ui/SnapCard.svelte` | The white forecast card (tiles, model switch, badge) | units, wind |
-| `src/ui/FeltSlider.svelte` | The magnetic "it felt like" ruler (drag, keys, haptics) | haptic |
 | `src/ui/TimeWheel.svelte` | Start/end time wheels | units, haptic, copy |
 | `src/ui/SwipeRow.svelte` | Swipe-to-delete rows | copy |
 | `src/ui/Calendar.svelte` | Sessions calendar | copy |
 | `src/ui/Settings.svelte` | Units + what a forecast saves | units, forecast, wind, copy |
-| `src/lib/predict.ts` | The learning and the rating guess | wind, types |
+| `src/lib/predict.ts` | The recommendation's public face (learnSpot, background trees, wind window and gear helpers) | learn/*, wind, types |
+| `src/lib/learn/*.ts` | The recommendation engine: config, features, examples, similar sessions, trees, model, windows, ranges, tide (see docs/learning.md) | wind, types |
 | `src/lib/forecast.ts` | Windy forecast access, caching, snapshots, tides, predictability | `@windy/fetch`, `@windy/http` |
-| `src/lib/wind.ts` | Directions, sports, gear presets, wind colours, **model ranking** (`modelScores`, `trustedModel`, `forecastBias`), date formats | theme |
+| `src/lib/wind.ts` | Directions, sports, gear presets, wind colours, distance, date formats | theme |
 | `src/lib/units.ts` | Unit conversion (wind incl. Beaufort, height, temp), formatting, 12/24 h | – |
 | `src/lib/storage.ts` | localStorage key per Windy user, `normalise`, `mergeData`, import/export, tombstones | types |
 | `src/lib/cloud.ts` + `cloudConfig.ts` | Optional account sync (pull/push/remove) | types |
@@ -61,7 +61,7 @@ your way around:
 | `'spotForm'` | New/edit spot: name, sports (+ "Other…" for your own), wind window or "I don't know yet". |
 | `'spot'` | The spot page (see below). |
 | `'snap'` | A saved or previewed forecast (SnapCard), link to spot, note, save/replace. |
-| `'log'` | Log/edit a session: spot + sport, date/time, rating or "Not worth it, didn't go", felt ruler, gusts, water, gear, GPX, notes. |
+| `'log'` | Log/edit a session: spot + sport, date/time (a start is needed), rating or "Not worth it, didn't go", gear, GPX, notes. Older sessions show what they logged by hand (felt wind, gusts, water) read-only. |
 
 **The spot page, in order:**
 1. SnapCard (conditions now, model switch) and the actions.
@@ -73,8 +73,7 @@ your way around:
    - folded: one line per sport;
    - open: per sport, a table with Your range · Matters · Today, plus Adjust (your own ranges).
    Gear hints sit at the bottom of the open card.
-6. **Which forecast to trust here:** one bar per model; the closest model is full length (yellow once it has 3+ sessions).
-7. Saved forecasts, then sessions.
+6. Saved forecasts, then sessions.
 
 **Script: the state that matters**
 
@@ -82,12 +81,12 @@ your way around:
 |---|---|
 | `data: SpotlogData` | The diary. Every change goes through `persist()`: tombstones/revived stamps, `updatedAt`, the local `save()`, then a debounced account push. |
 | `view`, `hist`, `spot`, `snap`, `f` (log form), `sf` (spot form) | Navigation: `go(view)` pushes onto `hist`, and back pops it. |
-| `trustMap` | spot id → the model to use (the most accurate one with 3+ sessions, else ECMWF). From `wind.ts → trustedModel`. |
-| `modelMap` | spot id → `SportModel[]`: what spotlog learned (samples from the spot + nearby spots at half weight, the bias, the start rating). Recomputed when the diary changes. |
+| `modelFor(s)` | the spot's recommendation model: ECMWF, or a fallback chosen once and saved as `spot.recommendationModel` (`chooseFallbackModel`). |
+| `modelMap` | spot id → `SportModel[]` from `learnSpot` (examples here + outings at spots next door, your ranges, the "What works" rows, trees when trained). Recomputed when the diary changes or trees finish training (`treesReady`). |
 | `nowBySpot` | Conditions now per spot (key `id`, or `id:model` for other models), 20-minute lifetime. |
 | `dayBySpot` | Today's hours per spot (for the best stretch of today). |
 | `outlookBySpot` | 6 days of hours, Windy's predictability per day, and today's tides (spot page only). |
-| `guessOf(s)`, `bestOf(s)` | The rating now and the best stretch of today (tiles, map, card). |
+| `guessOf(s)`, `bestOf(s)` | The rating now (`Result`) and the best stretch of today (`DayBest`): tiles, map, card. |
 | `spotLearned`, `spotParts`, `spotDays`, `spotBest`, `spotTide`, `spotGear` | The spot page's derived data. |
 
 ## Data flow
@@ -99,15 +98,14 @@ Save forecast ──► forecast.captureDay(lat, lon, focusTs, primary, models, 
                     └─ tide highs/lows (experimental)
                   → Snapshot { ts, models, waves, series }
 
-Log session ────► Session { date, start/end, rating, felt, sport, … , snapshotId }
+Log session ────► Session { date (= start), start/end, rating, sport, … , snapshotId }   (felt/gusts/water: legacy, kept)
                   └─ the snapshot's focus moves to the middle of the session (series re-read, no refetch)
 
-Learning ───────► samplesFor(spot, sessions, snapshots, trustedModel) → Sample[] (forecast at the session time + rating)
-                  learnSpot(spot, samples, {bias}) → SportModel[] (ranges + importance per condition)
-                  guess(models, conditionsNow) → Guess {rating, sport, parts}
-                  bestToday / nextDays(models, hours) → DayBest (tags, When to go, map pins)
+Learning ───────► examplesFor(spot, sessions, snapshots, model) → Example[] (forecast saved BEFORE the outing, summed up
+                  over it, + rating); learnSpot → SportModel[] (examples, your ranges, "What works" rows, trees)
+                  rateBest(models, conditionsNow) → Result {score, level, sport, source, support, reasons}
+                  bestToday / nextDays(models, hours) → DayBest (two-hour windows → stretches: tags, When to go, pins)
 
-Trust ──────────► modelScores(spot, sessions, snapshots): |felt − forecast| per model → ranking, best model per spot
 ```
 
 ## Windy APIs used

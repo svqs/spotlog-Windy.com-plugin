@@ -1,5 +1,5 @@
 import { THEME } from './theme';
-import type { Dir8, Spot, Session, Snapshot } from './types';
+import type { Dir8 } from './types';
 
 export const DIRS: Dir8[] = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 /** the usual sports (your own ones are typed in under "Other…" and kept by name) */
@@ -109,59 +109,6 @@ export const distanceKm = (a: { lat: number; lon: number }, b: { lat: number; lo
     const dLon = ((b.lon - a.lon) * Math.PI) / 180;
     const x = Math.sin(dLat / 2) ** 2 + Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
     return 2 * R * Math.asin(Math.sqrt(x));
-};
-
-export interface ModelScore {
-    model: string;
-    miss: number;
-    count: number;
-}
-
-/**
- * The reality check: for every session with a "felt like" value and a saved snapshot,
- * how far off was each model on average?
- */
-export const modelScores = (spot: Spot, sessions: Session[], snapshots: Snapshot[]): ModelScore[] => {
-    const acc: Record<string, { sum: number; count: number }> = {};
-    sessions
-        .filter(s => s.spotId === spot.id && s.felt !== null && s.snapshotId)
-        .forEach(s => {
-            const snap = snapshots.find(x => x.id === s.snapshotId);
-            snap?.models.forEach(m => {
-                if (m.wind === null || s.felt === null) {
-                    return;
-                }
-                acc[m.model] = acc[m.model] || { sum: 0, count: 0 };
-                acc[m.model].sum += Math.abs(m.wind - s.felt);
-                acc[m.model].count += 1;
-            });
-        });
-    // a model needs 3+ sessions to rank first, and few sessions count a little against it
-    const rank = (x: ModelScore) => (x.count >= 3 ? 0 : 1e6) + x.miss * (1 + 1 / x.count);
-    return Object.entries(acc)
-        .map(([model, v]) => ({ model, miss: v.sum / v.count, count: v.count }))
-        .sort((a, b) => rank(a) - rank(b));
-};
-
-/** The model to use at a spot: the most accurate one there once it has 3+ sessions with "felt like", else ECMWF */
-export const trustedModel = (spot: Spot, sessions: Session[], snapshots: Snapshot[]): string => {
-    const best = modelScores(spot, sessions, snapshots)[0];
-    return best && best.count >= 3 ? best.model : 'ecmwf';
-};
-
-/** Average of felt minus forecast (primary model) — negative means it usually feels lighter */
-export const forecastBias = (spot: Spot, sessions: Session[], snapshots: Snapshot[]): number | null => {
-    const diffs: number[] = [];
-    sessions
-        .filter(s => s.spotId === spot.id && s.felt !== null && s.snapshotId)
-        .forEach(s => {
-            const snap = snapshots.find(x => x.id === s.snapshotId);
-            const primary = snap?.models.find(m => m.model === snap.primary) || snap?.models[0];
-            if (primary && primary.wind !== null && s.felt !== null) {
-                diffs.push(s.felt - primary.wind);
-            }
-        });
-    return diffs.length ? diffs.reduce((a, b) => a + b, 0) / diffs.length : null;
 };
 
 export const fmtDay = (ts: number): string =>

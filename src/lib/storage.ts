@@ -79,6 +79,9 @@ const cleanSpot = (s: Any) => {
         dirs: ids(s.dirs).filter(d => DIR8.includes(d)),
         min: numOr(s.min, 6), max: numOr(s.max, 12), windUnknown: !!s.windUnknown, created: numOr(s.created, Date.now()),
         ...(isObj(s.ranges) ? { ranges: cleanRanges(s.ranges) } : {}), ...(s.startOwn === true ? { startOwn: true } : {}),
+        // the wind window counts as yours only once you changed or confirmed it (older spots: not yet)
+        windowConfirmed: s.windowConfirmed === true,
+        ...(typeof s.recommendationModel === 'string' && /^[A-Za-z0-9]{2,30}$/.test(s.recommendationModel) ? { recommendationModel: s.recommendationModel } : {}),
     };
 };
 const cleanSnap = (s: Any) => {

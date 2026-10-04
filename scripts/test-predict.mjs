@@ -16,95 +16,240 @@ try {
 writeFileSync(path.join(out, 'package.json'), '{"type":"commonjs"}');
 const require = createRequire(path.join(out, 'x.js'));
 const P = require('./predict.js');
+const F = require('./learn/features.js');
+const S = require('./learn/similar.js');
+const T = require('./learn/trees.js');
 
-const spot = { id: 's', name: 'Spot', lat: 0, lon: 0, sports: ['Windsurf'], dirs: ['W', 'SW'], min: 6, max: 12, created: 0 };
-const c = (wind, dir, gust = null, waves = null, extra = {}) => ({ wind, dir, gust, waves, ...extra });
-const smp = (wind, dir, rating, gust = null, waves = null, sport = 'Windsurf', extra = {}) => ({ ...c(wind, dir, gust, waves, extra), rating, sport, weight: 1, gearIds: [], tide: null, tideMove: null });
-const learn = (samples, s = spot) => P.learnSpot(s, samples);
-const lvl = g => P.shownLevel(g?.rating ?? null);
+
+/* ---------- builders: a spot, a saved day of forecast, a session (all in UTC so clocks are plain) ---------- */
+const H = 3600e3;
+const DAY0 = Date.UTC(2026, 6, 1);
+const spot = (o = {}) => ({ id: 's', name: 'Spot', lat: 0, lon: 0, sports: ['Windsurf'], dirs: ['W', 'SW'], min: 6, max: 12, created: 0, ...o });
+let ids = 0;
+/** a saved day: 25 hourly points from `from`, values from f(hourIndex) */
+function day(from, f, o = {}) {
+    const ts = Array.from({ length: 25 }, (_, i) => from + i * H);
+    const v = ts.map((_, i) => ({ wind: 8, gust: 11, dir: 260, temp: 20, rain: 0, waves: 0.8, period: 6, swell: null, ...f(i) }));
+    const col = k => v.map(x => x[k]);
+    return {
+        id: 'sn' + ++ids, spotId: o.spotId ?? 's', lat: 0, lon: 0, ts: from, savedAt: o.savedAt ?? from - H, primary: 'ecmwf', models: [],
+        waves: null,
+        series: { ts, models: { ecmwf: { wind: col('wind'), gust: col('gust'), dir: col('dir'), temp: col('temp'), rain: col('rain') } },
+            waves: { model: 'ecmwfWaves', waves: col('waves'), wavesPeriod: col('period'), wavesPower: col('waves').map(() => null), wavesDir: col('dir'), swell1: col('swell'), swell1Period: col('swell').map(x => (x ? 11 : null)), swell1Dir: col('swell').map(x => (x ? 280 : null)) } },
+    };
+}
+const clock = ts => new Date(ts).toISOString().slice(11, 16);
+/** a session from `start` for `hours`, rated `rating`, on a saved day */
+const session = (sn, start, hours, rating, o = {}) => ({
+    id: 'se' + ++ids, spotId: 's', snapshotId: sn.id, date: start, rating, felt: null, gusts: null, water: null, gear: '', gearIds: [], notes: '',
+    start: clock(start), end: hours ? clock(start + hours * H) : '', tz: 'UTC', ...o,
+});
+/** n outings on n different days at wind w (± a little), direction d, rated r */
+function outings(n, w, d, r, o = {}) {
+    const snaps = [];
+    const sessions = [];
+    for (let k = 0; k < n; k++) {
+        const t0 = DAY0 + (o.day0 ?? 0) * 864e5 + k * 864e5;
+        const sn = day(t0, () => ({ wind: w + (k % 3) * 0.3, dir: d, ...(o.values || {}) }), { spotId: o.spotId });
+        snaps.push(sn);
+        sessions.push(session(sn, t0 + 12 * H, 2, typeof r === 'function' ? r(k) : r, { spotId: o.spotId ?? 's', sport: o.sport }));
+    }
+    return { snaps, sessions };
+}
+const learn = (sp, data, spots = [sp]) => P.learnSpot(sp, spots, data.sessions, data.snaps);
+const x = (wind, dir, more = {}) => ({ wind, dir, gust: wind * 1.3, waves: 0.8, temp: 20, rain: 0, ...more });
+const rateOf = (models, f) => P.rate(models[0], f);
 let n = 0;
-const ok = (m) => { n++; console.log('✓', m); };
+const ok = m => { n++; console.log('✓', m); };
 
-// 1. no sessions: the wind window is the starting guess; outside it: not sure yet
-let m = learn([]);
-assert.equal(lvl(P.guess(m, c(9, 260))), 3);
-assert.equal(lvl(P.guess(m, c(9, 90))), 0);
-assert.equal(lvl(P.guess(m, c(25, 260))), 0);
-ok('no sessions: inside the wind window "Likely good", outside "Not sure yet"');
+/* ---------- 1. examples: only a forecast saved before the outing teaches ---------- */
+{
+    const sp = spot();
+    const sn = day(DAY0, i => ({ wind: 5 + i }));
+    const before = P.exampleOf(sp, session(sn, DAY0 + 12 * H, 2, 4), [sn], 'ecmwf');
+    const late = { ...sn, id: 'late', savedAt: DAY0 + 13 * H };
+    assert.equal(P.exampleOf(sp, session(late, DAY0 + 12 * H, 2, 4), [late], 'ecmwf'), 'saved after start');
+    // the outing 12:00–14:00: hours 12, 13, 14 → median wind 18, strongest gust
+    assert.equal(before.x.wind, 18);
+    assert.equal(before.from.hours, 3);
+    // two sessions on one saved day each read their own hours
+    const other = P.exampleOf(sp, session(sn, DAY0 + 6 * H, 1, 3), [sn], 'ecmwf');
+    assert.equal(other.x.wind, 11.5);
+    ok('examples: a forecast saved after the start doesn\'t teach; a shared saved day gives each outing its own hours');
+}
+{
+    const sp = spot();
+    const sn = day(DAY0, () => ({}));
+    // overnight in UTC: 22:00 → 01:00 is 3 hours
+    const t = P.outingTimes(session(sn, DAY0 + 22 * H, 3, 4));
+    assert.equal((t.end - t.start) / H, 3);
+    // daylight saving: Prague, night of 25 Oct 2026 (clocks go back at 03:00): 01:00 → 04:00 local is 4 real hours
+    const start = Date.UTC(2026, 9, 24, 23); // 01:00 CEST
+    const dst = P.outingTimes({ ...session(sn, start, 0, 4), start: '01:00', end: '04:00', tz: 'Europe/Prague' });
+    assert.equal((dst.end - dst.start) / H, 4);
+    // start only: the nearest hour, marked limited
+    const one = P.exampleOf(sp, { ...session(sn, DAY0 + 12 * H, 0, 4), end: '' }, [sn], 'ecmwf');
+    assert.equal(one.from.limited, true);
+    ok('outing times: overnight, a daylight-saving night, start-only sessions marked limited');
+}
+{
+    const sp = spot();
+    const sn = day(DAY0, () => ({}));
+    const gappy = { ...sn, id: 'gappy', series: { ...sn.series, ts: sn.series.ts.map((t, i) => (i >= 13 ? t + 2 * H : t)) } };
+    assert.equal(P.exampleOf(sp, session(gappy, DAY0 + 12 * H, 3, 4), [gappy], 'ecmwf'), 'gap');
+    const surf = spot({ sports: ['Surf'] });
+    const noSwell = day(DAY0, () => ({ waves: null, period: null }));
+    assert.equal(P.exampleOf(surf, session(noSwell, DAY0 + 12 * H, 2, 4), [noSwell], 'ecmwf'), 'missing core');
+    // an old single-hour save (no saved day) still teaches when saved for the start, marked limited
+    const old = { id: 'old', spotId: 's', lat: 0, lon: 0, ts: DAY0 + 12 * H, savedAt: DAY0 + 10 * H, primary: 'ecmwf', models: [{ model: 'ecmwf', ts: DAY0 + 12 * H, wind: 9, gust: 12, dir: 250, temp: 20 }], waves: null };
+    const e = P.exampleOf(sp, session(old, DAY0 + 12 * H, 2, 4), [old], 'ecmwf');
+    assert.equal(e.x.wind, 9); assert.equal(e.from.limited, true);
+    assert.equal(P.exampleOf(sp, session(sn, DAY0 + 12 * H, 2, 4), [sn], 'gfs'), 'model missing');
+    ok('examples: a forecast gap or missing surf data excludes; an old single-hour save counts as limited');
+}
 
-// 2. ranges are learned from great sessions
-const hist = [smp(9, 265, 5, 11, 0.6), smp(11, 250, 5, 14, 0.8), smp(10, 275, 4, 13, 0.7), smp(13, 270, 2, 20, 1.8), smp(10, 90, 1, 13, 0.5), smp(5, 260, 2, 7, 0.3)];
-m = learn(hist);
-const wind = m[0].params.find(p => p.key === 'wind');
-assert.equal(wind.from, 'sessions'); assert.ok(wind.lo > 7.5 && wind.hi < 13, wind);
-ok(`wind range learned from the great sessions: ${wind.lo.toFixed(1)}–${wind.hi.toFixed(1)} m/s`);
+/* ---------- 2. similar sessions: no evidence, your window, poor and mixed outcomes ---------- */
+{
+    const none = { snaps: [], sessions: [] };
+    assert.equal(rateOf(learn(spot({ windUnknown: true, dirs: [] }), none), x(9, 260)).level, 0);
+    // a preset window you never confirmed isn't knowledge
+    const preset = rateOf(learn(spot(), none), x(9, 260));
+    assert.equal(preset.level, 0); assert.deepEqual(preset.reasons, ['few sessions']);
+    // a window you confirmed: Good inside it (from your range), not outside
+    const mine = learn(spot({ windowConfirmed: true }), none);
+    const inside = rateOf(mine, x(9, 260));
+    assert.equal(inside.level, 3); assert.equal(inside.source, 'user range');
+    assert.equal(rateOf(mine, x(9, 90)).level, 0);
+    ok('no outings: nothing without a window; a preset window stays "not sure"; a confirmed one gives Good from your range');
+}
+{
+    const sp = spot({ windowConfirmed: true });
+    const poor = outings(4, 9, 260, 2);
+    const r = rateOf(learn(sp, poor), x(9, 260));
+    assert.equal(r.level, 0); assert.deepEqual(r.reasons, ['only poor sessions']);
+    ok('poor outings in these conditions overrule your confirmed window (never Good from poor-only)');
+}
+{
+    const sp = spot();
+    const good = outings(6, 9, 260, k => (k % 2 ? 5 : 4));
+    const bad = outings(6, 15, 260, 1, { day0: 10 });
+    const data = { snaps: [...good.snaps, ...bad.snaps], sessions: [...good.sessions, ...bad.sessions] };
+    const m = learn(sp, data);
+    const there = rateOf(m, x(9.3, 260));
+    const windy = rateOf(m, x(15.3, 260));
+    assert.ok(there.level >= 3 && there.score > windy.score + 1, JSON.stringify([there, windy])); assert.equal(there.source, 'similar sessions');
+    assert.equal(windy.level, 0);
+    // and the descriptive range shows where the great ones were
+    assert.deepEqual(m[0].rows.find(r => r.key === 'wind').spans.map(s => [s.lo, s.hi]), [[9, 9.6]]);
+    ok(`mixed outcomes: rated from similar outings (${there.score.toFixed(2)} near 9 m/s, ${windy.score.toFixed(2)} near 15); "What works" shows 9–9.6`);
+}
+{
+    const sp = spot({ windowConfirmed: true });
+    const ok3 = outings(3, 9, 260, 4);
+    assert.equal(rateOf(learn(sp, ok3), x(9, 260)).level, 3, 'great needs 3 outings rated 4+');
+    const five = outings(6, 9, 260, k => (k < 2 ? 5 : 4));
+    assert.equal(rateOf(learn(spot(), five), x(9, 260)).level, 5);
+    assert.ok(rateOf(learn(spot(), outings(6, 9, 260, k => (k ? 4 : 5))), x(9, 260)).level <= 4, 'epic needs two 5s');
+    ok('evidence for the tags: great from 3 great outings, epic from 6 with two 5s');
+}
+{
+    // outings at a spot next door (2 km) never make a learned tag on their own
+    const sp = spot();
+    const next = spot({ id: 'n', lat: 0.018 });
+    const there = outings(8, 9, 260, 5, { spotId: 'n' });
+    const r = rateOf(learn(sp, there, [sp, next]), x(9, 260));
+    assert.equal(r.level, 0);
+    assert.ok(r.score > 3.4, 'they still move the score');
+    ok('spots next door count a little, but never as evidence for a tag here');
+}
+{
+    // one day logged five times counts like one outing
+    const sp = spot();
+    const sn = day(DAY0, () => ({}));
+    const same = { snaps: [sn], sessions: [1, 2, 3, 4, 5].map(k => session(sn, DAY0 + (7 + k * 2) * H, 1, 5)) };
+    const r = rateOf(learn(sp, same), x(8, 260));
+    assert.ok(r.nEff < 3 && r.level === 0, JSON.stringify(r));
+    ok('the same day logged many times counts as one day');
+}
+{
+    assert.ok(F.distance2('Windsurf', x(9, 350), x(9, 10)) < F.distance2('Windsurf', x(9, 260), x(9, 300)), 'wraparound');
+    const full = F.distance2('Windsurf', x(9, 260), x(9, 260));
+    const noTemp = F.distance2('Windsurf', x(9, 260, { temp: null }), x(9, 260));
+    assert.ok(noTemp > full, 'a missing extra never looks closer');
+    assert.equal(F.distance2('Windsurf', x(null, 260), x(9, 260)), null);
+    ok('distance: directions wrap round north; missing extras count as different; a missing core can\'t be compared');
+}
 
-// 3. which conditions matter: 2 of 3 poor days had wind and waves outside the range, 1 the direction
-const imp = Object.fromEntries(m[0].params.map(p => [p.key, +p.importance.toFixed(2)]));
-assert.ok(imp.waves >= 0.6 && imp.wind >= 0.6 && imp.dir < imp.waves, imp);
-ok('importance learned from poor vs great sessions: ' + JSON.stringify(imp));
+/* ---------- 3. when to go: two-hour windows, no gaps, per sport ---------- */
+{
+    const sp = spot({ windowConfirmed: true, sports: ['Windsurf', 'Surf'] });
+    const m = learn(sp, { snaps: [], sessions: [] });
+    const h = (i, wind, dir = 260, more = {}) => ({ ts: DAY0 + i * H, day: true, wind, gust: wind, dir, waves: 0.8, period: 6, ...more });
+    // one good hour alone is no window
+    assert.equal(P.bestIn(m, [h(10, 3), h(11, 9), h(12, 3)], DAY0, DAY0 + 864e5, DAY0), null);
+    // 10–12 and 13–15, the hour between missing: two stretches, never 10–15
+    const gap = P.bestIn(m, [h(10, 9), h(11, 9), h(13, 9), h(14, 9)], DAY0, DAY0 + 864e5, DAY0);
+    assert.deepEqual([(gap.start - DAY0) / H, (gap.end - DAY0) / H], [10, 12]);
+    // a longer near-equal stretch wins over a short one
+    const long = P.bestIn(m, [h(8, 9), h(9, 9), h(11, 9), h(12, 9), h(13, 9), h(14, 9)], DAY0, DAY0 + 864e5, DAY0);
+    assert.deepEqual([(long.start - DAY0) / H, (long.end - DAY0) / H], [11, 15]);
+    // the tag names the sport that matched; surf without swell data stays out
+    assert.equal(long.sport, 'Windsurf');
+    assert.equal(P.rate(m[1], F.toFeatures(h(11, 9, 260, { waves: null, period: null }))).level, 0);
+    assert.equal(P.rate(m[0], F.toFeatures(h(11, 9, 260, { waves: null, period: null }))).level, 3);
+    ok('windows: no one-hour stretches, no bridged gaps, a longer near-equal stretch wins, the matching sport is named');
+}
+{
+    const sp = spot({ windowConfirmed: true });
+    const m = learn(sp, { snaps: [], sessions: [] });
+    const hours = [];
+    for (let d = 0; d < 3; d++) {for (let i = 8; i < 20; i++) {hours.push({ ts: DAY0 + d * 864e5 + i * H, day: true, wind: d === 1 ? 3 : 9, gust: 9, dir: 260, waves: 0.8 });}}
+    const days = P.nextDays(m, hours, 2, DAY0);
+    assert.ok(days[0].best === null && days[1].best !== null);
+    ok('next days: each day on its own (a calm day stays empty)');
+}
 
-// 4. a day like the great ones is great or epic; a day like the poor ones is not shown
-assert.ok(lvl(P.guess(m, c(10, 262, 13, 0.7))) >= 4, P.guess(m, c(10, 262, 13, 0.7)));
-assert.equal(lvl(P.guess(m, c(10, 90, 13, 0.7))), 0);
-assert.equal(lvl(P.guess(m, c(14, 265, 21, 1.9))), 0);
-ok('fitting days are Likely great/epic; east wind or too strong and wavy: "Not sure yet" (never negative)');
+/* ---------- 4. boosted trees: only with lots of varied data, deterministic ---------- */
+{
+    const sp = spot();
+    const small = outings(20, 9, 260, 4);
+    assert.equal(T.treesEligible(learn(sp, small)[0].local), false);
+    // 120 outings on 120 days: great between 9 and 12 m/s from the west, poor otherwise
+    const big = { snaps: [], sessions: [] };
+    for (let k = 0; k < 120; k++) {
+        const w = 4 + (k * 7) % 14;
+        const d = k % 4 ? 260 : 90;
+        const sn = day(DAY0 + k * 864e5, () => ({ wind: w, dir: d }));
+        big.snaps.push(sn);
+        big.sessions.push(session(sn, DAY0 + k * 864e5 + 12 * H, 2, w >= 9 && w <= 12 && d === 260 ? 5 : w >= 7 && d === 260 ? 3 : 1));
+    }
+    const m = learn(sp, big)[0];
+    assert.equal(T.treesEligible(m.local), true);
+    const a = T.trainTrees(m.sport, m.local, m.nearby, m.prior);
+    const b = T.trainTrees(m.sport, m.local, m.nearby, m.prior);
+    assert.deepEqual(a, b, 'deterministic');
+    if (a) {assert.ok(T.treeScore(a, x(10, 260)) > T.treeScore(a, x(16, 260)));}
+    assert.equal(a && T.treeScore(a, x(40, 260)), a ? null : null, 'no guess outside what it saw');
+    // in the app: trained in the background, picked up when the spot is learned again, dropped after a diary change
+    if (a) {
+        assert.equal(await P.trainTreesInBackground(learn(sp, big)), true);
+        assert.ok(learn(sp, big)[0].trees, 'picked up');
+        assert.equal(P.rate(learn(sp, big)[0], x(10, 260)).source, 'boosted trees');
+        const more = { snaps: big.snaps, sessions: [...big.sessions, session(big.snaps[0], DAY0 + 15 * H, 1, 2)] };
+        assert.equal(learn(sp, more)[0].trees, null, 'a changed diary needs new trees');
+    }
+    ok(`boosted trees: not with 20 outings; with 120 deterministic (${a ? `on, error ${a.check.maeTrees.toFixed(2)} vs ${a.check.maeSimilar.toFixed(2)}` : 'stayed off: similar sessions were as good'})`);
+}
 
-// 5. a condition that never decides the day matters little
-const any = [smp(9, 260, 5, 11, 0.4), smp(9, 262, 2, 11, 1.6), smp(9, 258, 5, 11, 1.5), smp(9, 265, 1, 11, 0.5), smp(9, 268, 2, 11, 1.0)];
-const m2 = learn(any);
-const wImp = m2[0].params.find(p => p.key === 'wind').importance;
-assert.ok(wImp < 0.4, wImp);
-ok(`wind that was the same on great and poor days matters little (${wImp.toFixed(2)})`);
-
-// 6. each sport learns separately at a multi-sport spot
-const both = { ...spot, sports: ['Windsurf', 'Surf'] };
-const mix = [smp(11, 270, 5, 14, 1, 'Windsurf'), smp(12, 265, 4, 15, 1.1, 'Windsurf'),
-    smp(3, 90, 5, 4, 1.5, 'Surf', { swell: 1.4, swellPeriod: 12, swellDir: 280 }), smp(2, 100, 5, 3, 1.6, 'Surf', { swell: 1.5, swellPeriod: 13, swellDir: 275 })];
-const m3 = learn(mix, both);
-assert.deepEqual(m3.map(x => x.sport), ['Windsurf', 'Surf']);
-const g = P.guess(m3, c(2.5, 95, 3.5, 1.5, { swell: 1.45, swellPeriod: 12, swellDir: 278 }));
-assert.equal(g.sport, 'Surf'); assert.ok(lvl(g) >= 4, g);
-ok('per sport: light offshore wind with a 12 s swell is a great surf day (not a windsurf day)');
-
-// 7. best window of the day
-const now = new Date(); now.setHours(12, 0, 0, 0);
-const hours = Array.from({ length: 12 }, (_, i) => ({ ts: now.getTime() + i * 3600e3, ...c(i >= 6 && i <= 8 ? 9 : 3, 260), day: i < 9 }));
-const best = P.bestToday(learn([]), hours, now.getTime());
-assert.ok(best && new Date(best.start).getHours() === 18 && !best.now, best);
-ok('best window today: found at 18:00 when now is too light');
-
-// 8. your own range wins over the learned one
-const own = { ...spot, ranges: { Windsurf: { waves: { hi: 0.5 } } } };
-const mo = learn(hist, own);
-assert.equal(mo[0].params.find(p => p.key === 'waves').from, 'you');
-assert.equal(lvl(P.guess(mo, c(10, 262, 13, 1.4))), 0);
-ok('a range you set yourself (waves up to 0.5 m) wins over the learned one');
-
-// 9. the forecast far off how it felt: half weight; a session outside the saved hours: left out
-const t0 = Date.UTC(2026, 8, 12, 12);
-const sn = { id: 'n', spotId: 's', lat: 0, lon: 0, ts: t0, savedAt: t0, primary: 'ecmwf', models: [], waves: null,
-    series: { ts: [0, 1, 2, 3].map(h => t0 + h * 3600e3), models: { ecmwf: { wind: [10, 10, 10, 10], gust: [12, 12, 12, 12], dir: [270, 270, 270, 270], temp: [20, 20, 20, 20] } }, waves: null } };
-const ses = (id, date, felt, start = '', end = '') => ({ id, spotId: 's', snapshotId: 'n', date, rating: 5, felt, gusts: null, water: null, gear: '', gearIds: [], start, end, notes: '' });
-const ss = P.samplesFor(spot, [ses('a', t0 + 3600e3, 10), ses('b', t0 + 3600e3, 5), ses('c', t0 + 30 * 3600e3, 10)], [sn]);
-assert.deepEqual(ss.map(x => x.weight), [1, 0.5]);
-ok('felt 5 m/s on a 10 m/s forecast counts half; a session a day after the saved hours is left out');
-
-// 10. the next days
-const d0 = new Date(); d0.setHours(0, 0, 0, 0);
-const days = Array.from({ length: 24 * 4 }, (_, i) => ({ ts: d0.getTime() + i * 3600e3, ...c(i >= 24 + 14 && i <= 24 + 17 ? 9 : 3, 260), day: (i % 24) >= 8 && (i % 24) <= 20 }));
-const outlook = P.nextDays(learn([]), days, 5, d0.getTime() + 10 * 3600e3);
-assert.ok(outlook[0].best && new Date(outlook[0].best.start).getHours() === 14 && !outlook[1].best, outlook);
-ok('next days: tomorrow 14:00 is good, the day after nothing stands out');
-
-// 11. tide hint
-const th = P.bestTide([{ rating: 5, tide: 'High', tideMove: 'Rising' }, { rating: 4, tide: 'High', tideMove: 'Falling' }, { rating: 2, tide: 'Low' }]);
-assert.equal(th.tide, 'High'); assert.equal(th.move, null);
-ok('tide: the tide most great sessions had');
-const H = 3600e3, tz = { highs: [0, 12.4 * H], lows: [6.2 * H] };
-assert.deepEqual(P.tideAt(tz, 1 * H), { tide: 'High', move: 'Falling' });
-assert.deepEqual(P.tideAt(tz, 3 * H), { tide: 'Mid', move: 'Falling' });
-assert.deepEqual(P.tideAt(tz, 7 * H), { tide: 'Low', move: 'Rising' });
-assert.equal(P.tideAt(tz, 20 * H), null);
-ok('tide at a time, from saved highs and lows');
+/* ---------- 5. tide ---------- */
+{
+    const th = P.bestTide([{ rating: 5, tide: 'High', tideMove: 'Rising' }, { rating: 4, tide: 'High', tideMove: 'Falling' }, { rating: 2, tide: 'Low' }]);
+    assert.equal(th.tide, 'High'); assert.equal(th.move, null);
+    const tz = { highs: [0, 12.4 * H], lows: [6.2 * H] };
+    assert.deepEqual(P.tideAt(tz, 1 * H), { tide: 'High', move: 'Falling' });
+    assert.deepEqual(P.tideAt(tz, 3 * H), { tide: 'Mid', move: 'Falling' });
+    assert.deepEqual(P.tideAt(tz, 7 * H), { tide: 'Low', move: 'Rising' });
+    assert.equal(P.tideAt(tz, 20 * H), null);
+    ok('tide: the tide most great outings had; the tide at a time from saved highs and lows');
+}
 console.log(`${n} learning checks passed`);

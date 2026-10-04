@@ -170,10 +170,10 @@
                         {/if}
                         <span class="t-tag">
                             {#if bestOf(s)}
-                                <span class="tag" style="background: { guessCol(bestOf(s)?.rating ?? null)[0] }; color: { guessCol(bestOf(s)?.rating ?? null)[1] }" title={ guessNote(bestOf(s), s) }>{ guessLbl(bestOf(s)?.rating ?? null, bestOf(s)?.sport) }</span>
+                                <span class="tag" style="background: { guessCol(bestOf(s)?.level ?? 0)[0] }; color: { guessCol(bestOf(s)?.level ?? 0)[1] }" title={ guessNote(bestOf(s)) }>{ guessLbl(bestOf(s)?.level ?? 0, bestOf(s)?.sport) }</span>
                                 {#if !bestOf(s)?.now}<small class="t-when">{ fill(W.from, { v: fmtTime(bestOf(s)?.start ?? 0) }) }</small>{/if}
                             {:else}
-                                <span class="tag ghost" title={ guessNote(guessOf(s), s) || ratingHint(s) }>{ W.guessUnsure }</span>
+                                <span class="tag ghost" title={ guessNote(guessOf(s)) }>{ W.guessUnsure }</span>
                             {/if}
                         </span>
                     </button>
@@ -383,7 +383,7 @@
             <small class="muted">{ W.formWindFrom }</small>
             <div class="dirs">
                 {#each DIRS as d, i}
-                    <button class="dir" class:on={ sf.dirs.includes(d) } aria-pressed={ sf.dirs.includes(d) } on:click={ () => sf && (sf = { ...sf, dirs: toggle(sf.dirs, d) }) }>
+                    <button class="dir" class:on={ sf.dirs.includes(d) } aria-pressed={ sf.dirs.includes(d) } on:click={ () => sf && (sf = { ...sf, sure: true, dirs: toggle(sf.dirs, d) }) }>
                         <span class="arrow" style="transform: rotate({ i * 45 + 180 }deg)">▲</span>{ d }
                     </button>
                 {/each}
@@ -399,6 +399,8 @@
                     <button class="round" aria-label="Raise maximum" on:click={ () => stepRange('dMax', 1) }>+</button>
                 </div>
             </div>
+            <!-- a prefilled window isn't knowledge: changing it, or saying you're sure, makes it count -->
+            <button class="chip notworth" class:on={ sf.sure } aria-pressed={ sf.sure } on:click={ () => sf && (sf = { ...sf, sure: !sf.sure }) }>{ W.formSure }</button>
             <small class="muted">{ W.formGuessNote }</small>
         {/if}
     </div>
@@ -415,10 +417,10 @@
         waves={ spotNow?.waves ?? null }
         loading={ !spotNow }
         u={ S }
-        badge={ spotGuess ? guessLbl(spotPred, spotGuess.sport) : '' }
-        badgeNote={ guessNote(spotGuess, spot) }
-        badgeBg={ guessCol(spotPred)[0] }
-        badgeFg={ guessCol(spotPred)[1] }
+        badge={ spotGuess ? guessLbl(spotGuess.level, spotGuess.sport) : '' }
+        badgeNote={ guessNote(spotGuess) }
+        badgeBg={ guessCol(spotGuess?.level ?? 0)[0] }
+        badgeFg={ guessCol(spotGuess?.level ?? 0)[1] }
     />
 
     {#if spotModels.length > 1}
@@ -461,6 +463,12 @@
                 <span class="grow"><b>{ fill(W.works, { dirs: dirsLabel(spot.dirs), min: fmtWind0(spot.min, S.wind), max: fmtWind0(spot.max, S.wind), unit: windLabel(S.wind) }) }</b></span>
                 <button class="link" on:click={ () => spot && editSpot(spot) }>{ W.edit }</button>
             </div>
+            {#if !spot.windowConfirmed}
+                <div class="row">
+                    <small class="muted grow">{ W.windowUnsure }</small>
+                    <button class="link" on:click={ confirmWindow }>{ W.windowConfirm }</button>
+                </div>
+            {/if}
             {#if spotLearnedWindow}
                 <div class="suggest">
                     <span class="grow"><small>{ W.learnedWindowTitle }</small><b>{ dirsLabel(spotLearnedWindow.dirs) }, { fmtWind0(spotLearnedWindow.min, S.wind) }–{ fmtWind0(spotLearnedWindow.max, S.wind) } { windLabel(S.wind) }</b></span>
@@ -482,7 +490,6 @@
         <div class="stats sep">
             <div><span class="lbl">{ W.statSessions }</span><span class="big">{ spotReal.length }</span></div>
             <div><span class="lbl">{ W.statAvg }</span><span class="big">{ avgRating }</span></div>
-            <div><span class="lbl">{ W.statBias }</span><span class="big">{ bias === null ? '–' : (bias > 0 ? '+' : bias < 0 ? '−' : '') + fmtWind(Math.abs(bias), S.wind) } <small>{ windLabel(S.wind) }</small></span></div>
         </div>
     </div>
 
@@ -493,7 +500,7 @@
             {#if spotBest}
                 <div class="reco-row">
                     <span class="r-day">{ W.today }</span>
-                    <span class="tag" style="background: { guessCol(spotBest.rating)[0] }; color: { guessCol(spotBest.rating)[1] }">{ guessLbl(spotBest.rating, spotBest.sport) }</span>
+                    <span class="tag" style="background: { guessCol(spotBest.level)[0] }; color: { guessCol(spotBest.level)[1] }" title={ guessNote(spotBest) }>{ guessLbl(spotBest.level, spotBest.sport) }</span>
                     <b class="r-time">{#if spotBest.now}<span>{ bestRange(spotBest) }</span>{:else}<span>{ fmtTime(spotBest.start) }–</span><span>{ fmtTime(spotBest.end) }</span>{/if}</b>
                 </div>
             {/if}
@@ -501,7 +508,7 @@
                 <div class="reco-row">
                     <span class="r-day">{ fmtDay(d.day) }{#if predOfDay(d.day, spotOutlook) !== null}<small class="r-pred" title={ W.predTitle }>{ fill(W.predShort, { p: Math.round(predOfDay(d.day, spotOutlook) ?? 0) }) }</small>{/if}</span>
                     {#if d.best}
-                        <span class="tag" style="background: { guessCol(d.best.rating)[0] }; color: { guessCol(d.best.rating)[1] }">{ guessLbl(d.best.rating, d.best.sport) }</span>
+                        <span class="tag" style="background: { guessCol(d.best.level)[0] }; color: { guessCol(d.best.level)[1] }" title={ guessNote(d.best) }>{ guessLbl(d.best.level, d.best.sport) }</span>
                         <b class="r-time"><span>{ fmtTime(d.best.start) }–</span><span>{ fmtTime(d.best.end) }</span></b>
                     {/if}
                 </div>
@@ -529,12 +536,12 @@
                         <div class="w-head">
                             <b>{ sportLbl(m.sport) }</b>
                             <!-- where the ranges come from: your sessions, else your wind window or your own ranges; nothing when nothing is known yet -->
-                            <small class="muted grow">{ m.params.some(p => p.from === 'sessions') ? fill(W.learnedFromShort, { n: m.sessions, g: m.great }) : m.params.some(p => p.from === 'window') ? W.fromWindowShort : m.params.some(p => p.from === 'you') ? W.setByYou : '' }</small>
+                            <small class="muted grow">{ m.outings ? fill(W.learnedFromShort, { n: m.outings, g: m.great }) : m.rows.some(r => r.from === 'window') ? W.fromWindowShort : m.rows.some(r => r.from === 'you') ? W.setByYou : '' }</small>
                             {#if editSport !== m.sport}<button class="link" on:click={ () => startEdit(m) }>{ W.adjust }</button>{/if}
                         </div>
                         {#if editSport === m.sport}
                             <div class="w-grid edit">
-                                {#each paramsOf(m.sport) as key (key)}
+                                {#each allFeatures(m.sport) as key (key)}
                                     <span class="w-name">{ paramName(key) }</span>
                                     {#if isCircular(key)}
                                         <div class="w-dirs">
@@ -556,15 +563,15 @@
                                 <button class="btn ghost small" on:click={ () => (editSport = null) }>{ W.cancel }</button>
                                 {#if spot.ranges?.[m.sport]}<button class="link" on:click={ () => resetEdit(m.sport) }>{ W.backToLearned }</button>{/if}
                             </div>
-                        {:else if m.params.length}
+                        {:else if m.rows.length}
                             <div class="w-grid">
                                 <span class="w-h"></span><span class="w-h">{ W.colWorks }</span><span class="w-h">{ W.colMatters }</span><span class="w-h w-r">{ W.colNow }</span>
-                                {#each spotParts(m) as row (row.p.key)}
-                                    <span class="w-name">{ paramName(row.p.key) }{#if row.p.from === 'you'}<i class="w-you" title={ W.setByYou }></i>{/if}</span>
-                                    <b class="w-range">{ rangeText(row.p) }</b>
-                                    <span class="w-imp imp{ importanceLevel(row.p.importance) }">{ W['matter' + importanceLevel(row.p.importance)] }</span>
-                                    {#if row.part}
-                                        <span class="w-now" class:ok={ row.part.fit >= 0.99 } class:near={ row.part.fit > 0 && row.part.fit < 0.99 }>{ nowText(row.p.key, row.part.value) }</span>
+                                {#each spotParts(m) as row (row.r.key)}
+                                    <span class="w-name">{ paramName(row.r.key) }{#if row.r.from === 'you'}<i class="w-you" title={ W.setByYou }></i>{/if}</span>
+                                    <b class="w-range">{ rangeText(row.r) }</b>
+                                    <span class="w-imp imp{ mattersLevel(row.r.matters) }">{ W['matter' + mattersLevel(row.r.matters)] }</span>
+                                    {#if row.value !== null && row.fit !== null}
+                                        <span class="w-now" class:ok={ row.fit >= 0.99 } class:near={ row.fit > 0 && row.fit < 0.99 }>{ nowText(row.r.key, row.value) }</span>
                                     {:else}
                                         <span class="w-now">–</span>
                                     {/if}
@@ -581,20 +588,6 @@
                 <small class="muted">{ W.worksLegend }</small>
             </div>
         {/if}
-    </div>
-
-    <div class="section">
-        <b>{ W.trustTitle }</b>
-        <div class="card">
-            {#if scores.length === 0}
-                <span class="muted">{@html rich(W.trustEmpty)}</span>
-            {:else}
-                {#each scores as sc, i}
-                    <div class="score"><span class="m" class:best={ i === 0 && sc.count >= 3 }>{ modelLabel(sc.model) }</span><span class="missbar"><i style="width: { closeness(sc.miss, scores) }%" class:best={ i === 0 && sc.count >= 3 }></i></span><span>±{ fmtWind(sc.miss, S.wind) } { windLabel(S.wind) }</span></div>
-                {/each}
-                <small class="muted">{ fill(W.trustNote, { n: scores[0].count }) }</small>
-            {/if}
-        </div>
     </div>
 
     <div class="section">
@@ -685,7 +678,6 @@
             wind={ logPrimary }
             waves={ logView.waves }
             models={ logView.models }
-            best={ closest?.model || null }
             u={ S }
         />
         {#if logView.note}<small class="muted sl-note">{ logView.note }</small>{/if}
@@ -715,6 +707,8 @@
             </div>
         </div>
         {#if f.start && f.end && f.end < f.start}<small class="muted">{ W.nextDay }</small>{/if}
+        {#if !f.start && !f.checked}<small class="muted">{ W.startNeeded }</small>{:else if f.start && !f.end}<small class="muted">{ W.endHelps }</small>{/if}
+        {#if logLate}<small class="muted">{ W.logLateFc }</small>{/if}
     </div>
 
     <div class="card">
@@ -761,26 +755,10 @@
         {#if f.checked}<small class="muted">{ W.notWorthNote }</small>{/if}
     </div>
 
-    <div class="card felt-card">
-        <div class="row start">
-            <span class="grow"><small>{ W.feltTitle }</small><b class="big2">{ f.felt === null ? '–' : f.felt } <small>{ windLabel(S.wind) }</small></b></span>
-            {#if logFc !== null && f.felt !== null}
-                <span class="tag ghost">{ f.felt < logFc ? W.lighter : f.felt > logFc ? W.stronger : W.asForecast }</span>
-            {/if}
-        </div>
-        <FeltSlider bind:value={ f.felt } min={ 0 } max={ feltMax } step={ feltStep } forecast={ logFc } unit={ windLabel(S.wind) } />
-        <div class="row sep">
-            <small class="grow muted">{ logFc !== null ? fill(W.whiteLine, { v: logFc, unit: windLabel(S.wind) }) : W.dragHint }</small>
-            {#if closest}<small>{ W.closest } <b>{ modelLabel(closest.model) }</b></small>{/if}
-        </div>
-    </div>
-
-    <div class="field"><span class="lbl">{ W.gusts }</span>
-        <div class="chips">{#each ['Steady', 'Gusty', 'Very gusty'] as g, i}<button class="chip" class:on={ f.gusts === g } on:click={ () => f && (f = { ...f, gusts: f.gusts === g ? null : g }) }>{ W['gust' + (i + 1)] }</button>{/each}</div>
-    </div>
-    <div class="field"><span class="lbl">{ W.water }</span>
-        <div class="chips">{#each ['Flat', 'Chop', 'Swell', 'Waves'] as wv, i}<button class="chip" class:on={ f.water === wv } on:click={ () => f && (f = { ...f, water: f.water === wv ? null : wv }) }>{ W['water' + (i + 1)] }</button>{/each}</div>
-    </div>
+    {#if logLegacy}
+        <!-- older sessions logged felt wind, gusts and water by hand: kept as they were, no longer asked -->
+        <small class="muted">{ fill(W.legacyLogged, { list: logLegacy }) }</small>
+    {/if}
     <div class="field"><span class="lbl">{ W.gear }</span>
         {#each logGearGroups as grp (grp.sport)}
             {#if logGearGroups.length > 1}<small class="muted">{ sportLbl(grp.sport) }</small>{/if}
@@ -818,7 +796,8 @@
 
     <label class="field"><span class="lbl">{ W.notes }</span><textarea rows="4" bind:value={ f.notes } placeholder={ W.notesPh }></textarea></label>
 
-    <button class="btn primary wide" on:click={ saveSession }>{ f.id ? W.saveChanges : W.saveSession }</button>
+    <!-- a new session needs its start time: that's how the forecast from before it is found ("didn't go" days don't) -->
+    <button class="btn primary wide" disabled={ !f.id && !f.start && !f.checked } on:click={ saveSession }>{ f.id ? W.saveChanges : W.saveSession }</button>
     {#if f.id}
         <button class="link danger" on:click={ () => { const se = data.sessions.find(x => x.id === f?.id); if (se) {deleteSession(se, true);} } }>{ W.deleteSession }</button>
     {/if}
@@ -857,18 +836,17 @@
     import { THEME, THEME_CSS, themeCss, guessColours, lightsUp, sessionMarkStyle } from './lib/theme';
     import {
         DIRS, SPORTS, RATING_BG, RATING_FG, GEAR_SPORTS, GEAR_BY_SPORT, ratingBg, ratingFg, dirName, dirsLabel, windColor, modelLabel,
-        distanceKm, modelScores, forecastBias, trustedModel, fmtDay, fmtDayTime, fmtTime,
+        distanceKm, fmtDay, fmtDayTime, fmtTime,
     } from './lib/wind';
-    import { fmtWind, fmtWind0, fmtHeight, fmtTemp, fmtDistance, windLabel, fromWind, toWind, windStep, feltTo, feltFrom } from './lib/units';
+    import { fmtWind, fmtWind0, fmtHeight, fmtTemp, fmtDistance, windLabel, fromWind, toWind, windStep } from './lib/units';
     import {
-        guess, conditionsOf, samplesFor, suggestWindow, shownLevel, bestToday, bestTide, sessionTide, learnSpot, importanceLevel, dirsOfParam, guessSport,
-        nextDays, learnedWindow, gearHints, ownAverage, nearbySpots, isCircular, paramsOf, MIN_SAMPLES,
+        rateBest, conditionsOf, toFeatures, suggestWindow, bestToday, bestTide, sessionTide, learnSpot, trainTreesInBackground, recommendationModel,
+        nextDays, learnedWindow, gearHints, isCircular, allFeatures, fitRange, mattersLevel,
     } from './lib/predict';
     import { words, w, t as tr, fill, rich, setWords } from './lib/copy';
     import { readTrack } from './lib/gpx';
 
     import SnapCard from './ui/SnapCard.svelte';
-    import FeltSlider from './ui/FeltSlider.svelte';
     import TimeWheel from './ui/TimeWheel.svelte';
     import SwipeRow from './ui/SwipeRow.svelte';
     import Calendar from './ui/Calendar.svelte';
@@ -877,7 +855,7 @@
     import PixelStar from './ui/PixelStar.svelte';
     import Brand from './ui/Brand.svelte';
     import type { TideDay } from './lib/forecast';
-    import type { Guess, DayBest, Hour, SportModel, ParamModel, ParamKey, OwnRange } from './lib/predict';
+    import type { Result, DayBest, Hour, SportModel, RangeRow, Feature } from './lib/predict';
     import type { WindyAuth } from './lib/cloud';
 
     import type { Spot, Snapshot, Session, ModelValue, WaveValue, Dir8, Settings as SettingsT, Track, SpotlogData, Gear } from './lib/types';
@@ -889,10 +867,12 @@
     interface SpotForm {
         id?: string; name: string; place: string; lat: number; lon: number; sports: string[];
         dirs: Dir8[]; dMin: number; dMax: number; windUnknown: boolean; created?: number; startOwn?: boolean;
+        /** you changed the window or said you're sure about it (the prefilled one alone isn't knowledge) */
+        sure: boolean;
     }
     interface LogForm {
         id?: string; spotId: string | null; lat?: number; lon?: number; snapshotId: string | null;
-        dateStr: string; rating: number; felt: number | null; gusts: string | null; water: string | null;
+        dateStr: string; rating: number;
         sport: string | null; checked?: boolean;
         gearIds: string[]; gear: string; start: string; end: string; notes: string; track: Track | null;
         /** snapshot this log created by itself (may be replaced when the date changes) */
@@ -958,11 +938,11 @@
     $: W = $words;
     $: RATE = [W.rate1, W.rate2, W.rate3, W.rate4, W.rate5];
     /** only good news gets a word (good, great, epic); anything else is "not sure yet" */
-    /** "Great for windsurf" (the rating is per sport), "Likely great" without a sport, or "Not sure yet" */
-    $: guessLbl = (r: number | null, sport?: string | null): string =>
-        (!shownLevel(r) ? W.guessUnsure : sport ? fill(W['guessFor' + shownLevel(r)], { sport: sportLbl(sport).toLowerCase() }) : W['guess' + shownLevel(r)]);
+    /** a tag's words from its level (3 good, 4 great, 5 epic, 0 not sure yet): "Great for windsurf" (ratings are per sport) */
+    $: guessLbl = (level: number, sport?: string | null): string =>
+        (!level ? W.guessUnsure : sport ? fill(W['guessFor' + level], { sport: sportLbl(sport).toLowerCase() }) : W['guess' + level]);
     const UNSURE: [string, string] = ['var(--sl-dirTile, #e9e8e3)', 'var(--sl-lightSub, #6b6b6b)'];
-    const guessCol = (r: number | null): [string, string] => (shownLevel(r) ? guessColours(r as number) : UNSURE);
+    const guessCol = (level: number): [string, string] => (level ? guessColours(level) : UNSURE);
     $: sportLbl = (sp: string): string => W['sport' + sp] || sp;
     /** a place without a name is stored as 'Dropped pin'; it shows in the chosen wording */
     $: pinName = (n: string | undefined): string => (!n || n === 'Dropped pin' ? W.droppedPin : n);
@@ -1205,30 +1185,27 @@
     $: spotReal = spotSessions.filter(s => !s.checked);
     $: spotSnapshots = spot ? data.snapshots.filter(s => s.spotId === spot?.id).sort((a, b) => b.ts - a.ts) : [];
     $: avgRating = spotReal.length ? (spotReal.reduce((a, s) => a + s.rating, 0) / spotReal.length).toFixed(1) : '–';
-    $: bias = spot ? forecastBias(spot, data.sessions, data.snapshots) : null;
-    $: scores = spot ? modelScores(spot, data.sessions, data.snapshots) : [];
     $: spotNow = spot ? nowOf(nowKey(spot.id, spotModel), nowBySpot) : null;
     $: spotModels = spot ? modelsBySpot[spot.id] || [] : [];
     // another spot opens with ECMWF again; which models cover it is checked once
     let modelSpotId: string | null = null;
     $: if ((spot?.id ?? null) !== modelSpotId) {
         modelSpotId = spot?.id ?? null;
-        spotModel = spot ? modelFor(spot, trustMap) : 'ecmwf';
+        spotModel = spot ? modelFor(spot) : 'ecmwf';
     }
     $: if (view === 'spot' && spot) {loadModels(spot);}
-    $: spotGuess = spot && spotNow ? guess(modelsOf(spot, modelMap), conditionsOf(spotNow.wind, spotNow.waves)) : null;
+    $: spotGuess = spot && spotNow ? rateBest(modelsOf(spot, modelMap), conditionsOf(spotNow.wind, spotNow.waves)) : null;
     $: spotLearned = spot ? modelsOf(spot, modelMap) : [];
-    $: spotPred = spotGuess?.rating ?? null;
     $: spotBest = spot ? bestOf(spot) : null;
     $: spotTide = spot ? bestTide(spotReal.map(x => ({ rating: x.rating, ...sessionTide(x, data.snapshots) }))) : null;
     $: spotLearnedWindow = spot && !spot.windUnknown ? learnedWindow(spot, spotLearned[0]) : null;
-    $: spotGear = spot ? gearHints(samplesFor(spot, data.sessions, data.snapshots, modelFor(spot, trustMap))) : [];
+    $: spotGear = gearHints(spotLearned);
     $: spotOutlook = spot ? outlookOf(spot.id, outlookBySpot) : null;
     $: spotDays = spot && spotOutlook ? nextDays(spotLearned, spotOutlook.hours) : [];
     /** no forecast saved here today: today's session couldn't teach spotlog */
     $: savedToday = spot ? spotSnapshots.some(sn => new Date(sn.savedAt).toDateString() === new Date().toDateString()) : true;
-    $: suggestion = spot && spot.windUnknown ? suggestWindow(spot, data.sessions, data.snapshots) : null;
-    $: goodCount = spot ? samplesFor(spot, data.sessions, data.snapshots).filter(x => x.rating >= 4).length : 0;
+    $: suggestion = spot && spot.windUnknown ? suggestWindow(spotLearned) : null;
+    $: goodCount = spotLearned.reduce((a, m) => a + m.great, 0);
     $: hoursOnWater = Math.round(realSessions.reduce((a, s) => a + sessionHours(s), 0));
     $: logSnap = f?.snapshotId ? data.snapshots.find(x => x.id === f?.snapshotId) || null : null;
     // what the snapshot card shows while logging: the saved day read at the session time
@@ -1239,10 +1216,10 @@
     $: logGearGroups = f ? groupGear(data.gear, [...(spotById(f.spotId)?.sports || []), ...GEAR_SPORTS]) : [];
     $: synced = cloudOn && !!wUser;
     $: syncLabel = syncState === 'saving' ? W.syncSaving : syncState === 'error' ? W.syncError : syncAt ? fill(W.syncAt, { time: fmtTime(syncAt) }) : W.syncLinked;
-    $: logFc = logPrimary?.wind != null ? roundToStep(feltTo(logPrimary.wind, S.wind)) : null;
-    $: feltStep = S.wind === 'bft' ? 0.5 : windStep(S.wind);
-    $: feltMax = Math.max(baseMax(S.wind), logFc !== null ? Math.ceil((logFc * 1.4) / (feltStep * 5)) * feltStep * 5 : 0);
-    $: closest = logView && f && f.felt !== null ? closestModel({ models: logView.models } as Snapshot, feltFrom(f.felt, S.wind)) : null;
+    /** the forecast attached to this log was saved after the session started: it stays, but can't teach */
+    $: logLate = !!(logSnap && f?.start && logSnap.savedAt > new Date(`${f.dateStr}T${f.start}`).getTime());
+    /** what an older session logged by hand (no longer asked): shown, kept as it is */
+    $: logLegacy = f?.id ? legacyLine(data.sessions.find(x => x.id === f?.id)) : '';
     $: nearSpot = place ? nearestWithin(place.lat, place.lon, 5) : null;
     $: spotsByCentre = view === 'pick' ? nearestSpots(centre().lat, centre().lon) : [];
     let mapTs = currentTs();
@@ -1281,9 +1258,7 @@
         otherName = '';
     }
     const spotById = (id: string | null) => (id ? data.spots.find(s => s.id === id) : undefined);
-        const baseMax = (u: string) => ({ ms: 20, kt: 40, kmh: 70, mph: 45, bft: 10 } as Record<string, number>)[u] || 20;
-    const roundToStep = (v: number) => Math.round(v / windStep(S.wind)) * windStep(S.wind);
-    const pad = (n: number) => String(n).padStart(2, '0');
+        const pad = (n: number) => String(n).padStart(2, '0');
     const dateStrOf = (ts: number) => { const d = new Date(ts); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
     const hhmmOf = (ts: number) => { const d = new Date(ts); return `${pad(d.getHours())}:${pad(d.getMinutes() - (d.getMinutes() % 5))}`; };
     const escapeHtml = (t: string) => t.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
@@ -1303,7 +1278,7 @@
     function touchMove(e: TouchEvent) {
         const y = e.touches[0]?.clientY ?? 0;
         const dy = touchY - y; // > 0: finger moves up = scroll down
-        // sideways moves (the felt ruler, a wobbly finger) stay inside Spotlog: the panel doesn't slide around
+        // sideways moves (a wobbly finger, a time wheel) stay inside Spotlog: the panel doesn't slide around
         if (Math.abs((e.touches[0]?.clientX ?? 0) - touchX) > Math.abs(dy)) {
             e.stopPropagation();
             return;
@@ -1367,96 +1342,75 @@
             : w('logOld');
         return { ts: sn.ts, models: sn.models, waves: sn.waves, matches: false, otherDay: otherDay || outside, note };
     }
-    /** the model each spot uses: the most accurate one there (3+ sessions with "felt like"), else ECMWF */
-    $: trustMap = new Map<string, string>(data.spots.map(s => [s.id, trustedModel(s, data.sessions, data.snapshots)]));
-    const modelFor = (s: Spot, _dep = trustMap): string => _dep.get(s.id) || 'ecmwf';
+    /** the model each spot learns and recommends from: ECMWF, or the one fallback chosen once where ECMWF has no forecast */
+    const modelFor = (s: Spot): string => recommendationModel(s);
     /** conditions-now cache: the spot's own model under the spot id (tiles, map), other models as id:model (spot page) */
-    const nowKey = (id: string, model: string) => (model === (trustMap.get(id) || 'ecmwf') ? id : `${id}:${model}`);
+    const nowKey = (id: string, model: string) => (model === modelFor(spotById(id) as Spot) ? id : `${id}:${model}`);
     const outlookOf = (id: string, _dep = outlookBySpot): Outlook | null => { const o = _dep[id]; return o && o !== 'loading' ? o : null; };
     function nowOf(id: string, _dep = nowBySpot): Now | null {
         const n = _dep[id];
         return n && n !== 'loading' ? n : null;
     }
-    /** each spot's sessions with their forecast, worked out once per change of the diary */
-    /** what spotlog has learned per spot and sport, worked out once per change of the diary */
-    $: ownAvg = ownAverage(data.sessions);
-    $: modelMap = new Map<string, SportModel[]>(data.spots.map(s => {
-        const m = modelFor(s, trustMap);
-        // sessions here, plus those at spots next door (half weight, same sports)
-        const near = nearbySpots(s, data.spots).flatMap(o => samplesFor(o, data.sessions, data.snapshots, m, 0.5)).filter(x => s.sports.includes(x.sport));
-        const samples = [...samplesFor(s, data.sessions, data.snapshots, m), ...near];
-        return [s.id, learnSpot(s, samples, { bias: forecastBias(s, data.sessions, data.snapshots), startRating: s.startOwn && ownAvg !== null ? ownAvg : undefined })];
-    }));
+    /** what spotlog has learned per spot and sport, worked out once per change of the diary (and when trees are ready) */
+    let treesReady = 0;
+    const learnAll = (d: SpotlogData, _ready: number) => new Map<string, SportModel[]>(d.spots.map(s => [s.id, learnSpot(s, d.spots, d.sessions, d.snapshots)]));
+    $: modelMap = learnAll(data, treesReady);
+    // boosted trees train in the background where a spot has lots of outings; the spots are learned again when they're ready
+    $: trainLater(modelMap);
+    function trainLater(learned: Map<string, SportModel[]>) {
+        trainTreesInBackground([...learned.values()].flat()).then(changed => { if (changed) {treesReady++;} });
+    }
     const modelsOf = (s: Spot, _dep = modelMap): SportModel[] => _dep.get(s.id) || [];
-    const sessionsOf = (s: Spot, _dep = modelMap): number => modelsOf(s, _dep).reduce((a, m) => a + m.sessions, 0);
-    $: guessOf = (s: Spot): Guess | null => {
+    $: guessOf = (s: Spot): Result | null => {
         const n = nowBySpot[s.id];
-        return n && n !== 'loading' ? guess(modelsOf(s, modelMap), conditionsOf(n.wind, n.waves)) : null;
+        return n && n !== 'loading' ? rateBest(modelsOf(s, modelMap), conditionsOf(n.wind, n.waves)) : null;
     };
     /** the best stretch of the rest of today (ECMWF), so a good evening shows up in the afternoon already */
     $: bestOf = (s: Spot): DayBest | null => {
         const h = dayBySpot[s.id];
         return h ? bestToday(modelsOf(s, modelMap), h) : null;
     };
-    $: ratingHint = (s: Spot): string => {
-        const n = Math.max(1, MIN_SAMPLES - sessionsOf(s, modelMap));
-        return n === 1 ? W.ratingAfterOne : fill(W.ratingAfterMany, { n });
-    };
-    /** what a guess is based on: "from 4 sessions here", "from your wind window" (+ the sport at multi-sport spots) */
-    $: guessNote = (g: { sessions: number; learned: boolean; sport: string; rating?: number | null } | null, s: Spot | null): string => {
-        if (!g || !s) {return '';}
-        const sp = s.sports.length > 1 ? sportLbl(g.sport) + ' · ' : '';
-        if (g.rating === null) {return sessionsOf(s, modelMap) < MIN_SAMPLES ? ratingHint(s) : W.badgeNone;}
-        return sp + (g.learned ? (g.sessions === 1 ? W.badgeFromOne : fill(W.badgeFrom, { n: g.sessions })) : W.badgeWindow);
-    };
-    /** "great · 18:00" for a window later today; just the word when it's on now */
-    /* ---------- what works here: one row per condition ---------- */
-    $: paramName = (k: ParamKey): string => W['param' + k[0].toUpperCase() + k.slice(1)];
-    $: rangeText = (p: ParamModel): string => {
-        if (p.centres) {return p.from === 'window' && spot ? dirsLabel(spot.dirs) : dirsLabel(dirsOfParam(p));}
-        const lo = p.lo ?? 0;
-        const hi = p.hi ?? 0;
-        if (p.key === 'wind' || p.key === 'gust') {
-            if (p.lo === undefined && p.hi !== undefined) {return fill(W.upTo, { v: `${fmtWind0(hi, S.wind)} ${windLabel(S.wind)}` });}
-            if (p.hi === undefined && p.lo !== undefined) {return fill(W.from, { v: `${fmtWind0(lo, S.wind)} ${windLabel(S.wind)}` });}
-            return `${fmtWind0(lo, S.wind)}–${fmtWind0(hi, S.wind)} ${windLabel(S.wind)}`;
+    /** what a tag is based on, or why it's "Not sure yet" (shown as the tag's tooltip and under the forecast card's tag) */
+    $: guessNote = (g: Result | DayBest | null): string => {
+        if (!g) {return '';}
+        if (!('reasons' in g) || g.level) {
+            return g.source === 'user range' ? W.basedRange : fill(g.source === 'boosted trees' ? W.basedTrees : W.basedSimilar, { n: g.support });
         }
-        const fmt = (k: ParamKey, v: number) => (k === 'period' ? `${Math.round(v)}` : k === 'temp' ? fmtTemp(v, S.temp).replace(/\s*°.*/, '') : k === 'rain' || k === 'power' ? `${Math.round(v * 10) / 10}` : fmtHeight(v, S.height));
-        const unit = p.key === 'period' ? 's' : p.key === 'temp' ? `°${S.temp}` : p.key === 'rain' ? 'mm' : p.key === 'power' ? 'kW/m' : S.height;
-        if (p.lo === undefined && p.hi !== undefined) {return fill(W.upTo, { v: `${fmt(p.key, hi)} ${unit}` });}
-        if (p.hi === undefined && p.lo !== undefined) {return fill(W.from, { v: `${fmt(p.key, lo)} ${unit}` });}
-        return `${fmt(p.key, lo)}–${fmt(p.key, hi)} ${unit}`;
+        return W[{ 'missing forecast': 'whyMissing', 'no evidence': 'whyFew', 'few sessions': 'whyFew', 'only poor sessions': 'whyPoor', 'below good': 'whyBelow', 'outside coverage': 'whyOutside' }[g.reasons[0]] || 'whyBelow'];
     };
-    $: nowText = (k: ParamKey, v: number): string =>
+    /* ---------- what works here: one row per condition ---------- */
+    $: paramName = (k: Feature): string => W['param' + k[0].toUpperCase() + k.slice(1)];
+    /** a range in your units: "8–13 kn", "up to 1.2 m", "W–SW"; separate spans joined with " · " */
+    $: rangeText = (r: RangeRow): string => {
+        if (r.dirs) {return dirsLabel(r.dirs);}
+        const isWind = r.key === 'wind' || r.key === 'gust';
+        const fmt = (v: number) => (isWind ? fmtWind0(v, S.wind) : r.key === 'period' ? `${Math.round(v)}` : r.key === 'temp' ? fmtTemp(v, S.temp).replace(/\s*°.*/, '') : r.key === 'rain' || r.key === 'power' ? `${Math.round(v * 10) / 10}` : fmtHeight(v, S.height));
+        const unit = isWind ? windLabel(S.wind) : r.key === 'period' ? 's' : r.key === 'temp' ? `°${S.temp}` : r.key === 'rain' ? 'mm' : r.key === 'power' ? 'kW/m' : S.height;
+        const span = ({ lo, hi }: { lo?: number; hi?: number }) =>
+            (lo === undefined ? fill(W.upTo, { v: fmt(hi ?? 0) }) : hi === undefined ? fill(W.from, { v: fmt(lo) }) : fmt(lo) === fmt(hi) ? fmt(lo) : `${fmt(lo)}–${fmt(hi)}`);
+        return `${(r.spans || []).map(span).join(' · ')} ${unit}`;
+    };
+    $: nowText = (k: Feature, v: number): string =>
         k === 'dir' || k === 'swellDir' ? dirName(v) : k === 'wind' || k === 'gust' ? `${fmtWind0(v, S.wind)} ${windLabel(S.wind)}`
             : k === 'period' ? `${Math.round(v)} s` : k === 'temp' ? fmtTemp(v, S.temp) : k === 'rain' ? `${Math.round(v * 10) / 10} mm`
                 : k === 'power' ? `${Math.round(v * 10) / 10} kW/m` : fmtHeight(v, S.height, true);
     /** one line per sport for the folded "What works here": "8–13 m/s · W–SW" */
     $: worksLine = (m: SportModel): string => {
-        const wnd = m.params.find(p => p.key === (m.sport === 'Surf' ? 'swell' : 'wind'));
-        const dir = m.params.find(p => p.key === (m.sport === 'Surf' ? 'swellDir' : 'dir'));
+        const wnd = m.rows.find(r => r.key === (m.sport === 'Surf' ? 'swell' : 'wind'));
+        const dir = m.rows.find(r => r.key === (m.sport === 'Surf' ? 'swellDir' : 'dir'));
         return [wnd && rangeText(wnd), dir && rangeText(dir)].filter(Boolean).join(' · ');
     };
+    /** each row with today's value and how it fits (1 inside, 0 off) */
     $: spotParts = (m: SportModel) => {
-        const g = spotNow ? guessSport(m, conditionsOf(spotNow.wind, spotNow.waves)) : null;
-        return m.params.map(p => ({ p, part: g?.parts.find(x => x.key === p.key) || null }));
+        const now = spotNow && conditionsOf(spotNow.wind, spotNow.waves);
+        const x = now ? toFeatures(now) : {};
+        return m.rows.map(r => ({ r, value: x[r.key] ?? null, fit: typeof x[r.key] === 'number' ? fitRange(r, x[r.key] as number) : null }));
     };
-    /** how close a model was, as a bar: the closest one is full, one twice as far off is half */
-    const closeness = (miss: number, list: { miss: number }[]): number =>
-        Math.round((100 * Math.max(0.1, Math.min(...list.map(x => x.miss)))) / Math.max(0.1, miss));
     $: bestRange = (b: DayBest): string => (b.now ? fill(W.todayUntil, { time: fmtTime(b.end) }) : fmtTime(b.start) + '–' + fmtTime(b.end));
     $: tideText = (t: { tide: string | null; move: string | null }): string =>
         [t.tide ? W['tide' + t.tide].toLowerCase() : '', t.move ? W['tide' + t.move].toLowerCase() : ''].filter(Boolean).join(', ');
     function primaryOf(sn: Snapshot): ModelValue | null {
         return sn.models.find(m => m.model === sn.primary) || sn.models[0] || null;
-    }
-    function closestModel(sn: Snapshot, ms: number): ModelValue | null {
-        let best: ModelValue | null = null;
-        for (const m of sn.models) {
-            if (m.wind === null) {continue;}
-            if (!best || Math.abs(m.wind - ms) < Math.abs((best.wind as number) - ms)) {best = m;}
-        }
-        return best;
     }
     function durationH(a: string, b: string): number {
         if (!a || !b) {return 0;}
@@ -1466,6 +1420,14 @@
         return d > 0 ? d : 0;
     }
     const sessionHours = (s: Session) => durationH(s.start, s.end) || (s.track ? s.track.durationMin / 60 : 0);
+    /** what an older session logged by hand, now kept read-only: "felt 14 kn · gusty · chop" */
+    const legacyLine = (se: Session | undefined): string => {
+        if (!se) {return '';}
+        const gi = ['Steady', 'Gusty', 'Very gusty'].indexOf(se.gusts || '');
+        const wi = ['Flat', 'Chop', 'Swell', 'Waves'].indexOf(se.water || '');
+        return [se.felt !== null ? fill(W.legacyFelt, { v: `${fmtWind0(se.felt, S.wind)} ${windLabel(S.wind)}` }) : '', gi >= 0 ? W['gust' + (gi + 1)] : '', wi >= 0 ? W['water' + (wi + 1)] : '']
+            .filter(Boolean).join(' · ');
+    };
     const feltLine = (se: Session): string => {
         if (se.felt === null) {return '';}
         const sn = data.snapshots.find(x => x.id === se.snapshotId);
@@ -1786,10 +1748,10 @@
             // a spot whose guess reaches the chosen level lights up in the guess colour; otherwise it stays grey
             // lights up when the rest of today has a good stretch; "great 18:00" when it's later on
             const best = bestOf(s);
-            const pred = best?.rating ?? null;
-            const good = lightsUp(pred) && shownLevel(pred) > 0;
-            const [gb, gf] = good ? guessColours(pred as number) : ['', ''];
-            const word = good && THEME.goodWord ? `<em>${escapeHtml(w('rate' + shownLevel(pred)))}${best && !best.now ? ' ' + escapeHtml(fmtTime(best.start)) : ''}</em>` : '';
+            const level = best?.level ?? 0;
+            const good = level > 0 && lightsUp(level);
+            const [gb, gf] = good ? guessColours(level) : ['', ''];
+            const word = good && THEME.goodWord ? `<em>${escapeHtml(w('rate' + level))}${best && !best.now ? ' ' + escapeHtml(fmtTime(best.start)) : ''}</em>` : '';
             let html: string;
             if (compactMarkers) {
                 // zoomed out: a plain dot, guess colour or grey (outline only if the theme turns it on)
@@ -1850,7 +1812,7 @@
     }
     function popupHtml(sp: Spot, n: Now | null, loading = false): string {
         const wv = n?.wind;
-        const g = n ? guess(modelsOf(sp, modelMap), conditionsOf(n.wind, n.waves)) : null;
+        const g = n ? rateBest(modelsOf(sp, modelMap), conditionsOf(n.wind, n.waves)) : null;
         const best = bestOf(sp);
         const tile = (label: string, val: string, bg: string, unit = '') =>
             `<div class="sl-t" style="background:${bg}"><span>${label}</span><b>${val}</b><small>${unit || '&nbsp;'}</small></div>`;
@@ -1862,8 +1824,8 @@
         return `<div class="sl-pop"><div class="sl-h"><span><b>${escapeHtml(sp.name)}</b><small>${L('cardNow')}</small></span>${nav}</div>` +
             (wv ? `<div class="sl-tiles">${tile(L('fcWind'), fmtWind0(wv.wind, S.wind), windColor(wv.wind), windLabel(S.wind))}${tile(L('fcGusts'), fmtWind0(wv.gust, S.wind), windColor(wv.gust), windLabel(S.wind))}${tile(L('fcFrom'), dirName(wv.dir), 'var(--sl-dirTile, #e9e8e3)')}${n?.waves ? tile(L('fcWaves'), fmtHeight(n.waves.waves, S.height), 'var(--sl-wavesTile, #dbe6f2)', S.height) : ''}</div>` : loading ? `<small>${L('cardLoading')}</small>` : `<small>${L('fcEmpty')}</small>`) +
             (wv ? `<small>${fmtTemp(wv.temp, S.temp)}</small>` : '') +
-            (g ? `<span class="sl-b" style="background:${guessCol(g.rating)[0]};color:${guessCol(g.rating)[1]}">${escapeHtml(guessLbl(g.rating, g.sport))}</span>` : '') +
-            (best && !best.now ? `<small class="sl-best">${L('bestToday')}: <b>${escapeHtml(guessLbl(best.rating, best.sport))}</b> ${escapeHtml(bestRange(best))}</small>` : '') +
+            (g ? `<span class="sl-b" style="background:${guessCol(g.level)[0]};color:${guessCol(g.level)[1]}">${escapeHtml(guessLbl(g.level, g.sport))}</span>` : '') +
+            (best && !best.now ? `<small class="sl-best">${L('bestToday')}: <b>${escapeHtml(guessLbl(best.level, best.sport))}</b> ${escapeHtml(bestRange(best))}</small>` : '') +
             (isMobile ? `<div class="sl-acts"><button data-act="snap">${L('cardSave')}</button><button data-act="log">${L('cardLog')}</button><button data-act="open">${L('cardDetails')}</button></div>` : '') +
             '</div>';
     }
@@ -2125,7 +2087,7 @@
         const isPin = !loc.name || loc.name === 'Dropped pin';
         sf = {
             name: isPin ? '' : loc.name || '', place: isPin ? '' : loc.name || '', lat: loc.lat, lon: loc.lon,
-            sports: ['Windsurf'], dirs: [], dMin: Math.round(toWind(7, S.wind)), dMax: Math.round(toWind(12, S.wind)), windUnknown: false, startOwn: false,
+            sports: ['Windsurf'], dirs: [], dMin: Math.round(toWind(7, S.wind)), dMax: Math.round(toWind(12, S.wind)), windUnknown: false, startOwn: false, sure: false,
         };
         go('spotForm');
         setTemp(loc.lat, loc.lon);
@@ -2138,22 +2100,22 @@
         sfReturn = null;
         sf = {
             id: s.id, name: s.name, place: s.place || '', lat: s.lat, lon: s.lon, sports: [...s.sports], dirs: [...s.dirs],
-            dMin: Math.round(toWind(s.min, S.wind)), dMax: Math.round(toWind(s.max, S.wind)), windUnknown: !!s.windUnknown, created: s.created, startOwn: !!s.startOwn,
+            dMin: Math.round(toWind(s.min, S.wind)), dMax: Math.round(toWind(s.max, S.wind)), windUnknown: !!s.windUnknown, created: s.created, startOwn: !!s.startOwn, sure: !!s.windowConfirmed,
         };
         go('spotForm');
     }
     function stepRange(k: 'dMin' | 'dMax', dir: number) {
         if (!sf) {return;}
         const st = windStep(S.wind);
-        if (k === 'dMin') {sf = { ...sf, dMin: Math.max(0, Math.min(sf.dMax - st, sf.dMin + dir * st)) };}
-        else {sf = { ...sf, dMax: Math.max(sf.dMin + st, sf.dMax + dir * st) };}
+        if (k === 'dMin') {sf = { ...sf, sure: true, dMin: Math.max(0, Math.min(sf.dMax - st, sf.dMin + dir * st)) };}
+        else {sf = { ...sf, sure: true, dMax: Math.max(sf.dMin + st, sf.dMax + dir * st) };}
     }
     function saveSpotForm() {
         if (!sf || !sf.name.trim()) {return;}
         const s: Spot = {
             id: sf.id || uid(), name: sf.name.trim(), place: sf.place, lat: sf.lat, lon: sf.lon, sports: sf.sports,
             dirs: sf.windUnknown ? [] : sf.dirs, min: Math.round(fromWind(sf.dMin, S.wind) * 10) / 10, max: Math.round(fromWind(sf.dMax, S.wind) * 10) / 10,
-            windUnknown: sf.windUnknown, created: sf.created || Date.now(),
+            windUnknown: sf.windUnknown, created: sf.created || Date.now(), windowConfirmed: !sf.windUnknown && sf.sure,
             ...(sf.startOwn ? { startOwn: true } : {}),
         };
         const isNew = !sf.id;
@@ -2200,9 +2162,18 @@
             persist();
         });
     }
+    /** "That's right": the wind window counts as yours (a preset one counts less) */
+    function confirmWindow() {
+        if (!spot) {return;}
+        const s: Spot = { ...spot, windowConfirmed: true };
+        data.spots = data.spots.map(x => (x.id === s.id ? s : x));
+        spot = s;
+        persist();
+        showToast(w('toastWindowConfirmed'));
+    }
     function applySuggestion() {
         if (!spot || !suggestion) {return;}
-        const s: Spot = { ...spot, dirs: suggestion.dirs, min: suggestion.min, max: suggestion.max, windUnknown: false };
+        const s: Spot = { ...spot, dirs: suggestion.dirs, min: suggestion.min, max: suggestion.max, windUnknown: false, windowConfirmed: true };
         data.spots = data.spots.map(x => (x.id === s.id ? s : x));
         spot = s;
         delete outlookBySpot[s.id];
@@ -2322,7 +2293,7 @@
     /* ---------- sessions ---------- */
     function emptyForm(): LogForm {
         return {
-            spotId: null, snapshotId: null, dateStr: dateStrOf(Date.now()), rating: 4, felt: null, gusts: null, water: null, sport: null,
+            spotId: null, snapshotId: null, dateStr: dateStrOf(Date.now()), rating: 4, sport: null,
             gearIds: [], gear: '', start: '', end: '', notes: '', track: null,
         };
     }
@@ -2348,9 +2319,6 @@
             nf.lon = o.lon;
             nf.spotId = nearestWithin(o.lat, o.lon ?? 0, 1)?.s.id ?? null;
         }
-        const sn = data.snapshots.find(x => x.id === nf.snapshotId);
-        const p = sn ? primaryOf(sn) : null;
-        nf.felt = p?.wind != null ? roundToStep(feltTo(p.wind, S.wind)) : null;
         f = nf;
         if (view === 'pick') {view = 'home';}
         go('log');
@@ -2374,10 +2342,7 @@
             const old = f.autoSnap;
             data.snapshots = [...data.snapshots.filter(x => !(old && x.id === old)), sn];
             persist();
-            if (f) {
-                const p = sn.models.find(m => m.model === sn.primary) || sn.models[0];
-                f = { ...f, snapshotId: sn.id, autoSnap: sn.id, felt: f.felt ?? (p?.wind != null ? roundToStep(feltTo(p.wind, S.wind)) : null) };
-            }
+            if (f) {f = { ...f, snapshotId: sn.id, autoSnap: sn.id };}
         } catch (e) {
             captureError = (e as Error).message;
             captureErrorDay = f?.dateStr || '';
@@ -2411,9 +2376,7 @@
         const sp = spotById(se.spotId);
         f = {
             id: se.id, spotId: se.spotId, lat: se.lat ?? sp?.lat, lon: se.lon ?? sp?.lon, snapshotId: se.snapshotId,
-            dateStr: dateStrOf(se.date), rating: se.rating,
-            felt: se.felt === null ? null : roundToStep(feltTo(se.felt, S.wind)),
-            gusts: se.gusts, water: se.water, sport: se.sport ?? null, checked: !!se.checked, gearIds: [...(se.gearIds || [])], gear: se.gear || '',
+            dateStr: dateStrOf(se.date), rating: se.rating, sport: se.sport ?? null, checked: !!se.checked, gearIds: [...(se.gearIds || [])], gear: se.gear || '',
             start: se.start, end: se.end, notes: se.notes, track: se.track || null,
         };
         go('log');
@@ -2441,13 +2404,12 @@
         else if (f.track?.start && dateStrOf(f.track.start) === f.dateStr) {date = f.track.start;}
         else {date = new Date(`${f.dateStr}T12:00`).getTime();}
         if (!isFinite(date)) {date = Date.now();}
+        // what older sessions logged by hand (felt wind, gusts, water, tide) stays exactly as it was; new sessions don't ask
+        const was = data.sessions.find(x => x.id === f?.id);
         const se: Session = {
             id: f.id || uid(), spotId: f.spotId, lat: f.lat, lon: f.lon, snapshotId: f.snapshotId, date, rating: f.checked ? 2 : f.rating,
             ...(f.checked ? { checked: true } : {}),
-            felt: f.felt === null ? null : Math.round(feltFrom(f.felt, S.wind) * 10) / 10,
-            gusts: f.gusts, water: f.water,
-            // a tide logged by hand in older diaries stays (new tides come from the saved forecast)
-            tide: data.sessions.find(x => x.id === f?.id)?.tide ?? null, tideMove: data.sessions.find(x => x.id === f?.id)?.tideMove ?? null,
+            felt: was?.felt ?? null, gusts: was?.gusts ?? null, water: was?.water ?? null, tide: was?.tide ?? null, tideMove: was?.tideMove ?? null,
             sport: logSport(f) || null, gearIds: f.gearIds, gear: f.gear.trim(), start: f.start, end: f.end, notes: f.notes, track: f.track,
             tz: deviceTz(),
         };
@@ -2552,17 +2514,28 @@
     }
 
     /* ---------- conditions + matches ---------- */
-    async function loadNow(s: Spot, model = modelFor(s, trustMap)): Promise<Now | null> {
+    async function loadNow(s: Spot, model = modelFor(s)): Promise<Now | null> {
         const k = nowKey(s.id, model);
         const cur = nowBySpot[k];
-        // the spot's model can change (a more accurate one here): then load again
+        // the spot's model can change (a fallback chosen): then load again
         if (cur && cur !== 'loading' && (cur.wind?.model ?? model) === model) {return cur;}
         nowBySpot = { ...nowBySpot, [k]: 'loading' };
-        const own = model === modelFor(s, trustMap);
+        const own = model === modelFor(s);
         const [n, hours] = await Promise.all([conditionsNow(s.lat, s.lon, model), own ? hoursToday(s.lat, s.lon, model) : Promise.resolve(null)]);
         if (hours) {dayBySpot = { ...dayBySpot, [s.id]: hours };}
         nowBySpot = { ...nowBySpot, [k]: n };
+        if (own && !n?.wind && !s.recommendationModel) {chooseFallbackModel(s);}
         return n;
+    }
+    /** ECMWF has no forecast here: pick one model that covers the spot, once, and keep it (learning and tags use it) */
+    async function chooseFallbackModel(s: Spot) {
+        const m = (await availableModels(s.lat, s.lon)).find(x => x !== 'ecmwf');
+        if (!m) {return;}
+        data.spots = data.spots.map(x => (x.id === s.id ? { ...x, recommendationModel: m } : x));
+        if (spot?.id === s.id) {spot = spotById(s.id) || spot;}
+        persist();
+        delete outlookBySpot[s.id];
+        loadNow(spotById(s.id) as Spot);
     }
     /** conditions are kept for 20 minutes; after that (Windy left open, the phone back from the pocket) they load again */
     let nowAt = 0;
@@ -2584,7 +2557,7 @@
     async function loadOutlook(s: Spot) {
         if (outlookBySpot[s.id] !== undefined) {return;}
         outlookBySpot = { ...outlookBySpot, [s.id]: 'loading' };
-        const m = modelFor(s, trustMap);
+        const m = modelFor(s);
         const from = Date.now();
         const [hours, pred, tide] = await Promise.all([hoursBetween(s.lat, s.lon, from, from + 6 * 864e5, m), predictability(s.lat, s.lon, m), tideToday(s.lat, s.lon)]);
         outlookBySpot = { ...outlookBySpot, [s.id]: { hours, pred, tide } };
@@ -2617,7 +2590,7 @@
     function useLearnedWindow() {
         if (!spot || !spotLearnedWindow) {return;}
         const before = spot;
-        const after: Spot = { ...spot, dirs: spotLearnedWindow.dirs, min: spotLearnedWindow.min, max: spotLearnedWindow.max };
+        const after: Spot = { ...spot, dirs: spotLearnedWindow.dirs, min: spotLearnedWindow.min, max: spotLearnedWindow.max, windowConfirmed: true };
         data.spots = data.spots.map(x => (x.id === after.id ? after : x));
         spot = after;
         persist();
@@ -2627,21 +2600,27 @@
             persist();
         });
     }
+    type OwnRange = { lo?: number; hi?: number; dirs?: Dir8[] };
     /** inputs are in your units; ranges are stored in m/s, m, °C */
-    const toUnit = (k: ParamKey, v: number): number =>
+    const toUnit = (k: Feature, v: number): number =>
         k === 'wind' || k === 'gust' ? Math.round(toWind(v, S.wind) * 10) / 10 : (k === 'waves' || k === 'swell') && S.height === 'ft' ? Math.round(v * 3.28084 * 10) / 10
             : k === 'temp' && S.temp === 'F' ? Math.round(v * 1.8 + 32) : Math.round(v * 100) / 100;
-    const fromUnit = (k: ParamKey, v: number): number =>
+    const fromUnit = (k: Feature, v: number): number =>
         k === 'wind' || k === 'gust' ? fromWind(v, S.wind) : (k === 'waves' || k === 'swell') && S.height === 'ft' ? v / 3.28084 : k === 'temp' && S.temp === 'F' ? (v - 32) / 1.8 : v;
+    /** a row's outer edges (all its spans together) */
+    const outer = (r: RangeRow | undefined): { lo?: number; hi?: number } => {
+        const spans = r?.spans || [];
+        return spans.length ? { lo: spans.some(x => x.lo === undefined) ? undefined : Math.min(...spans.map(x => x.lo as number)), hi: spans.some(x => x.hi === undefined) ? undefined : Math.max(...spans.map(x => x.hi as number)) } : {};
+    };
     function startEdit(m: SportModel) {
         editSport = m.sport;
         editRows = {};
-        for (const key of paramsOf(m.sport)) {
-            const p = m.params.find(x => x.key === key);
+        for (const key of allFeatures(m.sport)) {
+            const { lo, hi } = outer(m.rows.find(x => x.key === key));
             editRows[key] = {
-                lo: p?.lo !== undefined && !isCircular(key) ? String(toUnit(key, p.lo)) : '',
-                hi: p?.hi !== undefined && !isCircular(key) ? String(toUnit(key, p.hi)) : '',
-                dirs: p?.centres ? (p.from === 'window' && spot ? [...spot.dirs] : dirsOfParam(p)) : [],
+                lo: lo !== undefined && !isCircular(key) ? String(toUnit(key, lo)) : '',
+                hi: hi !== undefined && !isCircular(key) ? String(toUnit(key, hi)) : '',
+                dirs: [...(m.rows.find(x => x.key === key)?.dirs || [])],
             };
         }
     }
@@ -2649,10 +2628,10 @@
         if (!spot || !editSport) {return;}
         const learned = spotLearned.find(m => m.sport === editSport);
         const own: Record<string, OwnRange> = {};
-        for (const [key, row] of Object.entries(editRows) as [ParamKey, { lo: string; hi: string; dirs: Dir8[] }][]) {
-            const p = learned?.params.find(x => x.key === key);
+        for (const [key, row] of Object.entries(editRows) as [Feature, { lo: string; hi: string; dirs: Dir8[] }][]) {
+            const p = learned?.rows.find(x => x.key === key);
             if (isCircular(key)) {
-                const was = p?.centres ? (p.from === 'window' ? spot.dirs : dirsOfParam(p)) : [];
+                const was = p?.dirs || [];
                 const same = row.dirs.length === was.length && row.dirs.every(d => was.includes(d));
                 if (row.dirs.length && (!same || p?.from === 'you')) {own[key] = { dirs: row.dirs };}
                 continue;
@@ -2665,7 +2644,7 @@
             if (hi !== undefined && isFinite(hi)) {r.hi = fromUnit(key, hi);}
             const differs = (v: number | undefined, ref: number | undefined) =>
                 (v === undefined) !== (ref === undefined) || (v !== undefined && ref !== undefined && Math.abs(toUnit(key, v) - toUnit(key, ref)) > 0.01);
-            if ((r.lo !== undefined || r.hi !== undefined) && (p?.from === 'you' || differs(r.lo, p?.lo) || differs(r.hi, p?.hi))) {own[key] = r;}
+            if ((r.lo !== undefined || r.hi !== undefined) && (p?.from === 'you' || differs(r.lo, outer(p).lo) || differs(r.hi, outer(p).hi))) {own[key] = r;}
         }
         const ranges = { ...(spot.ranges || {}) };
         if (Object.keys(own).length) {ranges[editSport] = own;} else {delete ranges[editSport];}
@@ -2980,8 +2959,6 @@
     .when.one { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 2fr); gap: 6px;
         input[type='date'] { height: 44px; padding: 0 8px; font-size: 14px; text-align: center; -webkit-appearance: none; appearance: none; }
         .times { gap: 6px; .to { display: none; } } }
-    .spotlog.m .felt-card { padding: 10px 14px; gap: 6px;
-        .big2 { font-size: 20px; } .tag { font-size: 11px; } .sep { padding-top: 8px; } }
     /* inside the phone panel the bar already shows the logo, the actions and the tabs */
     .mwrap.on :global(.home-head), .mwrap.on :global(.home-acts), .mwrap.on :global(.home-tabs) { display: none !important; }
     @media (prefers-reduced-motion: reduce) { .mwrap.on, .mwrap.on:not(.open) { transition: none; } }
@@ -3186,9 +3163,6 @@
     .suggest { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: calc(var(--sl-radiusButton, 12px) + 2px); background: var(--sl-lightBg, #f8f8f8); color: var(--sl-lightText, #1c1c1c); small { color: var(--sl-lightSub, #6b6b6b); } }
     .section { display: flex; flex-direction: column; gap: 8px; }
     .h2 { font-size: 20px; }
-    .score { display: flex; align-items: center; gap: 10px; font-size: 13px;
-        .m { width: 64px; &.best { color: @orange; font-weight: 600; } }
-        .missbar { flex: 1; height: 6px; border-radius: 3px; background: @line; display: flex; i { display: block; border-radius: 3px; background: @sub; &.best { background: @orange; } } } }
     .ratings { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
     .rate { height: 62px; border-radius: calc(var(--sl-radiusButton, 12px) + 2px); border: 1px solid @line; background: @card; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
         b { font-size: 19px; } span { font-size: 11px; } }

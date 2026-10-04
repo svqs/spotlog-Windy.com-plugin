@@ -44,6 +44,13 @@ def text_problems(pg):
     t = pg.locator('.spotlog').first.inner_text()
     return [w for w in ['NaN', 'undefined', 'null', '[object', 'Infinity'] if w in t]
 
+def set_start(pg, hour='10'):
+    """pick a start time with the time wheel (new sessions need one)"""
+    pg.locator('.tw .field-btn').first.click()
+    pg.wait_for_selector('.tw .tw-pop')
+    pg.locator('.tw .tw-pop .col >> nth=0').locator('.it', has_text=hour).first.click()
+    pg.click('.tw .tw-pop .done')
+
 def cut_text(pg):
     """values that are cut off with "…" (an ellipsis is fine for long names and notes, not for numbers and tags)"""
     return pg.evaluate("""() => {
@@ -62,7 +69,7 @@ def overflow(pg):
       for (const el of root.querySelectorAll('*')) {
         const r = el.getBoundingClientRect(); if (!r.width || !r.height) continue;
         const cs = getComputedStyle(el); if (cs.visibility === 'hidden' || cs.position === 'fixed') continue;
-        if (el.closest('.swipe-actions,.sw .back,.tw-pop,[hidden],.cells,.scrollx,.trust,.hours,.felt .tape,.felt')) continue;
+        if (el.closest('.swipe-actions,.sw .back,.tw-pop,[hidden],.cells,.scrollx,.trust,.hours')) continue;
         if (r.right > rr.right + 1.5 || r.left < rr.left - 1.5) bad.push((el.className && el.className.baseVal === undefined ? el.className : el.tagName) + ' ' + (el.textContent || '').trim().slice(0, 30));
       }
       return [...new Set(bad)].slice(0, 6);
@@ -116,6 +123,18 @@ with sync_playwright() as p:
     pg.wait_for_selector('.tile')
     note(pg.locator('.welcome').count() == 0, 'old diary: no welcome (has data)')
     note(pg.locator('.tile').count() == 3, f'spot without coordinates is skipped ({pg.locator(".tile").count()} tiles)')
+    # what old sessions logged by hand (felt wind, gusts, water) survives opening and saving them again
+    pg.click('.tabs button:has-text("Sessions")')
+    # the list is newest first; the broken session (no valid date) was given today's date, so it comes first
+    order = ['bad1'] + [x['id'] for x in sorted((x for x in d['sessions'] if isinstance(x.get('date'), (int, float))), key=lambda x: -x['date'])]
+    idx = next(i for i, k in enumerate(order) if next(x for x in d['sessions'] if x['id'] == k).get('felt') is not None)
+    sid = order[idx]
+    pg.click(f'.sw .front >> nth={idx}'); pg.wait_for_selector('text=Save changes')
+    legacy_shown = pg.locator('text=Logged back then').count() == 1
+    pg.locator('text=Save changes').scroll_into_view_if_needed(); pg.click('text=Save changes'); pg.wait_for_timeout(500)
+    after = next(x for x in pg.evaluate(f"JSON.parse(localStorage.getItem('{KEY}')).sessions") if x['id'] == sid)
+    orig = next(x for x in d['sessions'] if x['id'] == sid)
+    note(legacy_shown and all(after.get(k) == orig.get(k) for k in ('felt', 'gusts', 'water', 'rating', 'start', 'end', 'notes')), f'old session: felt/gusts/water shown read-only and kept after saving ({legacy_shown}, {[(k, orig.get(k), after.get(k)) for k in ("felt", "gusts", "water", "rating", "start", "end") if after.get(k) != orig.get(k)] or [after.get(k) for k in ("felt", "gusts", "water")]})')
     note(not errs, f'old/odd data loads without errors {errs[:3]}')
     ctx.close()
     ctx, pg, errs = page()
@@ -159,7 +178,8 @@ with sync_playwright() as p:
         seed(pg, big_data(1, 0, 0))
         pg.click('.tile >> nth=0'); pg.wait_for_selector('.reco')
         pg.click('.act:has-text("Log session")')
-        pg.wait_for_selector('.felt', timeout=8000)
+        pg.wait_for_selector('.ratings', timeout=8000)
+        set_start(pg)
         today = pg.evaluate("new Date().toLocaleDateString('sv')")
         pg.locator('text=Save session').scroll_into_view_if_needed(); pg.click('text=Save session')
         pg.wait_for_timeout(600)
@@ -186,7 +206,7 @@ with sync_playwright() as p:
     note('Windsurf' in txt and 'Surf' in txt and 'learned from 5 sessions, 3 great' in txt and 'N' in txt, 'what works here, per sport: ' + txt.replace('\n', ' | ')[:300])
     pg.locator('.works').scroll_into_view_if_needed()
     pg.screenshot(path=f'{OUT}/works.png')
-    pg.click('.act:has-text("Log session")'); pg.wait_for_selector('.felt')
+    pg.click('.act:has-text("Log session")'); pg.wait_for_selector('.ratings'); set_start(pg)
     chips = pg.locator('[role=radiogroup][aria-label="Sport"] .chip').all_inner_texts()
     pg.get_by_role('radio', name='Surf', exact=True).click()
     pg.locator('text=Save session').scroll_into_view_if_needed(); pg.click('text=Save session')
@@ -194,7 +214,7 @@ with sync_playwright() as p:
     last = pg.evaluate(f"JSON.parse(localStorage.getItem('{KEY}')).sessions.slice(-1)[0]")
     note(chips[:2] == ['Windsurf', 'Surf'] and 'Kite' in chips and 'SUP' not in chips and chips[-1] == 'Other…' and last.get('sport') == 'Surf', f'multi-sport spot: the log asks which sport, the spot\'s first ({chips}), saved {last.get("sport")}')
     # a sport of your own, typed under "Other…": the session gets it and the spot learns it from now on
-    pg.click('.act:has-text("Log session")'); pg.wait_for_selector('.felt')
+    pg.click('.act:has-text("Log session")'); pg.wait_for_selector('.ratings'); set_start(pg)
     pg.locator('[role=radiogroup][aria-label="Sport"] .chip:has-text("Other…")').click()
     pg.fill('.other-sport input', 'Foil'); pg.click('.other-sport button')
     on = pg.locator('[role=radiogroup][aria-label="Sport"] .chip.on').all_inner_texts()
@@ -281,10 +301,10 @@ with sync_playwright() as p:
         pg.wait_for_selector('.works .w-grid'); at('.works', 'spot-works')
         pg.locator('.works .w-head .link:has-text("Adjust")').first.click(); pg.wait_for_selector('.w-grid.edit'); at('.w-grid.edit', 'spot-adjust')
         pg.locator('.works .btn:has-text("Cancel")').first.click()
-        at('.score', 'spot-trust')
-        pg.locator('.act:has-text("Log session")').first.click(); pg.wait_for_selector('.felt'); check('log-top')
+        at('.section:has-text("Saved forecasts")', 'spot-saved')
+        pg.locator('.act:has-text("Log session")').first.click(); pg.wait_for_selector('.ratings'); check('log-top')
         pg.locator('[role=radiogroup][aria-label="Sport"] .chip:has-text("Other…")').click(); at('.other-sport', 'log-sport')
-        at('.felt', 'log-felt')
+        at('.ratings', 'log-rating')
         at('text=Save session', 'log-bottom')
         pg.locator('.back, button[aria-label="Back"]').first.click() if pg.locator('.back, button[aria-label="Back"]').count() else None
         pg.wait_for_timeout(500)

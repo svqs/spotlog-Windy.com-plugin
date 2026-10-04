@@ -7,27 +7,27 @@ the owner, then update this page.
 
 | Decision | Why | Since |
 |---|---|---|
-| **Learn per spot and sport, plainly:** a range per condition + how much it matters, learned from your sessions vs the saved forecast. No fixed weights. | "Simple statistics on the parameters that matter per sport"; the old weighted system was overcomplicated | 0.13 |
-| **Gusts are a wind speed** in the user's units, like wind (not a gust factor) | That's how people read gusts in the forecast | 0.14.3 |
-| **Only good news:** good / great / epic, else "Not sure yet" | A wrong negative guess makes people skip good days | 0.12 |
+| **Recommendation v2** ([spec](specifications/recommendation-v2-spec.md)): weighted similar sessions per spot and sport; boosted trees only with lots of data and after beating similar sessions on later outings | Poor outings count through their ratings; evidence before tags; a path to a stronger model | 0.16 |
+| **Only a forecast saved before the outing teaches**; later ones stay in the diary | Learn from what you could have known | 0.16 |
+| **Your wind window counts as yours only once you change or confirm it** ("I'm sure" / "It's right"); a preset one counts less and never gives a tag alone | A preset mustn't pass for knowledge | 0.16 |
+| **One model per spot** (ECMWF; one fallback chosen once where ECMWF has no forecast); no felt-based "which forecast to trust" and no bias | Felt wind was often prefilled; shared saved days skewed it | 0.16 |
+| **Session form without felt wind, gusts and water**; old values kept and shown read-only; a start time is needed for new outings | Those inputs didn't teach; time finds the forecast | 0.16 |
+| **Only good news:** good / great / epic, else "Not sure yet" (with the reason as a tooltip) | A wrong negative guess makes people skip good days | 0.12 |
 | **Tags name the sport:** "Good / Great / Epic for windsurf" | Ratings are per sport | 0.15 |
-| **"Not worth it, didn't go"** is an option in Log session (rating 2, not counted as a session on the water) | Poor days teach what doesn't work; no extra button on the spot page | 0.14.2 |
-| **No "start from my own ratings" option** for now | The owner changed her mind; the field stays for old diaries | 0.14.1 |
-| **Own ranges are custom:** spotlog learns them, and you can adjust (Adjust › Save / Back to learned) | "Let it be custom, it learns and saves it but you can adjust it" | 0.14 |
+| **"Not worth it, didn't go"** is an option in Log session (rating 2, not counted as a session on the water; a weak signal in the learning) | Poor days teach what doesn't work; no extra button on the spot page | 0.14.2 |
+| **No "start from my own ratings" option** | The owner changed her mind; the field stays for old diaries | 0.14.1 |
+| **Own ranges are custom:** spotlog describes them, and you can adjust (Adjust › Save / Back to learned); yours count as confirmed | "Let it be custom, it learns and saves it but you can adjust it" | 0.14 |
 | **Gear hints only after many sessions** per gear (8+) | Few sessions say nothing about gear | 0.14 |
 | **Learned wind window is a suggestion** ("spotlog learned it works best … Use this"), never applied by itself | Not a default decision | 0.14 |
-| Sessions where the felt wind was far off the forecast count half; spots within 3 km share at half weight | Bad forecasts teach less; neighbours help early | 0.14 |
-| Each spot uses its most accurate model once it has 3+ felt sessions, else ECMWF | "Try ECMWF" by default | 0.14 |
 
 ## Spot page
 
 | Decision | Since |
 |---|---|
-| **Order:** forecast card → wind window card → When to go → What works here for you (fold-out, remembers open/closed; gear hints inside) → Which forecast to trust → saved forecasts → sessions | 0.14 |
-| **When to go** shows only days with a match (today included), with Windy's predictability "% sure" under each of the next days. "Nothing stands out today or in the next days." when none. No source line under it. | 0.15 |
-| **What works here:** a table with Your range · Matters · Today. Matters is in words (a little / some / a lot), not bars. **No ✓ ~ ✕ symbols.** Today is green when it fits, orange when close. | 0.14.7 |
+| **Order:** forecast card → wind window card → When to go → What works here for you (fold-out, remembers open/closed; gear hints inside) → saved forecasts → sessions ("Which forecast to trust" removed in 0.16) | 0.16 |
+| **When to go** shows only days with a match (today included), as stretches of at least two hours, with Windy's predictability "% sure" under each of the next days. "Nothing stands out today or in the next days." when none. No source line under it. | 0.15 |
+| **What works here:** a table with Your range · Matters · Today (descriptive since 0.16: ranges of your well-rated outings, they don't drive the score). Matters is in words (a little / some / a lot), not bars. **No ✓ ~ ✕ symbols.** Today is green when it fits, orange when close. | 0.14.7 |
 | What works, folded: one line per sport; "not sure yet" when nothing is known. Open with nothing known: "Not sure yet. Adjust your window or log a few sessions here…". The header line says where ranges come from (sessions / wind window / set by you) **only when there are some**. | 0.15.3 |
-| **Which forecast to trust:** the bars show closeness (the closest model is full; yellow once it has 3+ sessions), and the number is the average miss | 0.15.2 |
 
 ## Everywhere
 

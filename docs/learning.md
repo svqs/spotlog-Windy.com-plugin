@@ -1,143 +1,225 @@
-# How spotlog learns (src/lib/predict.ts)
+# How spotlog recommends (src/lib/predict.ts + src/lib/learn/)
 
-spotlog compares **what the forecast said at the time of each session** with **how the session went**. From that it
-learns, per spot and per sport, which conditions work for you and how much each one matters. Everything here is plain
-statistics on your own diary, with no machine-learning model and no shared data.
+Recommendation v2, built from [the specification](specifications/recommendation-v2-spec.md). spotlog compares **the
+forecast you saved before an outing** with **how the outing went (1–5)**. It then rates new forecasts from the most
+similar past outings, per spot and per sport. Everything runs in the browser on your own diary. There is no shared
+data and no server.
 
-`scripts/test-predict.mjs` checks the main behaviours (12 checks). Run it after any change in this file.
+`node scripts/test-predict.mjs` checks the behaviour (14 checks). Run it after any change here.
 
-## 1. Conditions per sport
+## The modules
 
-`SPORT_PARAMS` lists the conditions each sport looks at. `paramsOf(sport)` falls back to `Other`, which also covers
-the sports people type in themselves.
+```
+src/lib/predict.ts        the public face: learnSpot, trees in the background, wind window and gear helpers, re-exports
+src/lib/learn/config.ts   EVERY number below, in one place (change them only there; bump ALGORITHM_VERSION)
+src/lib/learn/features.ts what each sport looks at, summing a stretch of hours up, the distance between two forecasts
+src/lib/learn/examples.ts sessions → training examples (the only way data enters the learning)
+src/lib/learn/similar.ts  weighted similar sessions + your ranges + the evidence gates
+src/lib/learn/trees.ts    gradient-boosted regression trees and their walk-forward check
+src/lib/learn/model.ts    one sport at one spot (SportModel) and rate() = similar sessions, blended with trees when earned
+src/lib/learn/windows.ts  when to go: two-hour windows → stretches → the best one
+src/lib/learn/ranges.ts   your ranges (the prior) and the descriptive "What works here" rows
+src/lib/learn/tide.ts     tide state from saved highs/lows, the tide your best outings had
+```
 
-| Sport | Conditions |
+**Data flow:** `learnSpot()` → `examplesFor()` → `sportModel()` (prior + rows) → `rate()` / `bestIn()` in the UI.
+
+## 1. Features per sport (features.ts)
+
+| Sport | Core (required, weight 2) | Extra (optional, weight 1) |
+|---|---|---|
+| Windsurf, Kite, Wing, Other (and your own sports) | wind, dir | gust, waves, temp, rain |
+| Surf | swell, period, wind | swellDir, dir, power, temp, rain |
+
+- Units are SI; directions are in degrees.
+- Swell falls back to the total wave height, and period and direction to the waves' values, when the forecast has no
+  swell figure.
+- **A forecast without all core features is never rated** ("Not sure yet"). For example, a surf spot with no wave data
+  never gets a tag.
+
+**Summing a stretch up** (`summarize`, used for outings and future windows alike):
+- median wind, waves, swell, period, temperature and wave power;
+- **max** gust and rain;
+- **circular mean** for directions.
+
+**Distance** between two forecasts:
+
+```
+distance² = Σ weight × (difference / SCALE)² / Σ weight   over the sport's fixed feature set
+```
+
+- SCALE: wind/gust 3 m/s, waves/swell 0.75 m, period 3 s, temperature 8 °C, rain 2 mm, power 10 kW/m, directions 45°.
+- Direction differences go the shortest way round the compass.
+- A missing extra counts as difference 1, so missing data never looks closer.
+- A missing core feature means the two forecasts can't be compared.
+
+## 2. Training examples (examples.ts)
+
+One example per session at a spot. A session **teaches only when all of these hold**:
+
+| Rule | Why | Skip reason |
+|---|---|---|
+| rating 1–5 | the outcome | `rating` |
+| a saved forecast is linked | nothing to learn from otherwise | `no forecast` |
+| it was **saved no later than the start** (`savedAt > 0 && savedAt <= start`) | only what you could have known beforehand | `saved after start` |
+| it belongs to the spot or was saved within 1 km | right place | `other place` |
+| it has the spot's recommendation model | one model per spot, consistently | `model missing` |
+| it covers the outing, with no gap over 1.5 h | the whole session, not a guess | `not covered` / `gap` |
+| the sport's core features are there | comparable | `missing core` |
+
+**Time**
+- `session.date` is the start instant.
+- The end clock is read in the session's own time zone (`tz`). An end before the start is the next day, and
+  daylight-saving changes are handled.
+- **With start and end:** the saved hours inside the outing are summed up.
+- **Start only:** the nearest hour, marked `limited`.
+- **Old sessions without a start clock, and old single-hour saves:** used when they fit, also marked `limited`.
+
+**What else an example records**
+- **Kinds:** an outing, or a **"Not worth it, didn't go"** day (`checked`). Didn't-go days are a weak preference signal:
+  weight 0.25, and they never count as evidence for a tag.
+- **Provenance:** `from = {snapshotId, model, hours, limited}` lives only on the derived example, never in the diary.
+- **Tide:** from the tides saved with the day, else a hand-logged tide from an older diary.
+
+The sport is the session's own sport when the spot lists it, else the spot's first. Logging a new sport adds it to the
+spot.
+
+## 3. Weighted similar sessions: the default model (similar.ts)
+
+For a forecast `x`, per sport:
+
+1. **Neighbours:** the 10 closest examples within distance 2. Each one's weight is
+
+   ```
+   base × exp(−distance² / 2)
+   ```
+
+   - base 1 for a local outing;
+   - base 0.25 for an outing at a spot within 3 km;
+   - base 0.25 for a local "didn't go" day.
+2. **Caps:**
+   - all examples from one spot and day count at most 1 in total;
+   - all nearby-spot examples count at most 2 in total.
+3. **Your ranges as a starting preference** (ranges.ts → `priorOf`):
+   - Ranges you set with Adjust win, per parameter. Your wind window covers wind and direction.
+   - `userFit` is the fit of the **worst** of your ranges (1 inside, falling to 0 a tolerance beyond the edge).
+   - `priorRating = 1 + 2.4 × userFit` (at most 3.4).
+   - Weight 2 when it's yours: a range you set, or a window you changed or confirmed. Weight 0.5 for an unconfirmed
+     preset window. None for "I don't know yet".
+4. **Score:**
+
+   ```
+   score = (Σ weight × rating + priorWeight × priorRating) / (Σ weight + priorWeight)
+   ```
+
+   It's a 1–5 number, not a probability.
+
+## 4. Evidence: when a tag may show
+
+Only **local actual outings** among the neighbours count as evidence. Spots next door and didn't-go days don't.
+
+| Tag | Needs |
 |---|---|
-| Windsurf, Kite, Wing | wind, dir, gust, waves, temp, rain |
-| Surf | swell, period, swellDir, power, wind, dir, temp, rain |
-| Other (and your own sports) | wind, dir, waves, temp, rain |
+| any learned tag | effective support `N_eff ≥ 3`, at least one similar local outing rated 3+, and one within distance 1 |
+| Good from your range | a range you set or a window you confirmed (no outings needed); shown as "From the wind window you set" |
+| Great | at least 3 similar local outings rated 4+ |
+| Epic | at least 6 similar local outings rated 4+, including two 5s |
+| never | when every similar local outing was rated 1–2 |
 
-`SPEC` describes each condition:
-- `circular`: true for directions.
-- `main` vs extra: the starting importance is 0.5 for main conditions and 0.25 for extras (temp, rain, power).
-- `widen`: the least a learned range is widened by.
-- `tol`: how far beyond the edge the fit has dropped to 0, at minimum.
+- Effective support: `N_eff = (Σw)² / Σw²`, counted **per day**, so one day logged five times is one piece of
+  evidence.
+- The score's cut-offs are 2.7 good, 3.5 great, 4.2 epic. A tag is the lower of the score's level and what the evidence
+  allows.
+- Below Good, the result is "Not sure yet", with a reason: few sessions, only poor sessions, below good, missing
+  forecast, or outside what the trees saw.
 
-**Units inside the learning** are SI: m/s, m, s, kW/m, °C, mm, degrees. **Gusts are a wind speed (m/s)**, not a gust
-factor. Ranges from 0.14.0 that were a factor (< 3) are skipped.
+Every result is structured (`Result`): score, level, sport, source (`user range` / `similar sessions` /
+`boosted trees`), support, N_eff, nearest distance, cap and reasons.
 
-## 2. Samples: a session plus its forecast
+## 5. Boosted trees: the larger-data model (trees.ts)
 
-`samplesFor(spot, sessions, snapshots, model, weight)` turns sessions into `Sample`s.
+Small gradient-boosted regression trees on the same features.
 
-**Which sessions count**
-- Only sessions at the spot that have a saved forecast (`snapshotId`).
-- **Time:** `sessionTime(s)` is the start plus half the duration.
-- **Forecast:** `forecastFor(snapshot, time, model)` reads the saved day (`series`) at that time:
-  - From the spot's **trusted model** (see `wind.ts → trustedModel`), falling back to ECMWF.
-  - A session outside the saved hours (±1 h) is **left out**.
-  - Old snapshots without `series` count only when saved within 1.5 h of the session.
+- **Build:** depth ≤ 2, ≥ 10 examples per leaf, learning rate 0.05, 100 trees.
+- **Encoding:** directions as sine/cosine; extras get a missing-indicator; missing values are filled with the training
+  means.
+- Pure TypeScript, deterministic, no library.
 
-**Weight and sport**
-- Weight 1 by default.
-- **0.5** when the felt wind was more than a third away from the forecast (that day says less about the forecast).
-- **0.5** for sessions from spots within 3 km (`nearbySpots`, same sports only; done in `plugin.svelte → modelMap`).
-- The sample's sport is the session's sport when the spot lists it, else the spot's first sport. A new sport is added to
-  the spot when the session is saved, so normally it is listed.
+**May be used** (`treesEligible`) only for a spot and sport with 100+ actual local outings on 30+ days, with 20+ rated
+≤ 2 and 20+ rated ≥ 3. Spots next door and didn't-go days don't count.
 
-**Tide:** from the tides saved with the day (`tideAt`), or, for older diaries, the one logged by hand.
+**Must win** (`trainTrees`): a walk-forward check.
+- The last 40 % of days are predicted in up to 5 chronological blocks, each from the days before it. A day is never
+  split.
+- The trees are used only when their mean error is ≥ 5 % lower than similar sessions on ≥ 20 held-out outings **and**
+  they don't call more poor outings Good. They are then retrained on everything.
 
-**"Not worth it, didn't go"** sessions (`checked: true`, rating 2) are real poor samples. They teach what doesn't work
-and are excluded from stats and counts.
+**In use:**
+- score = 70 % trees + 30 % similar sessions (50/50 when you have confirmed ranges);
+- the same evidence gates apply;
+- outside the range of core values the trees saw: "Not sure yet".
 
-## 3. Ranges: what works
+**Training** runs in the background between frames, after a diary change (`trainTreesInBackground`). It is cached per
+spot, sport, data and algorithm version, and a failure falls back to similar sessions.
 
-`rangeOf(spot, sport, key, good)`, in order of priority:
+## 6. When to go (windows.ts)
 
-1. **Your own range** (`spot.ranges[sport][key]`, set with Adjust). It always wins.
-2. **From great sessions:** good = rating ≥ 4. When there is less than 2 weight of those, good falls back to rating ≥ 3.
-   - Needs good samples with at least 2 weight in total (`LEARN.minGood`).
-   - Linear conditions: from 6 sessions, the 10th–90th percentile (one odd day doesn't stretch the range); with fewer,
-     min–max. Then the range is widened by `max(10 %, spec.widen)` on each side.
-   - Directions: each great session's direction ± 20°.
-3. **Your wind window:** wind = `spot.min–spot.max`; direction = `spot.dirs` ± 22.5°. Nothing for "I don't know yet"
-   spots.
-4. Nothing: the condition isn't shown, and it doesn't count.
+- **Runs:** daylight forecast hours split wherever an hour is missing. A gap is longer than 1.5 × the hours' own step,
+  so a model's native 3-hour steps aren't gaps.
+- **Windows:** two hours long, rolling.
+  - A window counts when **every hour in it rates Good or better on its own** and the window's summed-up forecast does
+    too.
+  - One good hour never stands for a longer outing.
+- **Stretches:** qualifying windows next to each other merge into one stretch. Its rating is the windows' mean score,
+  and its level is capped by the weakest window's evidence.
+- **Best:**
+  - the highest mean;
+  - within 0.2: the longer stretch, then the earlier one.
+  - Each sport is scored separately, and the tag names the sport that matched.
+- **Range:** `bestToday` covers the rest of today (tiles, map, card); `nextDays` covers the next 5 days (When to go).
 
-`ParamModel.from` says which of the three it is (`you`, `sessions`, `window`). The UI says where ranges come from only
-when there are some.
+Windy's predictability "% sure" is shown next to the day. It is a separate forecast-uncertainty signal and never changes
+the score.
 
-**Bias:** the wind window is "how it feels". When comparing the forecast with the window, the forecast is shifted by the
-spot's average `felt − forecast` (`forecastBias`).
+## 7. "What works here" (ranges.ts → `describe`)
 
-## 4. Importance: how much a condition decides the day
+Per feature of the sport, in this order:
+1. **A range you set** with Adjust (marked with a dot).
+2. **Your outings:** the weighted 10th–90th percentile of local outings rated 4+, once there are 3 of them. Days count
+   once, so the weight is 1 ÷ outings that day.
+   - A gap wider than the feature's scale with a poor outing inside splits it into separate spans, shown like
+     `6–9 · 12–15 m/s`.
+   - Directions are shown as the compass sectors they fell in.
+3. **Your wind window** (wind and direction).
 
-For each condition, "inside" means fit ≥ 0.99:
+These describe where your well-rated outings were. They are not "optimal" ranges, and they don't drive the score;
+similar sessions do.
 
-```
-separation = share of good sessions inside + share of poor sessions (rating ≤ 2) outside − 1      (floored at 0)
-importance = (baseWeight × base + poorWeight × separation) / (baseWeight + poorWeight)            (floored at 0.05)
-             base = 0.5 for main conditions, 0.25 for extras; baseWeight = 2 (the base counts as 2 poor sessions)
-own range  → importance at least 0.8 (you know it matters)
-```
+**Matters** (a little / some / a lot) is descriptive too. It shows how well the range sets your great and poor outings
+apart, starting from "some" (core) or "a little" (extras).
 
-- Without poor sessions, importance stays at its base.
-- Poor days on which a condition was outside the range push its importance up. Poor days on which it was fine push it
-  down.
+## Where this differs from the specification, and why
 
-**In the UI** (the Matters column), `importanceLevel` maps importance to words: ≥ 0.65 "a lot", ≥ 0.35 "some", else
-"a little".
+- **Every hour of a window must be Good on its own.** The spec gates each hour only on features and evidence. With that
+  rule, a 2-hour window of one calm and one good hour could pass on its median. The stricter rule meets the spec's
+  acceptance test ("isolated one-hour matches") and its intent.
+- **`N_eff` counts days.** The spec's per-day weight cap doesn't change `N_eff` (it's scale-free), so five logs of one
+  day would still count as five pieces of evidence.
+- **The prior's weight** is 2 when any of your ranges is yours (set or confirmed) and 0.5 for an unconfirmed preset
+  window. The spec doesn't say what happens when both kinds are mixed.
+- **The "Matters" column stays**, as a description only (the owner's earlier decision). It no longer affects the
+  score.
+- **Wave power's scale (10 kW/m)** isn't in the spec, so it's a starting value.
+- **"Didn't go" days don't need a start time.** They're weak preference signals; without a time they use the session
+  date and are marked limited.
 
-## 5. Fit and score
+## Known limits and things to calibrate
 
-```
-fitOf(range, value) = 1 inside; falls linearly to 0 at max(25 % of the edge, spec.tol) beyond it
-                      (directions: degrees beyond the nearest centre ± half-width, over 30°)
-scoreOf = Σ(importance × fit) / Σ importance   ×   Π(1 − importance) for every condition whose fit is 0
-```
-
-The product means that a condition that matters and is clearly off pulls the whole day down.
-
-## 6. The guess
-
-```
-fitRating = (Σ rating × weight of sessions whose score ≥ 0.85 + 3.4 × 2) / (their weight + 2)
-guess     = 1 + (fitRating − 1) × score
-```
-
-- `fitRating` answers "how your sessions went when the conditions fitted". It starts at 3.4 (between good and great)
-  counted as 2 sessions, so one session can't swing it.
-- `guess(models, conditions)` takes the best sport.
-- `shownLevel` maps the rating to a level: ≥ 4.2 epic (5), ≥ 3.5 great (4), ≥ 2.7 good (3). **Below 2.7 nothing is
-  shown** ("Not sure yet"). Bad guesses are never shown.
-- **The UI names the sport:** "Great for windsurf".
-
-## 7. Best windows
-
-- `bestIn(models, hours, from, to)`: back-to-back **daylight** hours that are good or better, for one sport. The best
-  average wins.
-- `bestToday` covers the rest of today (tiles, map, "Best today").
-- `nextDays` covers the next 5 days (When to go).
-- Daylight comes from Windy's `isDay`, then celestial sunrise/sunset, then 6–21 h.
-
-## 8. Other helpers
-
-- **`suggestWindow`:** for "I don't know yet" spots, the directions and wind (±1 m/s) of 2+ great sessions.
-- **`learnedWindow`:** "spotlog learned it works best …". It offers the learned wind/direction when they differ from
-  your window.
-- **`gearHints`:** after 8+ sessions with one piece of gear at a spot (3+ great), the wind it was great in.
-- **`tideAt`, `sessionTide`, `bestTide`:** the tide state at a time (Low/Mid/High by thirds between a high and a low,
-  Rising/Falling), and the tide most of your great sessions had (needs 2+, a majority).
-
-## Known limits
-
-- **Blunt ranges:** a range is "inside/outside". It doesn't learn a sweet spot within the range, and it doesn't learn
-  combinations (for example "W only works above 15 kn").
-- **Ranges move slowly:** all sessions count the same, whatever their age. Nothing forgets old seasons yet.
-- **Few poor sessions = little learned importance.** "Not worth it, didn't go" exists to help with this.
-- **Forecast quality limits everything:** if the model was wrong that day, the sample is wrong. The felt-wind weighting
-  and the trusted model only soften this.
-- **Rain and temperature** are per hour of the forecast, not the session's actual weather.
-
-Any change to constants (`LEARN`, `SPEC`, the thresholds in `shownLevel` and `importanceLevel`) changes everyone's tags.
-Note it in the commit and in `docs/decisions.md`.
+- **Distances are averaged over the whole feature set.** For windsurf (8 weights), a 6 m/s wind difference alone is a
+  distance of only ~1. So outings in quite different wind still count as "similar", just with lower weight. Check
+  `SCALE` and the core/extra weights against real diaries.
+- **The thresholds are initial values:** `SIMILAR`, `GATES` and `TREES` in config.ts. Re-check them with walk-forward
+  tests once real diaries are big enough.
+- **No time-of-day learning:** spotlog finds good upcoming stretches but doesn't learn that you prefer mornings.
+- **No decay:** old seasons count as much as new ones.
+- **Forecast quality limits everything:** if the forecast was wrong that day, the example is too.

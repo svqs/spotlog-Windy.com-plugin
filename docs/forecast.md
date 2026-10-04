@@ -54,17 +54,14 @@ celestial sunrise/sunset ± 30 min, else 6–21 h).
 much the models agree about that day. spotlog shows it under the day in When to go. It is **not** part of the rating:
 spotlog's tag says how good the conditions would be **for you**, and Windy's % says how likely the forecast is to hold.
 
-## Which forecast to trust (wind.ts)
+## The model a spot uses
 
-- **`modelScores(spot, sessions, snapshots)`:** for every session with "it felt like" and a snapshot, `|felt − model
-  wind|` per model, averaged.
-  - Ranking: models with 3+ sessions come first.
-  - Fewer sessions count a little against a model (`miss × (1 + 1/count)`).
-- **`trustedModel`:** the best model with 3+ sessions, else ECMWF. Learning, tiles and the map use it per spot.
-- **`forecastBias`:** the average `felt − forecast` (primary model). It shifts the forecast before comparing it with the
-  wind window.
-- **On the spot page,** the bars show closeness: the closest model is full length, and a model twice as far off is half
-  as long. The number is the average miss in the user's unit.
+- Learning and recommendations use **one model per spot**: ECMWF, which is global. Only where ECMWF has no forecast is
+  one covering model chosen once and saved as `spot.recommendationModel` (`plugin.svelte → chooseFallbackModel`).
+- A saved forecast without that model can't teach that spot.
+- The spot page's model switch only changes what you **look at**, never what spotlog learns from.
+- The felt-wind model ranking ("Which forecast to trust") and the felt-wind bias were retired in 0.16. Felt wind was
+  often prefilled from the forecast, and one saved day shared by several sessions skewed the comparison.
 
 ## Tides (experimental)
 
@@ -75,6 +72,6 @@ spotlog's tag says how good the conditions would be **for you**, and Windy's % s
   real data.
 - **On screen:**
   - "Tide today" (times of highs/lows) shows only when parsing works.
-  - The session tide is computed from the saved highs/lows (`predict.ts → tideAt`). **Users never enter the tide.**
+  - The session tide is computed from the saved highs/lows (`learn/tide.ts → tideAt`). **Users never enter the tide.**
 - **Open:** where the tide data should come from long-term (Windy's tide feed vs another source) still needs research.
   It's parked for now.

@@ -24,10 +24,10 @@ something that has broken before.
 - [ ] The phone screenshots were actually looked at.
 - [ ] 12-hour clocks, long spot names, bft/kt/ft/°F still fit.
 
-## 5. Learning (when `predict.ts`, `wind.ts` or `forecast.ts` changed)
+## 5. Learning (when `predict.ts`, `learn/*` or `forecast.ts` changed)
 - [ ] `test-predict.mjs` passes. Changed expectations are explained in the commit.
-- [ ] The rating stays "only good news" (`shownLevel`), and tags name the sport.
-- [ ] Sessions outside the saved hours are still left out; the trusted model and bias still apply.
+- [ ] The rating stays "only good news" (cut-offs + evidence gates in `learn/similar.ts`), and tags name the sport.
+- [ ] Only forecasts saved before the outing teach; one model per spot; numbers changed only in `learn/config.ts` (version bumped).
 - [ ] `docs/learning.md` / `docs/forecast.md` are updated if the behaviour changed.
 
 ## 6. Code health
@@ -39,6 +39,6 @@ something that has broken before.
 ## 7. Shipping
 - [ ] The version is bumped in `package.json` **and** `src/pluginConfig.ts`.
 - [ ] `harness/sandbox.html` and `harness/stylelab/*` are rebuilt from this code.
-- [ ] e2e (52 steps) and scenarios (`FINDINGS: []`) pass.
+- [ ] e2e (51 steps) and scenarios (`FINDINGS: []`) pass.
 - [ ] The commit message says what changed for the user.
 - [ ] Nothing was published to windy-plugins.com without the owner's explicit OK.

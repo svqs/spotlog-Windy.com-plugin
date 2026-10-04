@@ -56,8 +56,7 @@ export const THEME = {
     dirTile: '#e9e8e3', wavesTile: '#dbe6f2', modelBg: '#d49500', modelText: '#ffffff', bestBg: '#1c1c1c', bestText: '#f8f8f8',
     // card on the map: small buttons
     popupSub: '#6b6b6b', popupBtnBg: '#ececea', popupBtnText: '#1c1c1c',
-    // "It felt like" ruler and the time wheels
-    feltMarker: '#d49500', feltTick: '#6b6b6b', feltMajor: '#9a9a9a', feltForecast: '#f8f8f8', feltLabel: '#b0b0b0',
+    // the time wheels
     wheelBg: '#3c3c3c', wheelLine: '#5a5a5a', wheelText: '#f8f8f8', wheelQuiet: '#b0b0b0', calToday: '#d49500',
     // the colours behind wind numbers, calm to storm (m/s: under 2, 4, 6, 8, 11, 14, 17, 22, above)
     wind1: '#5b6ec2', wind2: '#3fa0a8', wind3: '#4dbb5f', wind4: '#8fc446', wind5: '#d4c43a', wind6: '#e0a63a', wind7: '#e0873a', wind8: '#c9474f', wind9: '#a23fa0', windNone: '#e9e8e3',

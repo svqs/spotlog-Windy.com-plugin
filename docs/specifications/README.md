@@ -4,4 +4,4 @@ Keep proposed implementation specifications here. A specification describes inte
 
 | Specification | Scope |
 |---|---|
-| [Recommendation v2](recommendation-v2-spec.md) | Weighted similar sessions, a gated boosted-tree model, and a simpler session form. |
+| [Recommendation v2](recommendation-v2-spec.md) | Weighted similar sessions, a gated boosted-tree model, and a simpler session form. **Implemented in 0.16.0**; current behaviour and deviations: [learning.md](../learning.md). |

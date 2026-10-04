@@ -11,9 +11,9 @@ Chromium via Playwright.
 | 1 | `npm run build` | It compiles (Rollup + Svelte + TS) | ~10 s |
 | 2 | `npm run lint` | ESLint clean (no-use-before-define, no-shadow, braces, imports…) | ~10 s |
 | 3 | `python3 scripts/check-words.py` | Every phrase used exists in `copy.ts`, none duplicated, none unused | 1 s |
-| 4 | `node scripts/test-predict.mjs` | 12 learning checks (ranges, importance, own ranges, sports, best windows, tide…) | ~5 s |
+| 4 | `node scripts/test-predict.mjs` | 14 recommendation checks (examples, similar sessions, gates, windows, trees, tide) | ~10 s |
 | 5 | `npx -y svelte-check@3 --workspace . --threshold warning` | Types and Svelte warnings: 0 errors, 0 warnings | ~20 s |
-| 6 | `python3 harness/e2e.py <dir>` | 52 end-to-end steps through every flow | ~2 min |
+| 6 | `python3 harness/e2e.py <dir>` | 51 end-to-end steps through every flow | ~2 min |
 | 7 | `python3 harness/scenarios.py <dir>` | Data sizes, odd data, viewports, units, time zones, learning, phone cross-check | ~4 min |
 
 Checks 6 and 7 need a static server on port 8765 from the project root:
@@ -47,7 +47,7 @@ One long story. Each `ok(...)` is a step:
 - add a spot from the map;
 - save a forecast (preview, undo);
 - show on map;
-- log a session (rating, felt ruler drag + keys, gear, time wheel, GPX), then check the stored session and that the
+- log a session (no felt ruler/gusts/water; Save waits for a start time; rating, gear, time wheel, GPX), then check the stored session and that the
   tides were saved with the forecast;
 - open, swipe-delete and undo;
 - units;
@@ -65,7 +65,7 @@ One long story. Each `ok(...)` is a step:
 | § | What |
 |---|---|
 | 1 | Big diary (30 spots, 500 sessions, 200 saved days): load time, no errors |
-| 2 | Old and broken diaries: no welcome mark, missing fields, bad items skipped, broken JSON starts fresh |
+| 2 | Old and broken diaries: no welcome mark, missing fields, bad items skipped, broken JSON starts fresh; an old session's felt/gusts/water are shown read-only and survive saving |
 | 3 | Viewports 320 → 1920, every tab: nothing sticks out, no cut values, no odd text (`undefined`, `NaN`, `{placeholders}`) |
 | 4 | Every wind unit + ft + °F on home and the spot page |
 | 5 | Time zones and locales: a session logged today lands on today |
@@ -80,21 +80,21 @@ Helpers:
 
 ## Unit checks for the learning (scripts/test-predict.mjs)
 
-The script compiles `src/lib/predict.ts` with `tsc` into `node_modules/.cache/spotlog-predict` and asserts behaviour, not
-numbers to the decimal:
-- no sessions: the wind window decides;
-- ranges are learned from great sessions;
-- importance comes from poor vs great sessions;
-- fitting days are great/epic, misfits are "Not sure yet" (never negative);
-- equal-on-good-and-poor conditions matter little;
-- per sport (a surf day isn't a windsurf day);
-- the best window today;
-- your own range wins;
-- felt-off sessions count half and sessions outside the saved hours are left out;
-- next days;
-- the best tide and the tide at a time.
+The script compiles `src/lib/predict.ts` (and `learn/`) with `tsc` into `node_modules/.cache/spotlog-predict` and
+asserts behaviour, not numbers to the decimal:
+- **examples:** a forecast saved after the start doesn't teach; one saved day shared by two sessions gives each its own
+  hours; overnight and daylight-saving outings; start-only and old single-hour saves are marked limited; gaps and
+  missing surf data exclude;
+- **similar sessions:** nothing without a window; a preset window stays "Not sure yet"; a confirmed window gives Good
+  from your range; poor-only outings never give Good; mixed outcomes; Great/Epic evidence; spots next door are never
+  evidence; one day logged many times is one day; distances wrap round north, and a missing extra never looks closer;
+- **windows:** no one-hour stretches, no bridged gaps, a longer near-equal stretch wins, per sport, calm days stay
+  empty;
+- **trees:** not eligible with little data; deterministic with lots; picked up after background training, dropped
+  after a diary change;
+- **tide.**
 
-When you change `LEARN` or `SPEC`, update the expectations only if the new behaviour is what you want, and say why in
+When you change `learn/config.ts`, update the expectations only if the new behaviour is what you want, and say why in
 the commit.
 
 ## Writing new tests

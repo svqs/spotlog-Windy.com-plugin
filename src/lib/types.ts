@@ -17,8 +17,12 @@ export interface Spot {
     created: number;
     /** ranges you set yourself, per sport and condition (they win over what spotlog learns) */
     ranges?: Record<string, Partial<Record<string, { lo?: number; hi?: number; dirs?: Dir8[] }>>>;
-    /** start this spot from your own average rating instead of the general start */
+    /** (legacy, 0.14.0) start this spot from your own average rating; no longer used */
     startOwn?: boolean;
+    /** you changed or confirmed the wind window (a preset one counts less in the recommendation) */
+    windowConfirmed?: boolean;
+    /** the model this spot learns and recommends from when ECMWF has no forecast here (chosen once); unset = ECMWF */
+    recommendationModel?: string;
 }
 
 /** Value of one forecast model at the snapshot time (all SI: m/s, °C) */
@@ -99,8 +103,9 @@ export interface Session {
     snapshotId: string | null;
     date: number;
     rating: number;
-    /** What the wind felt like, m/s */
+    /** (legacy, kept read-only) what the wind felt like, m/s; new sessions save null */
     felt: number | null;
+    /** (legacy, kept read-only) Steady / Gusty / Very gusty; Flat / Chop / Swell / Waves; new sessions save null */
     gusts: string | null;
     water: string | null;
     /** "Checked, not worth it": a quick log of a day you didn't go (teaches spotlog what doesn't work) */

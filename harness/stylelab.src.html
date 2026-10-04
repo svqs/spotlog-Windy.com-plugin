@@ -331,8 +331,7 @@
     { kind: 'colours', id: 'wind', title: 'Wind colours', note: 'Behind every wind and gust number, calm to storm', screen: 'snap', items: [
       ...WIND_STEPS.map((l, i) => col(`wind${i + 1}`, l)), col('windNone', 'No forecast'),
     ] },
-    { kind: 'colours', id: 'felt', title: 'Ruler, time picker, calendar', screen: 'session', items: [
-      { type: 'h', label: '“It felt like” ruler' }, col('feltMarker', 'Marker'), col('feltTick', 'Ticks'), col('feltMajor', 'Long ticks'), col('feltForecast', 'Forecast line'), col('feltLabel', 'Numbers'),
+    { kind: 'colours', id: 'felt', title: 'Time picker, calendar', screen: 'session', items: [
       { type: 'h', label: 'Time picker' }, col('wheelBg', 'Background'), col('wheelLine', 'Edge'), col('wheelText', 'Picked time'), col('wheelQuiet', 'Other times'),
       { type: 'h', label: 'Calendar' }, col('calToday', 'Today'),
     ] },

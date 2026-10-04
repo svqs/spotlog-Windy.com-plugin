@@ -46,7 +46,6 @@
     ['.set .sw, .switch', 'Switch', ['switchOn', 'switchOff', 'switchKnob']],
     ['.tabs button, .seg button, .mtabs button, .viewtog button, .models-pick button, .units', 'Tabs and options', ['tabsBg', 'tabText', 'selBg', 'selText', 'radiusButton', 'radiusSmall']],
     ['.chip, .dir', 'Chip', ['chipLine', 'chipText', 'chipOnBg', 'chipOnText', 'radiusChip']],
-    ['.felt', '“It felt like” ruler', ['feltMarker', 'feltTick', 'feltMajor', 'feltForecast', 'feltLabel']],
     ['.tw-pop', 'Time picker', ['wheelBg', 'wheelLine', 'wheelText', 'wheelQuiet']],
     ['.field-btn, input, textarea', 'Field', ['inputBg', 'inputLine', 'inputText', 'radiusButton']],
     ['.cal', 'Calendar', ['uCard', 'uLine', 'uText', 'uSub', 'tabText', 'calToday', 'selBg', 'selText']],
