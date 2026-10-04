@@ -582,8 +582,7 @@
                 {#each trust as sc, i}
                     <div class="score"><span class="m" class:best={ i === 0 }>{ modelLabel(sc.model) }</span><span class="missbar"><i style="width: { closeness(sc.miss, trust) }%" class:best={ i === 0 }></i></span><span>{ fill(W.trustMiss, { v: sc.miss.toFixed(1) }) }</span></div>
                 {/each}
-                <small class="muted">{ fill(W.trustNote, { n: trust[0].count }) }</small>
-                <small class="muted">{ fill(W.trustUsing, { model: modelLabel(modelFor(spot)) }) }</small>
+                <small class="muted">{ fill(W.trustNote, { n: trust[0].count, model: modelLabel(modelFor(spot)) }) }</small>
             {/if}
         </div>
     </div>
@@ -718,7 +717,7 @@
             <!-- the sport of this session (any sport: a new one is added to the spot); spots learn per sport -->
             <div class="chips sep" role="radiogroup" aria-label={ W.sessionSport }>
                 {#each sportChoices(spotById(f.spotId)?.sports || [], f.sport) as sp}
-                    <button class="chip" class:on={ logSport(f) === sp } role="radio" aria-checked={ logSport(f) === sp } on:click={ () => f && (f = { ...f, sport: sp }) }>{ sportLbl(sp) }</button>
+                    <button class="chip" class:on={ otherFor !== 'log' && logSport(f) === sp } role="radio" aria-checked={ otherFor !== 'log' && logSport(f) === sp } on:click={ () => { otherFor = null; if (f) {f = { ...f, sport: sp };} } }>{ sportLbl(sp) }</button>
                 {/each}
                 <button class="chip" class:on={ otherFor === 'log' } aria-expanded={ otherFor === 'log' } on:click={ () => openOther('log') }>{ W.sportAddOther }</button>
             </div>
@@ -3013,7 +3012,9 @@
     .card .seg { background: @ground; }
 
     .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-    .tile { text-align: left; min-height: 128px; padding: 14px; border-radius: var(--sl-radiusCard, 18px); background: var(--sl-tileBg, #3c3c3c); border: 1px solid var(--sl-tileLine, #4d4d4d); display: flex; flex-direction: column; gap: 10px; justify-content: space-between; }
+    .tile { text-align: left; min-height: 128px; padding: 14px; border-radius: var(--sl-radiusCard, 18px); background: var(--sl-tileBg, #3c3c3c); border: 1px solid var(--sl-tileLine, #4d4d4d); display: flex; flex-direction: column; gap: 10px; }
+    /* the tag sits at the bottom, so the wind boxes line up across tiles whatever the tag's length */
+    .tiles:not(.list) .t-tag { margin-top: auto; }
     .t-name { font-size: 15px; font-weight: 600; }
     .t-tag { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; .t-when { color: @sub; font-size: 12px; white-space: nowrap; } }
     @media (max-width: 360px) { .tiles:not(.list) .t-tag .tag { font-size: 11px; padding: 3px 8px; } }
@@ -3066,15 +3067,16 @@
     /* spot page: save nudge, "checked, not worth it" */
     .nudge { display: block; margin: -2px 2px 0; font-size: 12px; line-height: 1.45; }
     /* spot page: the recommendation, today and the next days */
-    .reco { gap: 0; padding-top: 4px; padding-bottom: 12px; }
-    /* one row per day with a match: the day (and how sure Windy is) · the guess · the hours */
-    .reco-row { display: grid; grid-template-columns: 104px auto minmax(0, 1fr); align-items: center; column-gap: 12px; padding: 9px 0; border-bottom: 1px solid @line;
+    .reco { gap: 0; padding-top: 4px; padding-bottom: 12px; display: grid; grid-template-columns: max-content max-content minmax(0, 1fr); column-gap: 12px; }
+    /* one row per day with a match: the day (and how sure Windy is) · the guess · the hours.
+       The rows share the card's columns (subgrid), so each column is as wide as its longest entry and the hours stay on one line */
+    .reco-row { grid-column: ~"1 / -1"; display: grid; grid-template-columns: 104px auto minmax(0, 1fr); grid-template-columns: subgrid; align-items: center; column-gap: 12px; padding: 9px 0; border-bottom: 1px solid @line;
         &:last-of-type { border-bottom: 0; }
         .r-day { display: flex; flex-direction: column; gap: 1px; color: @sub; font-size: 13px; white-space: nowrap; line-height: 1.25; }
         .tag { justify-self: start; }
         .r-time { font-weight: 600; font-size: 13.5px; line-height: 1.3; span { white-space: nowrap; } }
         .r-pred { color: var(--sl-uQuiet, #8a8a8a); font-size: 11px; } }
-    .r-later { padding-top: 8px; }
+    .r-later { padding-top: 8px; grid-column: ~"1 / -1"; }
     .other-sport { display: flex; gap: 8px; margin-top: 8px; align-items: center;
         input { flex: 1; min-width: 0; height: 36px; padding: 0 12px; border-radius: var(--sl-radiusSmall, 9px); border: 1px solid var(--sl-inputLine, #5a5a5a); background: var(--sl-inputBg, #2e2e2e); color: var(--sl-inputText, #f8f8f8); font: inherit; } }
     .chip.notworth { align-self: flex-start; height: 32px; font-size: 13px; }
@@ -3105,8 +3107,8 @@
             &.on { background: var(--sl-chipOnBg, #f8f8f8); color: var(--sl-chipOnText, #1c1c1c) !important; border-color: var(--sl-chipOnBg, #f8f8f8); } }
         .gear-hint { font-size: 12.5px; color: @sub; }
         .btns { margin-top: 0; } }
-    @media (max-width: 480px) { .reco-row { grid-template-columns: 86px auto minmax(0, 1fr); column-gap: 10px; .r-time { font-size: 13px; } } }
-    @media (max-width: 380px) { .works .w-grid { column-gap: 9px; font-size: 12.5px; } .reco-row { grid-template-columns: 74px auto minmax(0, 1fr); column-gap: 8px; .tag { font-size: 11px; padding: 3px 8px; } .r-time { font-size: 12.5px; } } }
+    @media (max-width: 480px) { .reco, .reco-row { column-gap: 10px; } .reco-row .r-time { font-size: 13px; } }
+    @media (max-width: 380px) { .works .w-grid { column-gap: 9px; font-size: 12.5px; grid-template-columns: minmax(56px, max-content) minmax(0, max-content) max-content max-content; justify-content: space-between; } .works .w-h { letter-spacing: 0.02em; } .reco { column-gap: 8px; } .reco-row { column-gap: 8px; .tag { font-size: 11px; padding: 3px 8px; } .r-time { font-size: 12.5px; } } }
     label.link { cursor: pointer; }
     .chip { height: 36px; padding: 0 15px; border-radius: var(--sl-radiusChip, 18px); border: 1px solid var(--sl-chipLine, #5a5a5a); background: transparent; color: var(--sl-chipText, #f8f8f8) !important; display: inline-flex; align-items: center; gap: 6px;
         .k { font-size: 11px; opacity: 0.65; }

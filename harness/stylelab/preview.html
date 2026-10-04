@@ -550,7 +550,7 @@
 <script type="module">
 const __pluginConfig =  {
   "name": "windy-plugin-spotlog",
-  "version": "0.16.3",
+  "version": "0.16.4",
   "icon": "🌊",
   "title": "spotlog ✦",
   "description": "Save forecasts for your spots, log how the session really was, and learn which forecast to trust.",
@@ -562,8 +562,8 @@ const __pluginConfig =  {
   "addToContextmenu": true,
   "routerPath": "/spotlog",
   "private": true,
-  "built": 1791100968550,
-  "builtReadable": "2026-10-04T08:02:48.550Z"
+  "built": 1791102119974,
+  "builtReadable": "2026-10-04T08:21:59.974Z"
 };
 
 // transformCode: import bcast from '@windy/broadcast';
@@ -1673,7 +1673,7 @@ function hapticCleanup() {
 
 const config = {
     name: 'windy-plugin-spotlog',
-    version: '0.16.3',
+    version: '0.16.4',
     title: 'spotlog ✦'};
 
 const KEY = 'windy-plugin-spotlog:v1';
@@ -5365,7 +5365,7 @@ const COPY_GROUPS = [
             ],
             [
                 'worksLegend',
-                'Your range: what your great days here had, or what you set. Matters: how much it really decides your day here, learned from your great and poor days. Today: today\'s forecast, green when it fits your range.'
+                'Your range: what your good days here had. Matters: how much it counts here. Today: green when it fits.'
             ],
             [
                 'adjust',
@@ -5554,15 +5554,11 @@ const COPY_GROUPS = [
             ],
             [
                 'trustNote',
-                'How well each forecast foretold how your sessions here went ({n} sessions): the longer the bar, the better. The number is how far its guesses were off on average, on the 1–5 rating scale.'
+                'The longer the bar, the closer that forecast was to how your {n} sessions here went. spotlog learns from {model} and moves to the best one over time.'
             ],
             [
                 'trustMiss',
                 '{v} off'
-            ],
-            [
-                'trustUsing',
-                'spotlog learns from {model} here. Once another forecast has foretold 10+ of your sessions here clearly better, it learns from that one.'
             ],
             [
                 'checking',
@@ -10631,7 +10627,7 @@ class Brand extends SvelteComponent {
 const { Map: Map_1 } = globals;
 
 function add_css(target) {
-	append_styles(target, "svelte-sxknz1", ".spotlog.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{background:var(--sl-ground, #2e2e2e);color:var(--sl-text, #f8f8f8);font-family:'Instrument Sans', system-ui, sans-serif;font-size:var(--sl-textSize, 14px);padding:14px 16px 20px;display:flex;flex-direction:column;gap:var(--sl-panelGap, 16px);height:100%;max-height:100vh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-sizing:border-box;position:relative}.spotlog.svelte-sxknz1 button.svelte-sxknz1.svelte-sxknz1{font:inherit;color:inherit;cursor:pointer}.spotlog.svelte-sxknz1 button.svelte-sxknz1.svelte-sxknz1:focus-visible,.spotlog.svelte-sxknz1 input.svelte-sxknz1.svelte-sxknz1:focus-visible,.spotlog.svelte-sxknz1 textarea.svelte-sxknz1.svelte-sxknz1:focus-visible{outline:2px solid var(--sl-accent, #d49500);outline-offset:1px}.spotlog.svelte-sxknz1 small.svelte-sxknz1.svelte-sxknz1{color:var(--sl-sub, #b0b0b0);font-size:12px}.spotlog.svelte-sxknz1 b.svelte-sxknz1.svelte-sxknz1{font-weight:600}.spotlog.svelte-sxknz1 input.svelte-sxknz1.svelte-sxknz1,.spotlog.svelte-sxknz1 textarea.svelte-sxknz1.svelte-sxknz1{box-sizing:border-box;width:100%;font:inherit;color:var(--sl-inputText, #f8f8f8);background:var(--sl-inputBg, #3c3c3c);border:1px solid var(--sl-inputLine, #5a5a5a);border-radius:var(--sl-radiusButton, 12px);padding:11px 14px;outline:none;min-width:0}.spotlog.svelte-sxknz1 input[type='date'].svelte-sxknz1.svelte-sxknz1{color-scheme:dark}.spotlog.svelte-sxknz1 textarea.svelte-sxknz1.svelte-sxknz1{resize:vertical;line-height:1.45}.spotlog.svelte-sxknz1>*{flex-shrink:0}.spotlog.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1:not(.m){scrollbar-gutter:stable;scrollbar-width:thin;padding-right:8px}.mwrap.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1,.body.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:contents}.body.svelte-sxknz1>*{flex-shrink:0}.spotlog.m.bar.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{height:150px;max-height:none;min-height:150px;padding:0;gap:0;display:block;overflow:visible;position:relative}.spotlog.m.bar.gatebar.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{height:108px;min-height:108px}.mbar.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{padding:10px 12px 12px;display:flex;flex-direction:column;gap:9px}.mrow.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;align-items:center;gap:10px;min-height:30px}.mrow.svelte-sxknz1 .wordmark.svelte-sxknz1.svelte-sxknz1{font-size:18px}.mrow.svelte-sxknz1 .units.svelte-sxknz1.svelte-sxknz1{height:28px}.mhint.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{flex:1;min-width:0;text-align:right;font-size:12px;color:var(--sl-sub, #b0b0b0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mlink.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{border:0;background:none;padding:4px 0;color:var(--sl-accent, #d49500) !important;font-weight:600;font-size:13px}.macts.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:6px}.mact.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{height:42px;padding:0 6px;border-radius:var(--sl-radiusButton, 12px);border:1px solid var(--sl-actLine, #5a5a5a);background:var(--sl-actBg, #3c3c3c);color:var(--sl-actText, #f8f8f8) !important;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px !important;font-weight:600}.mact.svelte-sxknz1 span.svelte-sxknz1.svelte-sxknz1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mact.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1:disabled{opacity:0.6}@media(max-width: 359px){.mact.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{padding:0 4px}.mact.svelte-sxknz1 svg{display:none}}.mtabs.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;gap:3px;padding:3px;border-radius:var(--sl-radiusButton, 12px);background:var(--sl-tabsBg, #3c3c3c)}.mtabs.svelte-sxknz1 button.svelte-sxknz1.svelte-sxknz1{flex:1 1 auto;height:30px;border:0;border-radius:var(--sl-radiusSmall, 9px);background:transparent;color:var(--sl-tabText, #d0d0d0) !important;font-size:12px !important;padding:0 5px;white-space:nowrap}.mtabs.svelte-sxknz1 button.on.svelte-sxknz1.svelte-sxknz1{background:var(--sl-sel-bg, #f8f8f8);color:var(--sl-sel-text, #1c1c1c) !important;font-weight:600}.mtabs.svelte-sxknz1 .cnt.svelte-sxknz1.svelte-sxknz1{display:inline-block;margin-left:6px;min-width:16px;padding:1px 5px;box-sizing:border-box;border-radius:8px;background:rgba(248, 248, 248, 0.14);color:inherit;font-size:10.5px;line-height:14px;font-weight:600;font-variant-numeric:tabular-nums;vertical-align:1px}.mtabs.svelte-sxknz1 button.on .cnt.svelte-sxknz1.svelte-sxknz1{background:rgba(28, 28, 28, 0.12)}.mwrap.on.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;flex-direction:column;position:absolute;left:8px;right:8px;bottom:calc(100% + 8px);z-index:30;height:calc(100vh - 340px);height:calc(100dvh - 340px - env(safe-area-inset-top, 0px));min-height:260px;touch-action:pan-y;overscroll-behavior:contain;background:var(--sl-ground, #2e2e2e);border-radius:18px;box-shadow:0 10px 34px rgba(0, 0, 0, 0.5);overflow:hidden;transform-origin:50% 100%;transition:transform 0.22s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.18s ease}.mwrap.on.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1:not(.open){opacity:0;transform:translateY(14px) scale(0.98);pointer-events:none;visibility:hidden;transition:transform 0.18s ease, opacity 0.15s ease, visibility 0s 0.18s}.mwrap.on.svelte-sxknz1 .body.svelte-sxknz1.svelte-sxknz1{display:flex;flex-direction:column;gap:12px;flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:0 12px 16px;touch-action:pan-y}.mwrap.on.svelte-sxknz1 .topbar.svelte-sxknz1.svelte-sxknz1{position:sticky;top:0;z-index:8;margin:0 -12px -4px;padding:10px 8px 8px 12px;background:var(--sl-ground, #2e2e2e)}.mwrap.on.svelte-sxknz1 .topbar .title.svelte-sxknz1.svelte-sxknz1{font-size:16px}.mclose.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{flex-shrink:0;width:34px;height:34px;margin-left:-4px;border:0;border-radius:17px;background:none;color:var(--sl-sub, #b0b0b0) !important;font-size:16px;line-height:1;padding:0}.mwrap.on.unitspage.svelte-sxknz1 .body.svelte-sxknz1>:not(.upage){display:none !important}.mwrap.on.kb.svelte-sxknz1 .body.svelte-sxknz1.svelte-sxknz1{padding-bottom:55vh}.when.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:contents}.when.one.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:grid;grid-template-columns:minmax(0, 1.25fr) minmax(0, 2fr);gap:6px}.when.one.svelte-sxknz1 input[type='date'].svelte-sxknz1.svelte-sxknz1{height:44px;padding:0 8px;font-size:14px;text-align:center;-webkit-appearance:none;appearance:none}.when.one.svelte-sxknz1 .times.svelte-sxknz1.svelte-sxknz1{gap:6px}.when.one.svelte-sxknz1 .times .to.svelte-sxknz1.svelte-sxknz1{display:none}.mwrap.on.svelte-sxknz1 .home-head,.mwrap.on.svelte-sxknz1 .home-acts,.mwrap.on.svelte-sxknz1 .home-tabs{display:none !important}@media(prefers-reduced-motion: reduce){.mwrap.on.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1,.mwrap.on.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1:not(.open){transition:none}}.spotlog.m.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{padding:8px 10px 16px;gap:10px;height:50vh;height:50dvh;max-height:50dvh;touch-action:pan-y}.spotlog.m.svelte-sxknz1 .head.svelte-sxknz1.svelte-sxknz1{padding:10px 14px;gap:8px}.spotlog.m.svelte-sxknz1 .head .stats.svelte-sxknz1.svelte-sxknz1,.spotlog.m.svelte-sxknz1 .head .sync.svelte-sxknz1.svelte-sxknz1{display:none}.spotlog.m.svelte-sxknz1 .act.svelte-sxknz1.svelte-sxknz1{min-height:0;padding:8px 10px}.spotlog.m.svelte-sxknz1 .act small.svelte-sxknz1.svelte-sxknz1{display:none}.spotlog.m.svelte-sxknz1 .wordmark.svelte-sxknz1.svelte-sxknz1{font-size:20px}.spotlog.m.svelte-sxknz1 .stats .big.svelte-sxknz1.svelte-sxknz1{font-size:18px}.spotlog.m.svelte-sxknz1 .act b.svelte-sxknz1.svelte-sxknz1{font-size:13px}.spotlog.m.svelte-sxknz1 .act.svelte-sxknz1 svg{margin-bottom:2px}.spotlog.m.svelte-sxknz1 .tile.svelte-sxknz1.svelte-sxknz1{min-height:110px;padding:12px}.spotlog.m.svelte-sxknz1 .topbar .round.svelte-sxknz1.svelte-sxknz1{width:34px;height:34px}.spotlog.m.svelte-sxknz1 .title.svelte-sxknz1.svelte-sxknz1{font-size:16px}.beta.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{padding:2px 6px 1px;border-radius:7px;border:1px solid var(--sl-uOutline, #5a5a5a);color:var(--sl-sub, #b0b0b0);font:600 9.5px 'Instrument Sans', system-ui, sans-serif;letter-spacing:0.08em;text-transform:uppercase;line-height:1.2;align-self:center}.beta-note.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:block;margin-top:2px;color:var(--sl-uQuiet, #7a7a7a);font-size:11.5px;line-height:1.45;text-align:center;text-wrap:balance}.beta-card.svelte-sxknz1 .btns.svelte-sxknz1.svelte-sxknz1{flex-wrap:wrap}.beta-card.svelte-sxknz1 .btn.svelte-sxknz1.svelte-sxknz1{min-width:0}.welcome.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:6px 2px 4px}.welcome.svelte-sxknz1 .brand.svelte-sxknz1.svelte-sxknz1{margin-bottom:6px}.welcome.svelte-sxknz1 .h2.svelte-sxknz1.svelte-sxknz1{font-size:20px;text-wrap:balance}.welcome.svelte-sxknz1 .p.svelte-sxknz1.svelte-sxknz1{color:var(--sl-sub, #b0b0b0);line-height:1.5;max-width:34em}.welcome.svelte-sxknz1 .btn.svelte-sxknz1.svelte-sxknz1{margin-top:4px}.welcome.svelte-sxknz1 .link.svelte-sxknz1.svelte-sxknz1{align-self:center}.mwrap.on.svelte-sxknz1 .welcome.svelte-sxknz1.svelte-sxknz1{padding-top:0}.wordmark.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{font-family:'Doto', monospace;font-weight:900;font-size:var(--sl-wordmarkSize, 24px);letter-spacing:0.06em}.card.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{background:var(--sl-card, #3c3c3c);border:1px solid var(--sl-line, #4d4d4d);border-radius:var(--sl-radiusCard, 18px);padding:14px 16px;display:flex;flex-direction:column;gap:12px}.row.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;align-items:center;gap:10px}.row.start.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{align-items:flex-start}.card.row.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{flex-direction:row}.sep.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{padding-top:12px;border-top:1px solid var(--sl-line, #4d4d4d)}.grow.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}.title.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{font-size:var(--sl-titleSize, 17px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lbl.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{font-size:12px;color:var(--sl-sub, #b0b0b0)}.big.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{font-size:22px;font-weight:500;line-height:1}.big.svelte-sxknz1 small.svelte-sxknz1.svelte-sxknz1{font-size:12px}.big2.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{font-size:26px;font-weight:600;line-height:1.1}.big2.svelte-sxknz1 small.svelte-sxknz1.svelte-sxknz1{font-size:13px}.muted.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{color:var(--sl-sub, #b0b0b0);font-size:13px}.p.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{margin:0;line-height:1.45}.small.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{margin:0;font-size:12px;color:var(--sl-sub, #b0b0b0)}.r.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{text-align:right}.err.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{color:var(--sl-danger, #ff9a9a) !important;line-height:1.4}.stats.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr))}.stats.svelte-sxknz1>div.svelte-sxknz1.svelte-sxknz1{display:flex;flex-direction:column;gap:4px}.units.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{height:30px;padding:0 10px;border-radius:15px;border:1px solid var(--sl-uOutline, #5a5a5a);background:var(--sl-ground, #2e2e2e);font-size:12px !important;font-weight:600;white-space:nowrap;flex-shrink:0}.chev.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:inline-block;transition:transform 0.2s}.chev.up.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{transform:rotate(180deg)}.round.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{width:38px;height:38px;flex-shrink:0;border-radius:19px;background:var(--sl-card, #3c3c3c);border:1px solid var(--sl-line, #4d4d4d);font-size:16px}.topbar.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;align-items:center;gap:10px}.brand.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:inline-flex;align-items:center;gap:8px}.grow-b.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{flex:1;min-width:0}.back-menu.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:inline-flex;align-items:center;justify-content:center;width:22px;height:30px;margin:0 -2px 0 -6px;padding:0;border:0;background:none;color:var(--sl-text, #f8f8f8);opacity:0.85}.back-menu.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1:hover{opacity:1}.map-toggles.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{gap:14px}.maptog.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;align-items:center;gap:12px;border:0;background:none;padding:0;text-align:left}.maptog.svelte-sxknz1 small.svelte-sxknz1.svelte-sxknz1{display:block;margin-top:2px}.switch.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{width:40px;height:24px;border-radius:12px;background:var(--sl-switchOff, #5a5a5a);position:relative;flex-shrink:0;transition:background 0.15s}.switch.svelte-sxknz1 i.svelte-sxknz1.svelte-sxknz1{position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:9px;background:var(--sl-switchKnob, #f8f8f8);transition:transform 0.18s}.switch.on.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{background:var(--sl-switch, #d49500)}.switch.on.svelte-sxknz1 i.svelte-sxknz1.svelte-sxknz1{transform:translateX(16px)}.sync.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:block;margin-top:-4px;color:var(--sl-sub, #b0b0b0)}.sync.err.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{color:var(--sl-danger, #ff9a9a)}.coffee.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{align-self:center;display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border-radius:var(--sl-radiusChip, 18px);border:1px solid var(--sl-ghostLine, #5a5a5a);color:var(--sl-ghostText, #f8f8f8);text-decoration:none;font-weight:600;font-size:13px}.coffee.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1:hover{border-color:var(--sl-accent, #d49500)}.ver.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{font-size:11px;color:var(--sl-uQuiet, #7a7a7a)}.about.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;flex-direction:column;gap:12px}.h3.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{font-size:15px}.steps.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{gap:14px}.step.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;gap:12px;align-items:flex-start}.step.svelte-sxknz1 b.svelte-sxknz1.svelte-sxknz1{font-size:14px}.step.svelte-sxknz1 small.svelte-sxknz1.svelte-sxknz1{line-height:1.45;font-size:12.5px}.n.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{width:24px;height:24px;flex-shrink:0;border-radius:12px;border:1px solid var(--sl-uOutline, #5a5a5a);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--sl-sub, #b0b0b0)}.data-links.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{gap:18px}.data-links.svelte-sxknz1 .link.svelte-sxknz1.svelte-sxknz1{font-size:13px;padding:2px 0}.sig.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0 4px}.sig.svelte-sxknz1 .coffee.svelte-sxknz1.svelte-sxknz1{margin-top:6px}.data-links.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{flex-wrap:wrap}.replace.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{flex:1;display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;border:1px solid var(--sl-accent, #d49500);background:var(--sl-card, #3c3c3c)}.replace.svelte-sxknz1 .btns.svelte-sxknz1.svelte-sxknz1{margin-top:8px}.models-pick.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;flex-wrap:wrap;gap:4px;margin-top:-6px}.models-pick.svelte-sxknz1 button.svelte-sxknz1.svelte-sxknz1{height:28px;padding:0 11px;border-radius:var(--sl-radiusChip, 18px);border:1px solid var(--sl-chipLine, #5a5a5a);background:transparent;font-size:12px !important;color:var(--sl-sub, #b0b0b0) !important}.models-pick.svelte-sxknz1 button.on.svelte-sxknz1.svelte-sxknz1{background:var(--sl-sel-bg, #f8f8f8);border-color:var(--sl-sel-bg, #f8f8f8);color:var(--sl-sel-text, #1c1c1c) !important;font-weight:600}.sl-note.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{margin-top:-8px;padding:0 4px;line-height:1.4}.actions.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:8px}.act.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{min-height:78px;padding:10px 9px 10px 10px;min-width:0;border-radius:calc(var(--sl-radiusButton, 12px) + 2px);border:1px solid var(--sl-actLine, #5a5a5a);background:var(--sl-actBg, #3c3c3c);color:var(--sl-actText, #f8f8f8) !important;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:3px;text-align:left}.act.svelte-sxknz1 svg{color:var(--sl-actIcon, #f8f8f8);margin-bottom:4px}.act.svelte-sxknz1 b.svelte-sxknz1.svelte-sxknz1{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.act.svelte-sxknz1 small.svelte-sxknz1.svelte-sxknz1{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;color:var(--sl-actSub, #b0b0b0)}.act.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1:hover{border-color:var(--sl-uHoverLine, #777777);background:var(--sl-uHoverBg, #424242)}.act.on.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{border-color:var(--sl-accent, #d49500)}.act.on.svelte-sxknz1 svg{color:var(--sl-accent, #d49500)}.act.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1:disabled{opacity:0.6;cursor:default}.tabs.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1,.seg.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;gap:4px;padding:3px;background:var(--sl-tabsBg, #3c3c3c);border-radius:var(--sl-radiusButton, 12px)}.tabs.svelte-sxknz1 button.svelte-sxknz1.svelte-sxknz1,.seg.svelte-sxknz1 button.svelte-sxknz1.svelte-sxknz1{flex:1 1 auto;height:34px;padding:0 6px;border:0;border-radius:var(--sl-radiusSmall, 9px);background:transparent;color:var(--sl-tabText, #d0d0d0);white-space:nowrap}.tabs.svelte-sxknz1 button.on.svelte-sxknz1.svelte-sxknz1,.seg.svelte-sxknz1 button.on.svelte-sxknz1.svelte-sxknz1{background:var(--sl-sel-bg, #f8f8f8);color:var(--sl-sel-text, #1c1c1c) !important;font-weight:600}.seg.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{background:var(--sl-ground, #2e2e2e)}.seg.svelte-sxknz1 button.svelte-sxknz1.svelte-sxknz1{height:30px}.card.svelte-sxknz1 .seg.svelte-sxknz1.svelte-sxknz1{background:var(--sl-ground, #2e2e2e)}.tiles.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:8px}.tile.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{text-align:left;min-height:128px;padding:14px;border-radius:var(--sl-radiusCard, 18px);background:var(--sl-tileBg, #3c3c3c);border:1px solid var(--sl-tileLine, #4d4d4d);display:flex;flex-direction:column;gap:10px;justify-content:space-between}.t-name.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{font-size:15px;font-weight:600}.t-tag.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}.t-tag.svelte-sxknz1 .t-when.svelte-sxknz1.svelte-sxknz1{color:var(--sl-sub, #b0b0b0);font-size:12px;white-space:nowrap}@media(max-width: 360px){.tiles.svelte-sxknz1:not(.list) .t-tag .tag.svelte-sxknz1.svelte-sxknz1{font-size:11px;padding:3px 8px}}.viewtog.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{align-self:flex-end;display:flex;gap:2px;padding:2px;margin-bottom:-8px;border-radius:var(--sl-radiusSmall, 9px);background:var(--sl-tabsBg, #3c3c3c)}.viewtog.svelte-sxknz1 button.svelte-sxknz1.svelte-sxknz1{width:30px;height:24px;border:0;border-radius:7px;background:transparent;color:var(--sl-sub, #b0b0b0) !important;font-size:17px !important;line-height:1;padding:0}.viewtog.svelte-sxknz1 button.on.svelte-sxknz1.svelte-sxknz1{background:var(--sl-sel-bg, #f8f8f8);color:var(--sl-sel-text, #1c1c1c) !important;font-weight:600}.tiles.list.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{grid-template-columns:minmax(0, 1fr);gap:6px}.tiles.list.svelte-sxknz1 .tile.svelte-sxknz1.svelte-sxknz1{min-height:0;flex-direction:row;align-items:center;gap:10px;padding:8px 10px 8px 14px;border-radius:14px}.tiles.list.svelte-sxknz1 .t-name.svelte-sxknz1.svelte-sxknz1{flex:1;min-width:0;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tiles.list.svelte-sxknz1 .now.svelte-sxknz1.svelte-sxknz1{flex:0 0 auto}.tiles.list.svelte-sxknz1 .now-t.svelte-sxknz1.svelte-sxknz1,.tiles.list.svelte-sxknz1 .now-sub.svelte-sxknz1.svelte-sxknz1{display:none}.tiles.list.svelte-sxknz1 .sw.svelte-sxknz1.svelte-sxknz1{width:30px;height:30px;border-radius:9px;font-size:13px}.tiles.list.svelte-sxknz1 .t-tag.svelte-sxknz1.svelte-sxknz1{flex:0 0 auto}.tiles.list.svelte-sxknz1 .t-tag .t-when.svelte-sxknz1.svelte-sxknz1{display:none}.tiles.list.svelte-sxknz1 .tag.svelte-sxknz1.svelte-sxknz1{font-size:11px;padding:3px 9px}.now.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;align-items:center;gap:8px;min-width:0}.now-t.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{flex:1;display:flex;flex-direction:column;gap:1px;min-width:0}.now-t.svelte-sxknz1 b.svelte-sxknz1.svelte-sxknz1{font-size:13px}.now-sub.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;flex-wrap:wrap;gap:1px 10px;margin-top:-4px}.now-sub.svelte-sxknz1 small.svelte-sxknz1.svelte-sxknz1{color:var(--sl-sub, #b0b0b0);font-size:12.5px;white-space:nowrap}.wdir.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;flex-direction:column;align-items:center;gap:1px;flex-shrink:0;min-width:28px;color:var(--sl-text, #f8f8f8)}.wdir.svelte-sxknz1 svg.svelte-sxknz1.svelte-sxknz1{display:block}.wdir.svelte-sxknz1 small.svelte-sxknz1.svelte-sxknz1{font-size:11px;font-weight:600;color:var(--sl-sub, #b0b0b0)}.tag.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:inline-block;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600}.tag.ghost.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{border:1px solid var(--sl-ghostTagLine, #5a5a5a);color:var(--sl-sub, #b0b0b0);font-weight:400;font-size:11px}.empty.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{padding:20px;border:1px dashed var(--sl-uOutline, #5a5a5a);border-radius:14px;color:var(--sl-sub, #b0b0b0);text-align:center;line-height:1.45}.list.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;flex-direction:column}.item.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;align-items:center;gap:12px;min-height:54px;padding:6px 2px;border:0;border-bottom:1px solid var(--sl-line, #4d4d4d);background:transparent;text-align:left}.item.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1:last-child{border-bottom:0}.plain.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{border:0;background:none;padding:0;text-align:left}.ico.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--sl-sub, #b0b0b0)}.ico.live.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{color:var(--sl-accent, #d49500)}.dot-s.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:block;width:8px;height:8px;border-radius:4px;background:var(--sl-accent, #d49500)}.dot-s.off.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{background:transparent;border:1.5px solid var(--sl-uOutline, #5a5a5a);box-sizing:border-box}.kind.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{min-width:58px;height:26px;padding:0 8px;border-radius:8px;background:var(--sl-ground, #2e2e2e);font-size:11px;color:var(--sl-sub, #b0b0b0);display:flex;align-items:center;justify-content:center;box-sizing:border-box}.dot.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{width:30px;height:30px;flex-shrink:0;border-radius:15px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px}.sw.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{width:34px;height:34px;flex-shrink:0;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--sl-windText, #1c1c1c);font-weight:600}.mini.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{height:30px;padding:0 10px;border-radius:var(--sl-radiusSmall, 9px);border:1px solid var(--sl-ghostLine, #5a5a5a);color:var(--sl-ghostText, #f8f8f8) !important;background:transparent;font-size:12px !important}.mini.danger.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{color:var(--sl-danger, #ff9a9a) !important;border-color:var(--sl-dangerLine, #6a4444)}.btns.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.btn.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{height:46px;padding:0 16px;border-radius:var(--sl-radiusButton, 12px);font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:1;box-sizing:border-box;white-space:nowrap}.btn.primary.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{background:var(--sl-primary-bg, #d49500);color:var(--sl-primary-text, #fff) !important;border:0}.btn.ghost.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{background:transparent;border:1px solid var(--sl-ghostLine, #5a5a5a);color:var(--sl-ghostText, #f8f8f8) !important}.btn.wide.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{width:100%;flex:none}.btn.small.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{height:36px;flex:none;padding:0 14px;font-size:13px}.btn.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1:disabled{opacity:0.5;cursor:default}label.btn.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{cursor:pointer}.link.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{background:none;border:0;color:var(--sl-linkText, #d49500) !important;font-weight:600;padding:6px 0;align-self:flex-start;flex-shrink:0}.link.danger.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{color:var(--sl-danger, #ff9a9a) !important}.link-card.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{text-align:left;align-items:center}.field.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;flex-direction:column;gap:8px}.chips.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;flex-wrap:wrap;gap:6px}.nudge.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:block;margin:-2px 2px 0;font-size:12px;line-height:1.45}.reco.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{gap:0;padding-top:4px;padding-bottom:12px}.reco-row.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:grid;grid-template-columns:104px auto minmax(0, 1fr);align-items:center;column-gap:12px;padding:9px 0;border-bottom:1px solid var(--sl-line, #4d4d4d)}.reco-row.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1:last-of-type{border-bottom:0}.reco-row.svelte-sxknz1 .r-day.svelte-sxknz1.svelte-sxknz1{display:flex;flex-direction:column;gap:1px;color:var(--sl-sub, #b0b0b0);font-size:13px;white-space:nowrap;line-height:1.25}.reco-row.svelte-sxknz1 .tag.svelte-sxknz1.svelte-sxknz1{justify-self:start}.reco-row.svelte-sxknz1 .r-time.svelte-sxknz1.svelte-sxknz1{font-weight:600;font-size:13.5px;line-height:1.3}.reco-row.svelte-sxknz1 .r-time span.svelte-sxknz1.svelte-sxknz1{white-space:nowrap}.reco-row.svelte-sxknz1 .r-pred.svelte-sxknz1.svelte-sxknz1{color:var(--sl-uQuiet, #8a8a8a);font-size:11px}.r-later.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{padding-top:8px}.other-sport.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;gap:8px;margin-top:8px;align-items:center}.other-sport.svelte-sxknz1 input.svelte-sxknz1.svelte-sxknz1{flex:1;min-width:0;height:36px;padding:0 12px;border-radius:var(--sl-radiusSmall, 9px);border:1px solid var(--sl-inputLine, #5a5a5a);background:var(--sl-inputBg, #2e2e2e);color:var(--sl-inputText, #f8f8f8);font:inherit}.chip.notworth.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{align-self:flex-start;height:32px;font-size:13px}.works-head.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:0;background:none;padding:0;color:inherit !important;text-align:left;cursor:pointer}.works-head.svelte-sxknz1 .chev.svelte-sxknz1.svelte-sxknz1{display:inline-block;font-size:22px;line-height:1;font-weight:600;color:var(--sl-sub, #b0b0b0);transition:transform 0.2s}.works-head.svelte-sxknz1 .chev.open.svelte-sxknz1.svelte-sxknz1{transform:rotate(90deg)}.works-sum.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{text-align:left;gap:6px;cursor:pointer;color:inherit !important}.works-sum.svelte-sxknz1 .ws-line.svelte-sxknz1.svelte-sxknz1{display:flex;gap:10px;align-items:baseline;font-size:13.5px}.works-sum.svelte-sxknz1 .ws-line b.svelte-sxknz1.svelte-sxknz1{font-weight:600;min-width:74px}.works-sum.svelte-sxknz1 .ws-line span.svelte-sxknz1.svelte-sxknz1{color:var(--sl-sub, #b0b0b0)}.works.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{gap:14px}.works.svelte-sxknz1 .w-sport.svelte-sxknz1.svelte-sxknz1{display:flex;flex-direction:column;gap:10px}.works.svelte-sxknz1 .w-sport.svelte-sxknz1+.w-sport.svelte-sxknz1{border-top:1px solid var(--sl-line, #4d4d4d);padding-top:14px}.works.svelte-sxknz1 .w-head.svelte-sxknz1.svelte-sxknz1{display:flex;align-items:baseline;gap:10px}.works.svelte-sxknz1 .w-head b.svelte-sxknz1.svelte-sxknz1{font-size:14px}.works.svelte-sxknz1 .w-head .link.svelte-sxknz1.svelte-sxknz1{padding:0}.works.svelte-sxknz1 .w-grid.svelte-sxknz1.svelte-sxknz1{display:grid;grid-template-columns:minmax(64px, max-content) max-content max-content minmax(0, 1fr);column-gap:18px;row-gap:9px;align-items:center;font-size:13.5px}.works.svelte-sxknz1 .w-h.svelte-sxknz1.svelte-sxknz1{font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--sl-uQuiet, #8a8a8a)}.works.svelte-sxknz1 .w-r.svelte-sxknz1.svelte-sxknz1,.works.svelte-sxknz1 .w-now.svelte-sxknz1.svelte-sxknz1{text-align:right;justify-self:end}.works.svelte-sxknz1 .w-name.svelte-sxknz1.svelte-sxknz1{color:var(--sl-sub, #b0b0b0);white-space:nowrap}.works.svelte-sxknz1 .w-you.svelte-sxknz1.svelte-sxknz1{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--sl-linkText, #d49500);margin-left:6px;vertical-align:2px}.works.svelte-sxknz1 .w-range.svelte-sxknz1.svelte-sxknz1{font-weight:600;justify-self:start;line-height:1.3}.works.svelte-sxknz1 .w-imp.svelte-sxknz1.svelte-sxknz1{color:var(--sl-sub, #b0b0b0);white-space:nowrap;font-size:12.5px}.works.svelte-sxknz1 .w-imp.imp3.svelte-sxknz1.svelte-sxknz1{color:var(--sl-text, #f8f8f8);font-weight:600}.works.svelte-sxknz1 .w-now.svelte-sxknz1.svelte-sxknz1{color:var(--sl-sub, #b0b0b0);white-space:nowrap}.works.svelte-sxknz1 .w-now.ok.svelte-sxknz1.svelte-sxknz1{color:var(--sl-r4bg, #50b450)}.works.svelte-sxknz1 .w-now.near.svelte-sxknz1.svelte-sxknz1{color:var(--sl-linkText, #d49500)}.works.svelte-sxknz1 .w-grid.edit.svelte-sxknz1.svelte-sxknz1{grid-template-columns:minmax(0, 96px) minmax(0, 1fr);row-gap:8px}.works.svelte-sxknz1 .w-inputs.svelte-sxknz1.svelte-sxknz1{display:flex;align-items:center;gap:6px;color:var(--sl-sub, #b0b0b0)}.works.svelte-sxknz1 .w-inputs input.svelte-sxknz1.svelte-sxknz1{width:64px;height:34px;padding:0 8px;border-radius:var(--sl-radiusSmall, 9px);border:1px solid var(--sl-inputLine, #5a5a5a);background:var(--sl-inputBg, #2e2e2e);color:var(--sl-inputText, #f8f8f8);font:inherit}.works.svelte-sxknz1 .w-inputs small.svelte-sxknz1.svelte-sxknz1{font-size:12px}.works.svelte-sxknz1 .w-dirs.svelte-sxknz1.svelte-sxknz1{display:flex;flex-wrap:wrap;gap:4px}.works.svelte-sxknz1 .dchip.svelte-sxknz1.svelte-sxknz1{height:30px;min-width:36px;padding:0 8px;border-radius:var(--sl-radiusChip, 18px);border:1px solid var(--sl-chipLine, #5a5a5a);background:transparent;color:var(--sl-chipText, #f8f8f8) !important;font-size:12px}.works.svelte-sxknz1 .dchip.on.svelte-sxknz1.svelte-sxknz1{background:var(--sl-chipOnBg, #f8f8f8);color:var(--sl-chipOnText, #1c1c1c) !important;border-color:var(--sl-chipOnBg, #f8f8f8)}.works.svelte-sxknz1 .gear-hint.svelte-sxknz1.svelte-sxknz1{font-size:12.5px;color:var(--sl-sub, #b0b0b0)}.works.svelte-sxknz1 .btns.svelte-sxknz1.svelte-sxknz1{margin-top:0}@media(max-width: 480px){.reco-row.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{grid-template-columns:86px auto minmax(0, 1fr);column-gap:10px}.reco-row.svelte-sxknz1 .r-time.svelte-sxknz1.svelte-sxknz1{font-size:13px}}@media(max-width: 380px){.works.svelte-sxknz1 .w-grid.svelte-sxknz1.svelte-sxknz1{column-gap:9px;font-size:12.5px}.reco-row.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{grid-template-columns:74px auto minmax(0, 1fr);column-gap:8px}.reco-row.svelte-sxknz1 .tag.svelte-sxknz1.svelte-sxknz1{font-size:11px;padding:3px 8px}.reco-row.svelte-sxknz1 .r-time.svelte-sxknz1.svelte-sxknz1{font-size:12.5px}}label.link.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{cursor:pointer}.chip.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{height:36px;padding:0 15px;border-radius:var(--sl-radiusChip, 18px);border:1px solid var(--sl-chipLine, #5a5a5a);background:transparent;color:var(--sl-chipText, #f8f8f8) !important;display:inline-flex;align-items:center;gap:6px}.chip.svelte-sxknz1 .k.svelte-sxknz1.svelte-sxknz1{font-size:11px;opacity:0.65}.chip.on.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{background:var(--sl-chipOnBg, #f8f8f8);color:var(--sl-chipOnText, #1c1c1c) !important;border-color:var(--sl-chipOnBg, #f8f8f8)}.chip.dash.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{border-style:dashed;color:var(--sl-accent, #d49500) !important}.dirs.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:grid;grid-template-columns:repeat(4, minmax(0, 1fr));gap:6px}.dir.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{height:50px;border-radius:var(--sl-radiusButton, 12px);border:1px solid var(--sl-chipLine, #5a5a5a);color:var(--sl-chipText, #f8f8f8) !important;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px}.dir.on.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{background:var(--sl-chipOnBg, #f8f8f8);color:var(--sl-chipOnText, #1c1c1c) !important;border-color:var(--sl-chipOnBg, #f8f8f8)}.stepper.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;align-items:center;gap:4px}.stepper.svelte-sxknz1 small.svelte-sxknz1.svelte-sxknz1{margin-right:2px}.stepper.svelte-sxknz1 .round.svelte-sxknz1.svelte-sxknz1{width:34px;height:34px}.arrow.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:inline-block;font-size:11px;line-height:1}.arrow.o.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{color:var(--sl-accent, #d49500);font-size:16px;margin-right:2px}.arrows.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex}.suggest.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;align-items:center;gap:12px;padding:12px;border-radius:calc(var(--sl-radiusButton, 12px) + 2px);background:var(--sl-lightBg, #f8f8f8);color:var(--sl-lightText, #1c1c1c)}.suggest.svelte-sxknz1 small.svelte-sxknz1.svelte-sxknz1{color:var(--sl-lightSub, #6b6b6b)}.section.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;flex-direction:column;gap:8px}.h2.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{font-size:20px}.score.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;align-items:center;gap:10px;font-size:13px}.score.svelte-sxknz1 .m.svelte-sxknz1.svelte-sxknz1{width:64px}.score.svelte-sxknz1 .m.best.svelte-sxknz1.svelte-sxknz1{color:var(--sl-accent, #d49500);font-weight:600}.score.svelte-sxknz1 .missbar.svelte-sxknz1.svelte-sxknz1{flex:1;height:6px;border-radius:3px;background:var(--sl-line, #4d4d4d);display:flex}.score.svelte-sxknz1 .missbar i.svelte-sxknz1.svelte-sxknz1{display:block;border-radius:3px;background:var(--sl-sub, #b0b0b0)}.score.svelte-sxknz1 .missbar i.best.svelte-sxknz1.svelte-sxknz1{background:var(--sl-accent, #d49500)}.ratings.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:grid;grid-template-columns:repeat(5, minmax(0, 1fr));gap:6px}.rate.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{height:62px;border-radius:calc(var(--sl-radiusButton, 12px) + 2px);border:1px solid var(--sl-line, #4d4d4d);background:var(--sl-card, #3c3c3c);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}.rate.svelte-sxknz1 b.svelte-sxknz1.svelte-sxknz1{font-size:19px}.rate.svelte-sxknz1 span.svelte-sxknz1.svelte-sxknz1{font-size:11px}.times.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{gap:8px}.times.svelte-sxknz1 .to.svelte-sxknz1.svelte-sxknz1{height:44px;display:flex;align-items:center;color:var(--sl-sub, #b0b0b0)}.snapless.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;align-items:center;gap:10px;min-height:60px;padding:12px 14px;border-radius:var(--sl-radiusCard, 18px);background:var(--sl-lightBg, #f8f8f8);color:var(--sl-lightText, #1c1c1c);box-sizing:border-box}.opts.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;flex-direction:column;gap:6px}.opt.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 14px 8px 10px;border-radius:calc(var(--sl-radiusButton, 12px) + 2px);border:1px solid var(--sl-line, #4d4d4d);background:var(--sl-card, #3c3c3c);text-align:left;width:100%;box-sizing:border-box}.opt.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1:hover{border-color:var(--sl-uOutline, #5a5a5a)}.opt.on.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{border-color:var(--sl-accent, #d49500)}.chev-r.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{color:var(--sl-sub, #b0b0b0);font-size:18px}.spotlog-popup .leaflet-popup-content-wrapper,.spotlog-popup .leaflet-popup-tip-container{transform-origin:50% 100%;animation:sl-pop-in 0.22s cubic-bezier(0.2, 0.8, 0.3, 1) both}.spotlog-popup.sl-closing .leaflet-popup-content-wrapper,.spotlog-popup.sl-closing .leaflet-popup-tip-container{animation:sl-pop-out 0.17s ease-in both}@keyframes sl-pop-in{from{opacity:0;transform:translateY(8px) scale(0.94)}to{opacity:1;transform:none}}@keyframes sl-pop-out{from{opacity:1;transform:none}to{opacity:0;transform:translateY(6px) scale(0.96)}}@media(prefers-reduced-motion: reduce){.spotlog-popup .leaflet-popup-content-wrapper,.spotlog-popup .leaflet-popup-tip-container{animation:none}}.toast.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{position:sticky;bottom:12px;z-index:5;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;border-radius:14px;background:var(--sl-toast-bg, #f8f8f8);color:var(--sl-toast-text, #1c1c1c);font-weight:600;box-shadow:0 6px 20px rgba(0, 0, 0, 0.45)}.undo.svelte-sxknz1.svelte-sxknz1.svelte-sxknz1{height:32px;padding:0 14px;border-radius:10px;border:0;background:var(--sl-undo, #1c1c1c);color:var(--sl-toast-bg, #f8f8f8) !important;font-weight:600}.spotlog-marker{background:none;border:0}.spotlog-pin{position:absolute;transform:translate(-10px, -50%);display:flex;align-items:center;gap:6px;white-space:nowrap;height:26px;padding:0 10px 0 6px;border-radius:13px;background:var(--sl-pin-bg, #2e2e2e);color:var(--sl-pin-text, #f8f8f8);font:600 12px 'Instrument Sans', system-ui, sans-serif;box-shadow:0 2px 8px rgba(0, 0, 0, 0.35);cursor:pointer}.spotlog-pin i{width:10px;height:10px;border-radius:5px;background:var(--sl-pin-dot, #5a5a5a);display:block;flex-shrink:0}.spotlog-pin.active{background:var(--sl-active-bg, #f8f8f8);color:var(--sl-active-text, #1c1c1c)}.spotlog-pin em{font-style:normal;font-weight:600;font-size:11px;opacity:0.9;margin-left:2px}.spotlog-cdot{position:absolute;left:calc(var(--sl-compact-size, 10px) / -2);top:calc(var(--sl-compact-size, 10px) / -2);width:var(--sl-compact-size, 10px);height:var(--sl-compact-size, 10px);border-radius:50%;box-shadow:var(--sl-compact-ring, none);cursor:pointer}.spotlog-heat{position:absolute;border-radius:50%;transform:translate(-50%, -50%);cursor:default}.spotlog-heat.core::after{content:'';position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:3px;background:var(--sl-sess-color, #ff3d8b);box-shadow:0 0 0 1.5px var(--sl-sess-core-ring, #ffffff)}.spotlog-tip{display:none;position:absolute;left:50%;bottom:calc(100% + 4px);transform:translateX(-50%);z-index:5;flex-direction:column;gap:3px;min-width:130px;padding:8px 10px;border-radius:10px;background:var(--sl-tip-bg, #2e2e2e);color:var(--sl-tip-text, #f8f8f8);font:12px 'Instrument Sans', system-ui, sans-serif;white-space:nowrap;box-shadow:0 4px 14px rgba(0, 0, 0, 0.45);pointer-events:none}.spotlog-tip span{display:flex;align-items:center;gap:6px;opacity:0.85}.spotlog-tip i{width:8px;height:8px;border-radius:4px;display:block}.spotlog-tip small{opacity:0.6;font-size:11px}.spotlog-heat:hover .spotlog-tip,.spotlog-pin:hover .spotlog-tip,.spotlog-cdot:hover .spotlog-tip{display:flex}.spotlog-pin .spotlog-tip{left:10px;transform:translateX(-50%);bottom:calc(100% + 6px);font-weight:400}.spotlog-pin .spotlog-tip b{font-weight:600}.spotlog-dot{position:absolute;left:-8px;top:-8px;width:16px;height:16px;border-radius:8px;box-sizing:border-box;box-shadow:0 1px 4px rgba(0, 0, 0, 0.45)}.spotlog-dot.start{left:-6px;top:-6px;width:12px;height:12px;background:var(--sl-start-fill, #ff3d8b);border:2.5px solid var(--sl-start-border, #f8f8f8)}.spotlog-dot.end{left:-5px;top:-5px;width:10px;height:10px;background:var(--sl-end-fill, #1c1c1c);border:2.5px solid var(--sl-end-border, #ff3d8b)}.spotlog-route-label{position:absolute;transform:translate(12px, -50%);white-space:nowrap;font:600 13px 'Instrument Sans', system-ui, sans-serif;color:var(--sl-route-label, #f8f8f8);text-shadow:0 1px 3px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 0, 0, 0.35)}.spotlog-popup .leaflet-popup-content-wrapper{background:var(--sl-popup-bg, #f8f8f8);color:var(--sl-popup-text, #1c1c1c);border-radius:16px}.spotlog-popup .leaflet-popup-content{margin:12px}.sl-pop{display:flex;flex-direction:column;gap:8px;min-width:220px;font:13px 'Instrument Sans', system-ui, sans-serif;color:var(--sl-popup-text, #1c1c1c)}.sl-pop small{color:var(--sl-popupSub, #6b6b6b);font-size:12px}.sl-h{display:flex;align-items:flex-start;gap:8px}.sl-h > span:first-child{flex:1;display:flex;flex-direction:column;gap:1px}.sl-nav{display:flex;gap:4px;flex-shrink:0}.sl-pop:has(.sl-acts){min-width:264px}.sl-nav button,.sl-acts button{font:600 13px 'Instrument Sans', system-ui, sans-serif;color:var(--sl-popupBtnText, #1c1c1c);background:var(--sl-popupBtnBg, #ececea);border:0;border-radius:10px;cursor:pointer}.sl-nav button{width:30px;height:30px;font-size:18px;line-height:1;padding:0}.sl-brand{display:inline-flex;align-items:center;gap:0.22em;white-space:nowrap;vertical-align:-0.06em;line-height:1}.sl-star{display:inline-block;flex-shrink:0;color:var(--sl-star, #d49500)}.sl-nav .sl-x{background:transparent;color:var(--sl-popupSub, #6b6b6b);font-size:15px;margin-left:2px}.sl-acts{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:4px;margin-top:2px}.sl-acts{grid-template-columns:1.3fr 1.1fr 0.9fr !important}.sl-acts button{height:36px;padding:0 4px;white-space:nowrap;font-size:12.5px !important;overflow:hidden;text-overflow:ellipsis}.sl-acts button:first-child{background:var(--sl-primary-bg, #d49500);color:var(--sl-primary-text, #fff)}.sl-h b{font-size:14px}.sl-tiles{display:grid;grid-template-columns:repeat(4, minmax(0, 1fr));gap:4px}.sl-t{display:flex;flex-direction:column;justify-content:space-between;gap:6px;min-height:58px;padding:7px 8px;border-radius:9px;font-size:11px;color:var(--sl-windText, #1c1c1c);box-sizing:border-box}.sl-t span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sl-t b{display:block;font:900 20px 'Doto', ui-monospace, monospace;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:clip}.sl-pop .sl-t small{display:block;font:600 10px 'Instrument Sans', system-ui, sans-serif;color:inherit;opacity:0.7;line-height:1;white-space:nowrap}.sl-pop .sl-best b{font-weight:600;color:inherit}.sl-b{align-self:flex-start;padding:3px 9px;border-radius:10px;font-size:12px;font-weight:600}");
+	append_styles(target, "svelte-8bmt8i", ".spotlog.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{background:var(--sl-ground, #2e2e2e);color:var(--sl-text, #f8f8f8);font-family:'Instrument Sans', system-ui, sans-serif;font-size:var(--sl-textSize, 14px);padding:14px 16px 20px;display:flex;flex-direction:column;gap:var(--sl-panelGap, 16px);height:100%;max-height:100vh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-sizing:border-box;position:relative}.spotlog.svelte-8bmt8i button.svelte-8bmt8i.svelte-8bmt8i{font:inherit;color:inherit;cursor:pointer}.spotlog.svelte-8bmt8i button.svelte-8bmt8i.svelte-8bmt8i:focus-visible,.spotlog.svelte-8bmt8i input.svelte-8bmt8i.svelte-8bmt8i:focus-visible,.spotlog.svelte-8bmt8i textarea.svelte-8bmt8i.svelte-8bmt8i:focus-visible{outline:2px solid var(--sl-accent, #d49500);outline-offset:1px}.spotlog.svelte-8bmt8i small.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-sub, #b0b0b0);font-size:12px}.spotlog.svelte-8bmt8i b.svelte-8bmt8i.svelte-8bmt8i{font-weight:600}.spotlog.svelte-8bmt8i input.svelte-8bmt8i.svelte-8bmt8i,.spotlog.svelte-8bmt8i textarea.svelte-8bmt8i.svelte-8bmt8i{box-sizing:border-box;width:100%;font:inherit;color:var(--sl-inputText, #f8f8f8);background:var(--sl-inputBg, #3c3c3c);border:1px solid var(--sl-inputLine, #5a5a5a);border-radius:var(--sl-radiusButton, 12px);padding:11px 14px;outline:none;min-width:0}.spotlog.svelte-8bmt8i input[type='date'].svelte-8bmt8i.svelte-8bmt8i{color-scheme:dark}.spotlog.svelte-8bmt8i textarea.svelte-8bmt8i.svelte-8bmt8i{resize:vertical;line-height:1.45}.spotlog.svelte-8bmt8i>*{flex-shrink:0}.spotlog.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i:not(.m){scrollbar-gutter:stable;scrollbar-width:thin;padding-right:8px}.mwrap.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i,.body.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:contents}.body.svelte-8bmt8i>*{flex-shrink:0}.spotlog.m.bar.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{height:150px;max-height:none;min-height:150px;padding:0;gap:0;display:block;overflow:visible;position:relative}.spotlog.m.bar.gatebar.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{height:108px;min-height:108px}.mbar.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{padding:10px 12px 12px;display:flex;flex-direction:column;gap:9px}.mrow.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;align-items:center;gap:10px;min-height:30px}.mrow.svelte-8bmt8i .wordmark.svelte-8bmt8i.svelte-8bmt8i{font-size:18px}.mrow.svelte-8bmt8i .units.svelte-8bmt8i.svelte-8bmt8i{height:28px}.mhint.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{flex:1;min-width:0;text-align:right;font-size:12px;color:var(--sl-sub, #b0b0b0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mlink.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{border:0;background:none;padding:4px 0;color:var(--sl-accent, #d49500) !important;font-weight:600;font-size:13px}.macts.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:6px}.mact.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{height:42px;padding:0 6px;border-radius:var(--sl-radiusButton, 12px);border:1px solid var(--sl-actLine, #5a5a5a);background:var(--sl-actBg, #3c3c3c);color:var(--sl-actText, #f8f8f8) !important;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px !important;font-weight:600}.mact.svelte-8bmt8i span.svelte-8bmt8i.svelte-8bmt8i{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mact.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i:disabled{opacity:0.6}@media(max-width: 359px){.mact.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{padding:0 4px}.mact.svelte-8bmt8i svg{display:none}}.mtabs.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;gap:3px;padding:3px;border-radius:var(--sl-radiusButton, 12px);background:var(--sl-tabsBg, #3c3c3c)}.mtabs.svelte-8bmt8i button.svelte-8bmt8i.svelte-8bmt8i{flex:1 1 auto;height:30px;border:0;border-radius:var(--sl-radiusSmall, 9px);background:transparent;color:var(--sl-tabText, #d0d0d0) !important;font-size:12px !important;padding:0 5px;white-space:nowrap}.mtabs.svelte-8bmt8i button.on.svelte-8bmt8i.svelte-8bmt8i{background:var(--sl-sel-bg, #f8f8f8);color:var(--sl-sel-text, #1c1c1c) !important;font-weight:600}.mtabs.svelte-8bmt8i .cnt.svelte-8bmt8i.svelte-8bmt8i{display:inline-block;margin-left:6px;min-width:16px;padding:1px 5px;box-sizing:border-box;border-radius:8px;background:rgba(248, 248, 248, 0.14);color:inherit;font-size:10.5px;line-height:14px;font-weight:600;font-variant-numeric:tabular-nums;vertical-align:1px}.mtabs.svelte-8bmt8i button.on .cnt.svelte-8bmt8i.svelte-8bmt8i{background:rgba(28, 28, 28, 0.12)}.mwrap.on.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;flex-direction:column;position:absolute;left:8px;right:8px;bottom:calc(100% + 8px);z-index:30;height:calc(100vh - 340px);height:calc(100dvh - 340px - env(safe-area-inset-top, 0px));min-height:260px;touch-action:pan-y;overscroll-behavior:contain;background:var(--sl-ground, #2e2e2e);border-radius:18px;box-shadow:0 10px 34px rgba(0, 0, 0, 0.5);overflow:hidden;transform-origin:50% 100%;transition:transform 0.22s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.18s ease}.mwrap.on.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i:not(.open){opacity:0;transform:translateY(14px) scale(0.98);pointer-events:none;visibility:hidden;transition:transform 0.18s ease, opacity 0.15s ease, visibility 0s 0.18s}.mwrap.on.svelte-8bmt8i .body.svelte-8bmt8i.svelte-8bmt8i{display:flex;flex-direction:column;gap:12px;flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:0 12px 16px;touch-action:pan-y}.mwrap.on.svelte-8bmt8i .topbar.svelte-8bmt8i.svelte-8bmt8i{position:sticky;top:0;z-index:8;margin:0 -12px -4px;padding:10px 8px 8px 12px;background:var(--sl-ground, #2e2e2e)}.mwrap.on.svelte-8bmt8i .topbar .title.svelte-8bmt8i.svelte-8bmt8i{font-size:16px}.mclose.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{flex-shrink:0;width:34px;height:34px;margin-left:-4px;border:0;border-radius:17px;background:none;color:var(--sl-sub, #b0b0b0) !important;font-size:16px;line-height:1;padding:0}.mwrap.on.unitspage.svelte-8bmt8i .body.svelte-8bmt8i>:not(.upage){display:none !important}.mwrap.on.kb.svelte-8bmt8i .body.svelte-8bmt8i.svelte-8bmt8i{padding-bottom:55vh}.when.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:contents}.when.one.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:grid;grid-template-columns:minmax(0, 1.25fr) minmax(0, 2fr);gap:6px}.when.one.svelte-8bmt8i input[type='date'].svelte-8bmt8i.svelte-8bmt8i{height:44px;padding:0 8px;font-size:14px;text-align:center;-webkit-appearance:none;appearance:none}.when.one.svelte-8bmt8i .times.svelte-8bmt8i.svelte-8bmt8i{gap:6px}.when.one.svelte-8bmt8i .times .to.svelte-8bmt8i.svelte-8bmt8i{display:none}.mwrap.on.svelte-8bmt8i .home-head,.mwrap.on.svelte-8bmt8i .home-acts,.mwrap.on.svelte-8bmt8i .home-tabs{display:none !important}@media(prefers-reduced-motion: reduce){.mwrap.on.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i,.mwrap.on.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i:not(.open){transition:none}}.spotlog.m.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{padding:8px 10px 16px;gap:10px;height:50vh;height:50dvh;max-height:50dvh;touch-action:pan-y}.spotlog.m.svelte-8bmt8i .head.svelte-8bmt8i.svelte-8bmt8i{padding:10px 14px;gap:8px}.spotlog.m.svelte-8bmt8i .head .stats.svelte-8bmt8i.svelte-8bmt8i,.spotlog.m.svelte-8bmt8i .head .sync.svelte-8bmt8i.svelte-8bmt8i{display:none}.spotlog.m.svelte-8bmt8i .act.svelte-8bmt8i.svelte-8bmt8i{min-height:0;padding:8px 10px}.spotlog.m.svelte-8bmt8i .act small.svelte-8bmt8i.svelte-8bmt8i{display:none}.spotlog.m.svelte-8bmt8i .wordmark.svelte-8bmt8i.svelte-8bmt8i{font-size:20px}.spotlog.m.svelte-8bmt8i .stats .big.svelte-8bmt8i.svelte-8bmt8i{font-size:18px}.spotlog.m.svelte-8bmt8i .act b.svelte-8bmt8i.svelte-8bmt8i{font-size:13px}.spotlog.m.svelte-8bmt8i .act.svelte-8bmt8i svg{margin-bottom:2px}.spotlog.m.svelte-8bmt8i .tile.svelte-8bmt8i.svelte-8bmt8i{min-height:110px;padding:12px}.spotlog.m.svelte-8bmt8i .topbar .round.svelte-8bmt8i.svelte-8bmt8i{width:34px;height:34px}.spotlog.m.svelte-8bmt8i .title.svelte-8bmt8i.svelte-8bmt8i{font-size:16px}.beta.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{padding:2px 6px 1px;border-radius:7px;border:1px solid var(--sl-uOutline, #5a5a5a);color:var(--sl-sub, #b0b0b0);font:600 9.5px 'Instrument Sans', system-ui, sans-serif;letter-spacing:0.08em;text-transform:uppercase;line-height:1.2;align-self:center}.beta-note.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:block;margin-top:2px;color:var(--sl-uQuiet, #7a7a7a);font-size:11.5px;line-height:1.45;text-align:center;text-wrap:balance}.beta-card.svelte-8bmt8i .btns.svelte-8bmt8i.svelte-8bmt8i{flex-wrap:wrap}.beta-card.svelte-8bmt8i .btn.svelte-8bmt8i.svelte-8bmt8i{min-width:0}.welcome.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:6px 2px 4px}.welcome.svelte-8bmt8i .brand.svelte-8bmt8i.svelte-8bmt8i{margin-bottom:6px}.welcome.svelte-8bmt8i .h2.svelte-8bmt8i.svelte-8bmt8i{font-size:20px;text-wrap:balance}.welcome.svelte-8bmt8i .p.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-sub, #b0b0b0);line-height:1.5;max-width:34em}.welcome.svelte-8bmt8i .btn.svelte-8bmt8i.svelte-8bmt8i{margin-top:4px}.welcome.svelte-8bmt8i .link.svelte-8bmt8i.svelte-8bmt8i{align-self:center}.mwrap.on.svelte-8bmt8i .welcome.svelte-8bmt8i.svelte-8bmt8i{padding-top:0}.wordmark.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{font-family:'Doto', monospace;font-weight:900;font-size:var(--sl-wordmarkSize, 24px);letter-spacing:0.06em}.card.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{background:var(--sl-card, #3c3c3c);border:1px solid var(--sl-line, #4d4d4d);border-radius:var(--sl-radiusCard, 18px);padding:14px 16px;display:flex;flex-direction:column;gap:12px}.row.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;align-items:center;gap:10px}.row.start.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{align-items:flex-start}.card.row.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{flex-direction:row}.sep.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{padding-top:12px;border-top:1px solid var(--sl-line, #4d4d4d)}.grow.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}.title.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{font-size:var(--sl-titleSize, 17px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lbl.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{font-size:12px;color:var(--sl-sub, #b0b0b0)}.big.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{font-size:22px;font-weight:500;line-height:1}.big.svelte-8bmt8i small.svelte-8bmt8i.svelte-8bmt8i{font-size:12px}.big2.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{font-size:26px;font-weight:600;line-height:1.1}.big2.svelte-8bmt8i small.svelte-8bmt8i.svelte-8bmt8i{font-size:13px}.muted.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-sub, #b0b0b0);font-size:13px}.p.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{margin:0;line-height:1.45}.small.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{margin:0;font-size:12px;color:var(--sl-sub, #b0b0b0)}.r.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{text-align:right}.err.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-danger, #ff9a9a) !important;line-height:1.4}.stats.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr))}.stats.svelte-8bmt8i>div.svelte-8bmt8i.svelte-8bmt8i{display:flex;flex-direction:column;gap:4px}.units.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{height:30px;padding:0 10px;border-radius:15px;border:1px solid var(--sl-uOutline, #5a5a5a);background:var(--sl-ground, #2e2e2e);font-size:12px !important;font-weight:600;white-space:nowrap;flex-shrink:0}.chev.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:inline-block;transition:transform 0.2s}.chev.up.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{transform:rotate(180deg)}.round.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{width:38px;height:38px;flex-shrink:0;border-radius:19px;background:var(--sl-card, #3c3c3c);border:1px solid var(--sl-line, #4d4d4d);font-size:16px}.topbar.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;align-items:center;gap:10px}.brand.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:inline-flex;align-items:center;gap:8px}.grow-b.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{flex:1;min-width:0}.back-menu.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:inline-flex;align-items:center;justify-content:center;width:22px;height:30px;margin:0 -2px 0 -6px;padding:0;border:0;background:none;color:var(--sl-text, #f8f8f8);opacity:0.85}.back-menu.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i:hover{opacity:1}.map-toggles.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{gap:14px}.maptog.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;align-items:center;gap:12px;border:0;background:none;padding:0;text-align:left}.maptog.svelte-8bmt8i small.svelte-8bmt8i.svelte-8bmt8i{display:block;margin-top:2px}.switch.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{width:40px;height:24px;border-radius:12px;background:var(--sl-switchOff, #5a5a5a);position:relative;flex-shrink:0;transition:background 0.15s}.switch.svelte-8bmt8i i.svelte-8bmt8i.svelte-8bmt8i{position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:9px;background:var(--sl-switchKnob, #f8f8f8);transition:transform 0.18s}.switch.on.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{background:var(--sl-switch, #d49500)}.switch.on.svelte-8bmt8i i.svelte-8bmt8i.svelte-8bmt8i{transform:translateX(16px)}.sync.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:block;margin-top:-4px;color:var(--sl-sub, #b0b0b0)}.sync.err.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-danger, #ff9a9a)}.coffee.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{align-self:center;display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border-radius:var(--sl-radiusChip, 18px);border:1px solid var(--sl-ghostLine, #5a5a5a);color:var(--sl-ghostText, #f8f8f8);text-decoration:none;font-weight:600;font-size:13px}.coffee.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i:hover{border-color:var(--sl-accent, #d49500)}.ver.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{font-size:11px;color:var(--sl-uQuiet, #7a7a7a)}.about.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;flex-direction:column;gap:12px}.h3.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{font-size:15px}.steps.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{gap:14px}.step.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;gap:12px;align-items:flex-start}.step.svelte-8bmt8i b.svelte-8bmt8i.svelte-8bmt8i{font-size:14px}.step.svelte-8bmt8i small.svelte-8bmt8i.svelte-8bmt8i{line-height:1.45;font-size:12.5px}.n.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{width:24px;height:24px;flex-shrink:0;border-radius:12px;border:1px solid var(--sl-uOutline, #5a5a5a);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--sl-sub, #b0b0b0)}.data-links.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{gap:18px}.data-links.svelte-8bmt8i .link.svelte-8bmt8i.svelte-8bmt8i{font-size:13px;padding:2px 0}.sig.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0 4px}.sig.svelte-8bmt8i .coffee.svelte-8bmt8i.svelte-8bmt8i{margin-top:6px}.data-links.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{flex-wrap:wrap}.replace.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{flex:1;display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;border:1px solid var(--sl-accent, #d49500);background:var(--sl-card, #3c3c3c)}.replace.svelte-8bmt8i .btns.svelte-8bmt8i.svelte-8bmt8i{margin-top:8px}.models-pick.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;flex-wrap:wrap;gap:4px;margin-top:-6px}.models-pick.svelte-8bmt8i button.svelte-8bmt8i.svelte-8bmt8i{height:28px;padding:0 11px;border-radius:var(--sl-radiusChip, 18px);border:1px solid var(--sl-chipLine, #5a5a5a);background:transparent;font-size:12px !important;color:var(--sl-sub, #b0b0b0) !important}.models-pick.svelte-8bmt8i button.on.svelte-8bmt8i.svelte-8bmt8i{background:var(--sl-sel-bg, #f8f8f8);border-color:var(--sl-sel-bg, #f8f8f8);color:var(--sl-sel-text, #1c1c1c) !important;font-weight:600}.sl-note.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{margin-top:-8px;padding:0 4px;line-height:1.4}.actions.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:8px}.act.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{min-height:78px;padding:10px 9px 10px 10px;min-width:0;border-radius:calc(var(--sl-radiusButton, 12px) + 2px);border:1px solid var(--sl-actLine, #5a5a5a);background:var(--sl-actBg, #3c3c3c);color:var(--sl-actText, #f8f8f8) !important;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:3px;text-align:left}.act.svelte-8bmt8i svg{color:var(--sl-actIcon, #f8f8f8);margin-bottom:4px}.act.svelte-8bmt8i b.svelte-8bmt8i.svelte-8bmt8i{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.act.svelte-8bmt8i small.svelte-8bmt8i.svelte-8bmt8i{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;color:var(--sl-actSub, #b0b0b0)}.act.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i:hover{border-color:var(--sl-uHoverLine, #777777);background:var(--sl-uHoverBg, #424242)}.act.on.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{border-color:var(--sl-accent, #d49500)}.act.on.svelte-8bmt8i svg{color:var(--sl-accent, #d49500)}.act.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i:disabled{opacity:0.6;cursor:default}.tabs.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i,.seg.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;gap:4px;padding:3px;background:var(--sl-tabsBg, #3c3c3c);border-radius:var(--sl-radiusButton, 12px)}.tabs.svelte-8bmt8i button.svelte-8bmt8i.svelte-8bmt8i,.seg.svelte-8bmt8i button.svelte-8bmt8i.svelte-8bmt8i{flex:1 1 auto;height:34px;padding:0 6px;border:0;border-radius:var(--sl-radiusSmall, 9px);background:transparent;color:var(--sl-tabText, #d0d0d0);white-space:nowrap}.tabs.svelte-8bmt8i button.on.svelte-8bmt8i.svelte-8bmt8i,.seg.svelte-8bmt8i button.on.svelte-8bmt8i.svelte-8bmt8i{background:var(--sl-sel-bg, #f8f8f8);color:var(--sl-sel-text, #1c1c1c) !important;font-weight:600}.seg.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{background:var(--sl-ground, #2e2e2e)}.seg.svelte-8bmt8i button.svelte-8bmt8i.svelte-8bmt8i{height:30px}.card.svelte-8bmt8i .seg.svelte-8bmt8i.svelte-8bmt8i{background:var(--sl-ground, #2e2e2e)}.tiles.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:8px}.tile.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{text-align:left;min-height:128px;padding:14px;border-radius:var(--sl-radiusCard, 18px);background:var(--sl-tileBg, #3c3c3c);border:1px solid var(--sl-tileLine, #4d4d4d);display:flex;flex-direction:column;gap:10px}.tiles.svelte-8bmt8i:not(.list) .t-tag.svelte-8bmt8i.svelte-8bmt8i{margin-top:auto}.t-name.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{font-size:15px;font-weight:600}.t-tag.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}.t-tag.svelte-8bmt8i .t-when.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-sub, #b0b0b0);font-size:12px;white-space:nowrap}@media(max-width: 360px){.tiles.svelte-8bmt8i:not(.list) .t-tag .tag.svelte-8bmt8i.svelte-8bmt8i{font-size:11px;padding:3px 8px}}.viewtog.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{align-self:flex-end;display:flex;gap:2px;padding:2px;margin-bottom:-8px;border-radius:var(--sl-radiusSmall, 9px);background:var(--sl-tabsBg, #3c3c3c)}.viewtog.svelte-8bmt8i button.svelte-8bmt8i.svelte-8bmt8i{width:30px;height:24px;border:0;border-radius:7px;background:transparent;color:var(--sl-sub, #b0b0b0) !important;font-size:17px !important;line-height:1;padding:0}.viewtog.svelte-8bmt8i button.on.svelte-8bmt8i.svelte-8bmt8i{background:var(--sl-sel-bg, #f8f8f8);color:var(--sl-sel-text, #1c1c1c) !important;font-weight:600}.tiles.list.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{grid-template-columns:minmax(0, 1fr);gap:6px}.tiles.list.svelte-8bmt8i .tile.svelte-8bmt8i.svelte-8bmt8i{min-height:0;flex-direction:row;align-items:center;gap:10px;padding:8px 10px 8px 14px;border-radius:14px}.tiles.list.svelte-8bmt8i .t-name.svelte-8bmt8i.svelte-8bmt8i{flex:1;min-width:0;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tiles.list.svelte-8bmt8i .now.svelte-8bmt8i.svelte-8bmt8i{flex:0 0 auto}.tiles.list.svelte-8bmt8i .now-t.svelte-8bmt8i.svelte-8bmt8i,.tiles.list.svelte-8bmt8i .now-sub.svelte-8bmt8i.svelte-8bmt8i{display:none}.tiles.list.svelte-8bmt8i .sw.svelte-8bmt8i.svelte-8bmt8i{width:30px;height:30px;border-radius:9px;font-size:13px}.tiles.list.svelte-8bmt8i .t-tag.svelte-8bmt8i.svelte-8bmt8i{flex:0 0 auto}.tiles.list.svelte-8bmt8i .t-tag .t-when.svelte-8bmt8i.svelte-8bmt8i{display:none}.tiles.list.svelte-8bmt8i .tag.svelte-8bmt8i.svelte-8bmt8i{font-size:11px;padding:3px 9px}.now.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;align-items:center;gap:8px;min-width:0}.now-t.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{flex:1;display:flex;flex-direction:column;gap:1px;min-width:0}.now-t.svelte-8bmt8i b.svelte-8bmt8i.svelte-8bmt8i{font-size:13px}.now-sub.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;flex-wrap:wrap;gap:1px 10px;margin-top:-4px}.now-sub.svelte-8bmt8i small.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-sub, #b0b0b0);font-size:12.5px;white-space:nowrap}.wdir.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;flex-direction:column;align-items:center;gap:1px;flex-shrink:0;min-width:28px;color:var(--sl-text, #f8f8f8)}.wdir.svelte-8bmt8i svg.svelte-8bmt8i.svelte-8bmt8i{display:block}.wdir.svelte-8bmt8i small.svelte-8bmt8i.svelte-8bmt8i{font-size:11px;font-weight:600;color:var(--sl-sub, #b0b0b0)}.tag.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:inline-block;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600}.tag.ghost.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{border:1px solid var(--sl-ghostTagLine, #5a5a5a);color:var(--sl-sub, #b0b0b0);font-weight:400;font-size:11px}.empty.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{padding:20px;border:1px dashed var(--sl-uOutline, #5a5a5a);border-radius:14px;color:var(--sl-sub, #b0b0b0);text-align:center;line-height:1.45}.list.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;flex-direction:column}.item.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;align-items:center;gap:12px;min-height:54px;padding:6px 2px;border:0;border-bottom:1px solid var(--sl-line, #4d4d4d);background:transparent;text-align:left}.item.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i:last-child{border-bottom:0}.plain.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{border:0;background:none;padding:0;text-align:left}.ico.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--sl-sub, #b0b0b0)}.ico.live.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-accent, #d49500)}.dot-s.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:block;width:8px;height:8px;border-radius:4px;background:var(--sl-accent, #d49500)}.dot-s.off.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{background:transparent;border:1.5px solid var(--sl-uOutline, #5a5a5a);box-sizing:border-box}.kind.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{min-width:58px;height:26px;padding:0 8px;border-radius:8px;background:var(--sl-ground, #2e2e2e);font-size:11px;color:var(--sl-sub, #b0b0b0);display:flex;align-items:center;justify-content:center;box-sizing:border-box}.dot.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{width:30px;height:30px;flex-shrink:0;border-radius:15px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px}.sw.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{width:34px;height:34px;flex-shrink:0;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--sl-windText, #1c1c1c);font-weight:600}.mini.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{height:30px;padding:0 10px;border-radius:var(--sl-radiusSmall, 9px);border:1px solid var(--sl-ghostLine, #5a5a5a);color:var(--sl-ghostText, #f8f8f8) !important;background:transparent;font-size:12px !important}.mini.danger.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-danger, #ff9a9a) !important;border-color:var(--sl-dangerLine, #6a4444)}.btns.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.btn.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{height:46px;padding:0 16px;border-radius:var(--sl-radiusButton, 12px);font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:1;box-sizing:border-box;white-space:nowrap}.btn.primary.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{background:var(--sl-primary-bg, #d49500);color:var(--sl-primary-text, #fff) !important;border:0}.btn.ghost.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{background:transparent;border:1px solid var(--sl-ghostLine, #5a5a5a);color:var(--sl-ghostText, #f8f8f8) !important}.btn.wide.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{width:100%;flex:none}.btn.small.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{height:36px;flex:none;padding:0 14px;font-size:13px}.btn.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i:disabled{opacity:0.5;cursor:default}label.btn.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{cursor:pointer}.link.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{background:none;border:0;color:var(--sl-linkText, #d49500) !important;font-weight:600;padding:6px 0;align-self:flex-start;flex-shrink:0}.link.danger.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-danger, #ff9a9a) !important}.link-card.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{text-align:left;align-items:center}.field.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;flex-direction:column;gap:8px}.chips.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;flex-wrap:wrap;gap:6px}.nudge.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:block;margin:-2px 2px 0;font-size:12px;line-height:1.45}.reco.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{gap:0;padding-top:4px;padding-bottom:12px;display:grid;grid-template-columns:max-content max-content minmax(0, 1fr);column-gap:12px}.reco-row.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{grid-column:1 / -1;display:grid;grid-template-columns:104px auto minmax(0, 1fr);grid-template-columns:subgrid;align-items:center;column-gap:12px;padding:9px 0;border-bottom:1px solid var(--sl-line, #4d4d4d)}.reco-row.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i:last-of-type{border-bottom:0}.reco-row.svelte-8bmt8i .r-day.svelte-8bmt8i.svelte-8bmt8i{display:flex;flex-direction:column;gap:1px;color:var(--sl-sub, #b0b0b0);font-size:13px;white-space:nowrap;line-height:1.25}.reco-row.svelte-8bmt8i .tag.svelte-8bmt8i.svelte-8bmt8i{justify-self:start}.reco-row.svelte-8bmt8i .r-time.svelte-8bmt8i.svelte-8bmt8i{font-weight:600;font-size:13.5px;line-height:1.3}.reco-row.svelte-8bmt8i .r-time span.svelte-8bmt8i.svelte-8bmt8i{white-space:nowrap}.reco-row.svelte-8bmt8i .r-pred.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-uQuiet, #8a8a8a);font-size:11px}.r-later.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{padding-top:8px;grid-column:1 / -1}.other-sport.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;gap:8px;margin-top:8px;align-items:center}.other-sport.svelte-8bmt8i input.svelte-8bmt8i.svelte-8bmt8i{flex:1;min-width:0;height:36px;padding:0 12px;border-radius:var(--sl-radiusSmall, 9px);border:1px solid var(--sl-inputLine, #5a5a5a);background:var(--sl-inputBg, #2e2e2e);color:var(--sl-inputText, #f8f8f8);font:inherit}.chip.notworth.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{align-self:flex-start;height:32px;font-size:13px}.works-head.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:0;background:none;padding:0;color:inherit !important;text-align:left;cursor:pointer}.works-head.svelte-8bmt8i .chev.svelte-8bmt8i.svelte-8bmt8i{display:inline-block;font-size:22px;line-height:1;font-weight:600;color:var(--sl-sub, #b0b0b0);transition:transform 0.2s}.works-head.svelte-8bmt8i .chev.open.svelte-8bmt8i.svelte-8bmt8i{transform:rotate(90deg)}.works-sum.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{text-align:left;gap:6px;cursor:pointer;color:inherit !important}.works-sum.svelte-8bmt8i .ws-line.svelte-8bmt8i.svelte-8bmt8i{display:flex;gap:10px;align-items:baseline;font-size:13.5px}.works-sum.svelte-8bmt8i .ws-line b.svelte-8bmt8i.svelte-8bmt8i{font-weight:600;min-width:74px}.works-sum.svelte-8bmt8i .ws-line span.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-sub, #b0b0b0)}.works.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{gap:14px}.works.svelte-8bmt8i .w-sport.svelte-8bmt8i.svelte-8bmt8i{display:flex;flex-direction:column;gap:10px}.works.svelte-8bmt8i .w-sport.svelte-8bmt8i+.w-sport.svelte-8bmt8i{border-top:1px solid var(--sl-line, #4d4d4d);padding-top:14px}.works.svelte-8bmt8i .w-head.svelte-8bmt8i.svelte-8bmt8i{display:flex;align-items:baseline;gap:10px}.works.svelte-8bmt8i .w-head b.svelte-8bmt8i.svelte-8bmt8i{font-size:14px}.works.svelte-8bmt8i .w-head .link.svelte-8bmt8i.svelte-8bmt8i{padding:0}.works.svelte-8bmt8i .w-grid.svelte-8bmt8i.svelte-8bmt8i{display:grid;grid-template-columns:minmax(64px, max-content) max-content max-content minmax(0, 1fr);column-gap:18px;row-gap:9px;align-items:center;font-size:13.5px}.works.svelte-8bmt8i .w-h.svelte-8bmt8i.svelte-8bmt8i{font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--sl-uQuiet, #8a8a8a)}.works.svelte-8bmt8i .w-r.svelte-8bmt8i.svelte-8bmt8i,.works.svelte-8bmt8i .w-now.svelte-8bmt8i.svelte-8bmt8i{text-align:right;justify-self:end}.works.svelte-8bmt8i .w-name.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-sub, #b0b0b0);white-space:nowrap}.works.svelte-8bmt8i .w-you.svelte-8bmt8i.svelte-8bmt8i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--sl-linkText, #d49500);margin-left:6px;vertical-align:2px}.works.svelte-8bmt8i .w-range.svelte-8bmt8i.svelte-8bmt8i{font-weight:600;justify-self:start;line-height:1.3}.works.svelte-8bmt8i .w-imp.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-sub, #b0b0b0);white-space:nowrap;font-size:12.5px}.works.svelte-8bmt8i .w-imp.imp3.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-text, #f8f8f8);font-weight:600}.works.svelte-8bmt8i .w-now.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-sub, #b0b0b0);white-space:nowrap}.works.svelte-8bmt8i .w-now.ok.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-r4bg, #50b450)}.works.svelte-8bmt8i .w-now.near.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-linkText, #d49500)}.works.svelte-8bmt8i .w-grid.edit.svelte-8bmt8i.svelte-8bmt8i{grid-template-columns:minmax(0, 96px) minmax(0, 1fr);row-gap:8px}.works.svelte-8bmt8i .w-inputs.svelte-8bmt8i.svelte-8bmt8i{display:flex;align-items:center;gap:6px;color:var(--sl-sub, #b0b0b0)}.works.svelte-8bmt8i .w-inputs input.svelte-8bmt8i.svelte-8bmt8i{width:64px;height:34px;padding:0 8px;border-radius:var(--sl-radiusSmall, 9px);border:1px solid var(--sl-inputLine, #5a5a5a);background:var(--sl-inputBg, #2e2e2e);color:var(--sl-inputText, #f8f8f8);font:inherit}.works.svelte-8bmt8i .w-inputs small.svelte-8bmt8i.svelte-8bmt8i{font-size:12px}.works.svelte-8bmt8i .w-dirs.svelte-8bmt8i.svelte-8bmt8i{display:flex;flex-wrap:wrap;gap:4px}.works.svelte-8bmt8i .dchip.svelte-8bmt8i.svelte-8bmt8i{height:30px;min-width:36px;padding:0 8px;border-radius:var(--sl-radiusChip, 18px);border:1px solid var(--sl-chipLine, #5a5a5a);background:transparent;color:var(--sl-chipText, #f8f8f8) !important;font-size:12px}.works.svelte-8bmt8i .dchip.on.svelte-8bmt8i.svelte-8bmt8i{background:var(--sl-chipOnBg, #f8f8f8);color:var(--sl-chipOnText, #1c1c1c) !important;border-color:var(--sl-chipOnBg, #f8f8f8)}.works.svelte-8bmt8i .gear-hint.svelte-8bmt8i.svelte-8bmt8i{font-size:12.5px;color:var(--sl-sub, #b0b0b0)}.works.svelte-8bmt8i .btns.svelte-8bmt8i.svelte-8bmt8i{margin-top:0}@media(max-width: 480px){.reco.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i,.reco-row.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{column-gap:10px}.reco-row.svelte-8bmt8i .r-time.svelte-8bmt8i.svelte-8bmt8i{font-size:13px}}@media(max-width: 380px){.works.svelte-8bmt8i .w-grid.svelte-8bmt8i.svelte-8bmt8i{column-gap:9px;font-size:12.5px;grid-template-columns:minmax(56px, max-content) minmax(0, max-content) max-content max-content;justify-content:space-between}.works.svelte-8bmt8i .w-h.svelte-8bmt8i.svelte-8bmt8i{letter-spacing:0.02em}.reco.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{column-gap:8px}.reco-row.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{column-gap:8px}.reco-row.svelte-8bmt8i .tag.svelte-8bmt8i.svelte-8bmt8i{font-size:11px;padding:3px 8px}.reco-row.svelte-8bmt8i .r-time.svelte-8bmt8i.svelte-8bmt8i{font-size:12.5px}}label.link.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{cursor:pointer}.chip.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{height:36px;padding:0 15px;border-radius:var(--sl-radiusChip, 18px);border:1px solid var(--sl-chipLine, #5a5a5a);background:transparent;color:var(--sl-chipText, #f8f8f8) !important;display:inline-flex;align-items:center;gap:6px}.chip.svelte-8bmt8i .k.svelte-8bmt8i.svelte-8bmt8i{font-size:11px;opacity:0.65}.chip.on.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{background:var(--sl-chipOnBg, #f8f8f8);color:var(--sl-chipOnText, #1c1c1c) !important;border-color:var(--sl-chipOnBg, #f8f8f8)}.chip.dash.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{border-style:dashed;color:var(--sl-accent, #d49500) !important}.dirs.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:grid;grid-template-columns:repeat(4, minmax(0, 1fr));gap:6px}.dir.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{height:50px;border-radius:var(--sl-radiusButton, 12px);border:1px solid var(--sl-chipLine, #5a5a5a);color:var(--sl-chipText, #f8f8f8) !important;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px}.dir.on.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{background:var(--sl-chipOnBg, #f8f8f8);color:var(--sl-chipOnText, #1c1c1c) !important;border-color:var(--sl-chipOnBg, #f8f8f8)}.stepper.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;align-items:center;gap:4px}.stepper.svelte-8bmt8i small.svelte-8bmt8i.svelte-8bmt8i{margin-right:2px}.stepper.svelte-8bmt8i .round.svelte-8bmt8i.svelte-8bmt8i{width:34px;height:34px}.arrow.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:inline-block;font-size:11px;line-height:1}.arrow.o.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-accent, #d49500);font-size:16px;margin-right:2px}.arrows.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex}.suggest.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;align-items:center;gap:12px;padding:12px;border-radius:calc(var(--sl-radiusButton, 12px) + 2px);background:var(--sl-lightBg, #f8f8f8);color:var(--sl-lightText, #1c1c1c)}.suggest.svelte-8bmt8i small.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-lightSub, #6b6b6b)}.section.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;flex-direction:column;gap:8px}.h2.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{font-size:20px}.score.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;align-items:center;gap:10px;font-size:13px}.score.svelte-8bmt8i .m.svelte-8bmt8i.svelte-8bmt8i{width:64px}.score.svelte-8bmt8i .m.best.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-accent, #d49500);font-weight:600}.score.svelte-8bmt8i .missbar.svelte-8bmt8i.svelte-8bmt8i{flex:1;height:6px;border-radius:3px;background:var(--sl-line, #4d4d4d);display:flex}.score.svelte-8bmt8i .missbar i.svelte-8bmt8i.svelte-8bmt8i{display:block;border-radius:3px;background:var(--sl-sub, #b0b0b0)}.score.svelte-8bmt8i .missbar i.best.svelte-8bmt8i.svelte-8bmt8i{background:var(--sl-accent, #d49500)}.ratings.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:grid;grid-template-columns:repeat(5, minmax(0, 1fr));gap:6px}.rate.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{height:62px;border-radius:calc(var(--sl-radiusButton, 12px) + 2px);border:1px solid var(--sl-line, #4d4d4d);background:var(--sl-card, #3c3c3c);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}.rate.svelte-8bmt8i b.svelte-8bmt8i.svelte-8bmt8i{font-size:19px}.rate.svelte-8bmt8i span.svelte-8bmt8i.svelte-8bmt8i{font-size:11px}.times.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{gap:8px}.times.svelte-8bmt8i .to.svelte-8bmt8i.svelte-8bmt8i{height:44px;display:flex;align-items:center;color:var(--sl-sub, #b0b0b0)}.snapless.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;align-items:center;gap:10px;min-height:60px;padding:12px 14px;border-radius:var(--sl-radiusCard, 18px);background:var(--sl-lightBg, #f8f8f8);color:var(--sl-lightText, #1c1c1c);box-sizing:border-box}.opts.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;flex-direction:column;gap:6px}.opt.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 14px 8px 10px;border-radius:calc(var(--sl-radiusButton, 12px) + 2px);border:1px solid var(--sl-line, #4d4d4d);background:var(--sl-card, #3c3c3c);text-align:left;width:100%;box-sizing:border-box}.opt.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i:hover{border-color:var(--sl-uOutline, #5a5a5a)}.opt.on.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{border-color:var(--sl-accent, #d49500)}.chev-r.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{color:var(--sl-sub, #b0b0b0);font-size:18px}.spotlog-popup .leaflet-popup-content-wrapper,.spotlog-popup .leaflet-popup-tip-container{transform-origin:50% 100%;animation:sl-pop-in 0.22s cubic-bezier(0.2, 0.8, 0.3, 1) both}.spotlog-popup.sl-closing .leaflet-popup-content-wrapper,.spotlog-popup.sl-closing .leaflet-popup-tip-container{animation:sl-pop-out 0.17s ease-in both}@keyframes sl-pop-in{from{opacity:0;transform:translateY(8px) scale(0.94)}to{opacity:1;transform:none}}@keyframes sl-pop-out{from{opacity:1;transform:none}to{opacity:0;transform:translateY(6px) scale(0.96)}}@media(prefers-reduced-motion: reduce){.spotlog-popup .leaflet-popup-content-wrapper,.spotlog-popup .leaflet-popup-tip-container{animation:none}}.toast.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{position:sticky;bottom:12px;z-index:5;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;border-radius:14px;background:var(--sl-toast-bg, #f8f8f8);color:var(--sl-toast-text, #1c1c1c);font-weight:600;box-shadow:0 6px 20px rgba(0, 0, 0, 0.45)}.undo.svelte-8bmt8i.svelte-8bmt8i.svelte-8bmt8i{height:32px;padding:0 14px;border-radius:10px;border:0;background:var(--sl-undo, #1c1c1c);color:var(--sl-toast-bg, #f8f8f8) !important;font-weight:600}.spotlog-marker{background:none;border:0}.spotlog-pin{position:absolute;transform:translate(-10px, -50%);display:flex;align-items:center;gap:6px;white-space:nowrap;height:26px;padding:0 10px 0 6px;border-radius:13px;background:var(--sl-pin-bg, #2e2e2e);color:var(--sl-pin-text, #f8f8f8);font:600 12px 'Instrument Sans', system-ui, sans-serif;box-shadow:0 2px 8px rgba(0, 0, 0, 0.35);cursor:pointer}.spotlog-pin i{width:10px;height:10px;border-radius:5px;background:var(--sl-pin-dot, #5a5a5a);display:block;flex-shrink:0}.spotlog-pin.active{background:var(--sl-active-bg, #f8f8f8);color:var(--sl-active-text, #1c1c1c)}.spotlog-pin em{font-style:normal;font-weight:600;font-size:11px;opacity:0.9;margin-left:2px}.spotlog-cdot{position:absolute;left:calc(var(--sl-compact-size, 10px) / -2);top:calc(var(--sl-compact-size, 10px) / -2);width:var(--sl-compact-size, 10px);height:var(--sl-compact-size, 10px);border-radius:50%;box-shadow:var(--sl-compact-ring, none);cursor:pointer}.spotlog-heat{position:absolute;border-radius:50%;transform:translate(-50%, -50%);cursor:default}.spotlog-heat.core::after{content:'';position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:3px;background:var(--sl-sess-color, #ff3d8b);box-shadow:0 0 0 1.5px var(--sl-sess-core-ring, #ffffff)}.spotlog-tip{display:none;position:absolute;left:50%;bottom:calc(100% + 4px);transform:translateX(-50%);z-index:5;flex-direction:column;gap:3px;min-width:130px;padding:8px 10px;border-radius:10px;background:var(--sl-tip-bg, #2e2e2e);color:var(--sl-tip-text, #f8f8f8);font:12px 'Instrument Sans', system-ui, sans-serif;white-space:nowrap;box-shadow:0 4px 14px rgba(0, 0, 0, 0.45);pointer-events:none}.spotlog-tip span{display:flex;align-items:center;gap:6px;opacity:0.85}.spotlog-tip i{width:8px;height:8px;border-radius:4px;display:block}.spotlog-tip small{opacity:0.6;font-size:11px}.spotlog-heat:hover .spotlog-tip,.spotlog-pin:hover .spotlog-tip,.spotlog-cdot:hover .spotlog-tip{display:flex}.spotlog-pin .spotlog-tip{left:10px;transform:translateX(-50%);bottom:calc(100% + 6px);font-weight:400}.spotlog-pin .spotlog-tip b{font-weight:600}.spotlog-dot{position:absolute;left:-8px;top:-8px;width:16px;height:16px;border-radius:8px;box-sizing:border-box;box-shadow:0 1px 4px rgba(0, 0, 0, 0.45)}.spotlog-dot.start{left:-6px;top:-6px;width:12px;height:12px;background:var(--sl-start-fill, #ff3d8b);border:2.5px solid var(--sl-start-border, #f8f8f8)}.spotlog-dot.end{left:-5px;top:-5px;width:10px;height:10px;background:var(--sl-end-fill, #1c1c1c);border:2.5px solid var(--sl-end-border, #ff3d8b)}.spotlog-route-label{position:absolute;transform:translate(12px, -50%);white-space:nowrap;font:600 13px 'Instrument Sans', system-ui, sans-serif;color:var(--sl-route-label, #f8f8f8);text-shadow:0 1px 3px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 0, 0, 0.35)}.spotlog-popup .leaflet-popup-content-wrapper{background:var(--sl-popup-bg, #f8f8f8);color:var(--sl-popup-text, #1c1c1c);border-radius:16px}.spotlog-popup .leaflet-popup-content{margin:12px}.sl-pop{display:flex;flex-direction:column;gap:8px;min-width:220px;font:13px 'Instrument Sans', system-ui, sans-serif;color:var(--sl-popup-text, #1c1c1c)}.sl-pop small{color:var(--sl-popupSub, #6b6b6b);font-size:12px}.sl-h{display:flex;align-items:flex-start;gap:8px}.sl-h > span:first-child{flex:1;display:flex;flex-direction:column;gap:1px}.sl-nav{display:flex;gap:4px;flex-shrink:0}.sl-pop:has(.sl-acts){min-width:264px}.sl-nav button,.sl-acts button{font:600 13px 'Instrument Sans', system-ui, sans-serif;color:var(--sl-popupBtnText, #1c1c1c);background:var(--sl-popupBtnBg, #ececea);border:0;border-radius:10px;cursor:pointer}.sl-nav button{width:30px;height:30px;font-size:18px;line-height:1;padding:0}.sl-brand{display:inline-flex;align-items:center;gap:0.22em;white-space:nowrap;vertical-align:-0.06em;line-height:1}.sl-star{display:inline-block;flex-shrink:0;color:var(--sl-star, #d49500)}.sl-nav .sl-x{background:transparent;color:var(--sl-popupSub, #6b6b6b);font-size:15px;margin-left:2px}.sl-acts{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:4px;margin-top:2px}.sl-acts{grid-template-columns:1.3fr 1.1fr 0.9fr !important}.sl-acts button{height:36px;padding:0 4px;white-space:nowrap;font-size:12.5px !important;overflow:hidden;text-overflow:ellipsis}.sl-acts button:first-child{background:var(--sl-primary-bg, #d49500);color:var(--sl-primary-text, #fff)}.sl-h b{font-size:14px}.sl-tiles{display:grid;grid-template-columns:repeat(4, minmax(0, 1fr));gap:4px}.sl-t{display:flex;flex-direction:column;justify-content:space-between;gap:6px;min-height:58px;padding:7px 8px;border-radius:9px;font-size:11px;color:var(--sl-windText, #1c1c1c);box-sizing:border-box}.sl-t span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sl-t b{display:block;font:900 20px 'Doto', ui-monospace, monospace;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:clip}.sl-pop .sl-t small{display:block;font:600 10px 'Instrument Sans', system-ui, sans-serif;color:inherit;opacity:0.7;line-height:1;white-space:nowrap}.sl-pop .sl-best b{font-weight:600;color:inherit}.sl-b{align-self:flex-start;padding:3px 9px;border-radius:10px;font-size:12px;font-weight:600}");
 }
 
 function get_each_context_24(ctx, list, i) {
@@ -10871,11 +10867,11 @@ function create_if_block_94(ctx) {
 			if_block0.c();
 			t3 = space();
 			if_block1.c();
-			attr(span0, "class", "wordmark svelte-sxknz1");
-			attr(span1, "class", "beta svelte-sxknz1");
-			attr(span2, "class", "brand svelte-sxknz1");
-			attr(div0, "class", "mrow svelte-sxknz1");
-			attr(div1, "class", "mbar svelte-sxknz1");
+			attr(span0, "class", "wordmark svelte-8bmt8i");
+			attr(span1, "class", "beta svelte-8bmt8i");
+			attr(span2, "class", "brand svelte-8bmt8i");
+			attr(div0, "class", "mrow svelte-8bmt8i");
+			attr(div1, "class", "mbar svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div1, anchor);
@@ -10975,9 +10971,9 @@ function create_else_block_26(ctx) {
 			t2 = space();
 			span1 = element("span");
 			span1.textContent = "▾";
-			attr(span0, "class", "grow-b svelte-sxknz1");
-			attr(span1, "class", "chev svelte-sxknz1");
-			attr(button, "class", "units svelte-sxknz1");
+			attr(span0, "class", "grow-b svelte-8bmt8i");
+			attr(span1, "class", "chev svelte-8bmt8i");
+			attr(button, "class", "units svelte-8bmt8i");
 			attr(button, "aria-label", "Units and saved data");
 		},
 		m(target, anchor) {
@@ -11019,7 +11015,7 @@ function create_if_block_100(ctx) {
 		c() {
 			span = element("span");
 			t = text(t_value);
-			attr(span, "class", "mhint svelte-sxknz1");
+			attr(span, "class", "mhint svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, span, anchor);
@@ -11046,7 +11042,7 @@ function create_if_block_99(ctx) {
 		c() {
 			span = element("span");
 			t = text(t_value);
-			attr(span, "class", "mhint svelte-sxknz1");
+			attr(span, "class", "mhint svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, span, anchor);
@@ -11088,8 +11084,8 @@ function create_if_block_98(ctx) {
 			t1 = space();
 			button = element("button");
 			t2 = text(t2_value);
-			attr(span, "class", "mhint svelte-sxknz1");
-			attr(button, "class", "mlink svelte-sxknz1");
+			attr(span, "class", "mhint svelte-8bmt8i");
+			attr(button, "class", "mlink svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, span, anchor);
@@ -11141,7 +11137,7 @@ function create_else_block_25(ctx) {
 		c() {
 			button = element("button");
 			t = text(t_value);
-			attr(button, "class", "btn primary wide svelte-sxknz1");
+			attr(button, "class", "btn primary wide svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -11236,15 +11232,15 @@ function create_if_block_95(ctx) {
 				each_blocks[i].c();
 			}
 
-			attr(span0, "class", "svelte-sxknz1");
-			attr(button0, "class", "mact svelte-sxknz1");
+			attr(span0, "class", "svelte-8bmt8i");
+			attr(button0, "class", "mact svelte-8bmt8i");
 			button0.disabled = /*capturing*/ ctx[49];
-			attr(span1, "class", "svelte-sxknz1");
-			attr(button1, "class", "mact svelte-sxknz1");
-			attr(span2, "class", "svelte-sxknz1");
-			attr(button2, "class", "mact svelte-sxknz1");
-			attr(div0, "class", "macts svelte-sxknz1");
-			attr(div1, "class", "mtabs svelte-sxknz1");
+			attr(span1, "class", "svelte-8bmt8i");
+			attr(button1, "class", "mact svelte-8bmt8i");
+			attr(span2, "class", "svelte-8bmt8i");
+			attr(button2, "class", "mact svelte-8bmt8i");
+			attr(div0, "class", "macts svelte-8bmt8i");
+			attr(div1, "class", "mtabs svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div0, anchor);
@@ -11360,7 +11356,7 @@ function create_if_block_97(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "cnt svelte-sxknz1");
+			attr(small, "class", "cnt svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -11387,7 +11383,7 @@ function create_if_block_96(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "cnt svelte-sxknz1");
+			attr(small, "class", "cnt svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -11429,7 +11425,7 @@ function create_each_block_29(ctx) {
 			button = element("button");
 			t = text(t_value);
 			if (if_block) if_block.c();
-			attr(button, "class", "svelte-sxknz1");
+			attr(button, "class", "svelte-8bmt8i");
 			toggle_class(button, "on", /*modalOpen*/ ctx[33] && /*view*/ ctx[2] === 'home' && /*tab*/ ctx[36] === /*k*/ ctx[425]);
 		},
 		m(target, anchor) {
@@ -11723,19 +11719,19 @@ function create_if_block_5(ctx) {
 			label_1 = element("label");
 			t10 = text(t10_value);
 			input = element("input");
-			attr(span0, "class", "wordmark svelte-sxknz1");
-			attr(span1, "class", "beta svelte-sxknz1");
-			attr(span2, "class", "brand svelte-sxknz1");
-			attr(b, "class", "h2 svelte-sxknz1");
-			attr(p, "class", "p svelte-sxknz1");
-			attr(button0, "class", "btn primary wide svelte-sxknz1");
-			attr(button1, "class", "link svelte-sxknz1");
+			attr(span0, "class", "wordmark svelte-8bmt8i");
+			attr(span1, "class", "beta svelte-8bmt8i");
+			attr(span2, "class", "brand svelte-8bmt8i");
+			attr(b, "class", "h2 svelte-8bmt8i");
+			attr(p, "class", "p svelte-8bmt8i");
+			attr(button0, "class", "btn primary wide svelte-8bmt8i");
+			attr(button1, "class", "link svelte-8bmt8i");
 			attr(input, "type", "file");
 			attr(input, "accept", ".json,application/json");
 			input.hidden = true;
-			attr(input, "class", "svelte-sxknz1");
-			attr(label_1, "class", "link svelte-sxknz1");
-			attr(div, "class", "welcome svelte-sxknz1");
+			attr(input, "class", "svelte-8bmt8i");
+			attr(label_1, "class", "link svelte-8bmt8i");
+			attr(div, "class", "welcome svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -11855,12 +11851,12 @@ function create_if_block_2(ctx) {
 			t3 = space();
 			div2 = element("div");
 			if_block1.c();
-			attr(span0, "class", "wordmark svelte-sxknz1");
-			attr(span1, "class", "brand svelte-sxknz1");
-			attr(div0, "class", "row svelte-sxknz1");
-			attr(p, "class", "p svelte-sxknz1");
-			attr(div1, "class", "card head svelte-sxknz1");
-			attr(div2, "class", "card svelte-sxknz1");
+			attr(span0, "class", "wordmark svelte-8bmt8i");
+			attr(span1, "class", "brand svelte-8bmt8i");
+			attr(div0, "class", "row svelte-8bmt8i");
+			attr(p, "class", "p svelte-8bmt8i");
+			attr(div1, "class", "card head svelte-8bmt8i");
+			attr(div2, "class", "card svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			if (if_block0) if_block0.m(target, anchor);
@@ -11980,14 +11976,14 @@ function create_if_block_93(ctx) {
 			t5 = space();
 			div1 = element("div");
 			create_component(settings.$$.fragment);
-			attr(button0, "class", "round svelte-sxknz1");
+			attr(button0, "class", "round svelte-8bmt8i");
 			attr(button0, "aria-label", "Back");
-			attr(b, "class", "title svelte-sxknz1");
-			attr(span, "class", "grow svelte-sxknz1");
-			attr(button1, "class", "mclose svelte-sxknz1");
+			attr(b, "class", "title svelte-8bmt8i");
+			attr(span, "class", "grow svelte-8bmt8i");
+			attr(button1, "class", "mclose svelte-8bmt8i");
 			attr(button1, "aria-label", "Close");
-			attr(div0, "class", "topbar upage svelte-sxknz1");
-			attr(div1, "class", "card upage svelte-sxknz1");
+			attr(div0, "class", "topbar upage svelte-8bmt8i");
+			attr(div1, "class", "card upage svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div0, anchor);
@@ -12082,11 +12078,11 @@ function create_else_block_23(ctx) {
 			t4 = space();
 			if (if_block2) if_block2.c();
 			if_block2_anchor = empty();
-			attr(button, "class", "round svelte-sxknz1");
+			attr(button, "class", "round svelte-8bmt8i");
 			attr(button, "aria-label", "Back");
-			attr(b, "class", "title svelte-sxknz1");
-			attr(span, "class", "grow svelte-sxknz1");
-			attr(div, "class", "topbar svelte-sxknz1");
+			attr(b, "class", "title svelte-8bmt8i");
+			attr(span, "class", "grow svelte-8bmt8i");
+			attr(div, "class", "topbar svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -12284,27 +12280,27 @@ function create_if_block_85(ctx) {
 			small.textContent = "h";
 			t20 = space();
 			if (if_block3) if_block3.c();
-			attr(span0, "class", "wordmark svelte-sxknz1");
-			attr(span1, "class", "beta svelte-sxknz1");
-			attr(span2, "class", "brand grow-b svelte-sxknz1");
-			attr(span3, "class", "chev svelte-sxknz1");
+			attr(span0, "class", "wordmark svelte-8bmt8i");
+			attr(span1, "class", "beta svelte-8bmt8i");
+			attr(span2, "class", "brand grow-b svelte-8bmt8i");
+			attr(span3, "class", "chev svelte-8bmt8i");
 			toggle_class(span3, "up", /*showUnits*/ ctx[38]);
-			attr(button, "class", "units svelte-sxknz1");
+			attr(button, "class", "units svelte-8bmt8i");
 			attr(button, "aria-expanded", /*showUnits*/ ctx[38]);
 			attr(button, "aria-label", "Units and saved data");
-			attr(div0, "class", "row svelte-sxknz1");
-			attr(span4, "class", "lbl svelte-sxknz1");
-			attr(span5, "class", "big svelte-sxknz1");
-			attr(div1, "class", "svelte-sxknz1");
-			attr(span6, "class", "lbl svelte-sxknz1");
-			attr(span7, "class", "big svelte-sxknz1");
-			attr(div2, "class", "svelte-sxknz1");
-			attr(span8, "class", "lbl svelte-sxknz1");
-			attr(small, "class", "svelte-sxknz1");
-			attr(span9, "class", "big svelte-sxknz1");
-			attr(div3, "class", "svelte-sxknz1");
-			attr(div4, "class", "stats svelte-sxknz1");
-			attr(div5, "class", "card head home-head svelte-sxknz1");
+			attr(div0, "class", "row svelte-8bmt8i");
+			attr(span4, "class", "lbl svelte-8bmt8i");
+			attr(span5, "class", "big svelte-8bmt8i");
+			attr(div1, "class", "svelte-8bmt8i");
+			attr(span6, "class", "lbl svelte-8bmt8i");
+			attr(span7, "class", "big svelte-8bmt8i");
+			attr(div2, "class", "svelte-8bmt8i");
+			attr(span8, "class", "lbl svelte-8bmt8i");
+			attr(small, "class", "svelte-8bmt8i");
+			attr(span9, "class", "big svelte-8bmt8i");
+			attr(div3, "class", "svelte-8bmt8i");
+			attr(div4, "class", "stats svelte-8bmt8i");
+			attr(div5, "class", "card head home-head svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			if (if_block0) if_block0.m(target, anchor);
@@ -12462,7 +12458,7 @@ function create_if_block_92(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "svelte-sxknz1");
+			attr(small, "class", "svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -12495,9 +12491,9 @@ function create_else_block_24(ctx) {
 			t1 = space();
 			span = element("span");
 			span.textContent = "▾";
-			attr(span, "class", "chev svelte-sxknz1");
+			attr(span, "class", "chev svelte-8bmt8i");
 			toggle_class(span, "up", /*showUnits*/ ctx[38]);
-			attr(button, "class", "units svelte-sxknz1");
+			attr(button, "class", "units svelte-8bmt8i");
 			attr(button, "aria-expanded", /*showUnits*/ ctx[38]);
 			attr(button, "aria-label", "Units and saved data");
 		},
@@ -12555,10 +12551,10 @@ function create_if_block_91(ctx) {
 			t3 = space();
 			button1 = element("button");
 			button1.textContent = "✕";
-			attr(span, "class", "chev svelte-sxknz1");
-			attr(button0, "class", "units svelte-sxknz1");
+			attr(span, "class", "chev svelte-8bmt8i");
+			attr(button0, "class", "units svelte-8bmt8i");
 			attr(button0, "aria-label", "Units and saved data");
-			attr(button1, "class", "mclose svelte-sxknz1");
+			attr(button1, "class", "mclose svelte-8bmt8i");
 			attr(button1, "aria-label", "Close");
 		},
 		m(target, anchor) {
@@ -12610,7 +12606,7 @@ function create_if_block_90(ctx) {
 		c() {
 			div = element("div");
 			create_component(settings.$$.fragment);
-			attr(div, "class", "card svelte-sxknz1");
+			attr(div, "class", "card svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -12673,14 +12669,14 @@ function create_if_block_89(ctx) {
 			t5 = space();
 			button1 = element("button");
 			button1.textContent = "✕";
-			attr(b, "class", "title svelte-sxknz1");
-			attr(span0, "class", "grow svelte-sxknz1");
-			attr(span1, "class", "chev svelte-sxknz1");
-			attr(button0, "class", "units svelte-sxknz1");
+			attr(b, "class", "title svelte-8bmt8i");
+			attr(span0, "class", "grow svelte-8bmt8i");
+			attr(span1, "class", "chev svelte-8bmt8i");
+			attr(button0, "class", "units svelte-8bmt8i");
 			attr(button0, "aria-label", "Units and saved data");
-			attr(button1, "class", "mclose svelte-sxknz1");
+			attr(button1, "class", "mclose svelte-8bmt8i");
 			attr(button1, "aria-label", "Close");
-			attr(div, "class", "topbar svelte-sxknz1");
+			attr(div, "class", "topbar svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -12729,7 +12725,7 @@ function create_if_block_88(ctx) {
 		c() {
 			button = element("button");
 			button.innerHTML = `<svg width="14" height="22" viewBox="0 0 14 22" aria-hidden="true"><polyline points="11,3 3,11 11,19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>`;
-			attr(button, "class", "back-menu svelte-sxknz1");
+			attr(button, "class", "back-menu svelte-8bmt8i");
 			attr(button, "aria-label", "Back to the Windy menu");
 			attr(button, "title", "Back to the Windy menu");
 		},
@@ -12802,7 +12798,7 @@ function create_if_block_86(ctx) {
 		c() {
 			small = element("small");
 			t = text(/*syncLabel*/ ctx[81]);
-			attr(small, "class", "sync svelte-sxknz1");
+			attr(small, "class", "sync svelte-8bmt8i");
 
 			attr(small, "title", small_title_value = /*syncState*/ ctx[13] === 'error'
 			? /*syncError*/ ctx[54]
@@ -12835,7 +12831,7 @@ function create_if_block_86(ctx) {
 	};
 }
 
-// (669:30) 
+// (668:30) 
 function create_if_block_64(ctx) {
 	let current_block_type_index;
 	let if_block0;
@@ -13049,7 +13045,7 @@ function create_if_block_64(ctx) {
 			div4 = element("div");
 			div3 = element("div");
 			span2 = element("span");
-			span2.innerHTML = `<i class="dot-s svelte-sxknz1"></i>`;
+			span2.innerHTML = `<i class="dot-s svelte-8bmt8i"></i>`;
 			t11 = space();
 			span3 = element("span");
 			small0 = element("small");
@@ -13118,47 +13114,47 @@ function create_if_block_64(ctx) {
 			t38 = space();
 			if (if_block12) if_block12.c();
 			if_block12_anchor = empty();
-			attr(span0, "class", "lbl svelte-sxknz1");
+			attr(span0, "class", "lbl svelte-8bmt8i");
 			attr(input0, "type", "date");
 			attr(input0, "aria-label", "Date");
-			attr(input0, "class", "svelte-sxknz1");
-			attr(span1, "class", "to svelte-sxknz1");
-			attr(div0, "class", "row start times svelte-sxknz1");
-			attr(div1, "class", "when svelte-sxknz1");
+			attr(input0, "class", "svelte-8bmt8i");
+			attr(span1, "class", "to svelte-8bmt8i");
+			attr(div0, "class", "row start times svelte-8bmt8i");
+			attr(div1, "class", "when svelte-8bmt8i");
 			toggle_class(div1, "one", /*isMobile*/ ctx[102]);
-			attr(div2, "class", "field svelte-sxknz1");
-			attr(span2, "class", "ico svelte-sxknz1");
-			attr(small0, "class", "svelte-sxknz1");
-			attr(b0, "class", "svelte-sxknz1");
-			attr(span3, "class", "grow svelte-sxknz1");
-			attr(div3, "class", "row svelte-sxknz1");
-			attr(div4, "class", "card svelte-sxknz1");
-			attr(b1, "class", "h2 svelte-sxknz1");
-			attr(div5, "class", "ratings svelte-sxknz1");
-			attr(button0, "class", "chip notworth svelte-sxknz1");
+			attr(div2, "class", "field svelte-8bmt8i");
+			attr(span2, "class", "ico svelte-8bmt8i");
+			attr(small0, "class", "svelte-8bmt8i");
+			attr(b0, "class", "svelte-8bmt8i");
+			attr(span3, "class", "grow svelte-8bmt8i");
+			attr(div3, "class", "row svelte-8bmt8i");
+			attr(div4, "class", "card svelte-8bmt8i");
+			attr(b1, "class", "h2 svelte-8bmt8i");
+			attr(div5, "class", "ratings svelte-8bmt8i");
+			attr(button0, "class", "chip notworth svelte-8bmt8i");
 			attr(button0, "aria-pressed", button0_aria_pressed_value = !!/*f*/ ctx[10].checked);
 			toggle_class(button0, "on", /*f*/ ctx[10].checked);
-			attr(div6, "class", "section svelte-sxknz1");
-			attr(span4, "class", "lbl svelte-sxknz1");
+			attr(div6, "class", "section svelte-8bmt8i");
+			attr(span4, "class", "lbl svelte-8bmt8i");
 
 			attr(input1, "placeholder", input1_placeholder_value = /*data*/ ctx[1].gear.length
 			? /*W*/ ctx[15].gearPhAny
 			: /*W*/ ctx[15].gearPhFirst);
 
-			attr(input1, "class", "svelte-sxknz1");
-			attr(div7, "class", "row svelte-sxknz1");
-			attr(div8, "class", "field svelte-sxknz1");
-			attr(b2, "class", "svelte-sxknz1");
-			attr(small1, "class", "svelte-sxknz1");
-			attr(span5, "class", "grow svelte-sxknz1");
-			attr(div9, "class", "row svelte-sxknz1");
-			attr(div10, "class", "card svelte-sxknz1");
-			attr(span6, "class", "lbl svelte-sxknz1");
+			attr(input1, "class", "svelte-8bmt8i");
+			attr(div7, "class", "row svelte-8bmt8i");
+			attr(div8, "class", "field svelte-8bmt8i");
+			attr(b2, "class", "svelte-8bmt8i");
+			attr(small1, "class", "svelte-8bmt8i");
+			attr(span5, "class", "grow svelte-8bmt8i");
+			attr(div9, "class", "row svelte-8bmt8i");
+			attr(div10, "class", "card svelte-8bmt8i");
+			attr(span6, "class", "lbl svelte-8bmt8i");
 			attr(textarea, "rows", "4");
 			attr(textarea, "placeholder", textarea_placeholder_value = /*W*/ ctx[15].notesPh);
-			attr(textarea, "class", "svelte-sxknz1");
-			attr(label_1, "class", "field svelte-sxknz1");
-			attr(button1, "class", "btn primary wide svelte-sxknz1");
+			attr(textarea, "class", "svelte-8bmt8i");
+			attr(label_1, "class", "field svelte-8bmt8i");
+			attr(button1, "class", "btn primary wide svelte-8bmt8i");
 			button1.disabled = button1_disabled_value = !/*f*/ ctx[10].id && !/*f*/ ctx[10].start && !/*f*/ ctx[10].checked;
 		},
 		m(target, anchor) {
@@ -13629,7 +13625,7 @@ function create_if_block_64(ctx) {
 	};
 }
 
-// (629:34) 
+// (628:34) 
 function create_if_block_59(ctx) {
 	let snapcard;
 	let t0;
@@ -13744,22 +13740,22 @@ function create_if_block_59(ctx) {
 			t13 = space();
 			div2 = element("div");
 			if_block1.c();
-			attr(small0, "class", "muted sl-note svelte-sxknz1");
-			attr(i, "class", "dot-s svelte-sxknz1");
+			attr(small0, "class", "muted sl-note svelte-8bmt8i");
+			attr(i, "class", "dot-s svelte-8bmt8i");
 			toggle_class(i, "off", !/*snap*/ ctx[4].spotId);
-			attr(span0, "class", "ico svelte-sxknz1");
-			attr(small1, "class", "svelte-sxknz1");
-			attr(b, "class", "svelte-sxknz1");
-			attr(span1, "class", "grow svelte-sxknz1");
-			attr(button, "class", "btn ghost small svelte-sxknz1");
-			attr(div0, "class", "row svelte-sxknz1");
-			attr(div1, "class", "card svelte-sxknz1");
-			attr(span2, "class", "lbl svelte-sxknz1");
+			attr(span0, "class", "ico svelte-8bmt8i");
+			attr(small1, "class", "svelte-8bmt8i");
+			attr(b, "class", "svelte-8bmt8i");
+			attr(span1, "class", "grow svelte-8bmt8i");
+			attr(button, "class", "btn ghost small svelte-8bmt8i");
+			attr(div0, "class", "row svelte-8bmt8i");
+			attr(div1, "class", "card svelte-8bmt8i");
+			attr(span2, "class", "lbl svelte-8bmt8i");
 			attr(textarea, "rows", "3");
 			attr(textarea, "placeholder", textarea_placeholder_value = /*W*/ ctx[15].notePh);
-			attr(textarea, "class", "svelte-sxknz1");
-			attr(label_1, "class", "field svelte-sxknz1");
-			attr(div2, "class", "btns svelte-sxknz1");
+			attr(textarea, "class", "svelte-8bmt8i");
+			attr(label_1, "class", "field svelte-8bmt8i");
+			attr(div2, "class", "btns svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			mount_component(snapcard, target, anchor);
@@ -14200,44 +14196,44 @@ function create_if_block_34(ctx) {
 			t35 = space();
 			button4 = element("button");
 			t36 = text(t36_value);
-			attr(b0, "class", "svelte-sxknz1");
-			attr(small0, "class", "svelte-sxknz1");
-			attr(button0, "class", "act svelte-sxknz1");
+			attr(b0, "class", "svelte-8bmt8i");
+			attr(small0, "class", "svelte-8bmt8i");
+			attr(button0, "class", "act svelte-8bmt8i");
 			button0.disabled = /*capturing*/ ctx[49];
-			attr(b1, "class", "svelte-sxknz1");
-			attr(small1, "class", "svelte-sxknz1");
-			attr(button1, "class", "act svelte-sxknz1");
-			attr(b2, "class", "svelte-sxknz1");
-			attr(button2, "class", "act svelte-sxknz1");
+			attr(b1, "class", "svelte-8bmt8i");
+			attr(small1, "class", "svelte-8bmt8i");
+			attr(button1, "class", "act svelte-8bmt8i");
+			attr(b2, "class", "svelte-8bmt8i");
+			attr(button2, "class", "act svelte-8bmt8i");
 			attr(button2, "aria-pressed", button2_aria_pressed_value = /*mapShown*/ ctx[57] === /*spot*/ ctx[3].id);
 			toggle_class(button2, "on", /*mapShown*/ ctx[57] === /*spot*/ ctx[3].id);
-			attr(div0, "class", "actions svelte-sxknz1");
-			attr(span0, "class", "lbl svelte-sxknz1");
-			attr(span1, "class", "big svelte-sxknz1");
-			attr(div1, "class", "svelte-sxknz1");
-			attr(span2, "class", "lbl svelte-sxknz1");
-			attr(span3, "class", "big svelte-sxknz1");
-			attr(div2, "class", "svelte-sxknz1");
-			attr(div3, "class", "stats sep svelte-sxknz1");
-			attr(div4, "class", "card svelte-sxknz1");
-			attr(b3, "class", "svelte-sxknz1");
-			attr(div5, "class", "card reco svelte-sxknz1");
-			attr(div6, "class", "section svelte-sxknz1");
-			attr(b4, "class", "svelte-sxknz1");
-			attr(span4, "class", "chev svelte-sxknz1");
+			attr(div0, "class", "actions svelte-8bmt8i");
+			attr(span0, "class", "lbl svelte-8bmt8i");
+			attr(span1, "class", "big svelte-8bmt8i");
+			attr(div1, "class", "svelte-8bmt8i");
+			attr(span2, "class", "lbl svelte-8bmt8i");
+			attr(span3, "class", "big svelte-8bmt8i");
+			attr(div2, "class", "svelte-8bmt8i");
+			attr(div3, "class", "stats sep svelte-8bmt8i");
+			attr(div4, "class", "card svelte-8bmt8i");
+			attr(b3, "class", "svelte-8bmt8i");
+			attr(div5, "class", "card reco svelte-8bmt8i");
+			attr(div6, "class", "section svelte-8bmt8i");
+			attr(b4, "class", "svelte-8bmt8i");
+			attr(span4, "class", "chev svelte-8bmt8i");
 			attr(span4, "aria-hidden", "true");
 			toggle_class(span4, "open", /*S*/ ctx[17].worksOpen);
-			attr(button3, "class", "works-head svelte-sxknz1");
+			attr(button3, "class", "works-head svelte-8bmt8i");
 			attr(button3, "aria-expanded", button3_aria_expanded_value = /*S*/ ctx[17].worksOpen);
-			attr(div7, "class", "section works-sec svelte-sxknz1");
-			attr(b5, "class", "svelte-sxknz1");
-			attr(div8, "class", "card svelte-sxknz1");
-			attr(div9, "class", "section svelte-sxknz1");
-			attr(b6, "class", "svelte-sxknz1");
-			attr(div10, "class", "section svelte-sxknz1");
-			attr(b7, "class", "svelte-sxknz1");
-			attr(div11, "class", "section svelte-sxknz1");
-			attr(button4, "class", "link danger svelte-sxknz1");
+			attr(div7, "class", "section works-sec svelte-8bmt8i");
+			attr(b5, "class", "svelte-8bmt8i");
+			attr(div8, "class", "card svelte-8bmt8i");
+			attr(div9, "class", "section svelte-8bmt8i");
+			attr(b6, "class", "svelte-8bmt8i");
+			attr(div10, "class", "section svelte-8bmt8i");
+			attr(b7, "class", "svelte-8bmt8i");
+			attr(div11, "class", "section svelte-8bmt8i");
+			attr(button4, "class", "link danger svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			mount_component(snapcard, target, anchor);
@@ -14717,7 +14713,7 @@ function create_if_block_31(ctx) {
 			t1 = space();
 			div0 = element("div");
 			span1 = element("span");
-			span1.innerHTML = `<i class="dot-s svelte-sxknz1"></i>`;
+			span1.innerHTML = `<i class="dot-s svelte-8bmt8i"></i>`;
 			t2 = space();
 			span2 = element("span");
 			small0 = element("small");
@@ -14760,31 +14756,31 @@ function create_if_block_31(ctx) {
 			t20 = space();
 			button3 = element("button");
 			t21 = text(t21_value);
-			attr(span0, "class", "lbl svelte-sxknz1");
+			attr(span0, "class", "lbl svelte-8bmt8i");
 			attr(input, "placeholder", input_placeholder_value = /*W*/ ctx[15].formNamePh);
-			attr(input, "class", "svelte-sxknz1");
-			attr(label_1, "class", "field svelte-sxknz1");
-			attr(span1, "class", "ico svelte-sxknz1");
-			attr(small0, "class", "svelte-sxknz1");
-			attr(b0, "class", "svelte-sxknz1");
-			attr(span2, "class", "grow svelte-sxknz1");
-			attr(small1, "class", "r svelte-sxknz1");
-			attr(div0, "class", "card row svelte-sxknz1");
-			attr(span3, "class", "lbl svelte-sxknz1");
-			attr(button0, "class", "chip svelte-sxknz1");
+			attr(input, "class", "svelte-8bmt8i");
+			attr(label_1, "class", "field svelte-8bmt8i");
+			attr(span1, "class", "ico svelte-8bmt8i");
+			attr(small0, "class", "svelte-8bmt8i");
+			attr(b0, "class", "svelte-8bmt8i");
+			attr(span2, "class", "grow svelte-8bmt8i");
+			attr(small1, "class", "r svelte-8bmt8i");
+			attr(div0, "class", "card row svelte-8bmt8i");
+			attr(span3, "class", "lbl svelte-8bmt8i");
+			attr(button0, "class", "chip svelte-8bmt8i");
 			attr(button0, "aria-expanded", button0_aria_expanded_value = /*otherFor*/ ctx[58] === 'spot');
 			toggle_class(button0, "on", /*otherFor*/ ctx[58] === 'spot');
-			attr(div1, "class", "chips svelte-sxknz1");
-			attr(div2, "class", "field svelte-sxknz1");
-			attr(b1, "class", "grow svelte-sxknz1");
-			attr(div3, "class", "row svelte-sxknz1");
-			attr(button1, "class", "svelte-sxknz1");
+			attr(div1, "class", "chips svelte-8bmt8i");
+			attr(div2, "class", "field svelte-8bmt8i");
+			attr(b1, "class", "grow svelte-8bmt8i");
+			attr(div3, "class", "row svelte-8bmt8i");
+			attr(button1, "class", "svelte-8bmt8i");
 			toggle_class(button1, "on", !/*sf*/ ctx[9].windUnknown);
-			attr(button2, "class", "svelte-sxknz1");
+			attr(button2, "class", "svelte-8bmt8i");
 			toggle_class(button2, "on", /*sf*/ ctx[9].windUnknown);
-			attr(div4, "class", "seg svelte-sxknz1");
-			attr(div5, "class", "card svelte-sxknz1");
-			attr(button3, "class", "btn primary wide svelte-sxknz1");
+			attr(div4, "class", "seg svelte-8bmt8i");
+			attr(div5, "class", "card svelte-8bmt8i");
+			attr(button3, "class", "btn primary wide svelte-8bmt8i");
 			button3.disabled = button3_disabled_value = !/*sf*/ ctx[9].name.trim();
 		},
 		m(target, anchor) {
@@ -15057,17 +15053,17 @@ function create_if_block_29(ctx) {
 			t8 = text(t8_value);
 			small2 = element("small");
 			t9 = text(t9_value);
-			attr(b0, "class", "svelte-sxknz1");
-			attr(small0, "class", "svelte-sxknz1");
-			attr(button0, "class", "act svelte-sxknz1");
+			attr(b0, "class", "svelte-8bmt8i");
+			attr(small0, "class", "svelte-8bmt8i");
+			attr(button0, "class", "act svelte-8bmt8i");
 			button0.disabled = /*capturing*/ ctx[49];
-			attr(b1, "class", "svelte-sxknz1");
-			attr(small1, "class", "svelte-sxknz1");
-			attr(button1, "class", "act svelte-sxknz1");
-			attr(b2, "class", "svelte-sxknz1");
-			attr(small2, "class", "svelte-sxknz1");
-			attr(button2, "class", "act svelte-sxknz1");
-			attr(div, "class", "actions svelte-sxknz1");
+			attr(b1, "class", "svelte-8bmt8i");
+			attr(small1, "class", "svelte-8bmt8i");
+			attr(button1, "class", "act svelte-8bmt8i");
+			attr(b2, "class", "svelte-8bmt8i");
+			attr(small2, "class", "svelte-8bmt8i");
+			attr(button2, "class", "act svelte-8bmt8i");
+			attr(div, "class", "actions svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			mount_component(snapcard, target, anchor);
@@ -15274,22 +15270,22 @@ function create_if_block_23(ctx) {
 			t13 = space();
 			if (if_block4) if_block4.c();
 			if_block4_anchor = empty();
-			attr(span0, "class", "ico svelte-sxknz1");
+			attr(span0, "class", "ico svelte-8bmt8i");
 			toggle_class(span0, "live", /*waitingForMap*/ ctx[45]);
-			attr(small0, "class", "svelte-sxknz1");
-			attr(span2, "class", "grow svelte-sxknz1");
-			attr(button0, "class", "opt svelte-sxknz1");
+			attr(small0, "class", "svelte-8bmt8i");
+			attr(span2, "class", "grow svelte-8bmt8i");
+			attr(button0, "class", "opt svelte-8bmt8i");
 			toggle_class(button0, "on", /*waitingForMap*/ ctx[45]);
-			attr(span3, "class", "ico svelte-sxknz1");
+			attr(span3, "class", "ico svelte-8bmt8i");
 			toggle_class(span3, "live", /*locating*/ ctx[60]);
-			attr(small1, "class", "svelte-sxknz1");
+			attr(small1, "class", "svelte-8bmt8i");
 			toggle_class(small1, "err", !!/*locError*/ ctx[61]);
-			attr(span5, "class", "grow svelte-sxknz1");
-			attr(span6, "class", "chev-r svelte-sxknz1");
+			attr(span5, "class", "grow svelte-8bmt8i");
+			attr(span6, "class", "chev-r svelte-8bmt8i");
 			attr(span6, "aria-hidden", "true");
-			attr(button1, "class", "opt svelte-sxknz1");
+			attr(button1, "class", "opt svelte-8bmt8i");
 			button1.disabled = /*locating*/ ctx[60];
-			attr(div, "class", "opts svelte-sxknz1");
+			attr(div, "class", "opts svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			if (if_block0) if_block0.m(target, anchor);
@@ -15611,26 +15607,26 @@ function create_if_block_7(ctx) {
 			t17 = space();
 			if (if_block1) if_block1.c();
 			if_block1_anchor = empty();
-			attr(b0, "class", "svelte-sxknz1");
-			attr(small0, "class", "svelte-sxknz1");
-			attr(button0, "class", "act svelte-sxknz1");
+			attr(b0, "class", "svelte-8bmt8i");
+			attr(small0, "class", "svelte-8bmt8i");
+			attr(button0, "class", "act svelte-8bmt8i");
 			button0.disabled = /*capturing*/ ctx[49];
-			attr(b1, "class", "svelte-sxknz1");
-			attr(small1, "class", "svelte-sxknz1");
-			attr(button1, "class", "act svelte-sxknz1");
-			attr(b2, "class", "svelte-sxknz1");
-			attr(small2, "class", "svelte-sxknz1");
-			attr(button2, "class", "act svelte-sxknz1");
-			attr(div0, "class", "actions home-acts svelte-sxknz1");
-			attr(button3, "class", "svelte-sxknz1");
+			attr(b1, "class", "svelte-8bmt8i");
+			attr(small1, "class", "svelte-8bmt8i");
+			attr(button1, "class", "act svelte-8bmt8i");
+			attr(b2, "class", "svelte-8bmt8i");
+			attr(small2, "class", "svelte-8bmt8i");
+			attr(button2, "class", "act svelte-8bmt8i");
+			attr(div0, "class", "actions home-acts svelte-8bmt8i");
+			attr(button3, "class", "svelte-8bmt8i");
 			toggle_class(button3, "on", /*tab*/ ctx[36] === 'spots');
-			attr(button4, "class", "svelte-sxknz1");
+			attr(button4, "class", "svelte-8bmt8i");
 			toggle_class(button4, "on", /*tab*/ ctx[36] === 'sessions');
-			attr(button5, "class", "svelte-sxknz1");
+			attr(button5, "class", "svelte-8bmt8i");
 			toggle_class(button5, "on", /*tab*/ ctx[36] === 'gear');
-			attr(button6, "class", "svelte-sxknz1");
+			attr(button6, "class", "svelte-8bmt8i");
 			toggle_class(button6, "on", /*tab*/ ctx[36] === 'about');
-			attr(div1, "class", "tabs home-tabs svelte-sxknz1");
+			attr(div1, "class", "tabs home-tabs svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div0, anchor);
@@ -15802,7 +15798,7 @@ function create_if_block_7(ctx) {
 	};
 }
 
-// (684:4) {:else}
+// (683:4) {:else}
 function create_else_block_21(ctx) {
 	let div;
 
@@ -15819,7 +15815,7 @@ function create_else_block_21(ctx) {
 		c() {
 			div = element("div");
 			if_block.c();
-			attr(div, "class", "snapless svelte-sxknz1");
+			attr(div, "class", "snapless svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -15850,7 +15846,7 @@ function create_else_block_21(ctx) {
 	};
 }
 
-// (670:4) {#if logSnap && logView}
+// (669:4) {#if logSnap && logView}
 function create_if_block_80(ctx) {
 	let snapcard;
 	let t0;
@@ -15961,7 +15957,7 @@ function create_if_block_80(ctx) {
 	};
 }
 
-// (691:12) {:else}
+// (690:12) {:else}
 function create_else_block_22(ctx) {
 	let span;
 	let t_value = /*W*/ ctx[15].logNoPlace + "";
@@ -15971,7 +15967,7 @@ function create_else_block_22(ctx) {
 		c() {
 			span = element("span");
 			t = text(t_value);
-			attr(span, "class", "grow svelte-sxknz1");
+			attr(span, "class", "grow svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, span, anchor);
@@ -15988,7 +15984,7 @@ function create_else_block_22(ctx) {
 	};
 }
 
-// (688:42) 
+// (687:42) 
 function create_if_block_84(ctx) {
 	let span;
 	let t0_value = (/*captureError*/ ctx[53] || /*W*/ ctx[15].logNoFc) + "";
@@ -16007,8 +16003,8 @@ function create_if_block_84(ctx) {
 			t1 = space();
 			button = element("button");
 			t2 = text(t2_value);
-			attr(span, "class", "grow svelte-sxknz1");
-			attr(button, "class", "btn primary small svelte-sxknz1");
+			attr(span, "class", "grow svelte-8bmt8i");
+			attr(button, "class", "btn primary small svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, span, anchor);
@@ -16039,7 +16035,7 @@ function create_if_block_84(ctx) {
 	};
 }
 
-// (686:12) {#if capturing}
+// (685:12) {#if capturing}
 function create_if_block_83(ctx) {
 	let span;
 	let t_value = /*W*/ ctx[15].logSaving + "";
@@ -16065,7 +16061,7 @@ function create_if_block_83(ctx) {
 	};
 }
 
-// (680:8) {#if logView.note}
+// (679:8) {#if logView.note}
 function create_if_block_82(ctx) {
 	let small;
 	let t_value = /*logView*/ ctx[26].note + "";
@@ -16075,7 +16071,7 @@ function create_if_block_82(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "muted sl-note svelte-sxknz1");
+			attr(small, "class", "muted sl-note svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -16092,7 +16088,7 @@ function create_if_block_82(ctx) {
 	};
 }
 
-// (681:8) {#if logView.otherDay && f.lat !== undefined && !capturing}
+// (680:8) {#if logView.otherDay && f.lat !== undefined && !capturing}
 function create_if_block_81(ctx) {
 	let button;
 
@@ -16110,7 +16106,7 @@ function create_if_block_81(ctx) {
 		c() {
 			button = element("button");
 			t = text(t_value);
-			attr(button, "class", "btn ghost svelte-sxknz1");
+			attr(button, "class", "btn ghost svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -16139,7 +16135,7 @@ function create_if_block_81(ctx) {
 	};
 }
 
-// (706:8) {#if f.start && f.end && f.end < f.start}
+// (705:8) {#if f.start && f.end && f.end < f.start}
 function create_if_block_79(ctx) {
 	let small;
 	let t_value = /*W*/ ctx[15].nextDay + "";
@@ -16149,7 +16145,7 @@ function create_if_block_79(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "muted svelte-sxknz1");
+			attr(small, "class", "muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -16166,7 +16162,7 @@ function create_if_block_79(ctx) {
 	};
 }
 
-// (707:110) 
+// (706:110) 
 function create_if_block_78(ctx) {
 	let small;
 	let t_value = /*W*/ ctx[15].endHelps + "";
@@ -16176,7 +16172,7 @@ function create_if_block_78(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "muted svelte-sxknz1");
+			attr(small, "class", "muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -16193,7 +16189,7 @@ function create_if_block_78(ctx) {
 	};
 }
 
-// (707:8) {#if !f.start && !f.checked}
+// (706:8) {#if !f.start && !f.checked}
 function create_if_block_77(ctx) {
 	let small;
 	let t_value = /*W*/ ctx[15].startNeeded + "";
@@ -16203,7 +16199,7 @@ function create_if_block_77(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "muted svelte-sxknz1");
+			attr(small, "class", "muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -16220,7 +16216,7 @@ function create_if_block_77(ctx) {
 	};
 }
 
-// (708:8) {#if logLate}
+// (707:8) {#if logLate}
 function create_if_block_76(ctx) {
 	let small;
 	let t_value = /*W*/ ctx[15].logLateFc + "";
@@ -16230,7 +16226,7 @@ function create_if_block_76(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "muted svelte-sxknz1");
+			attr(small, "class", "muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -16247,7 +16243,7 @@ function create_if_block_76(ctx) {
 	};
 }
 
-// (715:12) {#if f.spotId}
+// (714:12) {#if f.spotId}
 function create_if_block_75(ctx) {
 	let button;
 	let t_value = /*W*/ ctx[15].change + "";
@@ -16259,7 +16255,7 @@ function create_if_block_75(ctx) {
 		c() {
 			button = element("button");
 			t = text(t_value);
-			attr(button, "class", "link svelte-sxknz1");
+			attr(button, "class", "link svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -16284,7 +16280,7 @@ function create_if_block_75(ctx) {
 	};
 }
 
-// (717:8) {#if f.spotId}
+// (716:8) {#if f.spotId}
 function create_if_block_73(ctx) {
 	let div;
 	let t0;
@@ -16320,10 +16316,10 @@ function create_if_block_73(ctx) {
 			t2 = space();
 			if (if_block) if_block.c();
 			if_block_anchor = empty();
-			attr(button, "class", "chip svelte-sxknz1");
+			attr(button, "class", "chip svelte-8bmt8i");
 			attr(button, "aria-expanded", button_aria_expanded_value = /*otherFor*/ ctx[58] === 'log');
 			toggle_class(button, "on", /*otherFor*/ ctx[58] === 'log');
-			attr(div, "class", "chips sep svelte-sxknz1");
+			attr(div, "class", "chips sep svelte-8bmt8i");
 			attr(div, "role", "radiogroup");
 			attr(div, "aria-label", div_aria_label_value = /*W*/ ctx[15].sessionSport);
 		},
@@ -16349,7 +16345,7 @@ function create_if_block_73(ctx) {
 			}
 		},
 		p(ctx, dirty) {
-			if (dirty[0] & /*f, sportLbl*/ 16778240 | dirty[2] & /*logSport, sportChoices*/ 8196 | dirty[3] & /*spotById*/ 33554432) {
+			if (dirty[0] & /*f, sportLbl*/ 16778240 | dirty[1] & /*otherFor*/ 134217728 | dirty[2] & /*logSport, sportChoices*/ 8196 | dirty[3] & /*spotById*/ 33554432) {
 				each_value_28 = ensure_array_like(/*sportChoices*/ ctx[75](/*spotById*/ ctx[118](/*f*/ ctx[10].spotId)?.sports || [], /*f*/ ctx[10].sport));
 				let i;
 
@@ -16414,7 +16410,7 @@ function create_if_block_73(ctx) {
 	};
 }
 
-// (720:16) {#each sportChoices(spotById(f.spotId)?.sports || [], f.sport) as sp}
+// (719:16) {#each sportChoices(spotById(f.spotId)?.sports || [], f.sport) as sp}
 function create_each_block_28(ctx) {
 	let button;
 	let t_value = /*sportLbl*/ ctx[24](/*sp*/ ctx[428]) + "";
@@ -16431,10 +16427,10 @@ function create_each_block_28(ctx) {
 		c() {
 			button = element("button");
 			t = text(t_value);
-			attr(button, "class", "chip svelte-sxknz1");
+			attr(button, "class", "chip svelte-8bmt8i");
 			attr(button, "role", "radio");
-			attr(button, "aria-checked", button_aria_checked_value = /*logSport*/ ctx[64](/*f*/ ctx[10]) === /*sp*/ ctx[428]);
-			toggle_class(button, "on", /*logSport*/ ctx[64](/*f*/ ctx[10]) === /*sp*/ ctx[428]);
+			attr(button, "aria-checked", button_aria_checked_value = /*otherFor*/ ctx[58] !== 'log' && /*logSport*/ ctx[64](/*f*/ ctx[10]) === /*sp*/ ctx[428]);
+			toggle_class(button, "on", /*otherFor*/ ctx[58] !== 'log' && /*logSport*/ ctx[64](/*f*/ ctx[10]) === /*sp*/ ctx[428]);
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -16449,12 +16445,12 @@ function create_each_block_28(ctx) {
 			ctx = new_ctx;
 			if (dirty[0] & /*sportLbl, f*/ 16778240 | dirty[2] & /*sportChoices*/ 8192 && t_value !== (t_value = /*sportLbl*/ ctx[24](/*sp*/ ctx[428]) + "")) set_data(t, t_value);
 
-			if (dirty[0] & /*f*/ 1024 | dirty[2] & /*logSport, sportChoices*/ 8196 && button_aria_checked_value !== (button_aria_checked_value = /*logSport*/ ctx[64](/*f*/ ctx[10]) === /*sp*/ ctx[428])) {
+			if (dirty[0] & /*f*/ 1024 | dirty[1] & /*otherFor*/ 134217728 | dirty[2] & /*logSport, sportChoices*/ 8196 && button_aria_checked_value !== (button_aria_checked_value = /*otherFor*/ ctx[58] !== 'log' && /*logSport*/ ctx[64](/*f*/ ctx[10]) === /*sp*/ ctx[428])) {
 				attr(button, "aria-checked", button_aria_checked_value);
 			}
 
-			if (dirty[0] & /*f*/ 1024 | dirty[2] & /*logSport, sportChoices*/ 8196 | dirty[3] & /*spotById*/ 33554432) {
-				toggle_class(button, "on", /*logSport*/ ctx[64](/*f*/ ctx[10]) === /*sp*/ ctx[428]);
+			if (dirty[0] & /*f*/ 1024 | dirty[1] & /*otherFor*/ 134217728 | dirty[2] & /*logSport, sportChoices*/ 8196 | dirty[3] & /*spotById*/ 33554432) {
+				toggle_class(button, "on", /*otherFor*/ ctx[58] !== 'log' && /*logSport*/ ctx[64](/*f*/ ctx[10]) === /*sp*/ ctx[428]);
 			}
 		},
 		d(detaching) {
@@ -16468,7 +16464,7 @@ function create_each_block_28(ctx) {
 	};
 }
 
-// (725:12) {#if otherFor === 'log'}
+// (724:12) {#if otherFor === 'log'}
 function create_if_block_74(ctx) {
 	let div;
 	let input;
@@ -16492,10 +16488,10 @@ function create_if_block_74(ctx) {
 			attr(input, "maxlength", "20");
 			attr(input, "placeholder", input_placeholder_value = /*W*/ ctx[15].sportNameHint);
 			attr(input, "aria-label", input_aria_label_value = /*W*/ ctx[15].sportNameHint);
-			attr(input, "class", "svelte-sxknz1");
-			attr(button, "class", "btn primary small svelte-sxknz1");
+			attr(input, "class", "svelte-8bmt8i");
+			attr(button, "class", "btn primary small svelte-8bmt8i");
 			button.disabled = button_disabled_value = !/*otherName*/ ctx[59].trim();
-			attr(div, "class", "other-sport svelte-sxknz1");
+			attr(div, "class", "other-sport svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -16545,7 +16541,7 @@ function create_if_block_74(ctx) {
 	};
 }
 
-// (732:8) {#if !f.spotId}
+// (731:8) {#if !f.spotId}
 function create_if_block_72(ctx) {
 	let div;
 	let each_blocks = [];
@@ -16587,9 +16583,9 @@ function create_if_block_72(ctx) {
 			t2 = space();
 			small = element("small");
 			t3 = text(t3_value);
-			attr(button, "class", "chip dash svelte-sxknz1");
-			attr(div, "class", "chips svelte-sxknz1");
-			attr(small, "class", "muted svelte-sxknz1");
+			attr(button, "class", "chip dash svelte-8bmt8i");
+			attr(div, "class", "chips svelte-8bmt8i");
+			attr(small, "class", "muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -16641,7 +16637,7 @@ function create_if_block_72(ctx) {
 	};
 }
 
-// (734:16) {#each (f.lat !== undefined ? nearestSpots(f.lat, f.lon ?? 0) : data.spots).slice(0, 5) as s (s.id)}
+// (733:16) {#each (f.lat !== undefined ? nearestSpots(f.lat, f.lon ?? 0) : data.spots).slice(0, 5) as s (s.id)}
 function create_each_block_27(key_2, ctx) {
 	let button;
 	let t_value = /*s*/ ctx[413].name + "";
@@ -16659,7 +16655,7 @@ function create_each_block_27(key_2, ctx) {
 		c() {
 			button = element("button");
 			t = text(t_value);
-			attr(button, "class", "chip svelte-sxknz1");
+			attr(button, "class", "chip svelte-8bmt8i");
 			this.first = button;
 		},
 		m(target, anchor) {
@@ -16686,7 +16682,7 @@ function create_each_block_27(key_2, ctx) {
 	};
 }
 
-// (746:12) {#each RATE as r, i}
+// (745:12) {#each RATE as r, i}
 function create_each_block_26(ctx) {
 	let button;
 	let b;
@@ -16708,9 +16704,9 @@ function create_each_block_26(ctx) {
 			b.textContent = `${/*i*/ ctx[440] + 1}`;
 			span = element("span");
 			t1 = text(t1_value);
-			attr(b, "class", "svelte-sxknz1");
-			attr(span, "class", "svelte-sxknz1");
-			attr(button, "class", "rate svelte-sxknz1");
+			attr(b, "class", "svelte-8bmt8i");
+			attr(span, "class", "svelte-8bmt8i");
+			attr(button, "class", "rate svelte-8bmt8i");
 
 			attr(button, "style", button_style_value = !/*f*/ ctx[10].checked && /*f*/ ctx[10].rating === /*i*/ ctx[440] + 1
 			? `background: ${RATING_BG[/*i*/ ctx[440]]}; border-color: ${RATING_BG[/*i*/ ctx[440]]}; color: ${RATING_FG[/*i*/ ctx[440]]}`
@@ -16754,7 +16750,7 @@ function create_each_block_26(ctx) {
 	};
 }
 
-// (752:8) {#if f.checked}
+// (751:8) {#if f.checked}
 function create_if_block_71(ctx) {
 	let small;
 	let t_value = /*W*/ ctx[15].notWorthNote + "";
@@ -16764,7 +16760,7 @@ function create_if_block_71(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "muted svelte-sxknz1");
+			attr(small, "class", "muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -16781,7 +16777,7 @@ function create_if_block_71(ctx) {
 	};
 }
 
-// (757:12) {#if logGearGroups.length > 1}
+// (756:12) {#if logGearGroups.length > 1}
 function create_if_block_70(ctx) {
 	let small;
 	let t_value = /*sportLbl*/ ctx[24](/*grp*/ ctx[419].sport) + "";
@@ -16791,7 +16787,7 @@ function create_if_block_70(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "muted svelte-sxknz1");
+			attr(small, "class", "muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -16808,7 +16804,7 @@ function create_if_block_70(ctx) {
 	};
 }
 
-// (759:16) {#each grp.items as g (g.id)}
+// (758:16) {#each grp.items as g (g.id)}
 function create_each_block_25(key_2, ctx) {
 	let button;
 	let span;
@@ -16831,8 +16827,8 @@ function create_each_block_25(key_2, ctx) {
 			span = element("span");
 			t0 = text(t0_value);
 			t1 = text(t1_value);
-			attr(span, "class", "k svelte-sxknz1");
-			attr(button, "class", "chip svelte-sxknz1");
+			attr(span, "class", "k svelte-8bmt8i");
+			attr(button, "class", "chip svelte-8bmt8i");
 			toggle_class(button, "on", /*f*/ ctx[10].gearIds.includes(/*g*/ ctx[422].id));
 			this.first = button;
 		},
@@ -16867,7 +16863,7 @@ function create_each_block_25(key_2, ctx) {
 	};
 }
 
-// (756:8) {#each logGearGroups as grp (grp.sport)}
+// (755:8) {#each logGearGroups as grp (grp.sport)}
 function create_each_block_24(key_2, ctx) {
 	let first;
 	let t;
@@ -16897,7 +16893,7 @@ function create_each_block_24(key_2, ctx) {
 				each_blocks[i].c();
 			}
 
-			attr(div, "class", "chips svelte-sxknz1");
+			attr(div, "class", "chips svelte-8bmt8i");
 			this.first = first;
 		},
 		m(target, anchor) {
@@ -16949,7 +16945,7 @@ function create_each_block_24(key_2, ctx) {
 	};
 }
 
-// (766:12) {#if f.gear.trim()}
+// (765:12) {#if f.gear.trim()}
 function create_if_block_69(ctx) {
 	let button;
 	let t_value = /*W*/ ctx[15].saveToGear + "";
@@ -16961,7 +16957,7 @@ function create_if_block_69(ctx) {
 		c() {
 			button = element("button");
 			t = text(t_value);
-			attr(button, "class", "btn ghost small svelte-sxknz1");
+			attr(button, "class", "btn ghost small svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -16986,7 +16982,7 @@ function create_if_block_69(ctx) {
 	};
 }
 
-// (775:12) {:else}
+// (774:12) {:else}
 function create_else_block_20(ctx) {
 	let label_1;
 	let t_value = /*W*/ ctx[15].gpsAdd + "";
@@ -17003,8 +16999,8 @@ function create_else_block_20(ctx) {
 			attr(input, "type", "file");
 			attr(input, "accept", ".gpx,.tcx,.fit,application/gpx+xml");
 			input.hidden = true;
-			attr(input, "class", "svelte-sxknz1");
-			attr(label_1, "class", "btn ghost small svelte-sxknz1");
+			attr(input, "class", "svelte-8bmt8i");
+			attr(label_1, "class", "btn ghost small svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, label_1, anchor);
@@ -17030,7 +17026,7 @@ function create_else_block_20(ctx) {
 	};
 }
 
-// (773:12) {#if f.track}
+// (772:12) {#if f.track}
 function create_if_block_68(ctx) {
 	let button;
 	let t_value = /*W*/ ctx[15].gpsShow + "";
@@ -17042,7 +17038,7 @@ function create_if_block_68(ctx) {
 		c() {
 			button = element("button");
 			t = text(t_value);
-			attr(button, "class", "link svelte-sxknz1");
+			attr(button, "class", "link svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -17067,7 +17063,7 @@ function create_if_block_68(ctx) {
 	};
 }
 
-// (779:8) {#if trackError}
+// (778:8) {#if trackError}
 function create_if_block_67(ctx) {
 	let small;
 	let t;
@@ -17076,7 +17072,7 @@ function create_if_block_67(ctx) {
 		c() {
 			small = element("small");
 			t = text(/*trackError*/ ctx[46]);
-			attr(small, "class", "err svelte-sxknz1");
+			attr(small, "class", "err svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -17093,7 +17089,7 @@ function create_if_block_67(ctx) {
 	};
 }
 
-// (780:8) {#if f.track}
+// (779:8) {#if f.track}
 function create_if_block_66(ctx) {
 	let div3;
 	let div0;
@@ -17166,19 +17162,19 @@ function create_if_block_66(ctx) {
 			t14 = space();
 			button = element("button");
 			t15 = text(t15_value);
-			attr(span0, "class", "lbl svelte-sxknz1");
-			attr(span1, "class", "big svelte-sxknz1");
-			attr(div0, "class", "svelte-sxknz1");
-			attr(span2, "class", "lbl svelte-sxknz1");
-			attr(small0, "class", "svelte-sxknz1");
-			attr(span3, "class", "big svelte-sxknz1");
-			attr(div1, "class", "svelte-sxknz1");
-			attr(span4, "class", "lbl svelte-sxknz1");
-			attr(small1, "class", "svelte-sxknz1");
-			attr(span5, "class", "big svelte-sxknz1");
-			attr(div2, "class", "svelte-sxknz1");
-			attr(div3, "class", "stats sep svelte-sxknz1");
-			attr(button, "class", "link danger svelte-sxknz1");
+			attr(span0, "class", "lbl svelte-8bmt8i");
+			attr(span1, "class", "big svelte-8bmt8i");
+			attr(div0, "class", "svelte-8bmt8i");
+			attr(span2, "class", "lbl svelte-8bmt8i");
+			attr(small0, "class", "svelte-8bmt8i");
+			attr(span3, "class", "big svelte-8bmt8i");
+			attr(div1, "class", "svelte-8bmt8i");
+			attr(span4, "class", "lbl svelte-8bmt8i");
+			attr(small1, "class", "svelte-8bmt8i");
+			attr(span5, "class", "big svelte-8bmt8i");
+			attr(div2, "class", "svelte-8bmt8i");
+			attr(div3, "class", "stats sep svelte-8bmt8i");
+			attr(button, "class", "link danger svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div3, anchor);
@@ -17239,7 +17235,7 @@ function create_if_block_66(ctx) {
 	};
 }
 
-// (794:4) {#if f.id}
+// (793:4) {#if f.id}
 function create_if_block_65(ctx) {
 	let button;
 	let t_value = /*W*/ ctx[15].deleteSession + "";
@@ -17251,7 +17247,7 @@ function create_if_block_65(ctx) {
 		c() {
 			button = element("button");
 			t = text(t_value);
-			attr(button, "class", "link danger svelte-sxknz1");
+			attr(button, "class", "link danger svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -17276,7 +17272,7 @@ function create_if_block_65(ctx) {
 	};
 }
 
-// (638:8) {#if linkOpen}
+// (637:8) {#if linkOpen}
 function create_if_block_62(ctx) {
 	let div;
 	let each_blocks = [];
@@ -17312,8 +17308,8 @@ function create_if_block_62(ctx) {
 			t1 = text(t1_value);
 			t2 = space();
 			if (if_block) if_block.c();
-			attr(button, "class", "chip dash svelte-sxknz1");
-			attr(div, "class", "chips svelte-sxknz1");
+			attr(button, "class", "chip dash svelte-8bmt8i");
+			attr(div, "class", "chips svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -17372,7 +17368,7 @@ function create_if_block_62(ctx) {
 	};
 }
 
-// (640:16) {#each nearestSpots(snap.lat, snap.lon).slice(0, 5) as s (s.id)}
+// (639:16) {#each nearestSpots(snap.lat, snap.lon).slice(0, 5) as s (s.id)}
 function create_each_block_23(key_2, ctx) {
 	let button;
 	let t_value = /*s*/ ctx[413].name + "";
@@ -17390,7 +17386,7 @@ function create_each_block_23(key_2, ctx) {
 		c() {
 			button = element("button");
 			t = text(t_value);
-			attr(button, "class", "chip svelte-sxknz1");
+			attr(button, "class", "chip svelte-8bmt8i");
 			toggle_class(button, "on", /*snap*/ ctx[4].spotId === /*s*/ ctx[413].id);
 			this.first = button;
 		},
@@ -17422,7 +17418,7 @@ function create_each_block_23(key_2, ctx) {
 	};
 }
 
-// (644:16) {#if snap.spotId}
+// (643:16) {#if snap.spotId}
 function create_if_block_63(ctx) {
 	let button;
 	let t_value = /*W*/ ctx[15].noSpot + "";
@@ -17434,7 +17430,7 @@ function create_if_block_63(ctx) {
 		c() {
 			button = element("button");
 			t = text(t_value);
-			attr(button, "class", "chip svelte-sxknz1");
+			attr(button, "class", "chip svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -17459,7 +17455,7 @@ function create_if_block_63(ctx) {
 	};
 }
 
-// (662:8) {:else}
+// (661:8) {:else}
 function create_else_block_19(ctx) {
 	let button0;
 	let t0_value = /*W*/ ctx[15].done + "";
@@ -17478,8 +17474,8 @@ function create_else_block_19(ctx) {
 			t1 = space();
 			button1 = element("button");
 			t2 = text(t2_value);
-			attr(button0, "class", "btn primary svelte-sxknz1");
-			attr(button1, "class", "btn ghost svelte-sxknz1");
+			attr(button0, "class", "btn primary svelte-8bmt8i");
+			attr(button1, "class", "btn ghost svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, button0, anchor);
@@ -17514,7 +17510,7 @@ function create_else_block_19(ctx) {
 	};
 }
 
-// (659:28) 
+// (658:28) 
 function create_if_block_61(ctx) {
 	let button0;
 	let t0_value = /*W*/ ctx[15].actSaveForecast + "";
@@ -17533,8 +17529,8 @@ function create_if_block_61(ctx) {
 			t1 = space();
 			button1 = element("button");
 			t2 = text(t2_value);
-			attr(button0, "class", "btn primary svelte-sxknz1");
-			attr(button1, "class", "btn ghost svelte-sxknz1");
+			attr(button0, "class", "btn primary svelte-8bmt8i");
+			attr(button1, "class", "btn ghost svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, button0, anchor);
@@ -17569,7 +17565,7 @@ function create_if_block_61(ctx) {
 	};
 }
 
-// (650:8) {#if snapDraft && replaceOf}
+// (649:8) {#if snapDraft && replaceOf}
 function create_if_block_60(ctx) {
 	let div1;
 	let b;
@@ -17614,12 +17610,12 @@ function create_if_block_60(ctx) {
 			t5 = space();
 			button1 = element("button");
 			t6 = text(t6_value);
-			attr(b, "class", "svelte-sxknz1");
-			attr(small, "class", "svelte-sxknz1");
-			attr(button0, "class", "btn primary svelte-sxknz1");
-			attr(button1, "class", "btn ghost svelte-sxknz1");
-			attr(div0, "class", "btns svelte-sxknz1");
-			attr(div1, "class", "replace svelte-sxknz1");
+			attr(b, "class", "svelte-8bmt8i");
+			attr(small, "class", "svelte-8bmt8i");
+			attr(button0, "class", "btn primary svelte-8bmt8i");
+			attr(button1, "class", "btn ghost svelte-8bmt8i");
+			attr(div0, "class", "btns svelte-8bmt8i");
+			attr(div1, "class", "replace svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div1, anchor);
@@ -17686,7 +17682,7 @@ function create_if_block_58(ctx) {
 				each_blocks[i].c();
 			}
 
-			attr(div, "class", "models-pick svelte-sxknz1");
+			attr(div, "class", "models-pick svelte-8bmt8i");
 			attr(div, "role", "radiogroup");
 			attr(div, "aria-label", "Forecast model");
 		},
@@ -17752,7 +17748,7 @@ function create_each_block_22(ctx) {
 			t = text(t_value);
 			attr(button, "role", "radio");
 			attr(button, "aria-checked", button_aria_checked_value = /*spotModel*/ ctx[6] === /*m*/ ctx[450]);
-			attr(button, "class", "svelte-sxknz1");
+			attr(button, "class", "svelte-8bmt8i");
 			toggle_class(button, "on", /*spotModel*/ ctx[6] === /*m*/ ctx[450]);
 		},
 		m(target, anchor) {
@@ -17797,7 +17793,7 @@ function create_if_block_57(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "svelte-sxknz1");
+			attr(small, "class", "svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -17824,7 +17820,7 @@ function create_if_block_56(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "muted nudge svelte-sxknz1");
+			attr(small, "class", "muted nudge svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -17893,11 +17889,11 @@ function create_else_block_18(ctx) {
 			t4 = space();
 			if (if_block) if_block.c();
 			if_block_anchor = empty();
-			attr(span0, "class", "arrows svelte-sxknz1");
-			attr(b, "class", "svelte-sxknz1");
-			attr(span1, "class", "grow svelte-sxknz1");
-			attr(button, "class", "link svelte-sxknz1");
-			attr(div, "class", "row start svelte-sxknz1");
+			attr(span0, "class", "arrows svelte-8bmt8i");
+			attr(b, "class", "svelte-8bmt8i");
+			attr(span1, "class", "grow svelte-8bmt8i");
+			attr(button, "class", "link svelte-8bmt8i");
+			attr(div, "class", "row start svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -18025,11 +18021,11 @@ function create_if_block_53(ctx) {
 			t3 = space();
 			if_block.c();
 			if_block_anchor = empty();
-			attr(b, "class", "svelte-sxknz1");
-			attr(small, "class", "svelte-sxknz1");
-			attr(span, "class", "grow svelte-sxknz1");
-			attr(button, "class", "link svelte-sxknz1");
-			attr(div, "class", "row start svelte-sxknz1");
+			attr(b, "class", "svelte-8bmt8i");
+			attr(small, "class", "svelte-8bmt8i");
+			attr(span, "class", "grow svelte-8bmt8i");
+			attr(button, "class", "link svelte-8bmt8i");
+			attr(div, "class", "row start svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -18089,7 +18085,7 @@ function create_each_block_21(ctx) {
 		c() {
 			span = element("span");
 			t = text("▲");
-			attr(span, "class", "arrow o svelte-sxknz1");
+			attr(span, "class", "arrow o svelte-8bmt8i");
 			set_style(span, "transform", "rotate(" + (DIRS.indexOf(/*d*/ ctx[438]) * 45 + 180) + "deg)");
 		},
 		m(target, anchor) {
@@ -18152,11 +18148,11 @@ function create_if_block_55(ctx) {
 			t8 = space();
 			button = element("button");
 			t9 = text(t9_value);
-			attr(small, "class", "svelte-sxknz1");
-			attr(b, "class", "svelte-sxknz1");
-			attr(span, "class", "grow svelte-sxknz1");
-			attr(button, "class", "btn primary small svelte-sxknz1");
-			attr(div, "class", "suggest svelte-sxknz1");
+			attr(small, "class", "svelte-8bmt8i");
+			attr(b, "class", "svelte-8bmt8i");
+			attr(span, "class", "grow svelte-8bmt8i");
+			attr(button, "class", "btn primary small svelte-8bmt8i");
+			attr(div, "class", "suggest svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -18213,7 +18209,7 @@ function create_else_block_17(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "muted svelte-sxknz1");
+			attr(small, "class", "muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -18280,12 +18276,12 @@ function create_if_block_54(ctx) {
 			t9 = space();
 			button = element("button");
 			t10 = text(t10_value);
-			attr(small0, "class", "svelte-sxknz1");
-			attr(b, "class", "svelte-sxknz1");
-			attr(small1, "class", "svelte-sxknz1");
-			attr(span, "class", "grow svelte-sxknz1");
-			attr(button, "class", "btn primary small svelte-sxknz1");
-			attr(div, "class", "suggest svelte-sxknz1");
+			attr(small0, "class", "svelte-8bmt8i");
+			attr(b, "class", "svelte-8bmt8i");
+			attr(small1, "class", "svelte-8bmt8i");
+			attr(span, "class", "grow svelte-8bmt8i");
+			attr(button, "class", "btn primary small svelte-8bmt8i");
+			attr(div, "class", "suggest svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -18364,13 +18360,13 @@ function create_if_block_51(ctx) {
 			t3 = space();
 			b = element("b");
 			if_block.c();
-			attr(span0, "class", "r-day svelte-sxknz1");
-			attr(span1, "class", "tag svelte-sxknz1");
+			attr(span0, "class", "r-day svelte-8bmt8i");
+			attr(span1, "class", "tag svelte-8bmt8i");
 			set_style(span1, "background", /*guessCol*/ ctx[107](/*spotBest*/ ctx[91].level)[0]);
 			set_style(span1, "color", /*guessCol*/ ctx[107](/*spotBest*/ ctx[91].level)[1]);
 			attr(span1, "title", span1_title_value = /*guessNote*/ ctx[73](/*spotBest*/ ctx[91]));
-			attr(b, "class", "r-time svelte-sxknz1");
-			attr(div, "class", "reco-row svelte-sxknz1");
+			attr(b, "class", "r-time svelte-8bmt8i");
+			attr(div, "class", "reco-row svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -18438,8 +18434,8 @@ function create_else_block_16(ctx) {
 			t1 = text("–");
 			span1 = element("span");
 			t2 = text(t2_value);
-			attr(span0, "class", "svelte-sxknz1");
-			attr(span1, "class", "svelte-sxknz1");
+			attr(span0, "class", "svelte-8bmt8i");
+			attr(span1, "class", "svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, span0, anchor);
@@ -18471,7 +18467,7 @@ function create_if_block_52(ctx) {
 		c() {
 			span = element("span");
 			t = text(t_value);
-			attr(span, "class", "svelte-sxknz1");
+			attr(span, "class", "svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, span, anchor);
@@ -18503,7 +18499,7 @@ function create_if_block_50(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "r-pred svelte-sxknz1");
+			attr(small, "class", "r-pred svelte-8bmt8i");
 			attr(small, "title", small_title_value = /*W*/ ctx[15].predTitle);
 		},
 		m(target, anchor) {
@@ -18554,13 +18550,13 @@ function create_if_block_49(ctx) {
 			t3 = text("–");
 			span2 = element("span");
 			t4 = text(t4_value);
-			attr(span0, "class", "tag svelte-sxknz1");
+			attr(span0, "class", "tag svelte-8bmt8i");
 			set_style(span0, "background", /*guessCol*/ ctx[107](/*d*/ ctx[438].best.level)[0]);
 			set_style(span0, "color", /*guessCol*/ ctx[107](/*d*/ ctx[438].best.level)[1]);
 			attr(span0, "title", span0_title_value = /*guessNote*/ ctx[73](/*d*/ ctx[438].best));
-			attr(span1, "class", "svelte-sxknz1");
-			attr(span2, "class", "svelte-sxknz1");
-			attr(b, "class", "r-time svelte-sxknz1");
+			attr(span1, "class", "svelte-8bmt8i");
+			attr(span2, "class", "svelte-8bmt8i");
+			attr(b, "class", "r-time svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, span0, anchor);
@@ -18622,8 +18618,8 @@ function create_each_block_20(key_2, ctx) {
 			if (if_block0) if_block0.c();
 			t1 = space();
 			if (if_block1) if_block1.c();
-			attr(span, "class", "r-day svelte-sxknz1");
-			attr(div, "class", "reco-row svelte-sxknz1");
+			attr(span, "class", "r-day svelte-8bmt8i");
+			attr(div, "class", "reco-row svelte-8bmt8i");
 			this.first = div;
 		},
 		m(target, anchor) {
@@ -18686,7 +18682,7 @@ function create_if_block_48(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "muted r-later svelte-sxknz1");
+			attr(small, "class", "muted r-later svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -18713,7 +18709,7 @@ function create_if_block_47(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "muted r-later svelte-sxknz1");
+			attr(small, "class", "muted r-later svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -18777,8 +18773,8 @@ function create_else_block_13(ctx) {
 			t1 = space();
 			small = element("small");
 			t2 = text(t2_value);
-			attr(small, "class", "muted svelte-sxknz1");
-			attr(div, "class", "card works svelte-sxknz1");
+			attr(small, "class", "muted svelte-8bmt8i");
+			attr(div, "class", "card works svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -18861,8 +18857,8 @@ function create_if_block_38(ctx) {
 			t0 = space();
 			small = element("small");
 			t1 = text(t1_value);
-			attr(small, "class", "muted svelte-sxknz1");
-			attr(button, "class", "card works-sum svelte-sxknz1");
+			attr(small, "class", "muted svelte-8bmt8i");
+			attr(button, "class", "card works-sum svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -18921,7 +18917,7 @@ function create_if_block_46(ctx) {
 		c() {
 			button = element("button");
 			t = text(t_value);
-			attr(button, "class", "link svelte-sxknz1");
+			attr(button, "class", "link svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -18957,7 +18953,7 @@ function create_else_block_15(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "muted svelte-sxknz1");
+			attr(small, "class", "muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -19015,11 +19011,11 @@ function create_if_block_43(ctx) {
 				each_blocks[i].c();
 			}
 
-			attr(span0, "class", "w-h svelte-sxknz1");
-			attr(span1, "class", "w-h svelte-sxknz1");
-			attr(span2, "class", "w-h svelte-sxknz1");
-			attr(span3, "class", "w-h w-r svelte-sxknz1");
-			attr(div, "class", "w-grid svelte-sxknz1");
+			attr(span0, "class", "w-h svelte-8bmt8i");
+			attr(span1, "class", "w-h svelte-8bmt8i");
+			attr(span2, "class", "w-h svelte-8bmt8i");
+			attr(span3, "class", "w-h w-r svelte-8bmt8i");
+			attr(div, "class", "w-grid svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -19112,11 +19108,11 @@ function create_if_block_39(ctx) {
 			t5 = text(t5_value);
 			t6 = space();
 			if (if_block) if_block.c();
-			attr(div0, "class", "w-grid edit svelte-sxknz1");
-			attr(small, "class", "muted svelte-sxknz1");
-			attr(button0, "class", "btn primary small svelte-sxknz1");
-			attr(button1, "class", "btn ghost small svelte-sxknz1");
-			attr(div1, "class", "btns svelte-sxknz1");
+			attr(div0, "class", "w-grid edit svelte-8bmt8i");
+			attr(small, "class", "muted svelte-8bmt8i");
+			attr(button0, "class", "btn primary small svelte-8bmt8i");
+			attr(button1, "class", "btn ghost small svelte-8bmt8i");
+			attr(div1, "class", "btns svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div0, anchor);
@@ -19200,7 +19196,7 @@ function create_if_block_45(ctx) {
 	return {
 		c() {
 			i = element("i");
-			attr(i, "class", "w-you svelte-sxknz1");
+			attr(i, "class", "w-you svelte-8bmt8i");
 			attr(i, "title", i_title_value = /*W*/ ctx[15].setByYou);
 		},
 		m(target, anchor) {
@@ -19227,7 +19223,7 @@ function create_else_block_14(ctx) {
 		c() {
 			span = element("span");
 			span.textContent = "–";
-			attr(span, "class", "w-now svelte-sxknz1");
+			attr(span, "class", "w-now svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, span, anchor);
@@ -19251,7 +19247,7 @@ function create_if_block_44(ctx) {
 		c() {
 			span = element("span");
 			t = text(t_value);
-			attr(span, "class", "w-now svelte-sxknz1");
+			attr(span, "class", "w-now svelte-8bmt8i");
 			toggle_class(span, "ok", /*row*/ ctx[463].fit >= 0.99);
 			toggle_class(span, "near", /*row*/ ctx[463].fit > 0 && /*row*/ ctx[463].fit < 0.99);
 		},
@@ -19320,9 +19316,9 @@ function create_each_block_19(key_2, ctx) {
 			t5 = space();
 			if_block1.c();
 			if_block1_anchor = empty();
-			attr(span0, "class", "w-name svelte-sxknz1");
-			attr(b, "class", "w-range svelte-sxknz1");
-			attr(span1, "class", span1_class_value = "w-imp imp" + mattersLevel(/*row*/ ctx[463].r.matters) + " svelte-sxknz1");
+			attr(span0, "class", "w-name svelte-8bmt8i");
+			attr(b, "class", "w-range svelte-8bmt8i");
+			attr(span1, "class", span1_class_value = "w-imp imp" + mattersLevel(/*row*/ ctx[463].r.matters) + " svelte-8bmt8i");
 			this.first = span0;
 		},
 		m(target, anchor) {
@@ -19359,7 +19355,7 @@ function create_each_block_19(key_2, ctx) {
 			if (dirty[0] & /*rangeText, spotLearned*/ 8454144 | dirty[2] & /*spotParts*/ 128 && t2_value !== (t2_value = /*rangeText*/ ctx[23](/*row*/ ctx[463].r) + "")) set_data(t2, t2_value);
 			if (dirty[0] & /*W, spotLearned*/ 98304 | dirty[2] & /*spotParts*/ 128 && t4_value !== (t4_value = /*W*/ ctx[15]['matter' + mattersLevel(/*row*/ ctx[463].r.matters)] + "")) set_data(t4, t4_value);
 
-			if (dirty[0] & /*spotLearned*/ 65536 | dirty[2] & /*spotParts*/ 128 && span1_class_value !== (span1_class_value = "w-imp imp" + mattersLevel(/*row*/ ctx[463].r.matters) + " svelte-sxknz1")) {
+			if (dirty[0] & /*spotLearned*/ 65536 | dirty[2] & /*spotParts*/ 128 && span1_class_value !== (span1_class_value = "w-imp imp" + mattersLevel(/*row*/ ctx[463].r.matters) + " svelte-8bmt8i")) {
 				attr(span1, "class", span1_class_value);
 			}
 
@@ -19446,13 +19442,13 @@ function create_if_block_42(ctx) {
 			attr(input0, "inputmode", "decimal");
 			attr(input0, "placeholder", "–");
 			attr(input0, "aria-label", input0_aria_label_value = /*paramName*/ ctx[72](/*key*/ ctx[458]) + ' ' + /*W*/ ctx[15].formMin);
-			attr(input0, "class", "svelte-sxknz1");
+			attr(input0, "class", "svelte-8bmt8i");
 			attr(input1, "inputmode", "decimal");
 			attr(input1, "placeholder", "–");
 			attr(input1, "aria-label", input1_aria_label_value = /*paramName*/ ctx[72](/*key*/ ctx[458]) + ' ' + /*W*/ ctx[15].formMax);
-			attr(input1, "class", "svelte-sxknz1");
-			attr(small, "class", "svelte-sxknz1");
-			attr(div, "class", "w-inputs svelte-sxknz1");
+			attr(input1, "class", "svelte-8bmt8i");
+			attr(small, "class", "svelte-8bmt8i");
+			attr(div, "class", "w-inputs svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -19539,7 +19535,7 @@ function create_if_block_41(ctx) {
 			}
 
 			t = space();
-			attr(div, "class", "w-dirs svelte-sxknz1");
+			attr(div, "class", "w-dirs svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -19602,7 +19598,7 @@ function create_each_block_18(ctx) {
 		c() {
 			button = element("button");
 			t = text(/*d*/ ctx[438]);
-			attr(button, "class", "dchip svelte-sxknz1");
+			attr(button, "class", "dchip svelte-8bmt8i");
 			attr(button, "aria-pressed", button_aria_pressed_value = /*editRows*/ ctx[48][/*key*/ ctx[458]]?.dirs.includes(/*d*/ ctx[438]));
 			toggle_class(button, "on", /*editRows*/ ctx[48][/*key*/ ctx[458]]?.dirs.includes(/*d*/ ctx[438]));
 		},
@@ -19665,7 +19661,7 @@ function create_each_block_17(key_2, ctx) {
 			t1 = space();
 			if (if_block) if_block.c();
 			if_block_anchor = empty();
-			attr(span, "class", "w-name svelte-sxknz1");
+			attr(span, "class", "w-name svelte-8bmt8i");
 			this.first = span;
 		},
 		m(target, anchor) {
@@ -19721,7 +19717,7 @@ function create_if_block_40(ctx) {
 		c() {
 			button = element("button");
 			t = text(t_value);
-			attr(button, "class", "link svelte-sxknz1");
+			attr(button, "class", "link svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -19797,10 +19793,10 @@ function create_each_block_16(key_2, ctx) {
 			if (if_block0) if_block0.c();
 			t4 = space();
 			if_block1.c();
-			attr(b, "class", "svelte-sxknz1");
-			attr(small, "class", "muted grow svelte-sxknz1");
-			attr(div0, "class", "w-head svelte-sxknz1");
-			attr(div1, "class", "w-sport svelte-sxknz1");
+			attr(b, "class", "svelte-8bmt8i");
+			attr(small, "class", "muted grow svelte-8bmt8i");
+			attr(div0, "class", "w-head svelte-8bmt8i");
+			attr(div1, "class", "w-sport svelte-8bmt8i");
 			this.first = div1;
 		},
 		m(target, anchor) {
@@ -19889,7 +19885,7 @@ function create_each_block_15(key_2, ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "gear-hint svelte-sxknz1");
+			attr(small, "class", "gear-hint svelte-8bmt8i");
 			this.first = small;
 		},
 		m(target, anchor) {
@@ -19932,10 +19928,10 @@ function create_each_block_14(key_2, ctx) {
 			t0 = text(t0_value);
 			span0 = element("span");
 			t1 = text(t1_value);
-			attr(b, "class", "svelte-sxknz1");
-			attr(span0, "class", "svelte-sxknz1");
+			attr(b, "class", "svelte-8bmt8i");
+			attr(span0, "class", "svelte-8bmt8i");
 			toggle_class(span0, "muted", !/*worksLine*/ ctx[70](/*m*/ ctx[450]));
-			attr(span1, "class", "ws-line svelte-sxknz1");
+			attr(span1, "class", "ws-line svelte-8bmt8i");
 			this.first = span1;
 		},
 		m(target, anchor) {
@@ -19965,17 +19961,14 @@ function create_each_block_14(key_2, ctx) {
 // (581:12) {:else}
 function create_else_block_12(ctx) {
 	let t0;
-	let small0;
-	let t1_value = fill(/*W*/ ctx[15].trustNote, { n: /*trust*/ ctx[89][0].count }) + "";
-	let t1;
-	let t2;
-	let small1;
+	let small;
 
-	let t3_value = fill(/*W*/ ctx[15].trustUsing, {
+	let t1_value = fill(/*W*/ ctx[15].trustNote, {
+		n: /*trust*/ ctx[89][0].count,
 		model: modelLabel(/*modelFor*/ ctx[124](/*spot*/ ctx[3]))
 	}) + "";
 
-	let t3;
+	let t1;
 	let each_value_13 = ensure_array_like(/*trust*/ ctx[89]);
 	let each_blocks = [];
 
@@ -19990,13 +19983,9 @@ function create_else_block_12(ctx) {
 			}
 
 			t0 = space();
-			small0 = element("small");
+			small = element("small");
 			t1 = text(t1_value);
-			t2 = space();
-			small1 = element("small");
-			t3 = text(t3_value);
-			attr(small0, "class", "muted svelte-sxknz1");
-			attr(small1, "class", "muted svelte-sxknz1");
+			attr(small, "class", "muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			for (let i = 0; i < each_blocks.length; i += 1) {
@@ -20006,11 +19995,8 @@ function create_else_block_12(ctx) {
 			}
 
 			insert(target, t0, anchor);
-			insert(target, small0, anchor);
-			append(small0, t1);
-			insert(target, t2, anchor);
-			insert(target, small1, anchor);
-			append(small1, t3);
+			insert(target, small, anchor);
+			append(small, t1);
 		},
 		p(ctx, dirty) {
 			if (dirty[0] & /*W*/ 32768 | dirty[2] & /*trust*/ 134217728 | dirty[4] & /*closeness*/ 4) {
@@ -20036,18 +20022,15 @@ function create_else_block_12(ctx) {
 				each_blocks.length = each_value_13.length;
 			}
 
-			if (dirty[0] & /*W*/ 32768 | dirty[2] & /*trust*/ 134217728 && t1_value !== (t1_value = fill(/*W*/ ctx[15].trustNote, { n: /*trust*/ ctx[89][0].count }) + "")) set_data(t1, t1_value);
-
-			if (dirty[0] & /*W, spot*/ 32776 && t3_value !== (t3_value = fill(/*W*/ ctx[15].trustUsing, {
+			if (dirty[0] & /*W, spot*/ 32776 | dirty[2] & /*trust*/ 134217728 && t1_value !== (t1_value = fill(/*W*/ ctx[15].trustNote, {
+				n: /*trust*/ ctx[89][0].count,
 				model: modelLabel(/*modelFor*/ ctx[124](/*spot*/ ctx[3]))
-			}) + "")) set_data(t3, t3_value);
+			}) + "")) set_data(t1, t1_value);
 		},
 		d(detaching) {
 			if (detaching) {
 				detach(t0);
-				detach(small0);
-				detach(t2);
-				detach(small1);
+				detach(small);
 			}
 
 			destroy_each(each_blocks, detaching);
@@ -20063,7 +20046,7 @@ function create_if_block_37(ctx) {
 	return {
 		c() {
 			span = element("span");
-			attr(span, "class", "muted svelte-sxknz1");
+			attr(span, "class", "muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, span, anchor);
@@ -20100,13 +20083,13 @@ function create_each_block_13(ctx) {
 			i_1 = element("i");
 			span2 = element("span");
 			t1 = text(t1_value);
-			attr(span0, "class", "m svelte-sxknz1");
+			attr(span0, "class", "m svelte-8bmt8i");
 			toggle_class(span0, "best", /*i*/ ctx[440] === 0);
 			set_style(i_1, "width", /*closeness*/ ctx[126](/*sc*/ ctx[448].miss, /*trust*/ ctx[89]) + "%");
-			attr(i_1, "class", "svelte-sxknz1");
+			attr(i_1, "class", "svelte-8bmt8i");
 			toggle_class(i_1, "best", /*i*/ ctx[440] === 0);
-			attr(span1, "class", "missbar svelte-sxknz1");
-			attr(div, "class", "score svelte-sxknz1");
+			attr(span1, "class", "missbar svelte-8bmt8i");
+			attr(div, "class", "score svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -20134,7 +20117,7 @@ function create_each_block_13(ctx) {
 	};
 }
 
-// (595:8) {:else}
+// (594:8) {:else}
 function create_else_block_11(ctx) {
 	let div;
 	let each_blocks = [];
@@ -20156,7 +20139,7 @@ function create_else_block_11(ctx) {
 				each_blocks[i].c();
 			}
 
-			attr(div, "class", "list svelte-sxknz1");
+			attr(div, "class", "list svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -20185,7 +20168,7 @@ function create_else_block_11(ctx) {
 	};
 }
 
-// (593:8) {#if spotSnapshots.length === 0}
+// (592:8) {#if spotSnapshots.length === 0}
 function create_if_block_36(ctx) {
 	let span;
 	let raw_value = rich(/*W*/ ctx[15].savedEmpty) + "";
@@ -20193,7 +20176,7 @@ function create_if_block_36(ctx) {
 	return {
 		c() {
 			span = element("span");
-			attr(span, "class", "muted svelte-sxknz1");
+			attr(span, "class", "muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, span, anchor);
@@ -20209,7 +20192,7 @@ function create_if_block_36(ctx) {
 	};
 }
 
-// (597:16) {#each spotSnapshots.slice(0, 8) as sn (sn.id)}
+// (596:16) {#each spotSnapshots.slice(0, 8) as sn (sn.id)}
 function create_each_block_12(key_2, ctx) {
 	let div;
 	let span0;
@@ -20274,13 +20257,13 @@ function create_each_block_12(key_2, ctx) {
 			button2 = element("button");
 			t8 = text(t8_value);
 			t9 = space();
-			attr(span0, "class", "sw svelte-sxknz1");
+			attr(span0, "class", "sw svelte-8bmt8i");
 			set_style(span0, "background", windColor(primaryOf(/*sn*/ ctx[445])?.wind ?? null));
-			attr(small, "class", "svelte-sxknz1");
-			attr(button0, "class", "grow plain svelte-sxknz1");
-			attr(button1, "class", "mini svelte-sxknz1");
-			attr(button2, "class", "mini danger svelte-sxknz1");
-			attr(div, "class", "item static svelte-sxknz1");
+			attr(small, "class", "svelte-8bmt8i");
+			attr(button0, "class", "grow plain svelte-8bmt8i");
+			attr(button1, "class", "mini svelte-8bmt8i");
+			attr(button2, "class", "mini danger svelte-8bmt8i");
+			attr(div, "class", "item static svelte-8bmt8i");
 			this.first = div;
 		},
 		m(target, anchor) {
@@ -20341,7 +20324,7 @@ function create_each_block_12(key_2, ctx) {
 	};
 }
 
-// (613:8) {:else}
+// (612:8) {:else}
 function create_else_block_10(ctx) {
 	let div;
 	let each_blocks = [];
@@ -20371,8 +20354,8 @@ function create_else_block_10(ctx) {
 			t0 = space();
 			small = element("small");
 			t1 = text(t1_value);
-			attr(div, "class", "list svelte-sxknz1");
-			attr(small, "class", "muted svelte-sxknz1");
+			attr(div, "class", "list svelte-8bmt8i");
+			attr(small, "class", "muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -20428,7 +20411,7 @@ function create_else_block_10(ctx) {
 	};
 }
 
-// (611:8) {#if spotSessions.length === 0}
+// (610:8) {#if spotSessions.length === 0}
 function create_if_block_35(ctx) {
 	let span;
 	let t_value = /*W*/ ctx[15].sessHereEmpty + "";
@@ -20438,7 +20421,7 @@ function create_if_block_35(ctx) {
 		c() {
 			span = element("span");
 			t = text(t_value);
-			attr(span, "class", "muted svelte-sxknz1");
+			attr(span, "class", "muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, span, anchor);
@@ -20457,7 +20440,7 @@ function create_if_block_35(ctx) {
 	};
 }
 
-// (616:20) <SwipeRow on:open={ () => openSession(se) } on:delete={ () => deleteSession(se) }>
+// (615:20) <SwipeRow on:open={ () => openSession(se) } on:delete={ () => deleteSession(se) }>
 function create_default_slot_1(ctx) {
 	let span0;
 	let t0_value = /*se*/ ctx[416].rating + "";
@@ -20492,11 +20475,11 @@ function create_default_slot_1(ctx) {
 			small = element("small");
 			t4 = text(t4_value);
 			t5 = space();
-			attr(span0, "class", "dot svelte-sxknz1");
+			attr(span0, "class", "dot svelte-8bmt8i");
 			set_style(span0, "background", ratingBg(/*se*/ ctx[416].rating));
 			set_style(span0, "color", ratingFg(/*se*/ ctx[416].rating));
-			attr(small, "class", "svelte-sxknz1");
-			attr(span2, "class", "grow svelte-sxknz1");
+			attr(small, "class", "svelte-8bmt8i");
+			attr(span2, "class", "grow svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, span0, anchor);
@@ -20541,7 +20524,7 @@ function create_default_slot_1(ctx) {
 	};
 }
 
-// (615:16) {#each spotSessions as se (se.id)}
+// (614:16) {#each spotSessions as se (se.id)}
 function create_each_block_11(key_2, ctx) {
 	let first;
 	let swiperow;
@@ -20623,7 +20606,7 @@ function create_each_block_10(ctx) {
 		c() {
 			button = element("button");
 			t = text(t_value);
-			attr(button, "class", "chip svelte-sxknz1");
+			attr(button, "class", "chip svelte-8bmt8i");
 			toggle_class(button, "on", /*sf*/ ctx[9].sports.includes(/*sp*/ ctx[428]));
 		},
 		m(target, anchor) {
@@ -20678,10 +20661,10 @@ function create_if_block_33(ctx) {
 			attr(input, "maxlength", "20");
 			attr(input, "placeholder", input_placeholder_value = /*W*/ ctx[15].sportNameHint);
 			attr(input, "aria-label", input_aria_label_value = /*W*/ ctx[15].sportNameHint);
-			attr(input, "class", "svelte-sxknz1");
-			attr(button, "class", "btn primary small svelte-sxknz1");
+			attr(input, "class", "svelte-8bmt8i");
+			attr(button, "class", "btn primary small svelte-8bmt8i");
 			button.disabled = button_disabled_value = !/*otherName*/ ctx[59].trim();
-			attr(div, "class", "other-sport svelte-sxknz1");
+			attr(div, "class", "other-sport svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -20831,26 +20814,26 @@ function create_else_block_9(ctx) {
 			t21 = space();
 			small5 = element("small");
 			t22 = text(t22_value);
-			attr(small0, "class", "muted svelte-sxknz1");
-			attr(div0, "class", "dirs svelte-sxknz1");
-			attr(small1, "class", "svelte-sxknz1");
-			attr(small2, "class", "svelte-sxknz1");
-			attr(b, "class", "big2 svelte-sxknz1");
-			attr(span, "class", "grow svelte-sxknz1");
-			attr(small3, "class", "svelte-sxknz1");
-			attr(button0, "class", "round svelte-sxknz1");
+			attr(small0, "class", "muted svelte-8bmt8i");
+			attr(div0, "class", "dirs svelte-8bmt8i");
+			attr(small1, "class", "svelte-8bmt8i");
+			attr(small2, "class", "svelte-8bmt8i");
+			attr(b, "class", "big2 svelte-8bmt8i");
+			attr(span, "class", "grow svelte-8bmt8i");
+			attr(small3, "class", "svelte-8bmt8i");
+			attr(button0, "class", "round svelte-8bmt8i");
 			attr(button0, "aria-label", "Lower minimum");
-			attr(button1, "class", "round svelte-sxknz1");
+			attr(button1, "class", "round svelte-8bmt8i");
 			attr(button1, "aria-label", "Raise minimum");
-			attr(div1, "class", "stepper svelte-sxknz1");
-			attr(small4, "class", "svelte-sxknz1");
-			attr(button2, "class", "round svelte-sxknz1");
+			attr(div1, "class", "stepper svelte-8bmt8i");
+			attr(small4, "class", "svelte-8bmt8i");
+			attr(button2, "class", "round svelte-8bmt8i");
 			attr(button2, "aria-label", "Lower maximum");
-			attr(button3, "class", "round svelte-sxknz1");
+			attr(button3, "class", "round svelte-8bmt8i");
 			attr(button3, "aria-label", "Raise maximum");
-			attr(div2, "class", "stepper svelte-sxknz1");
-			attr(div3, "class", "row sep svelte-sxknz1");
-			attr(small5, "class", "muted svelte-sxknz1");
+			attr(div2, "class", "stepper svelte-8bmt8i");
+			attr(div3, "class", "row sep svelte-8bmt8i");
+			attr(small5, "class", "muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small0, anchor);
@@ -20967,7 +20950,7 @@ function create_if_block_32(ctx) {
 	return {
 		c() {
 			p = element("p");
-			attr(p, "class", "p muted svelte-sxknz1");
+			attr(p, "class", "p muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, p, anchor);
@@ -21004,9 +20987,9 @@ function create_each_block_9(ctx) {
 			span.textContent = "▲";
 			t1 = text(/*d*/ ctx[438]);
 			t2 = space();
-			attr(span, "class", "arrow svelte-sxknz1");
+			attr(span, "class", "arrow svelte-8bmt8i");
 			set_style(span, "transform", "rotate(" + (/*i*/ ctx[440] * 45 + 180) + "deg)");
-			attr(button, "class", "dir svelte-sxknz1");
+			attr(button, "class", "dir svelte-8bmt8i");
 			attr(button, "aria-pressed", button_aria_pressed_value = /*sf*/ ctx[9].dirs.includes(/*d*/ ctx[438]));
 			toggle_class(button, "on", /*sf*/ ctx[9].dirs.includes(/*d*/ ctx[438]));
 		},
@@ -21065,7 +21048,7 @@ function create_if_block_30(ctx) {
 		c() {
 			button = element("button");
 			span0 = element("span");
-			span0.innerHTML = `<i class="dot-s svelte-sxknz1"></i>`;
+			span0.innerHTML = `<i class="dot-s svelte-8bmt8i"></i>`;
 			span1 = element("span");
 			small = element("small");
 			t0 = text(t0_value);
@@ -21075,11 +21058,11 @@ function create_if_block_30(ctx) {
 			t3 = text(t3_value);
 			span2 = element("span");
 			span2.textContent = "›";
-			attr(span0, "class", "ico svelte-sxknz1");
-			attr(small, "class", "svelte-sxknz1");
-			attr(b, "class", "svelte-sxknz1");
-			attr(span1, "class", "grow svelte-sxknz1");
-			attr(button, "class", "card row link-card svelte-sxknz1");
+			attr(span0, "class", "ico svelte-8bmt8i");
+			attr(small, "class", "svelte-8bmt8i");
+			attr(b, "class", "svelte-8bmt8i");
+			attr(span1, "class", "grow svelte-8bmt8i");
+			attr(button, "class", "card row link-card svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -21122,7 +21105,7 @@ function create_if_block_28(ctx) {
 	return {
 		c() {
 			p = element("p");
-			attr(p, "class", "p muted svelte-sxknz1");
+			attr(p, "class", "p muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, p, anchor);
@@ -21177,12 +21160,12 @@ function create_if_block_27(ctx) {
 			t5 = space();
 			span3 = element("span");
 			span3.textContent = "›";
-			attr(span0, "class", "ico svelte-sxknz1");
-			attr(small, "class", "svelte-sxknz1");
-			attr(span2, "class", "grow svelte-sxknz1");
-			attr(span3, "class", "chev-r svelte-sxknz1");
+			attr(span0, "class", "ico svelte-8bmt8i");
+			attr(small, "class", "svelte-8bmt8i");
+			attr(span2, "class", "grow svelte-8bmt8i");
+			attr(span3, "class", "chev-r svelte-8bmt8i");
 			attr(span3, "aria-hidden", "true");
-			attr(button, "class", "opt svelte-sxknz1");
+			attr(button, "class", "opt svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -21265,12 +21248,12 @@ function create_if_block_26(ctx) {
 			t3 = space();
 			span3 = element("span");
 			span3.textContent = "›";
-			attr(span0, "class", "ico svelte-sxknz1");
-			attr(small, "class", "svelte-sxknz1");
-			attr(span2, "class", "grow svelte-sxknz1");
-			attr(span3, "class", "chev-r svelte-sxknz1");
+			attr(span0, "class", "ico svelte-8bmt8i");
+			attr(small, "class", "svelte-8bmt8i");
+			attr(span2, "class", "grow svelte-8bmt8i");
+			attr(span3, "class", "chev-r svelte-8bmt8i");
 			attr(span3, "aria-hidden", "true");
-			attr(button, "class", "opt svelte-sxknz1");
+			attr(button, "class", "opt svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -21347,9 +21330,9 @@ function create_if_block_25(ctx) {
 				each_blocks[i].c();
 			}
 
-			attr(small, "class", "lbl svelte-sxknz1");
-			attr(div0, "class", "opts svelte-sxknz1");
-			attr(div1, "class", "section svelte-sxknz1");
+			attr(small, "class", "lbl svelte-8bmt8i");
+			attr(div0, "class", "opts svelte-8bmt8i");
+			attr(div1, "class", "section svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div1, anchor);
@@ -21412,7 +21395,7 @@ function create_each_block_8(key_2, ctx) {
 		c() {
 			button = element("button");
 			span0 = element("span");
-			span0.innerHTML = `<i class="dot-s svelte-sxknz1"></i>`;
+			span0.innerHTML = `<i class="dot-s svelte-8bmt8i"></i>`;
 			t0 = space();
 			span2 = element("span");
 			span1 = element("span");
@@ -21423,12 +21406,12 @@ function create_each_block_8(key_2, ctx) {
 			span3 = element("span");
 			span3.textContent = "›";
 			t5 = space();
-			attr(span0, "class", "ico svelte-sxknz1");
-			attr(small, "class", "svelte-sxknz1");
-			attr(span2, "class", "grow svelte-sxknz1");
-			attr(span3, "class", "chev-r svelte-sxknz1");
+			attr(span0, "class", "ico svelte-8bmt8i");
+			attr(small, "class", "svelte-8bmt8i");
+			attr(span2, "class", "grow svelte-8bmt8i");
+			attr(span3, "class", "chev-r svelte-8bmt8i");
 			attr(span3, "aria-hidden", "true");
-			attr(button, "class", "opt svelte-sxknz1");
+			attr(button, "class", "opt svelte-8bmt8i");
 			this.first = button;
 		},
 		m(target, anchor) {
@@ -21473,7 +21456,7 @@ function create_if_block_24(ctx) {
 	return {
 		c() {
 			small = element("small");
-			attr(small, "class", "muted sl-note svelte-sxknz1");
+			attr(small, "class", "muted sl-note svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -21619,32 +21602,32 @@ function create_else_block_8(ctx) {
 			t17 = space();
 			a = element("a");
 			t18 = text(t18_value);
-			attr(b0, "class", "h3 svelte-sxknz1");
-			attr(p0, "class", "p muted svelte-sxknz1");
-			attr(button0, "class", "btn ghost svelte-sxknz1");
+			attr(b0, "class", "h3 svelte-8bmt8i");
+			attr(p0, "class", "p muted svelte-8bmt8i");
+			attr(button0, "class", "btn ghost svelte-8bmt8i");
 			attr(input, "type", "file");
 			attr(input, "accept", ".json,application/json");
 			input.hidden = true;
-			attr(input, "class", "svelte-sxknz1");
-			attr(label_1, "class", "btn ghost svelte-sxknz1");
-			attr(div0, "class", "btns svelte-sxknz1");
-			attr(div1, "class", "card beta-card svelte-sxknz1");
-			attr(b1, "class", "h3 svelte-sxknz1");
-			attr(p1, "class", "p svelte-sxknz1");
-			attr(div2, "class", "card svelte-sxknz1");
-			attr(b2, "class", "h3 svelte-sxknz1");
-			attr(div3, "class", "card steps svelte-sxknz1");
-			attr(b3, "class", "h3 svelte-sxknz1");
-			attr(button1, "class", "link danger svelte-sxknz1");
-			attr(div4, "class", "row data-links svelte-sxknz1");
-			attr(div5, "class", "card svelte-sxknz1");
-			attr(small, "class", "ver svelte-sxknz1");
-			attr(a, "class", "coffee svelte-sxknz1");
+			attr(input, "class", "svelte-8bmt8i");
+			attr(label_1, "class", "btn ghost svelte-8bmt8i");
+			attr(div0, "class", "btns svelte-8bmt8i");
+			attr(div1, "class", "card beta-card svelte-8bmt8i");
+			attr(b1, "class", "h3 svelte-8bmt8i");
+			attr(p1, "class", "p svelte-8bmt8i");
+			attr(div2, "class", "card svelte-8bmt8i");
+			attr(b2, "class", "h3 svelte-8bmt8i");
+			attr(div3, "class", "card steps svelte-8bmt8i");
+			attr(b3, "class", "h3 svelte-8bmt8i");
+			attr(button1, "class", "link danger svelte-8bmt8i");
+			attr(div4, "class", "row data-links svelte-8bmt8i");
+			attr(div5, "class", "card svelte-8bmt8i");
+			attr(small, "class", "ver svelte-8bmt8i");
+			attr(a, "class", "coffee svelte-8bmt8i");
 			attr(a, "href", FEEDBACK_URL);
 			attr(a, "target", "_blank");
 			attr(a, "rel", "noopener noreferrer");
-			attr(div6, "class", "sig svelte-sxknz1");
-			attr(div7, "class", "about svelte-sxknz1");
+			attr(div6, "class", "sig svelte-8bmt8i");
+			attr(div7, "class", "about svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div7, anchor);
@@ -21892,16 +21875,16 @@ function create_if_block_19(ctx) {
 			t8 = space();
 			if_block.c();
 			if_block_anchor = empty();
-			attr(b, "class", "svelte-sxknz1");
-			attr(small, "class", "muted svelte-sxknz1");
-			attr(div0, "class", "seg svelte-sxknz1");
-			attr(div1, "class", "chips svelte-sxknz1");
+			attr(b, "class", "svelte-8bmt8i");
+			attr(small, "class", "muted svelte-8bmt8i");
+			attr(div0, "class", "seg svelte-8bmt8i");
+			attr(div1, "class", "chips svelte-8bmt8i");
 			attr(input, "placeholder", input_placeholder_value = /*gearHint*/ ctx[123](/*gearSport*/ ctx[51], /*gearKind*/ ctx[52]));
-			attr(input, "class", "svelte-sxknz1");
-			attr(button, "class", "btn primary small svelte-sxknz1");
+			attr(input, "class", "svelte-8bmt8i");
+			attr(button, "class", "btn primary small svelte-8bmt8i");
 			button.disabled = button_disabled_value = !/*gearName*/ ctx[55].trim();
-			attr(div2, "class", "row svelte-sxknz1");
-			attr(div3, "class", "card svelte-sxknz1");
+			attr(div2, "class", "row svelte-8bmt8i");
+			attr(div3, "class", "card svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div3, anchor);
@@ -22167,7 +22150,7 @@ function create_if_block_9(ctx) {
 			t2 = text(t2_value);
 			t3 = space();
 			span1 = element("span");
-			span1.innerHTML = `<i class="svelte-sxknz1"></i>`;
+			span1.innerHTML = `<i class="svelte-8bmt8i"></i>`;
 			t4 = space();
 			button1 = element("button");
 			span2 = element("span");
@@ -22177,24 +22160,24 @@ function create_if_block_9(ctx) {
 			t6 = text(t6_value);
 			t7 = space();
 			span3 = element("span");
-			span3.innerHTML = `<i class="svelte-sxknz1"></i>`;
-			attr(b0, "class", "svelte-sxknz1");
-			attr(small0, "class", "svelte-sxknz1");
-			attr(span0, "class", "grow svelte-sxknz1");
-			attr(span1, "class", "switch svelte-sxknz1");
+			span3.innerHTML = `<i class="svelte-8bmt8i"></i>`;
+			attr(b0, "class", "svelte-8bmt8i");
+			attr(small0, "class", "svelte-8bmt8i");
+			attr(span0, "class", "grow svelte-8bmt8i");
+			attr(span1, "class", "switch svelte-8bmt8i");
 			toggle_class(span1, "on", /*S*/ ctx[17].mapSpots);
-			attr(button0, "class", "maptog svelte-sxknz1");
+			attr(button0, "class", "maptog svelte-8bmt8i");
 			attr(button0, "role", "switch");
 			attr(button0, "aria-checked", button0_aria_checked_value = /*S*/ ctx[17].mapSpots);
-			attr(b1, "class", "svelte-sxknz1");
-			attr(small1, "class", "svelte-sxknz1");
-			attr(span2, "class", "grow svelte-sxknz1");
-			attr(span3, "class", "switch svelte-sxknz1");
+			attr(b1, "class", "svelte-8bmt8i");
+			attr(small1, "class", "svelte-8bmt8i");
+			attr(span2, "class", "grow svelte-8bmt8i");
+			attr(span3, "class", "switch svelte-8bmt8i");
 			toggle_class(span3, "on", /*S*/ ctx[17].mapSessions);
-			attr(button1, "class", "maptog svelte-sxknz1");
+			attr(button1, "class", "maptog svelte-8bmt8i");
 			attr(button1, "role", "switch");
 			attr(button1, "aria-checked", button1_aria_checked_value = /*S*/ ctx[17].mapSessions);
-			attr(div, "class", "card map-toggles svelte-sxknz1");
+			attr(div, "class", "card map-toggles svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			if_block.m(target, anchor);
@@ -22287,7 +22270,7 @@ function create_if_block_22(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "muted svelte-sxknz1");
+			attr(small, "class", "muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -22322,11 +22305,11 @@ function create_each_block_7(ctx) {
 			span1 = element("span");
 			b = element("b");
 			small = element("small");
-			attr(span0, "class", "n svelte-sxknz1");
-			attr(b, "class", "svelte-sxknz1");
-			attr(small, "class", "svelte-sxknz1");
-			attr(span1, "class", "grow svelte-sxknz1");
-			attr(div, "class", "step svelte-sxknz1");
+			attr(span0, "class", "n svelte-8bmt8i");
+			attr(b, "class", "svelte-8bmt8i");
+			attr(small, "class", "svelte-8bmt8i");
+			attr(span1, "class", "grow svelte-8bmt8i");
+			attr(div, "class", "step svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -22355,7 +22338,7 @@ function create_if_block_21(ctx) {
 	return {
 		c() {
 			p = element("p");
-			attr(p, "class", "p muted svelte-sxknz1");
+			attr(p, "class", "p muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, p, anchor);
@@ -22425,7 +22408,7 @@ function create_each_block_5(ctx) {
 		c() {
 			button = element("button");
 			t = text(t_value);
-			attr(button, "class", "svelte-sxknz1");
+			attr(button, "class", "svelte-8bmt8i");
 			toggle_class(button, "on", /*gearSport*/ ctx[51] === /*sp*/ ctx[428]);
 		},
 		m(target, anchor) {
@@ -22472,7 +22455,7 @@ function create_each_block_4(ctx) {
 		c() {
 			button = element("button");
 			t = text(t_value);
-			attr(button, "class", "chip svelte-sxknz1");
+			attr(button, "class", "chip svelte-8bmt8i");
 			toggle_class(button, "on", /*gearKind*/ ctx[52] === /*k*/ ctx[425].kind);
 		},
 		m(target, anchor) {
@@ -22560,7 +22543,7 @@ function create_if_block_20(ctx) {
 	return {
 		c() {
 			div = element("div");
-			attr(div, "class", "empty svelte-sxknz1");
+			attr(div, "class", "empty svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -22623,11 +22606,11 @@ function create_each_block_3(key_2, ctx) {
 			button = element("button");
 			t5 = text(t5_value);
 			t6 = space();
-			attr(span0, "class", "kind svelte-sxknz1");
-			attr(small, "class", "svelte-sxknz1");
-			attr(span2, "class", "grow svelte-sxknz1");
-			attr(button, "class", "link danger svelte-sxknz1");
-			attr(div, "class", "item static svelte-sxknz1");
+			attr(span0, "class", "kind svelte-8bmt8i");
+			attr(small, "class", "svelte-8bmt8i");
+			attr(span2, "class", "grow svelte-8bmt8i");
+			attr(button, "class", "link danger svelte-8bmt8i");
+			attr(div, "class", "item static svelte-8bmt8i");
 			this.first = div;
 		},
 		m(target, anchor) {
@@ -22714,11 +22697,11 @@ function create_each_block_2(key_2, ctx) {
 			}
 
 			t3 = space();
-			attr(b, "class", "grow svelte-sxknz1");
-			attr(small, "class", "svelte-sxknz1");
-			attr(div0, "class", "row svelte-sxknz1");
-			attr(div1, "class", "list svelte-sxknz1");
-			attr(div2, "class", "section svelte-sxknz1");
+			attr(b, "class", "grow svelte-8bmt8i");
+			attr(small, "class", "svelte-8bmt8i");
+			attr(div0, "class", "row svelte-8bmt8i");
+			attr(div1, "class", "list svelte-8bmt8i");
+			attr(div2, "class", "section svelte-8bmt8i");
 			this.first = div2;
 		},
 		m(target, anchor) {
@@ -22800,11 +22783,11 @@ function create_else_block_5(ctx) {
 			t3 = space();
 			if_block.c();
 			if_block_anchor = empty();
-			attr(button0, "class", "svelte-sxknz1");
+			attr(button0, "class", "svelte-8bmt8i");
 			toggle_class(button0, "on", /*sessView*/ ctx[37] === 'list');
-			attr(button1, "class", "svelte-sxknz1");
+			attr(button1, "class", "svelte-8bmt8i");
 			toggle_class(button1, "on", /*sessView*/ ctx[37] === 'cal');
-			attr(div, "class", "seg svelte-sxknz1");
+			attr(div, "class", "seg svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -22897,7 +22880,7 @@ function create_if_block_17(ctx) {
 	return {
 		c() {
 			div = element("div");
-			attr(div, "class", "empty svelte-sxknz1");
+			attr(div, "class", "empty svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -22991,8 +22974,8 @@ function create_if_block_18(ctx) {
 			t0 = space();
 			small = element("small");
 			t1 = text(t1_value);
-			attr(div, "class", "list svelte-sxknz1");
-			attr(small, "class", "muted svelte-sxknz1");
+			attr(div, "class", "list svelte-8bmt8i");
+			attr(small, "class", "muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -23088,11 +23071,11 @@ function create_default_slot(ctx) {
 			t5 = text(" · ");
 			t6 = text(t6_value);
 			t7 = space();
-			attr(span0, "class", "dot svelte-sxknz1");
+			attr(span0, "class", "dot svelte-8bmt8i");
 			set_style(span0, "background", ratingBg(/*se*/ ctx[416].rating));
 			set_style(span0, "color", ratingFg(/*se*/ ctx[416].rating));
-			attr(small, "class", "svelte-sxknz1");
-			attr(span2, "class", "grow svelte-sxknz1");
+			attr(small, "class", "svelte-8bmt8i");
+			attr(span2, "class", "grow svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, span0, anchor);
@@ -23258,19 +23241,19 @@ function create_else_block_2(ctx) {
 			attr(button0, "aria-pressed", button0_aria_pressed_value = /*S*/ ctx[17].spotView === 'list');
 			attr(button0, "aria-label", button0_aria_label_value = /*W*/ ctx[15].viewList);
 			attr(button0, "title", button0_title_value = /*W*/ ctx[15].viewList);
-			attr(button0, "class", "svelte-sxknz1");
+			attr(button0, "class", "svelte-8bmt8i");
 			toggle_class(button0, "on", /*S*/ ctx[17].spotView === 'list');
 			attr(button1, "aria-pressed", button1_aria_pressed_value = /*S*/ ctx[17].spotView !== 'list');
 			attr(button1, "aria-label", button1_aria_label_value = /*W*/ ctx[15].viewTiles);
 			attr(button1, "title", button1_title_value = /*W*/ ctx[15].viewTiles);
-			attr(button1, "class", "svelte-sxknz1");
+			attr(button1, "class", "svelte-8bmt8i");
 			toggle_class(button1, "on", /*S*/ ctx[17].spotView !== 'list');
-			attr(div0, "class", "viewtog svelte-sxknz1");
+			attr(div0, "class", "viewtog svelte-8bmt8i");
 			attr(div0, "role", "group");
 			attr(div0, "aria-label", "How to show your spots");
-			attr(div1, "class", "tiles svelte-sxknz1");
+			attr(div1, "class", "tiles svelte-8bmt8i");
 			toggle_class(div1, "list", /*S*/ ctx[17].spotView === 'list');
-			attr(small, "class", "muted svelte-sxknz1");
+			attr(small, "class", "muted svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div0, anchor);
@@ -23371,7 +23354,7 @@ function create_if_block_10(ctx) {
 	return {
 		c() {
 			div = element("div");
-			attr(div, "class", "empty svelte-sxknz1");
+			attr(div, "class", "empty svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -23399,8 +23382,8 @@ function create_else_block_4(ctx) {
 			span = element("span");
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "svelte-sxknz1");
-			attr(span, "class", "now svelte-sxknz1");
+			attr(small, "class", "svelte-8bmt8i");
+			attr(span, "class", "now svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, span, anchor);
@@ -23460,13 +23443,13 @@ function create_if_block_13(ctx) {
 			small = element("small");
 			t5 = text(t5_value);
 			if (if_block1) if_block1.c();
-			attr(span0, "class", "sw svelte-sxknz1");
+			attr(span0, "class", "sw svelte-8bmt8i");
 			set_style(span0, "background", windColor(/*nowOf*/ ctx[125](/*s*/ ctx[413].id, /*nowBySpot*/ ctx[12])?.wind?.wind ?? null));
-			attr(b, "class", "svelte-sxknz1");
-			attr(span1, "class", "now-t svelte-sxknz1");
-			attr(span2, "class", "now svelte-sxknz1");
-			attr(small, "class", "svelte-sxknz1");
-			attr(span3, "class", "now-sub svelte-sxknz1");
+			attr(b, "class", "svelte-8bmt8i");
+			attr(span1, "class", "now-t svelte-8bmt8i");
+			attr(span2, "class", "now svelte-8bmt8i");
+			attr(small, "class", "svelte-8bmt8i");
+			attr(span3, "class", "now-sub svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, span2, anchor);
@@ -23565,9 +23548,9 @@ function create_if_block_15(ctx) {
 			attr(svg, "viewBox", "0 0 18 18");
 			attr(svg, "aria-hidden", "true");
 			set_style(svg, "transform", "rotate(" + ((/*nowOf*/ ctx[125](/*s*/ ctx[413].id, /*nowBySpot*/ ctx[12])?.wind?.dir ?? 0) + 180) + "deg)");
-			attr(svg, "class", "svelte-sxknz1");
-			attr(small, "class", "svelte-sxknz1");
-			attr(span, "class", "wdir svelte-sxknz1");
+			attr(svg, "class", "svelte-8bmt8i");
+			attr(small, "class", "svelte-8bmt8i");
+			attr(span, "class", "wdir svelte-8bmt8i");
 			attr(span, "title", span_title_value = "Wind from " + dirName(/*nowOf*/ ctx[125](/*s*/ ctx[413].id, /*nowBySpot*/ ctx[12])?.wind?.dir ?? null));
 		},
 		m(target, anchor) {
@@ -23611,7 +23594,7 @@ function create_if_block_14(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "svelte-sxknz1");
+			attr(small, "class", "svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -23641,7 +23624,7 @@ function create_else_block_3(ctx) {
 		c() {
 			span = element("span");
 			t = text(t_value);
-			attr(span, "class", "tag ghost svelte-sxknz1");
+			attr(span, "class", "tag ghost svelte-8bmt8i");
 			attr(span, "title", span_title_value = /*guessNote*/ ctx[73](/*guessOf*/ ctx[74](/*s*/ ctx[413])));
 		},
 		m(target, anchor) {
@@ -23681,7 +23664,7 @@ function create_if_block_11(ctx) {
 			t1 = space();
 			if (if_block) if_block.c();
 			if_block_anchor = empty();
-			attr(span, "class", "tag svelte-sxknz1");
+			attr(span, "class", "tag svelte-8bmt8i");
 			set_style(span, "background", /*guessCol*/ ctx[107](/*bestOf*/ ctx[19](/*s*/ ctx[413])?.level ?? 0)[0]);
 			set_style(span, "color", /*guessCol*/ ctx[107](/*bestOf*/ ctx[19](/*s*/ ctx[413])?.level ?? 0)[1]);
 			attr(span, "title", span_title_value = /*guessNote*/ ctx[73](/*bestOf*/ ctx[19](/*s*/ ctx[413])));
@@ -23749,7 +23732,7 @@ function create_if_block_12(ctx) {
 		c() {
 			small = element("small");
 			t = text(t_value);
-			attr(small, "class", "t-when svelte-sxknz1");
+			attr(small, "class", "t-when svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -23820,9 +23803,9 @@ function create_each_block(key_2, ctx) {
 			span1 = element("span");
 			if_block1.c();
 			t3 = space();
-			attr(span0, "class", "t-name svelte-sxknz1");
-			attr(span1, "class", "t-tag svelte-sxknz1");
-			attr(button, "class", "tile svelte-sxknz1");
+			attr(span0, "class", "t-name svelte-8bmt8i");
+			attr(span1, "class", "t-tag svelte-8bmt8i");
+			attr(button, "class", "tile svelte-8bmt8i");
 			this.first = button;
 		},
 		m(target, anchor) {
@@ -23890,7 +23873,7 @@ function create_if_block_8(ctx) {
 	return {
 		c() {
 			small = element("small");
-			attr(small, "class", "beta-note svelte-sxknz1");
+			attr(small, "class", "beta-note svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, small, anchor);
@@ -23920,10 +23903,10 @@ function create_if_block_6(ctx) {
 			span = element("span");
 			button = element("button");
 			button.textContent = "✕";
-			attr(span, "class", "grow svelte-sxknz1");
-			attr(button, "class", "mclose svelte-sxknz1");
+			attr(span, "class", "grow svelte-8bmt8i");
+			attr(button, "class", "mclose svelte-8bmt8i");
 			attr(button, "aria-label", "Close");
-			attr(div, "class", "topbar svelte-sxknz1");
+			attr(div, "class", "topbar svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -23967,11 +23950,11 @@ function create_if_block_4(ctx) {
 			create_component(brand.$$.fragment);
 			button = element("button");
 			button.textContent = "✕";
-			attr(b, "class", "title svelte-sxknz1");
-			attr(span, "class", "grow svelte-sxknz1");
-			attr(button, "class", "mclose svelte-sxknz1");
+			attr(b, "class", "title svelte-8bmt8i");
+			attr(span, "class", "grow svelte-8bmt8i");
+			attr(button, "class", "mclose svelte-8bmt8i");
 			attr(button, "aria-label", "Close");
-			attr(div, "class", "topbar svelte-sxknz1");
+			attr(div, "class", "topbar svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, div, anchor);
@@ -24034,9 +24017,9 @@ function create_else_block(ctx) {
 			t1 = space();
 			button = element("button");
 			t2 = text(t2_value);
-			attr(b, "class", "svelte-sxknz1");
-			attr(p, "class", "p muted svelte-sxknz1");
-			attr(button, "class", "btn primary wide svelte-sxknz1");
+			attr(b, "class", "svelte-8bmt8i");
+			attr(p, "class", "p muted svelte-8bmt8i");
+			attr(button, "class", "btn primary wide svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, b, anchor);
@@ -24097,9 +24080,9 @@ function create_if_block_3(ctx) {
 			t1 = space();
 			button = element("button");
 			t2 = text(t2_value);
-			attr(b, "class", "svelte-sxknz1");
-			attr(p, "class", "p muted svelte-sxknz1");
-			attr(button, "class", "btn primary wide svelte-sxknz1");
+			attr(b, "class", "svelte-8bmt8i");
+			attr(p, "class", "p muted svelte-8bmt8i");
+			attr(button, "class", "btn primary wide svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, b, anchor);
@@ -24134,7 +24117,7 @@ function create_if_block_3(ctx) {
 	};
 }
 
-// (801:0) {#if toast}
+// (800:0) {#if toast}
 function create_if_block(ctx) {
 	let div;
 	let span;
@@ -24150,8 +24133,8 @@ function create_if_block(ctx) {
 			t0 = text(t0_value);
 			t1 = space();
 			if (if_block) if_block.c();
-			attr(span, "class", "grow svelte-sxknz1");
-			attr(div, "class", "toast svelte-sxknz1");
+			attr(span, "class", "grow svelte-8bmt8i");
+			attr(div, "class", "toast svelte-8bmt8i");
 			attr(div, "role", "status");
 		},
 		m(target, anchor) {
@@ -24187,7 +24170,7 @@ function create_if_block(ctx) {
 	};
 }
 
-// (804:8) {#if toast.undo}
+// (803:8) {#if toast.undo}
 function create_if_block_1(ctx) {
 	let button;
 	let t_value = (/*toast*/ ctx[56].label || /*W*/ ctx[15].undo) + "";
@@ -24199,7 +24182,7 @@ function create_if_block_1(ctx) {
 		c() {
 			button = element("button");
 			t = text(t_value);
-			attr(button, "class", "undo svelte-sxknz1");
+			attr(button, "class", "undo svelte-8bmt8i");
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -24265,14 +24248,14 @@ function create_fragment(ctx) {
 			t3 = space();
 			if (if_block2) if_block2.c();
 			attr(div0, "class", "plugin__mobile-header");
-			attr(div1, "class", "body svelte-sxknz1");
-			attr(div2, "class", "mwrap svelte-sxknz1");
+			attr(div1, "class", "body svelte-8bmt8i");
+			attr(div2, "class", "mwrap svelte-8bmt8i");
 			toggle_class(div2, "on", /*barMode*/ ctx[14]);
 			toggle_class(div2, "open", /*modalOpen*/ ctx[33]);
 			toggle_class(div2, "unitspage", /*barMode*/ ctx[14] && /*unitsOpen*/ ctx[34]);
 			toggle_class(div2, "kb", /*kbRoom*/ ctx[35]);
 			attr(section, "aria-label", "Spotlog");
-			attr(section, "class", "plugin__content spotlog svelte-sxknz1");
+			attr(section, "class", "plugin__content spotlog svelte-8bmt8i");
 			toggle_class(section, "m", /*isMobile*/ ctx[102]);
 			toggle_class(section, "bar", /*barMode*/ ctx[14]);
 			toggle_class(section, "gatebar", /*barMode*/ ctx[14] && !!/*gate*/ ctx[20]);
@@ -27758,7 +27741,15 @@ function instance($$self, $$props, $$invalidate) {
 	}
 
 	const click_handler_74 = () => f && $$invalidate(10, f = { ...f, spotId: null });
-	const click_handler_75 = sp => f && $$invalidate(10, f = { ...f, sport: sp });
+
+	const click_handler_75 = sp => {
+		$$invalidate(58, otherFor = null);
+
+		if (f) {
+			$$invalidate(10, f = { ...f, sport: sp });
+		}
+	};
+
 	const click_handler_76 = () => openOther('log');
 
 	function input_input_handler_3() {
