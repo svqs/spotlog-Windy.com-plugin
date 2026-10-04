@@ -176,7 +176,7 @@ with sync_playwright() as p:
     pg.click('text=Save session')
     pg.wait_for_selector('text=Sessions here')
     se = stored(pg)['sessions'][0]
-    assert se['rating'] == 5 and se['track'] and se['gearIds'] and se['felt'] is None and se['gusts'] is None and se['water'] is None, se
+    assert se['rating'] == 5 and se['track'] and se['gearIds'] and 'felt' not in se, se
     sn = next(x for x in stored(pg)['snapshots'] if x['id'] == se['snapshotId'])
     assert sn['series'].get('tide', {}).get('highs'), 'tides saved with the day'
     ok('session saved with rating, gear and track (no felt wind, gusts or water); the tide is saved with the forecast')
@@ -462,15 +462,16 @@ with sync_playwright() as p:
     assert any(v for v in row['data'].get('deleted', {}).values())
     ok('a delete syncs and is remembered')
 
-    # --- Premium gate: logged out / not Premium
+    # --- account gate: everyone logged in to Windy gets in (no Premium needed for now); logged out sees the login
     pg.evaluate("W.store.set('subscription', null)")
-    pg.wait_for_selector('b:has-text("is part of Windy Premium")')
+    pg.wait_for_timeout(300)
+    assert pg.locator('b:has-text("is part of Windy Premium")').count() == 0 and pg.locator('.act:has-text("Save forecast")').count() >= 1
     pg.evaluate("W.store.set('user', null)")
     pg.wait_for_selector('b:has-text("Log in to Windy to use")')
     shot('11c-gate')
     pg.evaluate("W.store.set('user', { id: 12345, username: 'sophia', email: 'sophia@example.com' }); W.store.set('subscription', 'premium')")
     pg.wait_for_selector('.act:has-text("Save forecast")')
-    ok('only logged-in Premium users get in; the diary comes back after logging in again')
+    ok('logged-in Windy users get in without Premium; logged out sees the login; the diary comes back after logging in again')
 
     # --- a spot where you don't know the wind yet (click on the empty map)
     pg.click('.tabs button:has-text("Spots")')
@@ -576,7 +577,7 @@ with sync_playwright() as p:
     tb = pg.evaluate("(() => { const t = document.querySelector('.mwrap.open .topbar').getBoundingClientRect(); const w = document.querySelector('.mwrap.open').getBoundingClientRect(); return t.top - w.top; })()")
     assert abs(tb) < 2, tb
     shot('14e-phone-log-scrolled')
-    ok('phone log: date/start/end on one line, header stays, no sideways scroll, no felt ruler any more')
+    ok('phone log: date/start/end on one line, header stays, no sideways scroll, only the inputs that teach')
     # the ✕ in the header closes the panel
     pg.click('.mwrap.open .topbar .mclose')
     pg.wait_for_timeout(250)
@@ -689,7 +690,7 @@ print('✓ no requests to Google Fonts (fonts are bundled)')
 print(json.dumps({
     'steps': len(steps),
     'spots': [(s['name'], s['dirs'], s['min'], s['max'], s.get('windUnknown')) for s in data['spots']],
-    'sessions': [{k: s.get(k) for k in ('spotId', 'rating', 'felt', 'gusts', 'water', 'start', 'end', 'gearIds')} | {'track_km': s['track'] and round(s['track']['distanceKm'], 1)} for s in data['sessions']],
+    'sessions': [{k: s.get(k) for k in ('spotId', 'rating', 'sport', 'start', 'end', 'gearIds')} | {'track_km': s['track'] and round(s['track']['distanceKm'], 1)} for s in data['sessions']],
     'snapshots': len(data['snapshots']),
     'gear': [g['name'] for g in data['gear']],
     'settings': data['settings'],

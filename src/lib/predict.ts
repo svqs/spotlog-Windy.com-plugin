@@ -26,6 +26,7 @@ export { rate, rateBest, type Result, type SportModel } from './learn/model';
 export { bestIn, bestToday, nextDays, type DayBest } from './learn/windows';
 export { bestTide, tideAt, type TideHint } from './learn/tide';
 export { exampleOf, examplesFor, outingTimes, sessionTide, type Example } from './learn/examples';
+export { modelSkill, type ModelSkill } from './learn/skill';
 
 /** The model a spot learns and recommends from: ECMWF, or the one fallback chosen once where ECMWF has no forecast */
 export const recommendationModel = (spot: Spot): string => spot.recommendationModel || 'ecmwf';

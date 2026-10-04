@@ -9,7 +9,7 @@ something that has broken before.
 
 ## 2. Data safety
 - [ ] New stored fields are in `types.ts` **and** cleaned in `storage.ts → normalise()` with a safe default.
-- [ ] Old diaries still load (scenario §2 passes). Legacy fields are still read where they're needed.
+- [ ] Old diaries still load (scenario §2 passes).
 - [ ] Deletes go through tombstones; undo/upload uses `revived`. Nothing wipes the diary on its own.
 - [ ] Values are stored in SI, and converted only for display.
 

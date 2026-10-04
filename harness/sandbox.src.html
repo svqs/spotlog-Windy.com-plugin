@@ -117,7 +117,7 @@
 { // sandbox scope: keeps these names apart from the plugin bundle
 
 const SB_KEY = 'windy-plugin-spotlog:v1:u12345'; // the mock Windy user's diary
-const SEED = 'spotlog-sandbox-seed-v6';
+const SEED = 'spotlog-sandbox-seed-v7';
 const NAME = 'windy-plugin-spotlog';
 const { project, unproject, singleclick, store, PLACES } = W.__mock;
 const mapEl = document.getElementById('map');
@@ -179,7 +179,7 @@ function exampleData() {
   return {
     version: 1,
     spots: [
-      { id: 'ex-valde', name: 'Valdevaqueros', place: 'Tarifa', lat: 36.068, lon: -5.697, sports: ['Windsurf'], dirs: ['E', 'SE'], min: 8, max: 13, windowConfirmed: true, created: t(40, 9) },
+      { id: 'ex-valde', name: 'Valdevaqueros', place: 'Tarifa', lat: 36.068, lon: -5.697, sports: ['Windsurf'], dirs: ['E', 'SE'], min: 8, max: 13, created: t(40, 9) },
       { id: 'ex-bolonia', name: 'Bolonia', place: 'Tarifa', lat: 36.089, lon: -5.772, sports: ['Surf', 'Windsurf'], dirs: [], min: 6, max: 12, windUnknown: true, created: t(30, 9) },
     ],
     snapshots: [
@@ -198,13 +198,13 @@ function exampleData() {
       { id: 'ex-g5', name: "9'2 longboard", kind: 'Board', sport: 'Surf' },
     ],
     sessions: [
-      { id: 'ex-x1', spotId: 'ex-valde', snapshotId: 'ex-s1', date: t(1, 14.5), rating: 4, felt: null, gusts: null, water: null, gearIds: ['ex-g1', 'ex-g2'], gear: '', start: '14:30', end: '17:05', notes: 'Gusty inside until 3 pm, then clean.', track },
-      { id: 'ex-x2', spotId: 'ex-valde', snapshotId: 'ex-s2', date: t(4, 13), rating: 5, felt: null, gusts: null, water: null, gearIds: ['ex-g1', 'ex-g3'], gear: '', start: '13:00', end: '16:00', notes: 'Clean and steady, mid tide.' },
-      { id: 'ex-x3', spotId: 'ex-valde', snapshotId: 'ex-s3', date: t(9, 14), rating: 2, felt: null, gusts: null, water: null, gearIds: ['ex-g3'], gear: '', start: '14:00', end: '15:00', notes: 'Too gusty, went in early.' },
-      { id: 'ex-x4', spotId: 'ex-valde', snapshotId: 'ex-s4', date: t(15, 15), rating: 3, felt: 8, gusts: 'Steady', water: 'Flat', gearIds: ['ex-g2'], gear: '', start: '15:00', end: '17:30', notes: 'A bit light but fun.' },
-      { id: 'ex-x5', spotId: 'ex-bolonia', snapshotId: 'ex-s5', date: t(6, 10), rating: 4, felt: null, gusts: null, water: null, gearIds: ['ex-g4'], gear: 'Longboard 9\'2', start: '10:00', end: '12:00', notes: 'Clean waist-high sets.' },
-      { id: 'ex-x7', spotId: 'ex-bolonia', snapshotId: 'ex-s6', date: t(12, 9), rating: 5, felt: null, gusts: null, water: null, gearIds: ['ex-g4'], gear: '', start: '09:00', end: '11:30', notes: 'Best surf this month, offshore breeze.' },
-      { id: 'ex-x6', spotId: null, snapshotId: null, date: t(22, 12), rating: 1, felt: null, gusts: null, water: 'Flat', gearIds: [], gear: '', start: '', end: '', notes: 'Drove to the coast, nothing. Add the spot later.' },
+      { id: 'ex-x1', spotId: 'ex-valde', snapshotId: 'ex-s1', date: t(1, 14.5), rating: 4, gearIds: ['ex-g1', 'ex-g2'], gear: '', start: '14:30', end: '17:05', notes: 'Gusty inside until 3 pm, then clean.', track },
+      { id: 'ex-x2', spotId: 'ex-valde', snapshotId: 'ex-s2', date: t(4, 13), rating: 5, gearIds: ['ex-g1', 'ex-g3'], gear: '', start: '13:00', end: '16:00', notes: 'Clean and steady, mid tide.' },
+      { id: 'ex-x3', spotId: 'ex-valde', snapshotId: 'ex-s3', date: t(9, 14), rating: 2, gearIds: ['ex-g3'], gear: '', start: '14:00', end: '15:00', notes: 'Too gusty, went in early.' },
+      { id: 'ex-x4', spotId: 'ex-valde', snapshotId: 'ex-s4', date: t(15, 15), rating: 3, gearIds: ['ex-g2'], gear: '', start: '15:00', end: '17:30', notes: 'A bit light but fun.' },
+      { id: 'ex-x5', spotId: 'ex-bolonia', snapshotId: 'ex-s5', date: t(6, 10), rating: 4, gearIds: ['ex-g4'], gear: 'Longboard 9\'2', start: '10:00', end: '12:00', notes: 'Clean waist-high sets.' },
+      { id: 'ex-x7', spotId: 'ex-bolonia', snapshotId: 'ex-s6', date: t(12, 9), rating: 5, gearIds: ['ex-g4'], gear: '', start: '09:00', end: '11:30', notes: 'Best surf this month, offshore breeze.' },
+      { id: 'ex-x6', spotId: null, snapshotId: null, date: t(22, 12), rating: 1, gearIds: [], gear: '', start: '', end: '', notes: 'Drove to the coast, nothing. Add the spot later.' },
     ],
     settings: { wind: 'ms', height: 'm', temp: 'C', allModels: true, layers: ['temp', 'waves', 'swell1', 'wavesPeriod', 'wavesPower'] },
   };

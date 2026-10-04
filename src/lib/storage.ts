@@ -79,8 +79,6 @@ const cleanSpot = (s: Any) => {
         dirs: ids(s.dirs).filter(d => DIR8.includes(d)),
         min: numOr(s.min, 6), max: numOr(s.max, 12), windUnknown: !!s.windUnknown, created: numOr(s.created, Date.now()),
         ...(isObj(s.ranges) ? { ranges: cleanRanges(s.ranges) } : {}), ...(s.startOwn === true ? { startOwn: true } : {}),
-        // the wind window counts as yours only once you changed or confirmed it (older spots: not yet)
-        windowConfirmed: s.windowConfirmed === true,
         ...(typeof s.recommendationModel === 'string' && /^[A-Za-z0-9]{2,30}$/.test(s.recommendationModel) ? { recommendationModel: s.recommendationModel } : {}),
     };
 };
@@ -99,8 +97,7 @@ const cleanTrack = (t: Any) => {
 const cleanSession = (s: Any) => ({
     id: s.id, spotId: typeof s.spotId === 'string' ? s.spotId : null, lat: lat(s.lat) ?? undefined, lon: lon(s.lon) ?? undefined,
     snapshotId: typeof s.snapshotId === 'string' ? s.snapshotId : null, date: numOr(s.date, Date.now()),
-    rating: Math.max(1, Math.min(5, Math.round(numOr(s.rating, 3) as number))), felt: numOr(s.felt, null),
-    gusts: str(s.gusts, 30) || null, water: str(s.water, 30) || null,
+    rating: Math.max(1, Math.min(5, Math.round(numOr(s.rating, 3) as number))), 
     sport: str(s.sport, 20) || null, ...(s.checked === true ? { checked: true } : {}),
     tide: ['Low', 'Mid', 'High'].includes(s.tide) ? s.tide : null, tideMove: ['Rising', 'Falling'].includes(s.tideMove) ? s.tideMove : null, gearIds: ids(s.gearIds), gear: str(s.gear, 300),
     start: /^\d\d:\d\d$/.test(s.start) ? s.start : '', end: /^\d\d:\d\d$/.test(s.end) ? s.end : '', notes: str(s.notes, 5000),

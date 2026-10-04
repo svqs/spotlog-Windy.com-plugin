@@ -16,7 +16,7 @@ export interface Similar {
     score: number | null;
     /** the highest tag the evidence allows: 0 none, 3 good, 4 great, 5 epic */
     cap: number;
-    /** learned from similar outings, or only from your confirmed ranges */
+    /** learned from similar outings, or only from your own ranges / wind window */
     learned: boolean;
     /** similar local outings, their effective number, and the nearest one's distance */
     support: number;
@@ -30,7 +30,7 @@ export const cutoff = (score: number | null): number => (score === null ? 0 : sc
 
 interface Neighbour { e: Example; d: number; w: number; local: boolean }
 
-/** The closest examples, weighted: closer counts more; one day counts at most once; spots next door count a little */
+/** The closest examples, weighted: closer counts more; spots next door count a little (and one day at most `dayCap`, when set) */
 function neighbours(sport: string, x: Features, local: Example[], nearby: Example[]): Neighbour[] {
     const found = [...local.map(e => ({ e, local: true })), ...nearby.map(e => ({ e, local: false }))]
         .map(n => ({ ...n, d2: distance2(sport, x, n.e.x) }))
@@ -45,9 +45,11 @@ function neighbours(sport: string, x: Features, local: Example[], nearby: Exampl
         const sum = list.reduce((a, n) => a + n.w, 0);
         if (sum > cap) {list.forEach(n => (n.w *= cap / sum));}
     };
-    const days = new Map<string, Neighbour[]>();
-    found.forEach(n => { const k = `${n.e.spotId}|${n.e.day}`; days.set(k, [...(days.get(k) || []), n]); });
-    days.forEach(list => scaleDown(list, SIMILAR.dayCap));
+    if (SIMILAR.dayCap !== null) {
+        const days = new Map<string, Neighbour[]>();
+        found.forEach(n => { const k = `${n.e.spotId}|${n.e.day}`; days.set(k, [...(days.get(k) || []), n]); });
+        days.forEach(list => scaleDown(list, SIMILAR.dayCap as number));
+    }
     scaleDown(found.filter(n => !n.local), SIMILAR.nearbyCap);
     return found;
 }
@@ -63,14 +65,13 @@ export function similar(sport: string, x: Features, local: Example[], nearby: Ex
 
     // the evidence: actual outings at this spot only (not spots next door, not "didn't go" days)
     const outs = ns.filter(n => n.local && n.e.kind === 'outing');
-    // effective support counts days, not logs: one day logged five times is one piece of evidence
-    const perDay = [...outs.reduce((m, n) => m.set(n.e.day, (m.get(n.e.day) || 0) + n.w), new Map<string, number>()).values()];
-    const ws = perDay.reduce((a, w) => a + w, 0);
-    const nEff = ws ? ws ** 2 / perDay.reduce((a, w) => a + w ** 2, 0) : 0;
+    // effective support: each logged outing is its own piece of evidence (closer ones weigh more)
+    const ws = outs.reduce((a, n) => a + n.w, 0);
+    const nEff = ws ? ws ** 2 / outs.reduce((a, n) => a + n.w ** 2, 0) : 0;
     const nearest = outs.length ? Math.min(...outs.map(n => n.d)) : null;
     const top = outs.filter(n => n.e.rating >= 4).length;
     const learned = nEff >= GATES.goodSupport && outs.some(n => n.e.rating >= 3) && (nearest ?? Infinity) <= SIMILAR.closeDistance;
-    const fromYou = prior.confirmed && pw > 0;
+    const fromYou = pw > 0;
     const poorOnly = outs.length > 0 && outs.every(n => n.e.rating <= 2);
     let cap = poorOnly ? 0 : learned ? 5 : fromYou ? 3 : 0;
     if (top < GATES.greatTop) {cap = Math.min(cap, 3);}

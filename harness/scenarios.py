@@ -123,18 +123,11 @@ with sync_playwright() as p:
     pg.wait_for_selector('.tile')
     note(pg.locator('.welcome').count() == 0, 'old diary: no welcome (has data)')
     note(pg.locator('.tile').count() == 3, f'spot without coordinates is skipped ({pg.locator(".tile").count()} tiles)')
-    # what old sessions logged by hand (felt wind, gusts, water) survives opening and saving them again
-    pg.click('.tabs button:has-text("Sessions")')
-    # the list is newest first; the broken session (no valid date) was given today's date, so it comes first
-    order = ['bad1'] + [x['id'] for x in sorted((x for x in d['sessions'] if isinstance(x.get('date'), (int, float))), key=lambda x: -x['date'])]
-    idx = next(i for i, k in enumerate(order) if next(x for x in d['sessions'] if x['id'] == k).get('felt') is not None)
-    sid = order[idx]
-    pg.click(f'.sw .front >> nth={idx}'); pg.wait_for_selector('text=Save changes')
-    legacy_shown = pg.locator('text=Logged back then').count() == 1
+    # fields older versions logged by hand (felt wind, gusts, water) are dropped quietly; the session itself stays
+    pg.click('.tabs button:has-text("Sessions")'); pg.click('.sw .front >> nth=1'); pg.wait_for_selector('text=Save changes')
     pg.locator('text=Save changes').scroll_into_view_if_needed(); pg.click('text=Save changes'); pg.wait_for_timeout(500)
-    after = next(x for x in pg.evaluate(f"JSON.parse(localStorage.getItem('{KEY}')).sessions") if x['id'] == sid)
-    orig = next(x for x in d['sessions'] if x['id'] == sid)
-    note(legacy_shown and all(after.get(k) == orig.get(k) for k in ('felt', 'gusts', 'water', 'rating', 'start', 'end', 'notes')), f'old session: felt/gusts/water shown read-only and kept after saving ({legacy_shown}, {[(k, orig.get(k), after.get(k)) for k in ("felt", "gusts", "water", "rating", "start", "end") if after.get(k) != orig.get(k)] or [after.get(k) for k in ("felt", "gusts", "water")]})')
+    kept = pg.evaluate(f"JSON.parse(localStorage.getItem('{KEY}')).sessions")
+    note(len(kept) == len(d['sessions']) and not any('felt' in x or 'gusts' in x or 'water' in x for x in kept), f'old sessions: all {len(kept)} kept, the old felt/gusts/water fields dropped after a save')
     note(not errs, f'old/odd data loads without errors {errs[:3]}')
     ctx.close()
     ctx, pg, errs = page()

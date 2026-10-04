@@ -55,7 +55,7 @@ export function rate(m: SportModel, x: Features): Result {
     if (m.trees && s.cap) {
         const t = treeScore(m.trees, x);
         if (t === null) {return { ...base, score: null, level: 0, source, cap: 0, reasons: ['outside coverage'] };}
-        const share = m.prior.confirmed ? TREES.blendConfirmed : TREES.blend;
+        const share = m.prior.weight ? TREES.blendWithRanges : TREES.blend;
         score = s.score === null ? t : share * t + (1 - share) * s.score;
         source = 'boosted trees';
     }

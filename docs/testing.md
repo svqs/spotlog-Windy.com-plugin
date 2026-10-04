@@ -11,7 +11,7 @@ Chromium via Playwright.
 | 1 | `npm run build` | It compiles (Rollup + Svelte + TS) | ~10 s |
 | 2 | `npm run lint` | ESLint clean (no-use-before-define, no-shadow, braces, imports…) | ~10 s |
 | 3 | `python3 scripts/check-words.py` | Every phrase used exists in `copy.ts`, none duplicated, none unused | 1 s |
-| 4 | `node scripts/test-predict.mjs` | 14 recommendation checks (examples, similar sessions, gates, windows, trees, tide) | ~10 s |
+| 4 | `node scripts/test-predict.mjs` | 15 recommendation checks (examples, similar sessions, gates, which forecast to trust, windows, trees, tide) | ~10 s |
 | 5 | `npx -y svelte-check@3 --workspace . --threshold warning` | Types and Svelte warnings: 0 errors, 0 warnings | ~20 s |
 | 6 | `python3 harness/e2e.py <dir>` | 51 end-to-end steps through every flow | ~2 min |
 | 7 | `python3 harness/scenarios.py <dir>` | Data sizes, odd data, viewports, units, time zones, learning, phone cross-check | ~4 min |
@@ -55,7 +55,7 @@ One long story. Each `ok(...)` is a step:
 - log from the last forecast; log without a place, then link it;
 - gear;
 - account sync (fake server), two tabs, tombstones;
-- Premium gate;
+- the account gate (logged in is enough, no Premium);
 - "I don't know yet" spots;
 - When to go and What works here (fold-out, Adjust, back to learned);
 - the phone bar + panel; touch typing.
@@ -65,7 +65,7 @@ One long story. Each `ok(...)` is a step:
 | § | What |
 |---|---|
 | 1 | Big diary (30 spots, 500 sessions, 200 saved days): load time, no errors |
-| 2 | Old and broken diaries: no welcome mark, missing fields, bad items skipped, broken JSON starts fresh; an old session's felt/gusts/water are shown read-only and survive saving |
+| 2 | Old and broken diaries: no welcome mark, missing fields, bad items skipped, broken JSON starts fresh; old felt/gusts/water fields are dropped while the sessions stay |
 | 3 | Viewports 320 → 1920, every tab: nothing sticks out, no cut values, no odd text (`undefined`, `NaN`, `{placeholders}`) |
 | 4 | Every wind unit + ft + °F on home and the spot page |
 | 5 | Time zones and locales: a session logged today lands on today |
@@ -85,9 +85,9 @@ asserts behaviour, not numbers to the decimal:
 - **examples:** a forecast saved after the start doesn't teach; one saved day shared by two sessions gives each its own
   hours; overnight and daylight-saving outings; start-only and old single-hour saves are marked limited; gaps and
   missing surf data exclude;
-- **similar sessions:** nothing without a window; a preset window stays "Not sure yet"; a confirmed window gives Good
-  from your range; poor-only outings never give Good; mixed outcomes; Great/Epic evidence; spots next door are never
-  evidence; one day logged many times is one day; distances wrap round north, and a missing extra never looks closer;
+- **similar sessions:** nothing without a window; the saved window gives Good from your range; poor-only outings never give Good; mixed outcomes; Great/Epic evidence; spots next door are never
+  evidence; each logged session counts, also several on one day; distances wrap round north, and a missing extra never looks closer;
+- **which forecast to trust:** the model whose forecasts foretold the sessions best ranks first;
 - **windows:** no one-hour stretches, no bridged gaps, a longer near-equal stretch wins, per sport, calm days stay
   empty;
 - **trees:** not eligible with little data; deterministic with lots; picked up after background training, dropped

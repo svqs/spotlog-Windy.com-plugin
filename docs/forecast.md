@@ -60,8 +60,9 @@ spotlog's tag says how good the conditions would be **for you**, and Windy's % s
   one covering model chosen once and saved as `spot.recommendationModel` (`plugin.svelte → chooseFallbackModel`).
 - A saved forecast without that model can't teach that spot.
 - The spot page's model switch only changes what you **look at**, never what spotlog learns from.
-- The felt-wind model ranking ("Which forecast to trust") and the felt-wind bias were retired in 0.16. Felt wind was
-  often prefilled from the forecast, and one saved day shared by several sessions skewed the comparison.
+- **Which forecast to trust here** ranks the models by how well their forecasts foretold your session ratings
+  (`learn/skill.ts`, see docs/learning.md §8). It only informs. The old felt-wind ranking and bias were retired in
+  0.16, because felt wind was often prefilled and shared saved days skewed it.
 
 ## Tides (experimental)
 

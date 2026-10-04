@@ -52,7 +52,7 @@ your way around:
 | Block | When it shows |
 |---|---|
 | Phone bar | Phones (`barMode`): a compact bar in Windy's pane. Pages open in a panel that rises over the map. |
-| Gate | The user isn't logged in to Windy, or isn't Premium (`bcast.emit('rqstOpen', 'login' / 'subscription')`). |
+| Gate | The user isn't logged in to Windy (`bcast.emit('rqstOpen', 'login')`). A Premium gate is there but off (`NEEDS_PREMIUM = false`). |
 | Welcome | Once, for someone new (`settings.welcomed`). |
 | Header | Wordmark, back, the units pill (`Settings`). |
 | `view === 'home'` | Actions (Save forecast / Add spot / Log session), stats, tabs: Spots (tiles or list), Sessions (list/calendar), Gear, How it works (data download/upload, delete everything). |
@@ -61,7 +61,7 @@ your way around:
 | `'spotForm'` | New/edit spot: name, sports (+ "Other…" for your own), wind window or "I don't know yet". |
 | `'spot'` | The spot page (see below). |
 | `'snap'` | A saved or previewed forecast (SnapCard), link to spot, note, save/replace. |
-| `'log'` | Log/edit a session: spot + sport, date/time (a start is needed), rating or "Not worth it, didn't go", gear, GPX, notes. Older sessions show what they logged by hand (felt wind, gusts, water) read-only. |
+| `'log'` | Log/edit a session: spot + sport, date/time (a start is needed), rating or "Not worth it, didn't go", gear, GPX, notes. |
 
 **The spot page, in order:**
 1. SnapCard (conditions now, model switch) and the actions.
@@ -73,7 +73,8 @@ your way around:
    - folded: one line per sport;
    - open: per sport, a table with Your range · Matters · Today, plus Adjust (your own ranges).
    Gear hints sit at the bottom of the open card.
-6. Saved forecasts, then sessions.
+6. **Which forecast to trust here:** models ranked by how well they foretold your sessions (`learn/skill.ts`).
+7. Saved forecasts, then sessions.
 
 **Script: the state that matters**
 
@@ -98,7 +99,7 @@ Save forecast ──► forecast.captureDay(lat, lon, focusTs, primary, models, 
                     └─ tide highs/lows (experimental)
                   → Snapshot { ts, models, waves, series }
 
-Log session ────► Session { date (= start), start/end, rating, sport, … , snapshotId }   (felt/gusts/water: legacy, kept)
+Log session ────► Session { date (= start), start/end, rating, sport, … , snapshotId }
                   └─ the snapshot's focus moves to the middle of the session (series re-read, no refetch)
 
 Learning ───────► examplesFor(spot, sessions, snapshots, model) → Example[] (forecast saved BEFORE the outing, summed up

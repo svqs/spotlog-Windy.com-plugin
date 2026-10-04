@@ -205,7 +205,6 @@
                         <SwipeRow on:open={ () => openSession(se) } on:delete={ () => deleteSession(se) }>
                             <span class="dot" style="background: { ratingBg(se.rating) }; color: { ratingFg(se.rating) }">{ se.rating }</span>
                             <span class="grow"><span>{ spotById(se.spotId)?.name || W.noSpotYet }{ se.track ? ' · ' + W.gps : '' }</span><small>{ fmtDay(se.date) } · { se.checked ? W.checkedLabel : se.notes ? se.notes.slice(0, 38) : RATE[se.rating - 1] }</small></span>
-                            <small>{ feltLine(se) }</small>
                         </SwipeRow>
                     {/each}
                 </div>
@@ -383,7 +382,7 @@
             <small class="muted">{ W.formWindFrom }</small>
             <div class="dirs">
                 {#each DIRS as d, i}
-                    <button class="dir" class:on={ sf.dirs.includes(d) } aria-pressed={ sf.dirs.includes(d) } on:click={ () => sf && (sf = { ...sf, sure: true, dirs: toggle(sf.dirs, d) }) }>
+                    <button class="dir" class:on={ sf.dirs.includes(d) } aria-pressed={ sf.dirs.includes(d) } on:click={ () => sf && (sf = { ...sf, dirs: toggle(sf.dirs, d) }) }>
                         <span class="arrow" style="transform: rotate({ i * 45 + 180 }deg)">▲</span>{ d }
                     </button>
                 {/each}
@@ -399,8 +398,6 @@
                     <button class="round" aria-label="Raise maximum" on:click={ () => stepRange('dMax', 1) }>+</button>
                 </div>
             </div>
-            <!-- a prefilled window isn't knowledge: changing it, or saying you're sure, makes it count -->
-            <button class="chip notworth" class:on={ sf.sure } aria-pressed={ sf.sure } on:click={ () => sf && (sf = { ...sf, sure: !sf.sure }) }>{ W.formSure }</button>
             <small class="muted">{ W.formGuessNote }</small>
         {/if}
     </div>
@@ -463,12 +460,7 @@
                 <span class="grow"><b>{ fill(W.works, { dirs: dirsLabel(spot.dirs), min: fmtWind0(spot.min, S.wind), max: fmtWind0(spot.max, S.wind), unit: windLabel(S.wind) }) }</b></span>
                 <button class="link" on:click={ () => spot && editSpot(spot) }>{ W.edit }</button>
             </div>
-            {#if !spot.windowConfirmed}
-                <div class="row">
-                    <small class="muted grow">{ W.windowUnsure }</small>
-                    <button class="link" on:click={ confirmWindow }>{ W.windowConfirm }</button>
-                </div>
-            {/if}
+
             {#if spotLearnedWindow}
                 <div class="suggest">
                     <span class="grow"><small>{ W.learnedWindowTitle }</small><b>{ dirsLabel(spotLearnedWindow.dirs) }, { fmtWind0(spotLearnedWindow.min, S.wind) }–{ fmtWind0(spotLearnedWindow.max, S.wind) } { windLabel(S.wind) }</b></span>
@@ -590,6 +582,21 @@
         {/if}
     </div>
 
+    <!-- which forecast foretold your sessions here best (it informs; the spot keeps learning from its own model) -->
+    <div class="section">
+        <b>{ W.trustTitle }</b>
+        <div class="card">
+            {#if trust.length === 0}
+                <span class="muted">{@html rich(W.trustEmpty)}</span>
+            {:else}
+                {#each trust as sc, i}
+                    <div class="score"><span class="m" class:best={ i === 0 }>{ modelLabel(sc.model) }</span><span class="missbar"><i style="width: { closeness(sc.miss, trust) }%" class:best={ i === 0 }></i></span><span>{ fill(W.trustMiss, { v: sc.miss.toFixed(1) }) }</span></div>
+                {/each}
+                <small class="muted">{ fill(W.trustNote, { n: trust[0].count }) }</small>
+            {/if}
+        </div>
+    </div>
+
     <div class="section">
         <b>{ W.savedTitle }</b>
         {#if spotSnapshots.length === 0}
@@ -618,7 +625,6 @@
                     <SwipeRow on:open={ () => openSession(se) } on:delete={ () => deleteSession(se) }>
                         <span class="dot" style="background: { ratingBg(se.rating) }; color: { ratingFg(se.rating) }">{ se.rating }</span>
                         <span class="grow"><span>{ fmtDay(se.date) }{ se.track ? ' · ' + W.gps : '' }</span><small>{ se.checked ? W.checkedLabel : se.notes ? se.notes.slice(0, 40) : RATE[se.rating - 1] }</small></span>
-                        <small>{ feltLine(se) }</small>
                     </SwipeRow>
                 {/each}
             </div>
@@ -755,10 +761,6 @@
         {#if f.checked}<small class="muted">{ W.notWorthNote }</small>{/if}
     </div>
 
-    {#if logLegacy}
-        <!-- older sessions logged felt wind, gusts and water by hand: kept as they were, no longer asked -->
-        <small class="muted">{ fill(W.legacyLogged, { list: logLegacy }) }</small>
-    {/if}
     <div class="field"><span class="lbl">{ W.gear }</span>
         {#each logGearGroups as grp (grp.sport)}
             {#if logGearGroups.length > 1}<small class="muted">{ sportLbl(grp.sport) }</small>{/if}
@@ -841,7 +843,7 @@
     import { fmtWind, fmtWind0, fmtHeight, fmtTemp, fmtDistance, windLabel, fromWind, toWind, windStep } from './lib/units';
     import {
         rateBest, conditionsOf, toFeatures, suggestWindow, bestToday, bestTide, sessionTide, learnSpot, trainTreesInBackground, recommendationModel,
-        nextDays, learnedWindow, gearHints, isCircular, allFeatures, fitRange, mattersLevel,
+        nextDays, learnedWindow, gearHints, isCircular, allFeatures, fitRange, mattersLevel, modelSkill,
     } from './lib/predict';
     import { words, w, t as tr, fill, rich, setWords } from './lib/copy';
     import { readTrack } from './lib/gpx';
@@ -867,8 +869,6 @@
     interface SpotForm {
         id?: string; name: string; place: string; lat: number; lon: number; sports: string[];
         dirs: Dir8[]; dMin: number; dMax: number; windUnknown: boolean; created?: number; startOwn?: boolean;
-        /** you changed the window or said you're sure about it (the prefilled one alone isn't knowledge) */
-        sure: boolean;
     }
     interface LogForm {
         id?: string; spotId: string | null; lat?: number; lon?: number; snapshotId: string | null;
@@ -1081,7 +1081,7 @@
     }
 
 
-    /* ---------- Windy account: Spotlog is for logged-in Premium users ---------- */
+    /* ---------- Windy account: spotlog is for logged-in Windy users (Premium only when NEEDS_PREMIUM) ---------- */
     interface WindyUser { id: number; username?: string; email?: string }
     const readWindyUser = (): WindyUser | null => {
         try {
@@ -1100,7 +1100,9 @@
     };
     let wUser = readWindyUser();
     let premium = readPremium();
-    $: gate = !wUser ? 'login' : !premium ? 'premium' : null;
+    /** for now spotlog is open to everyone logged in to Windy; true brings the Premium gate back */
+    const NEEDS_PREMIUM = false;
+    $: gate = !wUser ? 'login' : NEEDS_PREMIUM && !premium ? 'premium' : null;
     useWindyUser(wUser?.id);
 
     let data: SpotlogData = load();
@@ -1200,6 +1202,7 @@
     $: spotTide = spot ? bestTide(spotReal.map(x => ({ rating: x.rating, ...sessionTide(x, data.snapshots) }))) : null;
     $: spotLearnedWindow = spot && !spot.windUnknown ? learnedWindow(spot, spotLearned[0]) : null;
     $: spotGear = gearHints(spotLearned);
+    $: trust = spot ? modelSkill(spot, data.sessions, data.snapshots) : [];
     $: spotOutlook = spot ? outlookOf(spot.id, outlookBySpot) : null;
     $: spotDays = spot && spotOutlook ? nextDays(spotLearned, spotOutlook.hours) : [];
     /** no forecast saved here today: today's session couldn't teach spotlog */
@@ -1218,8 +1221,6 @@
     $: syncLabel = syncState === 'saving' ? W.syncSaving : syncState === 'error' ? W.syncError : syncAt ? fill(W.syncAt, { time: fmtTime(syncAt) }) : W.syncLinked;
     /** the forecast attached to this log was saved after the session started: it stays, but can't teach */
     $: logLate = !!(logSnap && f?.start && logSnap.savedAt > new Date(`${f.dateStr}T${f.start}`).getTime());
-    /** what an older session logged by hand (no longer asked): shown, kept as it is */
-    $: logLegacy = f?.id ? legacyLine(data.sessions.find(x => x.id === f?.id)) : '';
     $: nearSpot = place ? nearestWithin(place.lat, place.lon, 5) : null;
     $: spotsByCentre = view === 'pick' ? nearestSpots(centre().lat, centre().lon) : [];
     let mapTs = currentTs();
@@ -1406,6 +1407,9 @@
         const x = now ? toFeatures(now) : {};
         return m.rows.map(r => ({ r, value: x[r.key] ?? null, fit: typeof x[r.key] === 'number' ? fitRange(r, x[r.key] as number) : null }));
     };
+    /** a model's bar: the one that foretold best is full, one twice as far off is half */
+    const closeness = (miss: number, list: { miss: number }[]): number =>
+        Math.round((100 * Math.max(0.05, Math.min(...list.map(x => x.miss)))) / Math.max(0.05, miss));
     $: bestRange = (b: DayBest): string => (b.now ? fill(W.todayUntil, { time: fmtTime(b.end) }) : fmtTime(b.start) + '–' + fmtTime(b.end));
     $: tideText = (t: { tide: string | null; move: string | null }): string =>
         [t.tide ? W['tide' + t.tide].toLowerCase() : '', t.move ? W['tide' + t.move].toLowerCase() : ''].filter(Boolean).join(', ');
@@ -1420,21 +1424,6 @@
         return d > 0 ? d : 0;
     }
     const sessionHours = (s: Session) => durationH(s.start, s.end) || (s.track ? s.track.durationMin / 60 : 0);
-    /** what an older session logged by hand, now kept read-only: "felt 14 kn · gusty · chop" */
-    const legacyLine = (se: Session | undefined): string => {
-        if (!se) {return '';}
-        const gi = ['Steady', 'Gusty', 'Very gusty'].indexOf(se.gusts || '');
-        const wi = ['Flat', 'Chop', 'Swell', 'Waves'].indexOf(se.water || '');
-        return [se.felt !== null ? fill(W.legacyFelt, { v: `${fmtWind0(se.felt, S.wind)} ${windLabel(S.wind)}` }) : '', gi >= 0 ? W['gust' + (gi + 1)] : '', wi >= 0 ? W['water' + (wi + 1)] : '']
-            .filter(Boolean).join(' · ');
-    };
-    const feltLine = (se: Session): string => {
-        if (se.felt === null) {return '';}
-        const sn = data.snapshots.find(x => x.id === se.snapshotId);
-        const p = sn ? primaryOf(sn) : null;
-        const felt = fmtWind0(se.felt, S.wind);
-        return p && p.wind !== null ? `${fmtWind0(p.wind, S.wind)} → ${felt} ${windLabel(S.wind)}` : `${felt} ${windLabel(S.wind)}`;
-    };
     function nearestSpots(lat: number, lon: number): Spot[] {
         return [...data.spots].sort((a, b) => distanceKm(a, { lat, lon }) - distanceKm(b, { lat, lon }));
     }
@@ -2087,7 +2076,7 @@
         const isPin = !loc.name || loc.name === 'Dropped pin';
         sf = {
             name: isPin ? '' : loc.name || '', place: isPin ? '' : loc.name || '', lat: loc.lat, lon: loc.lon,
-            sports: ['Windsurf'], dirs: [], dMin: Math.round(toWind(7, S.wind)), dMax: Math.round(toWind(12, S.wind)), windUnknown: false, startOwn: false, sure: false,
+            sports: ['Windsurf'], dirs: [], dMin: Math.round(toWind(7, S.wind)), dMax: Math.round(toWind(12, S.wind)), windUnknown: false, startOwn: false,
         };
         go('spotForm');
         setTemp(loc.lat, loc.lon);
@@ -2100,22 +2089,22 @@
         sfReturn = null;
         sf = {
             id: s.id, name: s.name, place: s.place || '', lat: s.lat, lon: s.lon, sports: [...s.sports], dirs: [...s.dirs],
-            dMin: Math.round(toWind(s.min, S.wind)), dMax: Math.round(toWind(s.max, S.wind)), windUnknown: !!s.windUnknown, created: s.created, startOwn: !!s.startOwn, sure: !!s.windowConfirmed,
+            dMin: Math.round(toWind(s.min, S.wind)), dMax: Math.round(toWind(s.max, S.wind)), windUnknown: !!s.windUnknown, created: s.created, startOwn: !!s.startOwn,
         };
         go('spotForm');
     }
     function stepRange(k: 'dMin' | 'dMax', dir: number) {
         if (!sf) {return;}
         const st = windStep(S.wind);
-        if (k === 'dMin') {sf = { ...sf, sure: true, dMin: Math.max(0, Math.min(sf.dMax - st, sf.dMin + dir * st)) };}
-        else {sf = { ...sf, sure: true, dMax: Math.max(sf.dMin + st, sf.dMax + dir * st) };}
+        if (k === 'dMin') {sf = { ...sf, dMin: Math.max(0, Math.min(sf.dMax - st, sf.dMin + dir * st)) };}
+        else {sf = { ...sf, dMax: Math.max(sf.dMin + st, sf.dMax + dir * st) };}
     }
     function saveSpotForm() {
         if (!sf || !sf.name.trim()) {return;}
         const s: Spot = {
             id: sf.id || uid(), name: sf.name.trim(), place: sf.place, lat: sf.lat, lon: sf.lon, sports: sf.sports,
             dirs: sf.windUnknown ? [] : sf.dirs, min: Math.round(fromWind(sf.dMin, S.wind) * 10) / 10, max: Math.round(fromWind(sf.dMax, S.wind) * 10) / 10,
-            windUnknown: sf.windUnknown, created: sf.created || Date.now(), windowConfirmed: !sf.windUnknown && sf.sure,
+            windUnknown: sf.windUnknown, created: sf.created || Date.now(),
             ...(sf.startOwn ? { startOwn: true } : {}),
         };
         const isNew = !sf.id;
@@ -2162,18 +2151,9 @@
             persist();
         });
     }
-    /** "That's right": the wind window counts as yours (a preset one counts less) */
-    function confirmWindow() {
-        if (!spot) {return;}
-        const s: Spot = { ...spot, windowConfirmed: true };
-        data.spots = data.spots.map(x => (x.id === s.id ? s : x));
-        spot = s;
-        persist();
-        showToast(w('toastWindowConfirmed'));
-    }
     function applySuggestion() {
         if (!spot || !suggestion) {return;}
-        const s: Spot = { ...spot, dirs: suggestion.dirs, min: suggestion.min, max: suggestion.max, windUnknown: false, windowConfirmed: true };
+        const s: Spot = { ...spot, dirs: suggestion.dirs, min: suggestion.min, max: suggestion.max, windUnknown: false };
         data.spots = data.spots.map(x => (x.id === s.id ? s : x));
         spot = s;
         delete outlookBySpot[s.id];
@@ -2404,12 +2384,12 @@
         else if (f.track?.start && dateStrOf(f.track.start) === f.dateStr) {date = f.track.start;}
         else {date = new Date(`${f.dateStr}T12:00`).getTime();}
         if (!isFinite(date)) {date = Date.now();}
-        // what older sessions logged by hand (felt wind, gusts, water, tide) stays exactly as it was; new sessions don't ask
+        // a tide logged by hand in older diaries stays (new tides come from the saved forecast)
         const was = data.sessions.find(x => x.id === f?.id);
         const se: Session = {
             id: f.id || uid(), spotId: f.spotId, lat: f.lat, lon: f.lon, snapshotId: f.snapshotId, date, rating: f.checked ? 2 : f.rating,
             ...(f.checked ? { checked: true } : {}),
-            felt: was?.felt ?? null, gusts: was?.gusts ?? null, water: was?.water ?? null, tide: was?.tide ?? null, tideMove: was?.tideMove ?? null,
+            tide: was?.tide ?? null, tideMove: was?.tideMove ?? null,
             sport: logSport(f) || null, gearIds: f.gearIds, gear: f.gear.trim(), start: f.start, end: f.end, notes: f.notes, track: f.track,
             tz: deviceTz(),
         };
@@ -2590,7 +2570,7 @@
     function useLearnedWindow() {
         if (!spot || !spotLearnedWindow) {return;}
         const before = spot;
-        const after: Spot = { ...spot, dirs: spotLearnedWindow.dirs, min: spotLearnedWindow.min, max: spotLearnedWindow.max, windowConfirmed: true };
+        const after: Spot = { ...spot, dirs: spotLearnedWindow.dirs, min: spotLearnedWindow.min, max: spotLearnedWindow.max };
         data.spots = data.spots.map(x => (x.id === after.id ? after : x));
         spot = after;
         persist();
@@ -3163,6 +3143,9 @@
     .suggest { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: calc(var(--sl-radiusButton, 12px) + 2px); background: var(--sl-lightBg, #f8f8f8); color: var(--sl-lightText, #1c1c1c); small { color: var(--sl-lightSub, #6b6b6b); } }
     .section { display: flex; flex-direction: column; gap: 8px; }
     .h2 { font-size: 20px; }
+    .score { display: flex; align-items: center; gap: 10px; font-size: 13px;
+        .m { width: 64px; &.best { color: @orange; font-weight: 600; } }
+        .missbar { flex: 1; height: 6px; border-radius: 3px; background: @line; display: flex; i { display: block; border-radius: 3px; background: @sub; &.best { background: @orange; } } } }
     .ratings { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
     .rate { height: 62px; border-radius: calc(var(--sl-radiusButton, 12px) + 2px); border: 1px solid @line; background: @card; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
         b { font-size: 19px; } span { font-size: 11px; } }

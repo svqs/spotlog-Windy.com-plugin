@@ -20,7 +20,7 @@ export interface Range {
 export interface RangeRow extends Range { matters: number }
 
 /** Your own ranges for a sport as a starting preference */
-export interface Prior { ranges: Range[]; weight: number; confirmed: boolean }
+export interface Prior { ranges: Range[]; weight: number }
 
 const sectorOf = (deg: number): Dir8 => DIRS[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
 
@@ -38,23 +38,21 @@ export function fitRange(r: Range, v: number): number {
 }
 
 /**
- * Your ranges for a sport: the ones you set with Adjust win; your wind window covers wind and direction.
- * Confirmed (set by you, or a window you confirmed) counts more than a preset window; "I don't know yet" gives none.
+ * Your ranges for a sport: the ones you set with Adjust win; the wind window you saved covers wind and direction.
+ * A saved window counts as yours ("I don't know yet" gives none); when your sessions show something else,
+ * the spot page suggests it ("spotlog learned it works best … Use this").
  */
 export function priorOf(spot: Spot, sport: string): Prior {
     const own = spot.ranges?.[sport] || {};
     const ranges: Range[] = [];
     for (const key of allFeatures(sport)) {
         const o = own[key];
-        // (gust ranges from 0.14.0 were a gust factor, 1–2: skipped)
-        const oldFactor = key === 'gust' && (o?.lo ?? 0) < 3 && (o?.hi ?? 0) < 3;
         if (o?.dirs?.length) {ranges.push({ key, dirs: o.dirs, from: 'you' });}
-        else if (o && !oldFactor && (typeof o.lo === 'number' || typeof o.hi === 'number')) {ranges.push({ key, spans: [{ lo: o.lo, hi: o.hi }], from: 'you' });}
+        else if (o && (typeof o.lo === 'number' || typeof o.hi === 'number')) {ranges.push({ key, spans: [{ lo: o.lo, hi: o.hi }], from: 'you' });}
         else if (!spot.windUnknown && key === 'wind') {ranges.push({ key, spans: [{ lo: spot.min, hi: spot.max }], from: 'window' });}
         else if (!spot.windUnknown && key === 'dir' && spot.dirs.length) {ranges.push({ key, dirs: spot.dirs, from: 'window' });}
     }
-    const confirmed = ranges.some(r => r.from === 'you') || !!spot.windowConfirmed;
-    return { ranges, confirmed, weight: !ranges.length ? 0 : confirmed ? PRIOR.confirmedWeight : PRIOR.presetWeight };
+    return { ranges, weight: ranges.length ? PRIOR.weight : 0 };
 }
 
 /** 0–1: how well a forecast fits your ranges (the worst one decides); null when none applies */
@@ -106,8 +104,6 @@ function mattersOf(r: Range, core: boolean, list: Example[]): number {
 /** The rows of "What works here" for one sport: your ranges first, then your outings, then your wind window */
 export function describe(sport: string, prior: Prior, local: Example[]): RangeRow[] {
     const outings = local.filter(e => e.kind === 'outing');
-    const perDay = new Map<string, number>();
-    outings.forEach(e => perDay.set(e.day, (perDay.get(e.day) || 0) + 1));
     const { core } = featuresOf(sport);
     const rows: RangeRow[] = [];
     for (const key of allFeatures(sport)) {
@@ -115,7 +111,7 @@ export function describe(sport: string, prior: Prior, local: Example[]): RangeRo
         const good = outings.filter(e => e.rating >= RANGES.goodFrom && has(e.x, key));
         let r: Range | undefined = mine;
         if (!r && good.length >= RANGES.minGood) {
-            const vals = good.map(e => ({ x: e.x[key] as number, w: 1 / (perDay.get(e.day) || 1) }));
+            const vals = good.map(e => ({ x: e.x[key] as number, w: 1 }));
             r = isCircular(key)
                 ? { key, from: 'sessions', dirs: DIRS.filter(d => vals.some(v => sectorOf(v.x) === d)) }
                 : { key, from: 'sessions', spans: spansOf(key, vals, local.filter(e => e.rating <= RANGES.poorTo && has(e.x, key)).map(e => e.x[key] as number)) };

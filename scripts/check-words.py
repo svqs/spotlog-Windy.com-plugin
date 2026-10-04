@@ -7,7 +7,7 @@ dupes = {k for k in keys if keys.count(k) > 1}
 src = ''.join(p.read_text() for p in (root / 'src').rglob('*') if p.suffix in ('.svelte', '.ts') and p.name != 'copy.ts')
 used = set(re.findall(r"(?:\bW|\$words)\.(\w+)", src)) | set(re.findall(r"\b(?:w|tr|L)\('(\w+)'(?! \+)", src))
 used |= set(re.findall(r"\bkey: '(\w+)'", src)) | set(re.findall(r"'(title(?:Spots|Sessions|Gear|About))'", src))
-dyn = {'good': (1, 3), 'gust': (1, 3), 'water': (1, 4), 'rate': (1, 5), 'guess': (3, 5), 'guessFor': (3, 5), 'matter': (1, 3)}
+dyn = {'good': (1, 3), 'rate': (1, 5), 'guess': (3, 5), 'guessFor': (3, 5), 'matter': (1, 3)}
 for pre, (a, n) in dyn.items():
     for i in range(a, n + 1): used.add(f'{pre}{i}')
 used |= {'tide' + t for t in ['Low', 'Mid', 'High', 'Rising', 'Falling']}

@@ -70,7 +70,7 @@ that's answered, only allow-listed test ids may sync. Never release sync publicl
 - **Everything loaded is validated** (`normalise`). Uploads are capped at 25 MB. GPS files are capped at 40 MB and reduced to ~400 points (2 000 max when loading).
 - **No secrets in the plugin.** No trackers, no ads, no third-party requests except Windy's own APIs and the optional
   sync function.
-- **No spotlog accounts:** identity comes from the Windy login. Spotlog only opens for logged-in Premium users. That
+- **No spotlog accounts:** identity comes from the Windy login. spotlog opens for everyone logged in to Windy (a Premium gate can be switched on with `NEEDS_PREMIUM`). That
   check is client-side, a UX gate and not a security boundary.
 
 **Known limits**

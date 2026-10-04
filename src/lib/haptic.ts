@@ -1,5 +1,5 @@
 /**
- * A light tick under the finger (the felt ruler, the time wheels).
+ * A light tick under the finger (the time wheels).
  * Android: the vibration motor. iPhones have no vibration for web pages; Safari 18+ does give a light
  * Taptic tap when a native switch toggles, so a hidden one is flipped. Older iPhones: no tick, nothing breaks.
  */

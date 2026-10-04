@@ -41,7 +41,7 @@ function day(from, f, o = {}) {
 const clock = ts => new Date(ts).toISOString().slice(11, 16);
 /** a session from `start` for `hours`, rated `rating`, on a saved day */
 const session = (sn, start, hours, rating, o = {}) => ({
-    id: 'se' + ++ids, spotId: 's', snapshotId: sn.id, date: start, rating, felt: null, gusts: null, water: null, gear: '', gearIds: [], notes: '',
+    id: 'se' + ++ids, spotId: 's', snapshotId: sn.id, date: start, rating, gear: '', gearIds: [], notes: '',
     start: clock(start), end: hours ? clock(start + hours * H) : '', tz: 'UTC', ...o,
 });
 /** n outings on n different days at wind w (± a little), direction d, rated r */
@@ -112,22 +112,19 @@ const ok = m => { n++; console.log('✓', m); };
 {
     const none = { snaps: [], sessions: [] };
     assert.equal(rateOf(learn(spot({ windUnknown: true, dirs: [] }), none), x(9, 260)).level, 0);
-    // a preset window you never confirmed isn't knowledge
-    const preset = rateOf(learn(spot(), none), x(9, 260));
-    assert.equal(preset.level, 0); assert.deepEqual(preset.reasons, ['few sessions']);
-    // a window you confirmed: Good inside it (from your range), not outside
-    const mine = learn(spot({ windowConfirmed: true }), none);
+    // the wind window you saved: Good inside it (from your range), not outside
+    const mine = learn(spot(), none);
     const inside = rateOf(mine, x(9, 260));
     assert.equal(inside.level, 3); assert.equal(inside.source, 'user range');
     assert.equal(rateOf(mine, x(9, 90)).level, 0);
-    ok('no outings: nothing without a window; a preset window stays "not sure"; a confirmed one gives Good from your range');
+    ok('no outings: nothing without a window; the window you saved gives Good inside it (from your range)');
 }
 {
-    const sp = spot({ windowConfirmed: true });
+    const sp = spot();
     const poor = outings(4, 9, 260, 2);
     const r = rateOf(learn(sp, poor), x(9, 260));
     assert.equal(r.level, 0); assert.deepEqual(r.reasons, ['only poor sessions']);
-    ok('poor outings in these conditions overrule your confirmed window (never Good from poor-only)');
+    ok('poor outings in these conditions overrule your window (never Good from poor-only)');
 }
 {
     const sp = spot();
@@ -144,17 +141,18 @@ const ok = m => { n++; console.log('✓', m); };
     ok(`mixed outcomes: rated from similar outings (${there.score.toFixed(2)} near 9 m/s, ${windy.score.toFixed(2)} near 15); "What works" shows 9–9.6`);
 }
 {
-    const sp = spot({ windowConfirmed: true });
+    const sp = spot();
     const ok3 = outings(3, 9, 260, 4);
     assert.equal(rateOf(learn(sp, ok3), x(9, 260)).level, 3, 'great needs 3 outings rated 4+');
+    const learnOnly = spot({ windUnknown: true, dirs: [] });
     const five = outings(6, 9, 260, k => (k < 2 ? 5 : 4));
-    assert.equal(rateOf(learn(spot(), five), x(9, 260)).level, 5);
-    assert.ok(rateOf(learn(spot(), outings(6, 9, 260, k => (k ? 4 : 5))), x(9, 260)).level <= 4, 'epic needs two 5s');
+    assert.equal(rateOf(learn(learnOnly, five), x(9, 260)).level, 5);
+    assert.ok(rateOf(learn(learnOnly, outings(6, 9, 260, k => (k ? 4 : 5))), x(9, 260)).level <= 4, 'epic needs two 5s');
     ok('evidence for the tags: great from 3 great outings, epic from 6 with two 5s');
 }
 {
     // outings at a spot next door (2 km) never make a learned tag on their own
-    const sp = spot();
+    const sp = spot({ windUnknown: true, dirs: [] });
     const next = spot({ id: 'n', lat: 0.018 });
     const there = outings(8, 9, 260, 5, { spotId: 'n' });
     const r = rateOf(learn(sp, there, [sp, next]), x(9, 260));
@@ -163,13 +161,13 @@ const ok = m => { n++; console.log('✓', m); };
     ok('spots next door count a little, but never as evidence for a tag here');
 }
 {
-    // one day logged five times counts like one outing
-    const sp = spot();
+    // five sessions on one day are five pieces of evidence (they can go differently: tide, time of day)
+    const sp = spot({ windUnknown: true, dirs: [] });
     const sn = day(DAY0, () => ({}));
     const same = { snaps: [sn], sessions: [1, 2, 3, 4, 5].map(k => session(sn, DAY0 + (7 + k * 2) * H, 1, 5)) };
     const r = rateOf(learn(sp, same), x(8, 260));
-    assert.ok(r.nEff < 3 && r.level === 0, JSON.stringify(r));
-    ok('the same day logged many times counts as one day');
+    assert.ok(r.nEff >= 3 && r.level >= 3, JSON.stringify(r));
+    ok('each logged session counts as evidence, also several on one day');
 }
 {
     assert.ok(F.distance2('Windsurf', x(9, 350), x(9, 10)) < F.distance2('Windsurf', x(9, 260), x(9, 300)), 'wraparound');
@@ -180,9 +178,28 @@ const ok = m => { n++; console.log('✓', m); };
     ok('distance: directions wrap round north; missing extras count as different; a missing core can\'t be compared');
 }
 
+/* ---------- which forecast to trust: the model whose forecasts foretold your sessions best ---------- */
+{
+    const sp = spot({ windUnknown: true, dirs: [] });
+    const data = { snaps: [], sessions: [] };
+    for (let k = 0; k < 10; k++) {
+        const good = k % 2 === 0;
+        const sn = day(DAY0 + k * 864e5, () => ({ wind: good ? 9 : 16 }));
+        // GFS said the opposite: high wind on the good days, light on the poor ones
+        const g = sn.series.models.ecmwf;
+        sn.series.models.gfs = { ...g, wind: g.wind.map(() => (k % 4 < 2 ? 16 : 9)) };
+        data.snaps.push(sn);
+        data.sessions.push(session(sn, DAY0 + k * 864e5 + 12 * H, 2, good ? 5 : 1));
+    }
+    const skill = P.modelSkill(sp, data.sessions, data.snaps);
+    assert.deepEqual(skill.map(s => s.model), ['ecmwf', 'gfs']);
+    assert.ok(skill[0].miss < skill[1].miss && skill[0].count === 10);
+    ok(`which forecast to trust: ECMWF foretold your sessions best (${skill[0].miss.toFixed(1)} vs ${skill[1].miss.toFixed(1)} off)`);
+}
+
 /* ---------- 3. when to go: two-hour windows, no gaps, per sport ---------- */
 {
-    const sp = spot({ windowConfirmed: true, sports: ['Windsurf', 'Surf'] });
+    const sp = spot({ sports: ['Windsurf', 'Surf'] });
     const m = learn(sp, { snaps: [], sessions: [] });
     const h = (i, wind, dir = 260, more = {}) => ({ ts: DAY0 + i * H, day: true, wind, gust: wind, dir, waves: 0.8, period: 6, ...more });
     // one good hour alone is no window
@@ -200,7 +217,7 @@ const ok = m => { n++; console.log('✓', m); };
     ok('windows: no one-hour stretches, no bridged gaps, a longer near-equal stretch wins, the matching sport is named');
 }
 {
-    const sp = spot({ windowConfirmed: true });
+    const sp = spot();
     const m = learn(sp, { snaps: [], sessions: [] });
     const hours = [];
     for (let d = 0; d < 3; d++) {for (let i = 8; i < 20; i++) {hours.push({ ts: DAY0 + d * 864e5 + i * H, day: true, wind: d === 1 ? 3 : 9, gust: 9, dir: 260, waves: 0.8 });}}

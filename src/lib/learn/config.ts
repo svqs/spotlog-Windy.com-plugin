@@ -41,12 +41,15 @@ export const SIMILAR = {
     nearbyCap: 2,
     /** a "Not worth it, didn't go" day counts this much (a preference, not an outing) */
     checkedWeight: 0.25,
-    /** all outings of one spot, sport and day together count at most this much */
-    dayCap: 1,
+    /**
+     * all outings of one spot, sport and day together count at most this much; null = off.
+     * Off: several sessions on one day can go differently (tide, time of day), so each log is its own evidence.
+     */
+    dayCap: null as number | null,
 };
 
-/** Your own ranges and wind window as a starting preference (priorRating = 1 + span × fit) */
-export const PRIOR = { span: 2.4, confirmedWeight: 2, presetWeight: 0.5 };
+/** Your own ranges and wind window as a starting preference: priorRating = 1 + span × fit, counted like `weight` sessions */
+export const PRIOR = { span: 2.4, weight: 2 };
 
 /** Score cut-offs for the tags, and the evidence each tag needs */
 export const LEVELS = { good: 2.7, great: 3.5, epic: 4.2 };
@@ -67,6 +70,9 @@ export const WINDOW = {
     tie: 0.2,
 };
 
+/** Which forecast to trust here (skill.ts): a model is ranked once it was checked on this many outings */
+export const TRUST = { minSessions: 3 };
+
 /** "What works here" ranges (ranges.ts) */
 export const RANGES = { minGood: 3, low: 0.1, high: 0.9, goodFrom: 4, poorTo: 2 };
 
@@ -83,7 +89,7 @@ export const TREES = {
     /** walk-forward check: held-out outings needed, and how much better the trees must be */
     minHeldOut: 20,
     minGain: 0.05,
-    /** share of the trees in the final score (with a range you confirmed) */
+    /** share of the trees in the final score (when you have your own ranges or a wind window) */
     blend: 0.7,
-    blendConfirmed: 0.5,
+    blendWithRanges: 0.5,
 };
