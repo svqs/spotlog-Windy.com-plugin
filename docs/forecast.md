@@ -7,8 +7,14 @@
   - hourly steps where the model has them;
   - weather models also return Windy's daily summary (predictability) and sunrise/sunset;
   - wave models (`ecmwfWaves`, `gfsWaves`) are fetched without the extras.
-- **Cache:** results are cached per model and place (3 decimals) for 20 minutes. A model that doesn't cover the place
-  returns `null` quietly (logged with `console.info`).
+- **Cache:** exact coordinates + model identify requests, reused in flight for 20 minutes, with a 512-entry bound.
+  Failed/unusable payloads are evicted and return null (logged with console.info), so the next load can recover.
+  Tide requests are bounded at 128 entries/10 minutes (including entitlement in the key).
+- **UI controller:** injected sources share condition/hour requests (256 entries/20 minutes), available models
+  (128/20 minutes) and outlook (128/10 minutes). Empty answers/rejections can retry. Account changes clear UI caches;
+  location/model/entitlement changes invalidate derived values. Completions check both coordinates and current ownership.
+- **Host boundary:** `adapters/windy.ts` validates the unknown point payload before forecast readers use it. Shared
+  `forecast-values.ts` maps weather/wave columns; each reader keeps its own nearest-hour tolerance and wave fallback.
 - **Units:** values are converted to SI on read (temperature K → °C). Wind is m/s, rain (`precipAmount`) is mm per step.
 
 ## Models
@@ -101,3 +107,11 @@ The endpoint is the Cloudflare Worker in `tide-worker/` (see its README for depl
 **Before publishing publicly:** `getTideForecastUrl` is internal to Windy (`@ignore` in their typings), so ask Windy
 first. Windy says the tide data is licensed per end user: keep it in each user's own diary, as now. Predictions are
 astronomical only (no storm surge or wave setup).
+
+## Tide algorithms intentionally remain separate
+
+`learn/tide.ts` classifies saved high/low **times** into High/Mid/Low by thirds of the interval, and Rising/Falling;
+it rejects missing neighbors, equal types or gaps over nine hours. It has no height input. `tides/tideCore.ts` reads
+Windy's validated time/height series, interpolates height in metres (with a cosine fallback), mirrors boundary extremes,
+and returns a continuous range fraction plus an approximation flag. Their timestamps use ms, but the phase semantics
+and coverage/fallback rules differ. Combining them would change learned hints, so 0.18 shares no phase algorithm.

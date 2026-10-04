@@ -12,7 +12,7 @@ export function loadDesignLib() {
     const out = path.join(root, 'node_modules/.cache/spotlog-design');
     mkdirSync(out, { recursive: true });
     execFileSync(path.join(root, 'node_modules/.bin/tsc'), [
-        '--outDir', out, '--module', 'commonjs', '--target', 'es2020', '--skipLibCheck', '--esModuleInterop', '--noEmitOnError', 'false',
+        '--outDir', out, '--module', 'commonjs', '--target', 'es2020', '--skipLibCheck', '--esModuleInterop', '--noEmitOnError', 'true',
         ...['theme', 'copy', 'design'].map(n => path.join(root, 'src/lib', n + '.ts')),
     ], { stdio: 'inherit' });
     writeFileSync(path.join(out, 'package.json'), '{"type":"commonjs"}');
@@ -23,9 +23,7 @@ export function loadDesignLib() {
         return load.call(this, req, ...rest);
     };
     const require = createRequire(path.join(out, 'x.js'));
-    const theme = require('./theme.js');
-    const copy = require('./copy.js');
-    const design = require('./design.js');
-    Module._load = load;
-    return { theme, copy, design };
+    try {
+        return { theme: require('./theme.js'), copy: require('./copy.js'), design: require('./design.js') };
+    } finally {Module._load = load;}
 }

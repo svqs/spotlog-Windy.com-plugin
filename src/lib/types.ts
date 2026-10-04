@@ -45,6 +45,8 @@ export interface WaveValue {
 }
 
 export interface Snapshot {
+    /** Invalid imported forecast content stays in the diary but never teaches. */
+    forecastInvalid?: boolean;
     id: string;
     spotId: string | null;
     lat: number;
@@ -157,6 +159,10 @@ export interface SpotlogData {
     settings: Settings;
     /** last local change (ms), used by account sync */
     updatedAt?: number;
+    /** Per-entity last edit; legacy entities fall back to the document timestamp. */
+    revisions?: Record<string, number>;
+    /** Last settings edit, independent of diary entities. */
+    settingsAt?: number;
     /** ids deleted on this device (id -> ms), so a sync doesn't bring them back; pruned after 90 days */
     deleted?: Record<string, number>;
     /** ids brought back (upload, undo) after a delete (id -> ms): newer than the delete wins, also in other tabs and on other devices */

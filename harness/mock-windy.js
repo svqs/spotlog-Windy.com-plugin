@@ -280,7 +280,7 @@
     };
 
 
-    // ---- fake sync server (stands in for supabase/functions/spotlog) ----
+    // ---- fake backend-neutral sync server (test-only; production sync is disabled) ----
     // It "verifies" Windy's login token like the real function does: token 'mock-token-<id>' belongs to user <id>.
     const CLOUD_KEY = 'spotlog-mock-cloud';
     const cdb = () => { try { return JSON.parse(localStorage.getItem(CLOUD_KEY) || '{}'); } catch { return {}; } };
@@ -288,8 +288,14 @@
     const wait = ms => new Promise(r => setTimeout(r, ms));
     const verify = a => { if (!a || a.token !== 'mock-token-' + a.id) throw new Error('Could not confirm your Windy login'); return String(a.id); };
     window.__spotlogCloudMock = {
-        async pull(a) { await wait(200); const id = verify(a); const r = (cdb().rows || {})[id]; return r ? { data: r.data, updatedAt: r.updatedAt } : null; },
-        async push(a, data) { await wait(200); const id = verify(a); const d = cdb(); d.rows = d.rows || {}; d.rows[id] = { data, updatedAt: data.updatedAt || Date.now() }; cwrite(d); },
+        async pull(a) { await wait(200); const id = verify(a); const r = (cdb().rows || {})[id]; return r ? { data: r.data, updatedAt: r.updatedAt, revision: r.revision || 0 } : null; },
+        async push(a, data, expectedRevision) {
+            await wait(200); const id = verify(a); const d = cdb(); d.rows = d.rows || {};
+            const revision = d.rows[id]?.revision || 0;
+            if (revision !== expectedRevision) { const err = new Error('Sync conflict'); err.status = 409; throw err; }
+            d.rows[id] = { data, updatedAt: data.updatedAt || Date.now(), revision: revision + 1 };
+            cwrite(d); return revision + 1;
+        },
         async remove(a) { await wait(200); const id = verify(a); const d = cdb(); if (d.rows) delete d.rows[id]; cwrite(d); },
     };
 

@@ -3,7 +3,9 @@
  * BEFORE it started. This is the only place sessions become learning data: the similar-sessions scorer,
  * the boosted trees, the "What works here" ranges and the walk-forward check all use these examples.
  */
-import { distanceKm } from '../wind';
+import { distanceKm } from '../geo';
+import { dayKey, outingTimes } from '../time';
+export { dayKey, outingTimes } from '../time';
 import { EXAMPLE } from './config';
 import { hasCore, summarize, toFeatures, type Conditions, type Features } from './features';
 import { tideAt } from './tide';
@@ -32,38 +34,8 @@ export interface Example {
 export type Skip = 'rating' | 'no forecast' | 'saved after start' | 'other place' | 'model missing' | 'not covered' | 'gap' | 'missing core';
 
 const HOUR = 3600e3;
-const CLOCK = /^(\d\d):(\d\d)$/;
 
 /* ---------- time: the outing's start and end ---------- */
-
-/** Minutes the time zone is ahead of UTC at a moment (device time zone when unknown or invalid) */
-function offsetMin(ts: number, tz?: string): number {
-    try {
-        const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }).formatToParts(new Date(ts));
-        const n = (t: string) => Number(parts.find(p => p.type === t)?.value);
-        return Math.round((Date.UTC(n('year'), n('month') - 1, n('day'), n('hour'), n('minute')) - Math.floor(ts / 60e3) * 60e3) / 60e3);
-    } catch {
-        return tz ? offsetMin(ts) : -new Date(ts).getTimezoneOffset();
-    }
-}
-const localMinutes = (ts: number, tz?: string) => (((Math.floor(ts / 60e3) + offsetMin(ts, tz)) % 1440) + 1440) % 1440;
-
-/** The local calendar day of a moment, "YYYY-MM-DD" */
-export const dayKey = (ts: number, tz?: string): string => new Date(ts + offsetMin(ts, tz) * 60e3).toISOString().slice(0, 10);
-
-/**
- * When the outing started and ended. `date` is the start; the end clock is read in the session's own time zone
- * (an end before the start is the next day; daylight-saving changes are handled). No start clock = limited.
- */
-export function outingTimes(s: Session): { start: number; end: number | null; limited: boolean } {
-    const start = s.date;
-    const m = CLOCK.exec(s.end || '');
-    if (!CLOCK.test(s.start || '') || !m) {return { start, end: null, limited: !CLOCK.test(s.start || '') };}
-    const delta = (Number(m[1]) * 60 + Number(m[2]) - localMinutes(start, s.tz) + 1440) % 1440;
-    if (!delta) {return { start, end: null, limited: false };}
-    const guess = start + delta * 60e3;
-    return { start, end: guess - (offsetMin(guess, s.tz) - offsetMin(start, s.tz)) * 60e3, limited: false };
-}
 
 /* ---------- the saved forecast over the outing ---------- */
 
@@ -93,10 +65,18 @@ function coveredHours(ts: number[], start: number, end: number | null): number[]
 export const sportOf = (spot: Spot, s: Session): string => (s.sport && spot.sports.includes(s.sport) ? s.sport : spot.sports[0] || 'Other');
 
 /** One session → one example, or why it can't teach */
+const snapshotIndexes = new WeakMap<Snapshot[], Map<string, Snapshot>>();
+function snapshotById(snapshots: Snapshot[], id: string): Snapshot | undefined {
+    let index = snapshotIndexes.get(snapshots);
+    if (!index) {index = new Map(snapshots.map(snapshot => [snapshot.id, snapshot])); snapshotIndexes.set(snapshots, index);}
+    return index.get(id);
+}
+
 export function exampleOf(spot: Spot, s: Session, snapshots: Snapshot[], model: string): Example | Skip {
     if (!Number.isInteger(s.rating) || s.rating < 1 || s.rating > 5) {return 'rating';}
-    const sn = s.snapshotId ? snapshots.find(k => k.id === s.snapshotId) : null;
+    const sn = s.snapshotId ? snapshotById(snapshots, s.snapshotId) : null;
     if (!sn) {return 'no forecast';}
+    if (sn.forecastInvalid) {return 'not covered';}
     const { start, end, limited } = outingTimes(s);
     // only what you could have known beforehand: a forecast saved later stays in the diary but doesn't teach
     if (!(sn.savedAt > 0 && sn.savedAt <= start)) {return 'saved after start';}
@@ -133,7 +113,7 @@ export const examplesFor = (spot: Spot, sessions: Session[], snapshots: Snapshot
 
 /** A session's tide, from the tides saved with its forecast (the middle of the outing) */
 export function sessionTide(s: Session, snapshots: Snapshot[]): { tide: string | null; tideMove: string | null } {
-    const sn = s.snapshotId ? snapshots.find(x => x.id === s.snapshotId) : null;
+    const sn = s.snapshotId ? snapshotById(snapshots, s.snapshotId) : null;
     const { start, end } = outingTimes(s);
     const t = tideAt(sn?.series?.tide, end ? (start + end) / 2 : start);
     return { tide: t?.tide ?? null, tideMove: t?.move ?? null };

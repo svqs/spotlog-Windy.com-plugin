@@ -26,13 +26,13 @@
 | `src/ui/SwipeRow.svelte` | Swipe-to-delete rows | copy |
 | `src/ui/Calendar.svelte` | Sessions calendar | copy |
 | `src/ui/Settings.svelte` | Units + what a forecast saves | units, forecast, wind, copy |
-| `src/lib/predict.ts` | The recommendation's public face (learnSpot, background trees, wind window and gear helpers) | learn/*, wind, types |
-| `src/lib/learn/*.ts` | The recommendation engine: config, features, examples, similar sessions, trees, model, windows, ranges, tide (see docs/learning.md) | wind, types |
-| `src/lib/forecast.ts` | Windy forecast access, caching, snapshots, tides, predictability | `@windy/fetch`, `@windy/http` |
-| `src/lib/wind.ts` | Directions, sports, gear presets, wind colours, distance, date formats | theme |
+| `src/lib/predict.ts` | Public recommendation facade and tree-job identity | learn/*, geo, directions, types |
+| `src/lib/learn/*.ts` | Recommendation engine (see docs/learning.md), independent of presentation/host modules | geo, directions, time, types |
+| `src/lib/forecast.ts` | Coverage/freshness policy, snapshots, tides and bounded public caches | adapters/windy, forecast-values, tides |
+| `src/lib/wind.ts` | Sports/gear presentation, colours, date formatting; compatibility exports | theme, geo, directions |
 | `src/lib/units.ts` | Unit conversion (wind incl. Beaufort, height, temp), formatting, 12/24 h | – |
-| `src/lib/storage.ts` | localStorage key per Windy user, `normalise`, `mergeData`, import/export, tombstones | types |
-| `src/lib/cloud.ts` + `cloudConfig.ts` | Optional account sync (pull/push/remove) | types |
+| `src/lib/storage.ts` | Browser storage and import/export facade; re-exports normalise/merge | diary/*, types |
+| `src/lib/cloud.ts` + `cloudConfig.ts` | Backend-neutral sync transport (disabled; no server included) | types |
 | `src/lib/copy.ts` | Every phrase, grouped by screen; `w`, `fill`, `rich` (brand + bold) | design |
 | `src/lib/theme.ts` | Every colour, shape and map mark; turns them into CSS variables (`--sl-*`) | design |
 | `src/lib/design.ts` | A Style Lab design applied on top of the defaults (normally empty) | – |
@@ -41,8 +41,32 @@
 
 ## `plugin.svelte` anatomy
 
-The file is long on purpose: everything that shares state lives in one component. Use the section comments to find
-your way around:
+The root composes Windy's lifecycle, navigation, form drafts and explicit UI acceptance of asynchronous results.
+The large spot/log/snapshot screens remain here; extraction is incremental rather than a rewrite. Gear, About and
+SpotForm live in `ui/screens/` with typed events and no persistence or network access.
+
+New boundaries in 0.18:
+
+| Module | Ownership |
+|---|---|
+| `lib/diary/{commands,selectors,validation,revisions,merge}.ts` | Pure edits, indexes, unknown-input validation, serialized baselines and entity conflict rules |
+| `lib/controllers/{sync,forecasts,learning,lifetime,requests}.ts` | Injected transport, serialized writes, bounded requests, per-spot examples/skill reuse and account/operation ownership |
+| `lib/adapters/windy.ts` | Typed/validated point-forecast host boundary |
+| `lib/map/{markers,pins,popup,tracks,html}.ts` | Marker reconciliation, escaped display HTML and separate track lifecycle; Leaflet creation is injected by the root |
+| `lib/{geo,time,directions,forecast-values}.ts` | Pure domain calculations and weather column mapping |
+| `lib/forecast-display.ts` | Shared formatted values for SnapCard and Leaflet; escaping occurs only at the HTML boundary |
+| `lib/preview/bridge.ts` | Style Lab-only installation and teardown; navigation callbacks are composed in the root |
+
+Learning inputs use immutable entity arrays: commands replace arrays/items. Settings-only commands explicitly avoid
+re-fingerprinting all forecast entities. Svelte only assigns a new learning-state object when dependencies change;
+returning the same object and assigning it again would still dirty downstream Svelte 4 declarations.
+
+`ui/application.less` preserves the original application selectors. The build tags each local selector compound with
+`[data-spotlog]`, and only markup formerly owned by the root carries that attribute. Existing reusable components
+keep their own Svelte-scoped styles. Explicit `:global` Leaflet/phone selectors remain global. Verify generated CSS
+and phone screenshots whenever moving another screen.
+
+Use the section comments to find your way around:
 
 - **Markup:** `grep -n "<!-- =====" src/plugin.svelte`
 - **Script:** `grep -n "/\* ----------" src/plugin.svelte`

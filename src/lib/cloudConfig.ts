@@ -1,8 +1,7 @@
 /**
- * Where Spotlog keeps each user's diary so it follows their Windy login to every device.
- * Fill in the URL of the Supabase Edge Function from supabase/functions/spotlog (see docs/operations.md › "Account sync server").
- * Leave it empty and Spotlog keeps the diary in the browser only.
+ * Optional future sync endpoint. No backend is included or enabled in this repository.
+ * Leave this empty: spotlog keeps the diary in the browser only (see docs/operations.md).
  */
 export const CLOUD = {
-    functionUrl: '', // e.g. 'https://abcdxyz.supabase.co/functions/v1/spotlog'
+    functionUrl: '',
 };

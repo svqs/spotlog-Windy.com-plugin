@@ -11,6 +11,8 @@
  * Reports carry no coordinates and no user id; IP addresses are not stored.
  */
 
+import { readTextLimited } from '../../src/lib/http.ts';
+
 export interface Env {
     REPORTS: KVNamespace;
     /** Secret: token for GET /reports. */
@@ -91,8 +93,8 @@ export default {
 
 /** Parse and whitelist the plugin's report. Returns null if anything is off. */
 const readReport = async (req: Request): Promise<Report | null> => {
-    const text = await req.text();
-    if (!text || text.length > MAX_BODY) return null;
+    const text = await readTextLimited(req, MAX_BODY);
+    if (!text) return null;
 
     let body: Record<string, unknown>;
     try {
@@ -100,6 +102,7 @@ const readReport = async (req: Request): Promise<Report | null> => {
     } catch {
         return null;
     }
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
 
     const kind = typeof body.kind === 'string' && KINDS.has(body.kind) ? body.kind : null;
     if (!kind) return null;

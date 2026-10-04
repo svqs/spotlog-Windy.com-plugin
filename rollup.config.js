@@ -1,3 +1,4 @@
+import { uiStylesPlugin } from './scripts/ui-styles.mjs';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import terser from '@rollup/plugin-terser';
@@ -5,7 +6,6 @@ import terser from '@rollup/plugin-terser';
 import serve from 'rollup-plugin-serve';
 import rollupSvelte from 'rollup-plugin-svelte';
 import rollupSwc from 'rollup-plugin-swc3';
-import rollupCleanup from 'rollup-plugin-cleanup';
 
 import { less } from 'svelte-preprocess-less';
 import sveltePreprocess from 'svelte-preprocess';
@@ -36,15 +36,16 @@ export default {
             file: `dist/${out}.min.js`,
             format: 'module',
             plugins: [
-                rollupCleanup({ comments: 'none', extensions: ['ts'] }),
                 // smaller plugin.min.js: two compress passes, modern syntax, mangle top-level names
                 terser({ module: true, ecma: 2020, compress: { passes: 2, pure_getters: true }, mangle: { toplevel: true }, format: { comments: false } }),
             ],
         },
     ],
 
-    onwarn: () => {
-        /* We disable all warning messages */
+    onwarn: (warning, warn) => {
+        // Host-specific accessibility is checked separately by svelte-check; retain all other diagnostics.
+        if (warning.code === 'a11y-no-static-element-interactions') {return;}
+        warn(warning);
     },
     external: id => id.startsWith('@windy/'),
     watch: {
@@ -53,6 +54,7 @@ export default {
         clearScreen: false,
     },
     plugins: [
+        uiStylesPlugin(),
         rollupSvelte({
             emitCss: false,
             preprocess: {

@@ -13,8 +13,9 @@
 - **Dynamic keys** are built in code, for example `'guess' + level`, `'guessFor' + level`, `'matter' + level`,
   `'sport' + name`, `'param' + Key` and `'tide' + state`. When you add one, also add it to the lists in
   `scripts/check-words.py`.
-- `python3 scripts/check-words.py` must report `missing: []` and `duplicates: []`. It should also report `unused: []`;
-  remove phrases nobody uses.
+- `python3 scripts/check-words.py` fails for missing, duplicated or unused phrases. Its coverage includes
+  static calls, declared dynamic families, accessibility labels, gear hints and structured GPX errors; it is a
+  source-use check, not a general detector of every hard-coded string.
 
 ## Writing for spotlog
 
@@ -43,7 +44,7 @@
 - **Pages:** `harness/stylelab/index.html` is the editor and `preview.html` is the real spotlog with fake Windy and
   example data. They're built by `node scripts/build-lab.mjs` and published as a claude.ai artifact.
 - **Saving:** the lab saves to its artifact database, document `design/current`:
-  `{ tokens: {...all 148}, words: {...changed only}, savedAt }`.
+  `{ tokens: {...all current tokens}, words: {...changed only}, savedAt }`.
 
 **Applying a saved design**
 1. Read `design/current` from the lab's database.
@@ -68,3 +69,9 @@
   Today is green when it fits your range and orange when close.
 - **Phone screens:** `harness/scenarios.py` section 8 takes screenshots of every screen at 320/360/390/430. Look at them
   after UI changes.
+
+
+0.18 keeps stable English gear-kind identifiers in saved diaries and resolves their labels/hints through copy.
+Custom/existing unknown kinds display their saved value. GPX readers throw structured errors; the UI maps their
+keys through copy. SnapCard and Leaflet share `forecast-display.ts`, so unit conversion/rounding stays consistent.
+The live preview bridge is installed and removed separately from production lifecycle; it never writes the diary.

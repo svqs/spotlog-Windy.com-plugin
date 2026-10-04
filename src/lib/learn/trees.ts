@@ -72,7 +72,7 @@ const walk = (n: Node, r: number[]): number => ('leaf' in n ? n.leaf : walk(r[n.
 
 /* ---------- boosting ---------- */
 
-function fit(sport: string, train: Example[]): Omit<TreeModel, 'check'> {
+function* fitSteps(sport: string, train: Example[]): Generator<void, Omit<TreeModel, 'check'>> {
     const raw = train.map(e => row(sport, e.x));
     const means = meansOf(raw);
     const X = raw.map(r => fill(r, means));
@@ -86,6 +86,7 @@ function fit(sport: string, train: Example[]): Omit<TreeModel, 'check'> {
         const tree = grow(X, y.map((v, i) => v - pred[i]), order, all, TREES.depth);
         trees.push(tree);
         X.forEach((r, i) => (pred[i] += TREES.rate * walk(tree, r)));
+        yield;
     }
     const seen: TreeModel['seen'] = {};
     for (const f of featuresOf(sport).core.filter(c => !isCircular(c))) {
@@ -121,7 +122,7 @@ export function treesEligible(local: Example[]): boolean {
  * 5 % lower on 20+ held-out outings and they don't call more poor outings Good.
  * Returns the trees trained on everything when they win, else null.
  */
-export function trainTrees(sport: string, local: Example[], nearby: Example[], prior: Prior): TreeModel | null {
+function* trainingSteps(sport: string, local: Example[], nearby: Example[], prior: Prior): Generator<void, TreeModel | null> {
     if (!treesEligible(local)) {return null;}
     const days = [...new Set(outingsOf(local).map(e => e.day))].sort();
     const held = days.slice(Math.floor(days.length * 0.6));
@@ -132,13 +133,14 @@ export function trainTrees(sport: string, local: Example[], nearby: Example[], p
         const before = local.filter(e => e.day < held[b]);
         const test = outingsOf(local).filter(e => block.has(e.day));
         if (!outingsOf(before).length) {continue;}
-        const trees = { ...fit(sport, outingsOf(before)), check: { heldOut: 0, maeTrees: 0, maeSimilar: 0 } };
+        const trees = { ...(yield* fitSteps(sport, outingsOf(before))), check: { heldOut: 0, maeTrees: 0, maeSimilar: 0 } };
         for (const e of test) {
             const s = similar(sport, e.x, before, nearby, prior);
             const t = treeScore(trees, e.x) ?? s.score ?? 3;
             errs.trees += Math.abs(t - e.rating);
             errs.similar += Math.abs((s.score ?? 3) - e.rating);
             errs.n++;
+            yield;
             if (e.rating <= 2) {
                 errs.goodTrees += Math.min(cutoff(t), s.cap) >= 3 ? 1 : 0;
                 errs.goodSimilar += Math.min(cutoff(s.score), s.cap) >= 3 ? 1 : 0;
@@ -146,5 +148,29 @@ export function trainTrees(sport: string, local: Example[], nearby: Example[], p
         }
     }
     if (errs.n < TREES.minHeldOut || errs.trees > (1 - TREES.minGain) * errs.similar || errs.goodTrees > errs.goodSimilar) {return null;}
-    return { ...fit(sport, outingsOf(local)), check: { heldOut: errs.n, maeTrees: errs.trees / errs.n, maeSimilar: errs.similar / errs.n } };
+    return { ...(yield* fitSteps(sport, outingsOf(local))), check: { heldOut: errs.n, maeTrees: errs.trees / errs.n, maeSimilar: errs.similar / errs.n } };
+}
+
+/** Synchronous reference and cooperative execution share every arithmetic operation. */
+export function trainTrees(sport: string, local: Example[], nearby: Example[], prior: Prior): TreeModel | null {
+    const steps = trainingSteps(sport, local, nearby, prior);
+    let step = steps.next();
+    while (!step.done) {step = steps.next();}
+    return step.value;
+}
+
+export async function trainTreesAsync(sport: string, local: Example[], nearby: Example[], prior: Prior,
+    valid: () => boolean = () => true): Promise<TreeModel | null> {
+    const steps = trainingSteps(sport, local, nearby, prior);
+    let step = steps.next();
+    let deadline = Date.now() + 8;
+    while (!step.done) {
+        if (!valid()) {steps.return(null); return null;}
+        if (Date.now() >= deadline) {
+            await new Promise<void>(resolve => setTimeout(resolve, 0));
+            deadline = Date.now() + 8;
+        }
+        step = steps.next();
+    }
+    return step.value;
 }

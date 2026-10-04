@@ -19,6 +19,12 @@ export const TEMP_UNITS: { id: TempUnit; label: string }[] = [
 // Beaufort upper limits in m/s for force 0..11 (12 is above the last limit)
 const BFT = [0.5, 1.6, 3.4, 5.5, 8.0, 10.8, 13.9, 17.2, 20.8, 24.5, 28.5, 32.7];
 
+export const toHeight = (metres: number, unit: HeightUnit): number => unit === 'ft' ? metres * 3.28084 : metres;
+export const fromHeight = (value: number, unit: HeightUnit): number => unit === 'ft' ? value / 3.28084 : value;
+export const toTemperature = (celsius: number, unit: TempUnit): number => unit === 'F' ? celsius * 1.8 + 32 : celsius;
+export const fromTemperature = (value: number, unit: TempUnit): number => unit === 'F' ? (value - 32) / 1.8 : value;
+export const celsiusFromKelvin = (kelvin: number | null): number | null => kelvin === null ? null : Math.round((kelvin - 273.15) * 10) / 10;
+
 export const windLabel = (u: WindUnit): string => WIND_UNITS.find(x => x.id === u)?.label || u;
 
 /** m/s -> display unit (not rounded) */
@@ -70,13 +76,13 @@ export const fmtWind0 = (ms: number | null, u: WindUnit): string => {
 
 export const fmtHeight = (m: number | null, u: HeightUnit, withUnit = false): string => {
     if (m === null || !isFinite(m)) {return '–';}
-    const v = u === 'ft' ? Math.round(m * 3.28084 * 10) / 10 : Math.round(m * 10) / 10;
+    const v = Math.round(toHeight(m, u) * 10) / 10;
     return withUnit ? `${v} ${u}` : `${v}`;
 };
 
 export const fmtTemp = (c: number | null, u: TempUnit): string => {
     if (c === null || !isFinite(c)) {return '–';}
-    return u === 'F' ? `${Math.round(c * 9 / 5 + 32)} °F` : `${Math.round(c)} °C`;
+    return `${Math.round(toTemperature(c, u))} °${u}`;
 };
 
 export const fmtDistance = (km: number, h: HeightUnit): string =>
@@ -84,21 +90,6 @@ export const fmtDistance = (km: number, h: HeightUnit): string =>
 
 /** Steps for the range steppers, in display unit */
 export const windStep = (u: WindUnit): number => (u === 'kmh' ? 2 : 1);
-
-/** Uses Windy's own wind unit as the first default, if Windy exposes it */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const guessWindUnit = (metrics: any): WindUnit => {
-    try {
-        const m = String(metrics?.wind?.metric || '').toLowerCase();
-        if (m.includes('kt')) {return 'kt';}
-        if (m.includes('km')) {return 'kmh';}
-        if (m.includes('mph')) {return 'mph';}
-        if (m.includes('bft')) {return 'bft';}
-    } catch {
-        /* ignore */
-    }
-    return 'ms';
-};
 
 export const uses12h = (): boolean => {
     try {

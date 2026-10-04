@@ -7,17 +7,18 @@
  *                 your own ranges as a starting preference; a tag needs enough local evidence.
  * 3. trees.ts     with lots of varied outings, boosted trees may join in, but only after beating similar
  *                 sessions on later outings (walk-forward check).
- * 4. windows.ts   when to go: two-hour windows over the coming forecast, merged into stretches, never across gaps.
+ * 4. windows.ts   when to go: hourly windows over the coming forecast, merged into stretches, never across gaps.
  * 5. ranges.ts    "What works here": your ranges, and where your well-rated outings' forecasts were.
  * All numbers live in learn/config.ts. docs/learning.md explains the method.
  */
-import { DIRS, distanceKm } from './wind';
+import { DIRS } from './directions';
+import { distanceKm } from './geo';
 import { ALGORITHM_VERSION, SIMILAR, TRUST } from './learn/config';
 import { examplesFor, sportOf, type Example } from './learn/examples';
 import { priorOf, type Range } from './learn/ranges';
 import { sportModel, type SportModel } from './learn/model';
 import { modelSkill, type ModelSkill } from './learn/skill';
-import { trainTrees, treesEligible, type TreeModel } from './learn/trees';
+import { trainTreesAsync, treesEligible, type TreeModel } from './learn/trees';
 import type { Conditions } from './learn/features';
 import type { Dir8, Session, Snapshot, Spot, ModelValue, WaveValue } from './types';
 
@@ -58,17 +59,22 @@ export const nearbySpots = (spot: Spot, spots: Spot[], km = SIMILAR.nearbyKm): S
 
 /** Boosted trees already trained (or found not to help), per spot, sport and the data they saw */
 const treeCache = new Map<string, TreeModel | null>();
-const treeKey = (m: SportModel): string => {
-    const s = [ALGORITHM_VERSION, m.spotId, m.sport, JSON.stringify(m.prior), ...[...m.local, ...m.nearby].map(e => `${e.sessionId}:${e.rating}:${e.start}`)].join('|');
-    let h = 5381;
-    for (let i = 0; i < s.length; i++) {h = ((h << 5) + h + s.charCodeAt(i)) | 0;}
-    return `${m.spotId}|${m.sport}|${h}`;
-};
+export function treeKey(m: SportModel): string {
+    const examples = (items: Example[]) => [...items].sort((a, b) => a.sessionId.localeCompare(b.sessionId)).map(item => ({
+        id: item.sessionId, rating: item.rating, kind: item.kind, day: item.day, start: item.start,
+        x: item.x, from: item.from,
+    }));
+    // Exact canonical inputs avoid short-hash collisions and include changed forecast provenance/features.
+    return JSON.stringify([ALGORITHM_VERSION, m.spotId, m.sport, m.prior, examples(m.local), examples(m.nearby)]);
+}
+const pendingTrees = new Map<string, Promise<boolean>>();
+let activeTreeKeys = new Set<string>();
+let trainingQueue: Promise<unknown> = Promise.resolve();
 
 /** Everything spotlog knows about a spot: one model per sport (examples here + outings at spots next door) */
-export function learnSpot(spot: Spot, spots: Spot[], sessions: Session[], snapshots: Snapshot[], model = learningModel(spot, sessions, snapshots)): SportModel[] {
-    const local = examplesFor(spot, sessions, snapshots, model);
-    const near = nearbySpots(spot, spots).flatMap(o => examplesFor(o, sessions, snapshots, model)).filter(e => e.kind === 'outing');
+export function learnSpot(spot: Spot, spots: Spot[], sessions: Session[], snapshots: Snapshot[], model = learningModel(spot, sessions, snapshots), readExamples = examplesFor): SportModel[] {
+    const local = readExamples(spot, sessions, snapshots, model);
+    const near = nearbySpots(spot, spots).flatMap(o => readExamples(o, sessions, snapshots, model)).filter(e => e.kind === 'outing');
     return (spot.sports.length ? spot.sports : ['Other']).map(sport => {
         const m = sportModel(spot.id, sport, local.filter(e => e.sport === sport), near.filter(e => e.sport === sport), priorOf(spot, sport));
         m.trees = treeCache.get(treeKey(m)) ?? null;
@@ -81,22 +87,31 @@ export function learnSpot(spot: Spot, spots: Spot[], sessions: Session[], snapsh
  * Resolves true when a model changed (then learn the spots again to pick them up).
  */
 export async function trainTreesInBackground(models: SportModel[]): Promise<boolean> {
-    let changed = false;
-    for (const m of models) {
+    activeTreeKeys = new Set(models.map(treeKey));
+    for (const key of treeCache.keys()) {if (!activeTreeKeys.has(key)) {treeCache.delete(key);}}
+    const results = await Promise.all(models.map(m => {
         const key = treeKey(m);
-        if (treeCache.has(key) || !treesEligible(m.local)) {continue;}
-        await new Promise(r => setTimeout(r, 0));
-        try {
-            const t = trainTrees(m.sport, m.local, m.nearby, m.prior);
-            treeCache.set(key, t);
-            changed = changed || !!t;
-        } catch (e) {
-            // a failed training leaves similar sessions in charge
-            console.info('[spotlog] trees not trained', e);
-            treeCache.set(key, null);
-        }
-    }
-    return changed;
+        if (treeCache.has(key) || !treesEligible(m.local)) {return Promise.resolve(false);}
+        const pending = pendingTrees.get(key);
+        if (pending) {return pending;}
+        const task = trainingQueue.then(async () => {
+            if (!activeTreeKeys.has(key)) {pendingTrees.delete(key); return false;}
+            try {
+                const trained = await trainTreesAsync(m.sport, m.local, m.nearby, m.prior, () => activeTreeKeys.has(key));
+                if (!activeTreeKeys.has(key)) {return false;}
+                treeCache.set(key, trained);
+                return !!trained;
+            } catch (error) {
+                if (activeTreeKeys.has(key)) {treeCache.set(key, null);}
+                console.info('[spotlog] trees not trained', error);
+                return false;
+            } finally {pendingTrees.delete(key);}
+        });
+        trainingQueue = task;
+        pendingTrees.set(key, task);
+        return task;
+    }));
+    return results.some(Boolean);
 }
 
 /* ---------- wind window helpers (spot page) ---------- */

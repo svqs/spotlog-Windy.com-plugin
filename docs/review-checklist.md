@@ -39,6 +39,6 @@ something that has broken before.
 ## 7. Shipping
 - [ ] The version is bumped in `package.json` **and** `src/pluginConfig.ts`.
 - [ ] `harness/sandbox.html` and `harness/stylelab/*` are rebuilt from this code.
-- [ ] e2e (51 steps) and scenarios (`FINDINGS: []`) pass.
+- [ ] e2e (50 steps) and scenarios (`FINDINGS: []`) pass.
 - [ ] The commit message says what changed for the user.
 - [ ] Nothing was published to windy-plugins.com without the owner's explicit OK.

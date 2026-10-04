@@ -2,7 +2,7 @@
  * Which forecast to trust here: for every model saved with your outings, how well its forecasts foretold how
  * your sessions at this spot went. Each outing is guessed from your outings on other days (leave one day out),
  * with weighted similar sessions on that model's values; the model whose guesses missed least foretells best.
- * Only informs: the spot keeps learning from its one recommendation model (docs/learning.md).
+ * The best model can become the learning model after the evidence gate (docs/learning.md).
  */
 import { TRUST } from './config';
 import { examplesFor } from './examples';
@@ -19,12 +19,12 @@ export interface ModelSkill {
 }
 
 /** The models saved with this spot's sessions, best first (only those checked on enough outings) */
-export function modelSkill(spot: Spot, sessions: Session[], snapshots: Snapshot[]): ModelSkill[] {
+export function modelSkill(spot: Spot, sessions: Session[], snapshots: Snapshot[], readExamples = examplesFor): ModelSkill[] {
     const linked = new Set(sessions.filter(s => s.spotId === spot.id && s.snapshotId).map(s => s.snapshotId));
     const models = new Set(snapshots.filter(sn => linked.has(sn.id)).flatMap(sn => Object.keys(sn.series?.models || {})));
     const out: ModelSkill[] = [];
     for (const model of models) {
-        const outings = examplesFor(spot, sessions, snapshots, model).filter(e => e.kind === 'outing');
+        const outings = readExamples(spot, sessions, snapshots, model).filter(e => e.kind === 'outing');
         let miss = 0;
         let count = 0;
         for (const e of outings) {

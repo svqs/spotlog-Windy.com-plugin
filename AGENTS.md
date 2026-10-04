@@ -14,8 +14,8 @@ A session diary inside Windy for wind and wave sports:
    windsurf") and lights up spots on the map.
 
 It is a client-side Svelte 4 + TypeScript plugin built with Windy's plugin template (`@windycom/plugin-devtools`).
-There is no backend of its own yet. The diary lives in the browser's `localStorage` on windy.com, and an optional sync
-server is prepared in `supabase/`.
+There is no backend of its own. The diary lives in the browser's `localStorage` on windy.com. Supabase was removed;
+the optional backend-neutral sync client is disabled and exercised only by the harness mock.
 
 ## Ground rules
 
@@ -41,7 +41,7 @@ These rules come from the owner (Sophia, a designer at Windy). Breaking one is a
 - `docs/decisions.md` lists more decisions like these. Read it before you "simplify" something back.
 
 **Code and data**
-- **Never lose user data.** Every new stored field is validated in `storage.ts → normalise()` (snapshot series are the one exception, see `docs/data-model.md`). Old diaries must keep
+- **Never lose user data.** Every new stored field is validated in `storage.ts → normalise()` (the validator is in `src/lib/diary/validation.ts`; see `docs/data-model.md`). Old diaries must keep
   loading. Deletes use tombstones (`deleted`) and undo/upload use `revived`.
 - **Secrets:** the `WINDY_API_KEY` lives only in GitHub Actions secrets. Never write it to a file, a log or the repo.
 - **Publishing** (`publish-plugin` workflow or `scripts/publish.sh`) uploads a new version to windy-plugins.com. **Only
@@ -58,8 +58,8 @@ These rules come from the owner (Sophia, a designer at Windy). Breaking one is a
 | Lint | `npm run lint` |
 | Every phrase exists and is used | `python3 scripts/check-words.py` |
 | Learning unit checks | `node scripts/test-predict.mjs` |
-| Svelte/TS type check | `npx -y svelte-check@3 --workspace . --threshold warning` |
-| End-to-end (51 steps, needs a server on :8765) | `python3 -m http.server 8765 &` then `python3 harness/e2e.py /tmp/shots` |
+| Svelte/TS type check | `npm run check:types` |
+| End-to-end (50 steps, needs a server on :8765) | `python3 -m http.server 8765 &` then `python3 harness/e2e.py /tmp/shots` |
 | Scenarios (data sizes, units, time zones, viewports, phone cross-check) | `python3 harness/scenarios.py /tmp/scen` |
 
 Playwright for Python is needed for the e2e tests and scenarios, and Chromium must be installed for it. All checks must
@@ -81,7 +81,7 @@ src/lib/units.ts       unit conversion and formatting
 src/lib/copy.ts        every phrase (grouped by screen)                                              → docs/ui-and-copy.md
 src/lib/theme.ts       every colour, shape and map mark (Style Lab tokens)
 src/lib/design.ts      a Style Lab design applied on top (normally empty: designs are folded into theme.ts / copy.ts)
-src/lib/cloud.ts       optional account sync client; supabase/ has the server
+src/lib/cloud.ts       optional backend-neutral sync client (disabled; no server is included)
 tide-worker/           optional Cloudflare Worker that receives tide error reports (its README says how to deploy)
 harness/               fake Windy (mock-windy.js), test pages, sandbox + Style Lab builders, e2e + scenarios
 scripts/               build-lab, apply-design, check-words, test-predict, publish

@@ -1,409 +1,291 @@
-<div class="plugin__mobile-header">
+<div data-spotlog class="plugin__mobile-header">
     { title }
 </div>
 <!-- the key handlers only keep your typing inside Spotlog (away from Windy's search); the swipe handlers keep scrolling inside the panel -->
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-<section aria-label="Spotlog" class="plugin__content spotlog" class:m={ isMobile } class:bar={ barMode } class:gatebar={ barMode && !!gate } bind:this={ root } on:touchstart={ touchStart } on:touchmove={ touchMove } on:touchend={ fieldTouchEnd } on:keydown={ keepKeys } on:keyup={ keepKeys } on:keypress={ keepKeys }>
+<section data-spotlog aria-label={ W.appName } class="plugin__content spotlog" class:m={ isMobile } class:bar={ barMode } class:gatebar={ barMode && !!gate } bind:this={ root } on:touchstart={ touchStart } on:touchmove={ touchMove } on:touchend={ fieldTouchEnd } on:keydown={ keepKeys } on:keyup={ keepKeys } on:keypress={ keepKeys }>
 
 {#if barMode}
 <!-- ================= PHONE: a compact bar in Windy's pane; pages open in a panel that rises over the map (like The Buoy's list) ================= -->
-    <div class="mbar">
-        <div class="mrow">
-            <span class="brand"><span class="wordmark">SPOTLOG</span><PixelStar size={ 12 } /><span class="beta">{ W.betaTag }</span></span>
+    <div data-spotlog class="mbar">
+        <div data-spotlog class="mrow">
+            <span data-spotlog class="brand"><span data-spotlog class="wordmark">{ W.wordmark }</span><PixelStar size={ 12 } /><span data-spotlog class="beta">{ W.betaTag }</span></span>
             {#if waitingForMap}
-                <span class="mhint">{ pickFor === 'snap' ? W.hintSnap : pickFor === 'log' ? W.hintLog : W.hintSpot }</span>
-                <button class="mlink" on:click={ () => { waitingForMap = false; openModal(); } }>{ W.cancel }</button>
+                <span data-spotlog class="mhint">{ pickFor === 'snap' ? W.hintSnap : pickFor === 'log' ? W.hintLog : W.hintSpot }</span>
+                <button data-spotlog class="mlink" on:click={ () => { waitingForMap = false; openModal(); } }>{ W.cancel }</button>
             {:else if capturing}
-                <span class="mhint">{ W.hintLoading }</span>
+                <span data-spotlog class="mhint">{ W.hintLoading }</span>
             {:else if gate}
-                <span class="mhint">{ W.hintPremium }</span>
+                <span data-spotlog class="mhint">{ W.hintPremium }</span>
             {:else}
-                <span class="grow-b"></span>
-                <button class="units" aria-label="Units and saved data" on:click={ () => openUnits(true) }>{ unitsLabel } <span class="chev">▾</span></button>
+                <span data-spotlog class="grow-b"></span>
+                <button data-spotlog class="units" aria-label={ W.unitsLabel } on:click={ () => openUnits(true) }>{ unitsLabel } <span data-spotlog class="chev">▾</span></button>
             {/if}
         </div>
         {#if !gate}
-            <div class="macts">
-                <button class="mact" disabled={ capturing } on:click={ () => { startPick('snap'); } }><Icon name="weather" size={ 18 } /><span>{ W.actSaveForecast }</span></button>
-                <button class="mact" on:click={ () => { startPick('spot'); } }><Icon name="pin" size={ 18 } /><span>{ W.actAddSpot }</span></button>
-                <button class="mact" on:click={ () => { startPick('log'); } }><Icon name="pen" size={ 18 } /><span>{ W.actLogSession }</span></button>
+            <div data-spotlog class="macts">
+                <button data-spotlog class="mact" disabled={ capturing } on:click={ () => { startPick('snap'); } }><Icon name="weather" size={ 18 } /><span data-spotlog>{ W.actSaveForecast }</span></button>
+                <button data-spotlog class="mact" on:click={ () => { startPick('spot'); } }><Icon name="pin" size={ 18 } /><span data-spotlog>{ W.actAddSpot }</span></button>
+                <button data-spotlog class="mact" on:click={ () => { startPick('log'); } }><Icon name="pen" size={ 18 } /><span data-spotlog>{ W.actLogSession }</span></button>
             </div>
-            <div class="mtabs">
+            <div data-spotlog class="mtabs">
                 {#each [['spots', W.tabSpots], ['sessions', W.tabSessions], ['gear', W.tabGear], ['about', W.tabAbout]] as [k, label]}
-                    <button class:on={ modalOpen && view === 'home' && tab === k } on:click={ () => toggleTab(asTab(k)) }>{ label }{#if k === 'spots'}<small class="cnt">{ data.spots.length }</small>{:else if k === 'sessions'}<small class="cnt">{ realSessions.length }</small>{/if}</button>
+                    <button data-spotlog class:on={ modalOpen && view === 'home' && tab === k } on:click={ () => toggleTab(asTab(k)) }>{ label }{#if k === 'spots'}<small data-spotlog class="cnt">{ data.spots.length }</small>{:else if k === 'sessions'}<small data-spotlog class="cnt">{ realSessions.length }</small>{/if}</button>
                 {/each}
             </div>
         {:else}
-            <button class="btn primary wide" on:click={ openModal }>{ gate === 'login' ? W.gateBarLogin : W.gateBarPremium }</button>
+            <button data-spotlog class="btn primary wide" on:click={ openModal }>{ gate === 'login' ? W.gateBarLogin : W.gateBarPremium }</button>
         {/if}
     </div>
 {/if}
-<div class="mwrap" class:on={ barMode } class:open={ modalOpen } class:unitspage={ barMode && unitsOpen } class:kb={ kbRoom }>
-<div class="body" bind:this={ bodyEl } on:focusin={ fieldFocus } on:focusout={ fieldBlur }>
+<div data-spotlog class="mwrap" class:on={ barMode } class:open={ modalOpen } class:unitspage={ barMode && unitsOpen } class:kb={ kbRoom }>
+<div data-spotlog class="body" bind:this={ bodyEl } on:focusin={ fieldFocus } on:focusout={ fieldBlur }>
 
 {#if gate}
 <!-- ================= LOGIN / PREMIUM GATE ================= -->
-    {#if barMode}<div class="topbar"><span class="grow"><b class="title"><Brand cap /></b></span><button class="mclose" aria-label="Close" on:click={ closeModal }>✕</button></div>{/if}
-    <div class="card head">
-        <div class="row"><span class="brand"><span class="wordmark">SPOTLOG</span><PixelStar size={ 15 } /></span></div>
-        <p class="p">{@html rich(W.gateIntro)}</p>
+    {#if barMode}<div data-spotlog class="topbar"><span data-spotlog class="grow"><b data-spotlog class="title"><Brand cap /></b></span><button data-spotlog class="mclose" aria-label={ W.close } on:click={ closeModal }>✕</button></div>{/if}
+    <div data-spotlog class="card head">
+        <div data-spotlog class="row"><span data-spotlog class="brand"><span data-spotlog class="wordmark">{ W.wordmark }</span><PixelStar size={ 15 } /></span></div>
+        <p data-spotlog class="p">{@html rich(W.gateIntro)}</p>
     </div>
-    <div class="card">
+    <div data-spotlog class="card">
         {#if gate === 'login'}
-            <b>{@html rich(W.gateLoginTitle)}</b>
-            <p class="p muted">{@html rich(W.gateLoginText)}</p>
-            <button class="btn primary wide" on:click={ () => bcast.emit('rqstOpen', 'login') }>{ W.gateLoginBtn }</button>
+            <b data-spotlog>{@html rich(W.gateLoginTitle)}</b>
+            <p data-spotlog class="p muted">{@html rich(W.gateLoginText)}</p>
+            <button data-spotlog class="btn primary wide" on:click={ () => bcast.emit('rqstOpen', 'login') }>{ W.gateLoginBtn }</button>
         {:else}
-            <b>{@html rich(W.gatePremiumTitle)}</b>
-            <p class="p muted">{@html rich(W.gatePremiumText, { user: wUser?.username || wUser?.email || 'a Windy user' })}</p>
-            <button class="btn primary wide" on:click={ () => bcast.emit('rqstOpen', 'subscription') }>{ W.gatePremiumBtn }</button>
+            <b data-spotlog>{@html rich(W.gatePremiumTitle)}</b>
+            <p data-spotlog class="p muted">{@html rich(W.gatePremiumText, { user: wUser?.username || wUser?.email || W.windyUser })}</p>
+            <button data-spotlog class="btn primary wide" on:click={ () => bcast.emit('rqstOpen', 'subscription') }>{ W.gatePremiumBtn }</button>
         {/if}
     </div>
 {:else if welcome}
 <!-- ================= WELCOME (once, for someone new) ================= -->
-    <div class="welcome">
-        {#if barMode}<div class="topbar"><span class="grow"></span><button class="mclose" aria-label="Close" on:click={ closeModal }>✕</button></div>{/if}
-        <span class="brand"><span class="wordmark">SPOTLOG</span><PixelStar size={ 15 } /><span class="beta">{ W.betaTag }</span></span>
-        <b class="h2">{@html rich(W.welcomeTitle)}</b>
-        <p class="p">{@html rich(W.welcomeText)}</p>
-        <button class="btn primary wide" on:click={ finishWelcome }>{ W.welcomeStart }</button>
-        <button class="link" on:click={ () => { finishWelcome(); openHowItWorks(); } }>{ W.welcomeHow }</button>
-        <label class="link">{ W.welcomeUpload }<input type="file" accept=".json,application/json" on:change={ e => { finishWelcome(); onUpload(e); } } hidden /></label>
+    <div data-spotlog class="welcome">
+        {#if barMode}<div data-spotlog class="topbar"><span data-spotlog class="grow"></span><button data-spotlog class="mclose" aria-label={ W.close } on:click={ closeModal }>✕</button></div>{/if}
+        <span data-spotlog class="brand"><span data-spotlog class="wordmark">{ W.wordmark }</span><PixelStar size={ 15 } /><span data-spotlog class="beta">{ W.betaTag }</span></span>
+        <b data-spotlog class="h2">{@html rich(W.welcomeTitle)}</b>
+        <p data-spotlog class="p">{@html rich(W.welcomeText)}</p>
+        <button data-spotlog class="btn primary wide" on:click={ finishWelcome }>{ W.welcomeStart }</button>
+        <button data-spotlog class="link" on:click={ () => { finishWelcome(); openHowItWorks(); } }>{ W.welcomeHow }</button>
+        <label data-spotlog class="link">{ W.welcomeUpload }<input data-spotlog type="file" accept=".json,application/json" on:change={ e => { finishWelcome(); onUpload(e); } } hidden /></label>
     </div>
 {:else}
 
 <!-- ================= HEADER ================= -->
 <!-- phones: units and saved data open as their own page in the panel -->
 {#if barMode && unitsOpen}
-    <div class="topbar upage">
-        <button class="round" aria-label="Back" on:click={ unitsBack }>←</button>
-        <span class="grow"><b class="title">{ W.unitsTitle }</b></span>
-        <button class="mclose" aria-label="Close" on:click={ closeModal }>✕</button>
+    <div data-spotlog class="topbar upage">
+        <button data-spotlog class="round" aria-label={ W.back } on:click={ unitsBack }>←</button>
+        <span data-spotlog class="grow"><b data-spotlog class="title">{ W.unitsTitle }</b></span>
+        <button data-spotlog class="mclose" aria-label={ W.close } on:click={ closeModal }>✕</button>
     </div>
-    <div class="card upage"><Settings settings={ data.settings } on:change={ e => setSettings(e.detail) } /></div>
+    <div data-spotlog class="card upage"><Settings settings={ data.settings } on:change={ e => setSettings(e.detail) } /></div>
 {/if}
 {#if view === 'home'}
     {#if barMode}
-        <div class="topbar">
-            <span class="grow"><b class="title">{ W[TAB_TITLE[tab]] }</b></span>
-            <button class="units" aria-label="Units and saved data" on:click={ () => openUnits() }>{ unitsLabel } <span class="chev">▾</span></button>
-            <button class="mclose" aria-label="Close" on:click={ closeModal }>✕</button>
+        <div data-spotlog class="topbar">
+            <span data-spotlog class="grow"><b data-spotlog class="title">{ W[TAB_TITLE[tab]] }</b></span>
+            <button data-spotlog class="units" aria-label={ W.unitsLabel } on:click={ () => openUnits() }>{ unitsLabel } <span data-spotlog class="chev">▾</span></button>
+            <button data-spotlog class="mclose" aria-label={ W.close } on:click={ closeModal }>✕</button>
         </div>
     {/if}
-    <div class="card head home-head">
-        <div class="row">
+    <div data-spotlog class="card head home-head">
+        <div data-spotlog class="row">
             {#if !isMobile}
-                <button class="back-menu" aria-label="Back to the Windy menu" title="Back to the Windy menu" on:click={ toWindyMenu }>
-                    <svg width="14" height="22" viewBox="0 0 14 22" aria-hidden="true"><polyline points="11,3 3,11 11,19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                <button data-spotlog class="back-menu" aria-label={ W.windyMenu } title={ W.windyMenu } on:click={ toWindyMenu }>
+                    <svg data-spotlog width="14" height="22" viewBox="0 0 14 22" aria-hidden="true"><polyline data-spotlog points="11,3 3,11 11,19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 </button>
             {/if}
-            <span class="brand grow-b"><span class="wordmark">SPOTLOG</span><PixelStar size={ 15 } /><span class="beta">{ W.betaTag }</span></span>
-            <button class="units" aria-expanded={ showUnits } aria-label="Units and saved data" on:click={ () => (showUnits = !showUnits) }>{ unitsLabel } <span class="chev" class:up={ showUnits }>▾</span></button>
+            <span data-spotlog class="brand grow-b"><span data-spotlog class="wordmark">{ W.wordmark }</span><PixelStar size={ 15 } /><span data-spotlog class="beta">{ W.betaTag }</span></span>
+            <button data-spotlog class="units" aria-expanded={ showUnits } aria-label={ W.unitsLabel } on:click={ () => (showUnits = !showUnits) }>{ unitsLabel } <span data-spotlog class="chev" class:up={ showUnits }>▾</span></button>
         </div>
         {#if showUnits}<Settings settings={ data.settings } on:change={ e => setSettings(e.detail) } />{/if}
-        <div class="stats">
-            <div><span class="lbl">{ W.statSpots }</span><span class="big">{ data.spots.length }</span></div>
-            <div><span class="lbl">{ W.statSessions }</span><span class="big">{ realSessions.length }</span></div>
-            <div><span class="lbl">{ W.statWater }</span><span class="big">{ hoursOnWater } <small>h</small></span></div>
+        <div data-spotlog class="stats">
+            <div data-spotlog><span data-spotlog class="lbl">{ W.statSpots }</span><span data-spotlog class="big">{ data.spots.length }</span></div>
+            <div data-spotlog><span data-spotlog class="lbl">{ W.statSessions }</span><span data-spotlog class="big">{ realSessions.length }</span></div>
+            <div data-spotlog><span data-spotlog class="lbl">{ W.statWater }</span><span data-spotlog class="big">{ hoursOnWater } <small data-spotlog>h</small></span></div>
         </div>
         {#if synced}
-            <small class="sync" class:err={ syncState === 'error' } title={ syncState === 'error' ? syncError : '' }>{ syncLabel }</small>
+            <small data-spotlog class="sync" class:err={ syncState === 'error' } title={ syncState === 'error' ? syncError : '' }>{ syncLabel }</small>
         {/if}
     </div>
 {:else}
-    <div class="topbar">
-        <button class="round" aria-label="Back" on:click={ back }>←</button>
-        <span class="grow"><b class="title">{ hdr.title }</b>{#if hdr.sub}<small>{ hdr.sub }</small>{/if}</span>
+    <div data-spotlog class="topbar">
+        <button data-spotlog class="round" aria-label={ W.back } on:click={ back }>←</button>
+        <span data-spotlog class="grow"><b data-spotlog class="title">{ hdr.title }</b>{#if hdr.sub}<small data-spotlog>{ hdr.sub }</small>{/if}</span>
         {#if barMode}
-            <button class="units" aria-label="Units and saved data" on:click={ () => openUnits() }>{ unitsLabel } <span class="chev">▾</span></button>
-            <button class="mclose" aria-label="Close" on:click={ closeModal }>✕</button>
+            <button data-spotlog class="units" aria-label={ W.unitsLabel } on:click={ () => openUnits() }>{ unitsLabel } <span data-spotlog class="chev">▾</span></button>
+            <button data-spotlog class="mclose" aria-label={ W.close } on:click={ closeModal }>✕</button>
         {:else}
-            <button class="units" aria-expanded={ showUnits } aria-label="Units and saved data" on:click={ () => (showUnits = !showUnits) }>{ unitsLabel } <span class="chev" class:up={ showUnits }>▾</span></button>
+            <button data-spotlog class="units" aria-expanded={ showUnits } aria-label={ W.unitsLabel } on:click={ () => (showUnits = !showUnits) }>{ unitsLabel } <span data-spotlog class="chev" class:up={ showUnits }>▾</span></button>
         {/if}
     </div>
-    {#if showUnits && !barMode}<div class="card"><Settings settings={ data.settings } on:change={ e => setSettings(e.detail) } /></div>{/if}
+    {#if showUnits && !barMode}<div data-spotlog class="card"><Settings settings={ data.settings } on:change={ e => setSettings(e.detail) } /></div>{/if}
 {/if}
 
 <!-- ================= HOME ================= -->
 {#if view === 'home'}
-    <div class="actions home-acts">
-        <button class="act" disabled={ capturing } on:click={ () => startPick('snap') }><Icon name="weather" /><b>{ capturing ? W.actLoading : W.actSaveForecast }</b><small>{ W.actSaveForecastSub }</small></button>
-        <button class="act" on:click={ () => startPick('spot') }><Icon name="pin" /><b>{ W.actAddSpot }</b><small>{ W.actAddSpotSub }</small></button>
-        <button class="act" on:click={ () => startPick('log') }><Icon name="pen" /><b>{ W.actLogSession }</b><small>{ W.actLogSessionSub }</small></button>
+    <div data-spotlog class="actions home-acts">
+        <button data-spotlog class="act" disabled={ capturing } on:click={ () => startPick('snap') }><Icon name="weather" /><b data-spotlog>{ capturing ? W.actLoading : W.actSaveForecast }</b><small data-spotlog>{ W.actSaveForecastSub }</small></button>
+        <button data-spotlog class="act" on:click={ () => startPick('spot') }><Icon name="pin" /><b data-spotlog>{ W.actAddSpot }</b><small data-spotlog>{ W.actAddSpotSub }</small></button>
+        <button data-spotlog class="act" on:click={ () => startPick('log') }><Icon name="pen" /><b data-spotlog>{ W.actLogSession }</b><small data-spotlog>{ W.actLogSessionSub }</small></button>
     </div>
 
-    <div class="tabs home-tabs">
-        <button class:on={ tab === 'spots' } on:click={ () => (tab = 'spots') }>{ W.tabSpots }</button>
-        <button class:on={ tab === 'sessions' } on:click={ () => (tab = 'sessions') }>{ W.tabSessions }</button>
-        <button class:on={ tab === 'gear' } on:click={ () => (tab = 'gear') }>{ W.tabGear }</button>
-        <button class:on={ tab === 'about' } on:click={ () => (tab = 'about') }>{ W.tabAbout }</button>
+    <div data-spotlog class="tabs home-tabs">
+        <button data-spotlog class:on={ tab === 'spots' } on:click={ () => (tab = 'spots') }>{ W.tabSpots }</button>
+        <button data-spotlog class:on={ tab === 'sessions' } on:click={ () => (tab = 'sessions') }>{ W.tabSessions }</button>
+        <button data-spotlog class:on={ tab === 'gear' } on:click={ () => (tab = 'gear') }>{ W.tabGear }</button>
+        <button data-spotlog class:on={ tab === 'about' } on:click={ () => (tab = 'about') }>{ W.tabAbout }</button>
     </div>
 
     {#if tab === 'spots'}
         {#if data.spots.length === 0}
-            <div class="empty">{@html rich(W.spotsEmpty)}</div>
+            <div data-spotlog class="empty">{@html rich(W.spotsEmpty)}</div>
         {:else}
-            <div class="viewtog" role="group" aria-label="How to show your spots">
-                <button class:on={ S.spotView === 'list' } aria-pressed={ S.spotView === 'list' } aria-label={ W.viewList } title={ W.viewList } on:click={ () => setSettings({ ...S, spotView: 'list' }) }>−</button>
-                <button class:on={ S.spotView !== 'list' } aria-pressed={ S.spotView !== 'list' } aria-label={ W.viewTiles } title={ W.viewTiles } on:click={ () => setSettings({ ...S, spotView: 'tiles' }) }>+</button>
+            <div data-spotlog class="viewtog" role="group" aria-label={ W.spotDisplay }>
+                <button data-spotlog class:on={ S.spotView === 'list' } aria-pressed={ S.spotView === 'list' } aria-label={ W.viewList } title={ W.viewList } on:click={ () => setSettings({ ...S, spotView: 'list' }) }>−</button>
+                <button data-spotlog class:on={ S.spotView !== 'list' } aria-pressed={ S.spotView !== 'list' } aria-label={ W.viewTiles } title={ W.viewTiles } on:click={ () => setSettings({ ...S, spotView: 'tiles' }) }>+</button>
             </div>
-            <div class="tiles" class:list={ S.spotView === 'list' }>
+            <div data-spotlog class="tiles" class:list={ S.spotView === 'list' }>
                 {#each data.spots as s (s.id)}
-                    <button class="tile" on:click={ () => (barMode ? spotOnMap(s) : openSpot(s, true)) }>
-                        <span class="t-name">{ s.name }</span>
+                    <button data-spotlog class="tile" on:click={ () => (barMode ? spotOnMap(s) : openSpot(s, true)) }>
+                        <span data-spotlog class="t-name">{ s.name }</span>
                         {#if nowOf(s.id, nowBySpot)}
-                            <span class="now">
-                                <span class="sw" style="background: { windColor(nowOf(s.id, nowBySpot)?.wind?.wind ?? null) }">{ fmtWind0(nowOf(s.id, nowBySpot)?.wind?.wind ?? null, S.wind) }</span>
-                                <span class="now-t"><b>{ windLabel(S.wind) }</b></span>
+                            <span data-spotlog class="now">
+                                <span data-spotlog class="sw" style="background: { windColor(nowOf(s.id, nowBySpot)?.wind?.wind ?? null) }">{ fmtWind0(nowOf(s.id, nowBySpot)?.wind?.wind ?? null, S.wind) }</span>
+                                <span data-spotlog class="now-t"><b data-spotlog>{ windLabel(S.wind) }</b></span>
                                 {#if nowOf(s.id, nowBySpot)?.wind?.dir != null}
                                     <!-- the arrow points where the wind blows to, like Windy's; the letters say where it comes from -->
-                                    <span class="wdir" title="Wind from { dirName(nowOf(s.id, nowBySpot)?.wind?.dir ?? null) }">
-                                        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" style="transform: rotate({ (nowOf(s.id, nowBySpot)?.wind?.dir ?? 0) + 180 }deg)"><path d="M9 2 L14 10 L10.2 9 L10.2 16 L7.8 16 L7.8 9 L4 10 Z" fill="currentColor" /></svg>
-                                        <small>{ dirName(nowOf(s.id, nowBySpot)?.wind?.dir ?? null) }</small>
+                                    <span data-spotlog class="wdir" title={ fill(W.windFrom, { direction: dirName(nowOf(s.id, nowBySpot)?.wind?.dir ?? null) }) }>
+                                        <svg data-spotlog width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" style="transform: rotate({ (nowOf(s.id, nowBySpot)?.wind?.dir ?? 0) + 180 }deg)"><path data-spotlog d="M9 2 L14 10 L10.2 9 L10.2 16 L7.8 16 L7.8 9 L4 10 Z" fill="currentColor" /></svg>
+                                        <small data-spotlog>{ dirName(nowOf(s.id, nowBySpot)?.wind?.dir ?? null) }</small>
                                     </span>
                                 {/if}
                             </span>
                             <!-- gusts and waves under the wind: each stays whole, they wrap onto two lines when the tile is narrow -->
-                            <span class="now-sub"><small>{ fill(W.tileGusts, { v: fmtWind0(nowOf(s.id, nowBySpot)?.wind?.gust ?? null, S.wind) }) }</small>{#if nowOf(s.id, nowBySpot)?.waves}<small>{ fill(W.tileWaves, { v: fmtHeight(nowOf(s.id, nowBySpot)?.waves?.waves ?? null, S.height, true) }) }</small>{/if}</span>
+                            <span data-spotlog class="now-sub"><small data-spotlog>{ fill(W.tileGusts, { v: fmtWind0(nowOf(s.id, nowBySpot)?.wind?.gust ?? null, S.wind) }) }</small>{#if nowOf(s.id, nowBySpot)?.waves}<small data-spotlog>{ fill(W.tileWaves, { v: fmtHeight(nowOf(s.id, nowBySpot)?.waves?.waves ?? null, S.height, true) }) }</small>{/if}</span>
                         {:else}
-                            <span class="now"><small>{ W.tileLoading }</small></span>
+                            <span data-spotlog class="now"><small data-spotlog>{ W.tileLoading }</small></span>
                         {/if}
-                        <span class="t-tag">
+                        <span data-spotlog class="t-tag">
                             {#if bestOf(s)}
-                                <span class="tag" style="background: { guessCol(bestOf(s)?.level ?? 0)[0] }; color: { guessCol(bestOf(s)?.level ?? 0)[1] }" title={ guessNote(bestOf(s)) }>{ guessLbl(bestOf(s)?.level ?? 0, bestOf(s)?.sport) }</span>
-                                {#if !bestOf(s)?.now}<small class="t-when">{ fill(W.from, { v: fmtTime(bestOf(s)?.start ?? 0) }) }</small>{/if}
+                                <span data-spotlog class="tag" style="background: { guessCol(bestOf(s)?.level ?? 0)[0] }; color: { guessCol(bestOf(s)?.level ?? 0)[1] }" title={ guessNote(bestOf(s)) }>{ guessLbl(bestOf(s)?.level ?? 0, bestOf(s)?.sport) }</span>
+                                {#if !bestOf(s)?.now}<small data-spotlog class="t-when">{ fill(W.from, { v: fmtTime(bestOf(s)?.start ?? 0) }) }</small>{/if}
                             {:else}
-                                <span class="tag ghost" title={ guessNote(guessOf(s)) }>{ W.guessUnsure }</span>
+                                <span data-spotlog class="tag ghost" title={ guessNote(guessOf(s)) }>{ W.guessUnsure }</span>
                             {/if}
                         </span>
                     </button>
                 {/each}
             </div>
-            <small class="muted">{@html rich(W.spotsNote)}</small>
+            <small data-spotlog class="muted">{@html rich(W.spotsNote)}</small>
         {/if}
-        <div class="card map-toggles">
-            <button class="maptog" role="switch" aria-checked={ S.mapSpots } on:click={ () => setSettings({ ...S, mapSpots: !S.mapSpots }) }>
-                <span class="grow"><b>{ W.mapSpotsTitle }</b><small>{ W.mapSpotsSub }</small></span>
-                <span class="switch" class:on={ S.mapSpots }><i></i></span>
+        <div data-spotlog class="card map-toggles">
+            <button data-spotlog class="maptog" role="switch" aria-checked={ S.mapSpots } on:click={ () => setSettings({ ...S, mapSpots: !S.mapSpots }) }>
+                <span data-spotlog class="grow"><b data-spotlog>{ W.mapSpotsTitle }</b><small data-spotlog>{ W.mapSpotsSub }</small></span>
+                <span data-spotlog class="switch" class:on={ S.mapSpots }><i data-spotlog></i></span>
             </button>
-            <button class="maptog" role="switch" aria-checked={ S.mapSessions } on:click={ () => setSettings({ ...S, mapSessions: !S.mapSessions }) }>
-                <span class="grow"><b>{ W.mapSessTitle }</b><small>{ W.mapSessSub }</small></span>
-                <span class="switch" class:on={ S.mapSessions }><i></i></span>
+            <button data-spotlog class="maptog" role="switch" aria-checked={ S.mapSessions } on:click={ () => setSettings({ ...S, mapSessions: !S.mapSessions }) }>
+                <span data-spotlog class="grow"><b data-spotlog>{ W.mapSessTitle }</b><small data-spotlog>{ W.mapSessSub }</small></span>
+                <span data-spotlog class="switch" class:on={ S.mapSessions }><i data-spotlog></i></span>
             </button>
         </div>
     {:else if tab === 'sessions'}
         {#if data.sessions.length === 0}
-            <div class="empty">{@html rich(W.sessEmpty)}</div>
+            <div data-spotlog class="empty">{@html rich(W.sessEmpty)}</div>
         {:else}
-            <div class="seg">
-                <button class:on={ sessView === 'list' } on:click={ () => (sessView = 'list') }>{ W.sessList }</button>
-                <button class:on={ sessView === 'cal' } on:click={ () => (sessView = 'cal') }>{ W.sessCal }</button>
+            <div data-spotlog class="seg">
+                <button data-spotlog class:on={ sessView === 'list' } on:click={ () => (sessView = 'list') }>{ W.sessList }</button>
+                <button data-spotlog class:on={ sessView === 'cal' } on:click={ () => (sessView = 'cal') }>{ W.sessCal }</button>
             </div>
             {#if sessView === 'list'}
-                <div class="list">
+                <div data-spotlog class="list">
                     {#each allSessions as se (se.id)}
                         <SwipeRow on:open={ () => openSession(se) } on:delete={ () => deleteSession(se) }>
-                            <span class="dot" style="background: { ratingBg(se.rating) }; color: { ratingFg(se.rating) }">{ se.rating }</span>
-                            <span class="grow"><span>{ spotById(se.spotId)?.name || W.noSpotYet }{ se.track ? ' · ' + W.gps : '' }</span><small>{ fmtDay(se.date) } · { se.checked ? W.checkedLabel : se.notes ? se.notes.slice(0, 38) : RATE[se.rating - 1] }</small></span>
+                            <span data-spotlog class="dot" style="background: { ratingBg(se.rating) }; color: { ratingFg(se.rating) }">{ se.rating }</span>
+                            <span data-spotlog class="grow"><span data-spotlog>{ spotById(se.spotId)?.name || W.noSpotYet }{ se.track ? ' · ' + W.gps : '' }</span><small data-spotlog>{ fmtDay(se.date) } · { se.checked ? W.checkedLabel : se.notes ? se.notes.slice(0, 38) : RATE[se.rating - 1] }</small></span>
                         </SwipeRow>
                     {/each}
                 </div>
-                <small class="muted">{ W.swipeHint }</small>
+                <small data-spotlog class="muted">{ W.swipeHint }</small>
             {:else}
                 <Calendar sessions={ realSessions } colors={ RATING_BG } labels={ RATE } spotName={ se => spotById(se.spotId)?.name || W.noSpotYet } on:open={ e => openSession(e.detail) } />
             {/if}
         {/if}
     {:else if tab === 'gear'}
-        <div class="card">
-            <b>{ W.gearAddTitle }</b>
-            <small class="muted">{ W.gearAddSub }</small>
-            <div class="seg">
-                {#each GEAR_SPORTS as sp}<button class:on={ gearSport === sp } on:click={ () => { gearSport = sp; gearKind = GEAR_BY_SPORT[sp][0].kind; } }>{ sportLbl(sp) }</button>{/each}
-            </div>
-            <div class="chips">
-                {#each GEAR_BY_SPORT[gearSport] as k}<button class="chip" class:on={ gearKind === k.kind } on:click={ () => (gearKind = k.kind) }>{ k.kind }</button>{/each}
-            </div>
-            <div class="row">
-                <input bind:value={ gearName } placeholder={ gearHint(gearSport, gearKind) } on:keydown={ e => e.key === 'Enter' && addGear() } />
-                <button class="btn primary small" disabled={ !gearName.trim() } on:click={ addGear }>{ W.gearAddBtn }</button>
-            </div>
-        </div>
-        {#if data.gear.length === 0}
-            <div class="empty">{@html rich(W.gearEmpty)}</div>
-        {:else}
-            {#each gearGroups as grp (grp.sport)}
-                <div class="section">
-                    <div class="row"><b class="grow">{ sportLbl(grp.sport) }</b><small>{ fill(W.gearSaved, { n: grp.items.length }) }</small></div>
-                    <div class="list">
-                        {#each grp.items as g (g.id)}
-                            <div class="item static">
-                                <span class="kind">{ g.kind }</span>
-                                <span class="grow"><span>{ g.name }</span><small>{ fill(W.gearUsed, { n: gearUse(g.id) }) }</small></span>
-                                <button class="link danger" on:click={ () => deleteGear(g.id) }>{ W.gearRemove }</button>
-                            </div>
-                        {/each}
-                    </div>
-                </div>
-            {/each}
-        {/if}
+        <GearScreen groups={gearGroups} count={data.gear.length} {gearUse} on:add={ e => addGear(e.detail) } on:remove={ e => deleteGear(e.detail) } />
     {:else}
-        <div class="about">
-            <div class="card beta-card">
-                <b class="h3">{@html rich(W.betaTitle)}</b>
-                <p class="p muted">{@html rich(W.betaText)}</p>
-                <div class="btns">
-                    <button class="btn ghost" on:click={ () => exportJson(data) }>{ W.download }</button>
-                    <label class="btn ghost">{ W.upload }<input type="file" accept=".json,application/json" on:change={ onUpload } hidden /></label>
-                </div>
-                {#if W.uploadHint}<small class="muted">{ W.uploadHint }</small>{/if}
-            </div>
-            <div class="card">
-                <b class="h3">{@html rich(W.aboutTitle)}</b>
-                <p class="p">{@html rich(W.aboutText)}</p>
-            </div>
-            <div class="card steps">
-                <b class="h3">{@html rich(W.howTitle)}</b>
-                {#each [1, 2, 3, 4] as n}
-                    <div class="step"><span class="n">{ n }</span><span class="grow"><b>{@html rich(W['step' + n + 'Title'])}</b><small>{@html rich(W['step' + n + 'Text'])}</small></span></div>
-                {/each}
-            </div>
-            <div class="card">
-                <b class="h3">{@html rich(W.goodTitle)}</b>
-                {#each [1, 2, 3] as n}{#if W['good' + n]}<p class="p muted">{@html rich(W['good' + n])}</p>{/if}{/each}
-                <div class="row data-links">
-                    <button class="link danger" on:click={ clearAll }>{ armed === 'all' ? W.deleteAllArmed : W.deleteAll }</button>
-                </div>
-            </div>
-            <small class="muted credits">{ W.tideCredits }</small>
-            <div class="sig">
-                <PixelStar size={ 14 } />
-                <small class="ver">{ fill(W.version, { v: version }) }</small>
-                <a class="coffee" href={ FEEDBACK_URL } target="_blank" rel="noopener noreferrer">{ W.feedback }</a>
-            </div>
-        </div>
+        <About {version} feedbackUrl={ FEEDBACK_URL } deleteArmed={ armed === 'all' } on:download={ () => exportJson(data) } on:upload={ e => onUpload(e.detail) } on:clear={ clearAll } />
     {/if}
-    {#if tab !== 'about'}<small class="beta-note">{@html rich(W.betaNote)}</small>{/if}
+    {#if tab !== 'about'}<small data-spotlog class="beta-note">{@html rich(W.betaNote)}</small>{/if}
 
 
 <!-- ================= PICK A PLACE ================= -->
 {:else if view === 'pick'}
     {#if pickFor === 'snap'}
-        <p class="p muted">{@html rich(W.pickSnapNote, { time: fmtTime(Date.now() + 864e5) })}</p>
+        <p data-spotlog class="p muted">{@html rich(W.pickSnapNote, { time: fmtTime(Date.now() + 864e5) })}</p>
     {/if}
-    <div class="opts">
+    <div data-spotlog class="opts">
         {#if pickFor === 'log' && lastSnap}
-            <button class="opt" on:click={ () => lastSnap && startLog({ snap: lastSnap }) }>
-                <span class="ico"><Icon name="weather" /></span>
-                <span class="grow"><span>{ W.pickLast }</span><small>{ spotById(lastSnap.spotId)?.name || W.pickSavedPlace } · { fmtDayTime(lastSnap.ts) }</small></span>
-                <span class="chev-r" aria-hidden="true">›</span>
+            <button data-spotlog class="opt" on:click={ () => lastSnap && startLog({ snap: lastSnap }) }>
+                <span data-spotlog class="ico"><Icon name="weather" /></span>
+                <span data-spotlog class="grow"><span data-spotlog>{ W.pickLast }</span><small data-spotlog>{ spotById(lastSnap.spotId)?.name || W.pickSavedPlace } · { fmtDayTime(lastSnap.ts) }</small></span>
+                <span data-spotlog class="chev-r" aria-hidden="true">›</span>
             </button>
         {/if}
-        <button class="opt" class:on={ waitingForMap } on:click={ () => { waitingForMap = true; locError = ''; if (barMode) {modalOpen = false;} } }>
-            <span class="ico" class:live={ waitingForMap }><Icon name="pointer" /></span>
-            <span class="grow"><span>{ isMobile ? W.pickTap : W.pickClick }</span><small>{ waitingForMap ? (isMobile ? W.pickTapWaiting : W.pickClickWaiting) : W.pickMapSub }</small></span>
+        <button data-spotlog class="opt" class:on={ waitingForMap } on:click={ () => { waitingForMap = true; locError = ''; if (barMode) {modalOpen = false;} } }>
+            <span data-spotlog class="ico" class:live={ waitingForMap }><Icon name="pointer" /></span>
+            <span data-spotlog class="grow"><span data-spotlog>{ isMobile ? W.pickTap : W.pickClick }</span><small data-spotlog>{ waitingForMap ? (isMobile ? W.pickTapWaiting : W.pickClickWaiting) : W.pickMapSub }</small></span>
         </button>
-        <button class="opt" disabled={ locating } on:click={ useMyLocation }>
-            <span class="ico" class:live={ locating }><Icon name="crosshair" /></span>
-            <span class="grow"><span>{ W.pickMe }</span><small class:err={ !!locError }>{ locating ? W.pickMeFinding : locError || W.pickMeSub }</small></span>
-            <span class="chev-r" aria-hidden="true">›</span>
+        <button data-spotlog class="opt" disabled={ locating } on:click={ useMyLocation }>
+            <span data-spotlog class="ico" class:live={ locating }><Icon name="crosshair" /></span>
+            <span data-spotlog class="grow"><span data-spotlog>{ W.pickMe }</span><small data-spotlog class:err={ !!locError }>{ locating ? W.pickMeFinding : locError || W.pickMeSub }</small></span>
+            <span data-spotlog class="chev-r" aria-hidden="true">›</span>
         </button>
         {#if pickFor === 'log'}
-            <button class="opt" on:click={ () => startLog({}) }>
-                <span class="ico"><Icon name="plus" /></span>
-                <span class="grow"><span>{ W.pickNoPlace }</span><small>{ W.pickNoPlaceSub }</small></span>
-                <span class="chev-r" aria-hidden="true">›</span>
+            <button data-spotlog class="opt" on:click={ () => startLog({}) }>
+                <span data-spotlog class="ico"><Icon name="plus" /></span>
+                <span data-spotlog class="grow"><span data-spotlog>{ W.pickNoPlace }</span><small data-spotlog>{ W.pickNoPlaceSub }</small></span>
+                <span data-spotlog class="chev-r" aria-hidden="true">›</span>
             </button>
         {/if}
     </div>
     {#if pickFor !== 'spot' && spotsByCentre.length}
-        <div class="section">
-            <small class="lbl">{ W.pickNearest }</small>
-            <div class="opts">
+        <div data-spotlog class="section">
+            <small data-spotlog class="lbl">{ W.pickNearest }</small>
+            <div data-spotlog class="opts">
                 {#each spotsByCentre as s (s.id)}
-                    <button class="opt" on:click={ () => actOn(pickFor, { lat: s.lat, lon: s.lon, name: s.name }, s) }>
-                        <span class="ico"><i class="dot-s"></i></span>
-                        <span class="grow"><span>{ s.name }</span><small>{ s.place || W.yourSpot }</small></span>
-                        <span class="chev-r" aria-hidden="true">›</span>
+                    <button data-spotlog class="opt" on:click={ () => actOn(pickFor, { lat: s.lat, lon: s.lon, name: s.name }, s) }>
+                        <span data-spotlog class="ico"><i data-spotlog class="dot-s"></i></span>
+                        <span data-spotlog class="grow"><span data-spotlog>{ s.name }</span><small data-spotlog>{ s.place || W.yourSpot }</small></span>
+                        <span data-spotlog class="chev-r" aria-hidden="true">›</span>
                     </button>
                 {/each}
             </div>
         </div>
     {/if}
     {#if pickFor === 'snap'}
-        <small class="muted sl-note">{@html rich(W.pickTip)}</small>
+        <small data-spotlog class="muted sl-note">{@html rich(W.pickTip)}</small>
     {/if}
 
 <!-- ================= PLACE (clicked on map) ================= -->
 {:else if view === 'place' && place}
     <SnapCard title={ pinName(place.name) } sub={ fill(W.placeSub, { time: timelineLabelFull }) } model={ modelLabel(currentModel()) } wind={ placeNow } waves={ placeWaves } loading={ placeLoading } u={ S } empty={ W.placeEmpty } />
     {#if nearSpot}
-        <button class="card row link-card" on:click={ () => nearSpot && openSpot(nearSpot.s) }>
-            <span class="ico"><i class="dot-s"></i></span><span class="grow"><small>{ W.nearSpot }</small><b>{ nearSpot.s.name } · { fmtDistance(nearSpot.d, S.height) }</b></span><span>›</span>
+        <button data-spotlog class="card row link-card" on:click={ () => nearSpot && openSpot(nearSpot.s) }>
+            <span data-spotlog class="ico"><i data-spotlog class="dot-s"></i></span><span data-spotlog class="grow"><small data-spotlog>{ W.nearSpot }</small><b data-spotlog>{ nearSpot.s.name } · { fmtDistance(nearSpot.d, S.height) }</b></span><span data-spotlog>›</span>
         </button>
     {/if}
-    <div class="actions">
-        <button class="act" disabled={ capturing } on:click={ () => place && actOn('snap', place) }><Icon name="weather" /><b>{ capturing ? W.actLoading : W.actSaveForecast }</b><small>{ W.actSaveForecastSub }</small></button>
-        <button class="act" on:click={ () => place && actOn('spot', place) }><Icon name="pin" /><b>{ W.actAddSpot }</b><small>{ W.here }</small></button>
-        <button class="act" on:click={ () => place && actOn('log', place) }><Icon name="pen" /><b>{ W.actLogSession }</b><small>{ W.here }</small></button>
+    <div data-spotlog class="actions">
+        <button data-spotlog class="act" disabled={ capturing } on:click={ () => place && actOn('snap', place) }><Icon name="weather" /><b data-spotlog>{ capturing ? W.actLoading : W.actSaveForecast }</b><small data-spotlog>{ W.actSaveForecastSub }</small></button>
+        <button data-spotlog class="act" on:click={ () => place && actOn('spot', place) }><Icon name="pin" /><b data-spotlog>{ W.actAddSpot }</b><small data-spotlog>{ W.here }</small></button>
+        <button data-spotlog class="act" on:click={ () => place && actOn('log', place) }><Icon name="pen" /><b data-spotlog>{ W.actLogSession }</b><small data-spotlog>{ W.here }</small></button>
     </div>
 
 <!-- ================= NEW / EDIT SPOT ================= -->
 {:else if view === 'spotForm' && sf}
-    <label class="field"><span class="lbl">{ W.formName }</span><input bind:value={ sf.name } placeholder={ W.formNamePh } /></label>
-    <div class="card row">
-        <span class="ico"><i class="dot-s"></i></span>
-        <span class="grow"><small>{ W.formLocation }</small><b>{ sf.place || sf.lat.toFixed(3) + ', ' + sf.lon.toFixed(3) }</b></span>
-        <small class="r">{ isMobile ? '' : W.formMove }</small>
-    </div>
-
-    <div class="field"><span class="lbl">{ W.formSport }</span>
-        <div class="chips">
-            {#each sportChoices(sf.sports) as sp}
-                <button class="chip" class:on={ sf.sports.includes(sp) } on:click={ () => sf && (sf = { ...sf, sports: toggle(sf.sports, sp) }) }>{ sportLbl(sp) }</button>
-            {/each}
-            <button class="chip" class:on={ otherFor === 'spot' } aria-expanded={ otherFor === 'spot' } on:click={ () => openOther('spot') }>{ W.sportAddOther }</button>
-        </div>
-        {#if otherFor === 'spot'}
-            <div class="other-sport">
-                <input bind:value={ otherName } maxlength="20" placeholder={ W.sportNameHint } aria-label={ W.sportNameHint } on:keydown={ e => e.key === 'Enter' && addOther() } />
-                <button class="btn primary small" disabled={ !otherName.trim() } on:click={ addOther }>{ W.sportAdd }</button>
-            </div>
-        {/if}
-    </div>
-
-    <div class="card">
-        <div class="row"><b class="grow">{ W.formWindQ }</b></div>
-        <div class="seg">
-            <button class:on={ !sf.windUnknown } on:click={ () => sf && (sf = { ...sf, windUnknown: false }) }>{ W.formKnow }</button>
-            <button class:on={ sf.windUnknown } on:click={ () => sf && (sf = { ...sf, windUnknown: true }) }>{ W.formDontKnow }</button>
-        </div>
-        {#if sf.windUnknown}
-            <p class="p muted">{@html rich(W.formUnknownText)}</p>
-        {:else}
-            <small class="muted">{ W.formWindFrom }</small>
-            <div class="dirs">
-                {#each DIRS as d, i}
-                    <button class="dir" class:on={ sf.dirs.includes(d) } aria-pressed={ sf.dirs.includes(d) } on:click={ () => sf && (sf = { ...sf, dirs: toggle(sf.dirs, d) }) }>
-                        <span class="arrow" style="transform: rotate({ i * 45 + 180 }deg)">▲</span>{ d }
-                    </button>
-                {/each}
-            </div>
-            <div class="row sep">
-                <span class="grow"><small>{ W.formStrength }</small><b class="big2">{ sf.dMin }–{ sf.dMax } <small>{ windLabel(S.wind) }</small></b></span>
-                <div class="stepper"><small>{ W.formMin }</small>
-                    <button class="round" aria-label="Lower minimum" on:click={ () => stepRange('dMin', -1) }>−</button>
-                    <button class="round" aria-label="Raise minimum" on:click={ () => stepRange('dMin', 1) }>+</button>
-                </div>
-                <div class="stepper"><small>{ W.formMax }</small>
-                    <button class="round" aria-label="Lower maximum" on:click={ () => stepRange('dMax', -1) }>−</button>
-                    <button class="round" aria-label="Raise maximum" on:click={ () => stepRange('dMax', 1) }>+</button>
-                </div>
-            </div>
-            <small class="muted">{ W.formGuessNote }</small>
-        {/if}
-    </div>
-
-    <button class="btn primary wide" disabled={ !sf.name.trim() } on:click={ saveSpotForm }>{ sf.id ? W.formSaveEdit : W.formSaveNew }</button>
+    <SpotFormScreen bind:form={sf} settings={S} {isMobile} otherOpen={otherFor === 'spot'} bind:otherName {sportChoices} {sportLbl} on:openOther={ () => openOther('spot') } on:addOther={ addOther } on:save={saveSpotForm} on:step={ e => stepRange(e.detail.range, e.detail.delta) } />
 
 <!-- ================= SPOT ================= -->
 {:else if view === 'spot' && spot}
@@ -424,245 +306,245 @@
     />
 
     {#if spotModels.length > 1}
-        <div class="models-pick" role="radiogroup" aria-label="Forecast model">
+        <div data-spotlog class="models-pick" role="radiogroup" aria-label={ W.forecastModel }>
             {#each spotModels as m}
-                <button class:on={ spotModel === m } role="radio" aria-checked={ spotModel === m } on:click={ () => spot && setSpotModel(spot, m) }>{ modelLabel(m) }</button>
+                <button data-spotlog class:on={ spotModel === m } role="radio" aria-checked={ spotModel === m } on:click={ () => spot && setSpotModel(spot, m) }>{ modelLabel(m) }</button>
             {/each}
         </div>
     {/if}
-    <div class="actions">
-        <button class="act" disabled={ capturing } on:click={ () => spot && saveForecastAt({ lat: spot.lat, lon: spot.lon, spot }) }><Icon name="weather" /><b>{ capturing ? W.actLoading : W.actSaveForecast }</b><small>{ W.actSaveForecastSub }</small></button>
-        <button class="act" on:click={ () => spot && startLog({ spot }) }><Icon name="pen" /><b>{ W.actLogSession }</b><small>{ W.spotLogSub }</small></button>
-        <button class="act" class:on={ mapShown === spot.id } aria-pressed={ mapShown === spot.id } on:click={ () => spot && toggleShowOnMap(spot) }><Icon name="map" /><b>{ W.showOnMap }</b>{#if mapShown === spot.id}<small>{ W.showOnMapHide }</small>{/if}</button>
+    <div data-spotlog class="actions">
+        <button data-spotlog class="act" disabled={ capturing } on:click={ () => spot && saveForecastAt({ lat: spot.lat, lon: spot.lon, spot }) }><Icon name="weather" /><b data-spotlog>{ capturing ? W.actLoading : W.actSaveForecast }</b><small data-spotlog>{ W.actSaveForecastSub }</small></button>
+        <button data-spotlog class="act" on:click={ () => spot && startLog({ spot }) }><Icon name="pen" /><b data-spotlog>{ W.actLogSession }</b><small data-spotlog>{ W.spotLogSub }</small></button>
+        <button data-spotlog class="act" class:on={ mapShown === spot.id } aria-pressed={ mapShown === spot.id } on:click={ () => spot && toggleShowOnMap(spot) }><Icon name="map" /><b data-spotlog>{ W.showOnMap }</b>{#if mapShown === spot.id}<small data-spotlog>{ W.showOnMapHide }</small>{/if}</button>
     </div>
 
     {#if !savedToday}
-        <small class="muted nudge">{ W.saveNudge }</small>
+        <small data-spotlog class="muted nudge">{ W.saveNudge }</small>
     {/if}
 
     <!-- what works in general: your wind window -->
-    <div class="card">
+    <div data-spotlog class="card">
         {#if spot.windUnknown}
-            <div class="row start">
-                <span class="grow"><b>{ W.windUnknownTitle }</b><small>{@html rich(W.windUnknownText)}</small></span>
-                <button class="link" on:click={ () => spot && editSpot(spot) }>{ W.edit }</button>
+            <div data-spotlog class="row start">
+                <span data-spotlog class="grow"><b data-spotlog>{ W.windUnknownTitle }</b><small data-spotlog>{@html rich(W.windUnknownText)}</small></span>
+                <button data-spotlog class="link" on:click={ () => spot && editSpot(spot) }>{ W.edit }</button>
             </div>
             {#if suggestion}
-                <div class="suggest">
-                    <span class="grow"><small>{ W.bestDays }</small><b>{ dirsLabel(suggestion.dirs) }, { fmtWind0(suggestion.min, S.wind) }–{ fmtWind0(suggestion.max, S.wind) } { windLabel(S.wind) }</b><small>{ fill(W.bestDaysFrom, { n: suggestion.basedOn }) }</small></span>
-                    <button class="btn primary small" on:click={ applySuggestion }>{ W.useThis }</button>
+                <div data-spotlog class="suggest">
+                    <span data-spotlog class="grow"><small data-spotlog>{ W.bestDays }</small><b data-spotlog>{ directionText(suggestion.dirs) }, { fmtWind0(suggestion.min, S.wind) }–{ fmtWind0(suggestion.max, S.wind) } { windLabel(S.wind) }</b><small data-spotlog>{ fill(W.bestDaysFrom, { n: suggestion.basedOn }) }</small></span>
+                    <button data-spotlog class="btn primary small" on:click={ applySuggestion }>{ W.useThis }</button>
                 </div>
             {:else}
-                <small class="muted">{ fill(W.moreNeeded, { n: Math.max(0, 2 - goodCount) }) }</small>
+                <small data-spotlog class="muted">{ fill(W.moreNeeded, { n: Math.max(0, 2 - goodCount) }) }</small>
             {/if}
         {:else}
-            <div class="row start">
-                <span class="arrows">
-                    {#each spot.dirs as d}<span class="arrow o"><WindArrow from={ DIRS.indexOf(d) * 45 } size={ 18 } /></span>{/each}
+            <div data-spotlog class="row start">
+                <span data-spotlog class="arrows">
+                    {#each spot.dirs as d}<span data-spotlog class="arrow o"><WindArrow from={ DIRS.indexOf(d) * 45 } size={ 18 } /></span>{/each}
                 </span>
-                <span class="grow"><b>{ fill(W.works, { dirs: dirsLabel(spot.dirs), min: fmtWind0(spot.min, S.wind), max: fmtWind0(spot.max, S.wind), unit: windLabel(S.wind) }) }</b></span>
-                <button class="link" on:click={ () => spot && editSpot(spot) }>{ W.edit }</button>
+                <span data-spotlog class="grow"><b data-spotlog>{ fill(W.works, { dirs: directionText(spot.dirs), min: fmtWind0(spot.min, S.wind), max: fmtWind0(spot.max, S.wind), unit: windLabel(S.wind) }) }</b></span>
+                <button data-spotlog class="link" on:click={ () => spot && editSpot(spot) }>{ W.edit }</button>
             </div>
 
             {#if spotLearnedWindow}
-                <div class="suggest">
-                    <span class="grow"><small>{ W.learnedWindowTitle }</small><b>{ dirsLabel(spotLearnedWindow.dirs) }, { fmtWind0(spotLearnedWindow.min, S.wind) }–{ fmtWind0(spotLearnedWindow.max, S.wind) } { windLabel(S.wind) }</b></span>
-                    <button class="btn primary small" on:click={ useLearnedWindow }>{ W.useLearned }</button>
+                <div data-spotlog class="suggest">
+                    <span data-spotlog class="grow"><small data-spotlog>{ W.learnedWindowTitle }</small><b data-spotlog>{ directionText(spotLearnedWindow.dirs) }, { fmtWind0(spotLearnedWindow.min, S.wind) }–{ fmtWind0(spotLearnedWindow.max, S.wind) } { windLabel(S.wind) }</b></span>
+                    <button data-spotlog class="btn primary small" on:click={ useLearnedWindow }>{ W.useLearned }</button>
                 </div>
             {/if}
         {/if}
-        <div class="stats sep">
-            <div><span class="lbl">{ W.statSessions }</span><span class="big">{ spotReal.length }</span></div>
-            <div><span class="lbl">{ W.statAvg }</span><span class="big">{ avgRating }</span></div>
+        <div data-spotlog class="stats sep">
+            <div data-spotlog><span data-spotlog class="lbl">{ W.statSessions }</span><span data-spotlog class="big">{ spotReal.length }</span></div>
+            <div data-spotlog><span data-spotlog class="lbl">{ W.statAvg }</span><span data-spotlog class="big">{ avgRating }</span></div>
         </div>
     </div>
 
     <!-- the recommendation: today and the next days -->
-    <div class="section">
-        <b>{ W.recoTitle }</b>
-        <div class="card reco">
+    <div data-spotlog class="section">
+        <b data-spotlog>{ W.recoTitle }</b>
+        <div data-spotlog class="card reco">
             {#if spotBest}
-                <div class="reco-row">
-                    <span class="r-day">{ W.today }</span>
-                    <span class="tag" style="background: { guessCol(spotBest.level)[0] }; color: { guessCol(spotBest.level)[1] }" title={ guessNote(spotBest) }>{ guessLbl(spotBest.level, spotBest.sport) }</span>
-                    <b class="r-time">{#if spotBest.now}<span>{ bestRange(spotBest) }</span>{:else}<span>{ fmtTime(spotBest.start) }–</span><span>{ fmtTime(spotBest.end) }</span>{/if}</b>
+                <div data-spotlog class="reco-row">
+                    <span data-spotlog class="r-day">{ W.today }</span>
+                    <span data-spotlog class="tag" style="background: { guessCol(spotBest.level)[0] }; color: { guessCol(spotBest.level)[1] }" title={ guessNote(spotBest) }>{ guessLbl(spotBest.level, spotBest.sport) }</span>
+                    <b data-spotlog class="r-time">{#if spotBest.now}<span data-spotlog>{ bestRange(spotBest) }</span>{:else}<span data-spotlog>{ fmtTime(spotBest.start) }–</span><span data-spotlog>{ fmtTime(spotBest.end) }</span>{/if}</b>
                 </div>
             {/if}
             {#each spotDays.filter(d => d.best) as d (d.day)}
-                <div class="reco-row">
-                    <span class="r-day">{ fmtDay(d.day) }{#if predOfDay(d.day, spotOutlook) !== null}<small class="r-pred" title={ W.predTitle }>{ fill(W.predShort, { p: Math.round(predOfDay(d.day, spotOutlook) ?? 0) }) }</small>{/if}</span>
+                <div data-spotlog class="reco-row">
+                    <span data-spotlog class="r-day">{ fmtDay(d.day) }{#if predOfDay(d.day, spotOutlook) !== null}<small data-spotlog class="r-pred" title={ W.predTitle }>{ fill(W.predShort, { p: Math.round(predOfDay(d.day, spotOutlook) ?? 0) }) }</small>{/if}</span>
                     {#if d.best}
-                        <span class="tag" style="background: { guessCol(d.best.level)[0] }; color: { guessCol(d.best.level)[1] }" title={ guessNote(d.best) }>{ guessLbl(d.best.level, d.best.sport) }</span>
-                        <b class="r-time"><span>{ fmtTime(d.best.start) }–</span><span>{ fmtTime(d.best.end) }</span></b>
+                        <span data-spotlog class="tag" style="background: { guessCol(d.best.level)[0] }; color: { guessCol(d.best.level)[1] }" title={ guessNote(d.best) }>{ guessLbl(d.best.level, d.best.sport) }</span>
+                        <b data-spotlog class="r-time"><span data-spotlog>{ fmtTime(d.best.start) }–</span><span data-spotlog>{ fmtTime(d.best.end) }</span></b>
                     {/if}
                 </div>
             {/each}
-            {#if !spotOutlook || !dayBySpot[spot.id]}<small class="muted r-later">{ W.checking }</small>{:else if !spotBest && !spotDays.some(d => d.best)}<small class="muted r-later">{ W.daysNone }</small>{/if}
+            {#if !spotOutlook || !dayBySpot[spot.id]}<small data-spotlog class="muted r-later">{ W.checking }</small>{:else if !spotBest && !spotDays.some(d => d.best)}<small data-spotlog class="muted r-later">{ W.daysNone }</small>{/if}
         </div>
     </div>
 
     <!-- what works here for you: folded to one line, open for the details (it stays as you leave it) -->
-    <div class="section works-sec">
-        <button class="works-head" aria-expanded={ S.worksOpen } on:click={ () => setWorksOpen(!S.worksOpen) }>
-            <b>{ W.worksTitle }</b><span class="chev" class:open={ S.worksOpen } aria-hidden="true">›</span>
+    <div data-spotlog class="section works-sec">
+        <button data-spotlog class="works-head" aria-expanded={ S.worksOpen } on:click={ () => setWorksOpen(!S.worksOpen) }>
+            <b data-spotlog>{ W.worksTitle }</b><span data-spotlog class="chev" class:open={ S.worksOpen } aria-hidden="true">›</span>
         </button>
         {#if !S.worksOpen}
-            <button class="card works-sum" on:click={ () => setWorksOpen(true) }>
+            <button data-spotlog class="card works-sum" on:click={ () => setWorksOpen(true) }>
                 {#each spotLearned as m (m.sport)}
-                    <span class="ws-line"><b>{ sportLbl(m.sport) }</b><span class:muted={ !worksLine(m) }>{ worksLine(m) || W.worksUnknown }</span></span>
+                    <span data-spotlog class="ws-line"><b data-spotlog>{ sportLbl(m.sport) }</b><span data-spotlog class:muted={ !worksLine(m) }>{ worksLine(m) || W.worksUnknown }</span></span>
                 {/each}
-                <small class="muted">{ W.worksOpenHint }</small>
+                <small data-spotlog class="muted">{ W.worksOpenHint }</small>
             </button>
         {:else}
-            <div class="card works">
+            <div data-spotlog class="card works">
                 {#each spotLearned as m (m.sport)}
-                    <div class="w-sport">
-                        <div class="w-head">
-                            <b>{ sportLbl(m.sport) }</b>
+                    <div data-spotlog class="w-sport">
+                        <div data-spotlog class="w-head">
+                            <b data-spotlog>{ sportLbl(m.sport) }</b>
                             <!-- where the ranges come from: your sessions, else your wind window or your own ranges; nothing when nothing is known yet -->
-                            <small class="muted grow">{ m.outings ? fill(W.learnedFromShort, { n: m.outings, g: m.great }) : m.rows.some(r => r.from === 'window') ? W.fromWindowShort : m.rows.some(r => r.from === 'you') ? W.setByYou : '' }</small>
-                            {#if editSport !== m.sport}<button class="link" on:click={ () => startEdit(m) }>{ W.adjust }</button>{/if}
+                            <small data-spotlog class="muted grow">{ m.outings ? fill(W.learnedFromShort, { n: m.outings, g: m.great }) : m.rows.some(r => r.from === 'window') ? W.fromWindowShort : m.rows.some(r => r.from === 'you') ? W.setByYou : '' }</small>
+                            {#if editSport !== m.sport}<button data-spotlog class="link" on:click={ () => startEdit(m) }>{ W.adjust }</button>{/if}
                         </div>
                         {#if editSport === m.sport}
-                            <div class="w-grid edit">
+                            <div data-spotlog class="w-grid edit">
                                 {#each allFeatures(m.sport) as key (key)}
-                                    <span class="w-name">{ paramName(key) }</span>
+                                    <span data-spotlog class="w-name">{ paramName(key) }</span>
                                     {#if isCircular(key)}
-                                        <div class="w-dirs">
-                                            {#each DIRS as d}<button class="dchip" class:on={ editRows[key]?.dirs.includes(d) } aria-pressed={ editRows[key]?.dirs.includes(d) } on:click={ () => toggleEditDir(key, d) }>{ d }</button>{/each}
+                                        <div data-spotlog class="w-dirs">
+                                            {#each DIRS as d}<button data-spotlog class="dchip" class:on={ editRows[key]?.dirs.includes(d) } aria-pressed={ editRows[key]?.dirs.includes(d) } on:click={ () => toggleEditDir(key, d) }>{ d }</button>{/each}
                                         </div>
                                     {:else if editRows[key]}
-                                        <div class="w-inputs">
-                                            <input inputmode="decimal" bind:value={ editRows[key].lo } placeholder="–" aria-label={ paramName(key) + ' ' + W.formMin } />
-                                            <span>–</span>
-                                            <input inputmode="decimal" bind:value={ editRows[key].hi } placeholder="–" aria-label={ paramName(key) + ' ' + W.formMax } />
-                                            <small>{ key === 'wind' || key === 'gust' ? windLabel(S.wind) : key === 'waves' || key === 'swell' ? S.height : key === 'period' ? 's' : key === 'temp' ? '°' + S.temp : key === 'rain' ? 'mm' : key === 'power' ? 'kW/m' : '' }</small>
+                                        <div data-spotlog class="w-inputs">
+                                            <input data-spotlog inputmode="decimal" bind:value={ editRows[key].lo } placeholder="–" aria-label={ paramName(key) + ' ' + W.formMin } />
+                                            <span data-spotlog>–</span>
+                                            <input data-spotlog inputmode="decimal" bind:value={ editRows[key].hi } placeholder="–" aria-label={ paramName(key) + ' ' + W.formMax } />
+                                            <small data-spotlog>{ key === 'wind' || key === 'gust' ? windLabel(S.wind) : key === 'waves' || key === 'swell' ? S.height : key === 'period' ? 's' : key === 'temp' ? '°' + S.temp : key === 'rain' ? 'mm' : key === 'power' ? 'kW/m' : '' }</small>
                                         </div>
                                     {/if}
                                 {/each}
                             </div>
-                            <small class="muted">{ W.adjustNote }</small>
-                            <div class="btns">
-                                <button class="btn primary small" on:click={ saveEdit }>{ W.save }</button>
-                                <button class="btn ghost small" on:click={ () => (editSport = null) }>{ W.cancel }</button>
-                                {#if spot.ranges?.[m.sport]}<button class="link" on:click={ () => resetEdit(m.sport) }>{ W.backToLearned }</button>{/if}
+                            <small data-spotlog class="muted">{ W.adjustNote }</small>
+                            <div data-spotlog class="btns">
+                                <button data-spotlog class="btn primary small" on:click={ saveEdit }>{ W.save }</button>
+                                <button data-spotlog class="btn ghost small" on:click={ () => (editSport = null) }>{ W.cancel }</button>
+                                {#if spot.ranges?.[m.sport]}<button data-spotlog class="link" on:click={ () => resetEdit(m.sport) }>{ W.backToLearned }</button>{/if}
                             </div>
                         {:else if m.rows.length}
-                            <div class="w-grid">
-                                <span class="w-h"></span><span class="w-h">{ W.colWorks }</span><span class="w-h">{ W.colMatters }</span><span class="w-h w-r">{ W.colNow }</span>
+                            <div data-spotlog class="w-grid">
+                                <span data-spotlog class="w-h"></span><span data-spotlog class="w-h">{ W.colWorks }</span><span data-spotlog class="w-h">{ W.colMatters }</span><span data-spotlog class="w-h w-r">{ W.colNow }</span>
                                 {#each spotParts(m) as row (row.r.key)}
-                                    <span class="w-name">{ paramName(row.r.key) }{#if row.r.from === 'you'}<i class="w-you" title={ W.setByYou }></i>{/if}</span>
-                                    <b class="w-range">{ rangeText(row.r) }</b>
-                                    <span class="w-imp imp{ mattersLevel(row.r.matters) }">{ W['matter' + mattersLevel(row.r.matters)] }</span>
+                                    <span data-spotlog class="w-name">{ paramName(row.r.key) }{#if row.r.from === 'you'}<i data-spotlog class="w-you" title={ W.setByYou }></i>{/if}</span>
+                                    <b data-spotlog class="w-range">{ rangeText(row.r) }</b>
+                                    <span data-spotlog class="w-imp imp{ mattersLevel(row.r.matters) }">{ W['matter' + mattersLevel(row.r.matters)] }</span>
                                     {#if row.value !== null && row.fit !== null}
-                                        <span class="w-now" class:ok={ row.fit >= 0.99 } class:near={ row.fit > 0 && row.fit < 0.99 }>{ nowText(row.r.key, row.value) }</span>
+                                        <span data-spotlog class="w-now" class:ok={ row.fit >= 0.99 } class:near={ row.fit > 0 && row.fit < 0.99 }>{ nowText(row.r.key, row.value) }</span>
                                     {:else}
-                                        <span class="w-now">–</span>
+                                        <span data-spotlog class="w-now">–</span>
                                     {/if}
                                 {/each}
                             </div>
                         {:else}
-                            <small class="muted">{ W.worksUnknownLong }</small>
+                            <small data-spotlog class="muted">{ W.worksUnknownLong }</small>
                         {/if}
                     </div>
                 {/each}
                 {#each spotGear as gh (gh.gearId)}
-                    <small class="gear-hint">{ fill(W.gearHint, { gear: data.gear.find(g => g.id === gh.gearId)?.name || W.gear, range: `${fmtWind0(gh.lo, S.wind)}–${fmtWind0(gh.hi, S.wind)} ${windLabel(S.wind)}`, n: gh.sessions }) }</small>
+                    <small data-spotlog class="gear-hint">{ fill(W.gearHint, { gear: data.gear.find(g => g.id === gh.gearId)?.name || W.gear, range: `${fmtWind0(gh.lo, S.wind)}–${fmtWind0(gh.hi, S.wind)} ${windLabel(S.wind)}`, n: gh.sessions }) }</small>
                 {/each}
-                <small class="muted">{ W.worksLegend }</small>
+                <small data-spotlog class="muted">{ W.worksLegend }</small>
             </div>
         {/if}
     </div>
 
-    <!-- which forecast foretold your sessions here best (it informs; the spot keeps learning from its own model) -->
-    <div class="section">
-        <b>{ W.trustTitle }</b>
-        <div class="card">
+    <!-- Which model foretold your outings best; a clearly better model can become the learning model. -->
+    <div data-spotlog class="section">
+        <b data-spotlog>{ W.trustTitle }</b>
+        <div data-spotlog class="card">
             {#if trust.length === 0}
-                <span class="muted">{@html rich(W.trustEmpty)}</span>
+                <span data-spotlog class="muted">{@html rich(W.trustEmpty)}</span>
             {:else}
                 {#each trust as sc, i}
-                    <div class="score"><span class="m" class:best={ i === 0 }>{ modelLabel(sc.model) }</span><span class="missbar"><i style="width: { closeness(sc.miss, trust) }%" class:best={ i === 0 }></i></span><span>{ fill(W.trustMiss, { v: sc.miss.toFixed(1) }) }</span></div>
+                    <div data-spotlog class="score"><span data-spotlog class="m" class:best={ i === 0 }>{ modelLabel(sc.model) }</span><span data-spotlog class="missbar"><i data-spotlog style="width: { closeness(sc.miss, trust) }%" class:best={ i === 0 }></i></span><span data-spotlog>{ fill(W.trustMiss, { v: sc.miss.toFixed(1) }) }</span></div>
                 {/each}
-                <small class="muted">{ fill(W.trustNote, { n: trust[0].count, model: modelLabel(modelFor(spot)) }) }</small>
+                <small data-spotlog class="muted">{ fill(W.trustNote, { n: trust[0].count, model: modelLabel(modelFor(spot)) }) }</small>
             {/if}
         </div>
     </div>
 
-    <div class="section">
-        <b>{ W.savedTitle }</b>
+    <div data-spotlog class="section">
+        <b data-spotlog>{ W.savedTitle }</b>
         {#if spotSnapshots.length === 0}
-            <span class="muted">{@html rich(W.savedEmpty)}</span>
+            <span data-spotlog class="muted">{@html rich(W.savedEmpty)}</span>
         {:else}
-            <div class="list">
+            <div data-spotlog class="list">
                 {#each spotSnapshots.slice(0, 8) as sn (sn.id)}
-                    <div class="item static">
-                        <span class="sw" style="background: { windColor(primaryOf(sn)?.wind ?? null) }">{ fmtWind0(primaryOf(sn)?.wind ?? null, S.wind) }</span>
-                        <button class="grow plain" on:click={ () => openSnap(sn) }><span>{ fmtDayTime(sn.ts) }</span><small>{ fill(W.modelsN, { n: sn.models.length }) }{ sn.note ? ' · ' + sn.note.slice(0, 24) : '' }</small></button>
-                        <button class="mini" on:click={ () => openSnap(sn) }>{ W.edit }</button>
-                        <button class="mini danger" on:click={ () => deleteSnap(sn) }>{ W.delete }</button>
+                    <div data-spotlog class="item static">
+                        <span data-spotlog class="sw" style="background: { windColor(primaryOf(sn)?.wind ?? null) }">{ fmtWind0(primaryOf(sn)?.wind ?? null, S.wind) }</span>
+                        <button data-spotlog class="grow plain" on:click={ () => openSnap(sn) }><span data-spotlog>{ fmtDayTime(sn.ts) }</span><small data-spotlog>{ fill(W.modelsN, { n: sn.models.length }) }{ sn.note ? ' · ' + sn.note.slice(0, 24) : '' }</small></button>
+                        <button data-spotlog class="mini" on:click={ () => openSnap(sn) }>{ W.edit }</button>
+                        <button data-spotlog class="mini danger" on:click={ () => deleteSnap(sn) }>{ W.delete }</button>
                     </div>
                 {/each}
             </div>
         {/if}
     </div>
 
-    <div class="section">
-        <b>{ W.sessHere }</b>
+    <div data-spotlog class="section">
+        <b data-spotlog>{ W.sessHere }</b>
         {#if spotSessions.length === 0}
-            <span class="muted">{ W.sessHereEmpty }</span>
+            <span data-spotlog class="muted">{ W.sessHereEmpty }</span>
         {:else}
-            <div class="list">
+            <div data-spotlog class="list">
                 {#each spotSessions as se (se.id)}
                     <SwipeRow on:open={ () => openSession(se) } on:delete={ () => deleteSession(se) }>
-                        <span class="dot" style="background: { ratingBg(se.rating) }; color: { ratingFg(se.rating) }">{ se.rating }</span>
-                        <span class="grow"><span>{ fmtDay(se.date) }{ se.track ? ' · ' + W.gps : '' }</span><small>{ se.checked ? W.checkedLabel : se.notes ? se.notes.slice(0, 40) : RATE[se.rating - 1] }</small></span>
+                        <span data-spotlog class="dot" style="background: { ratingBg(se.rating) }; color: { ratingFg(se.rating) }">{ se.rating }</span>
+                        <span data-spotlog class="grow"><span data-spotlog>{ fmtDay(se.date) }{ se.track ? ' · ' + W.gps : '' }</span><small data-spotlog>{ se.checked ? W.checkedLabel : se.notes ? se.notes.slice(0, 40) : RATE[se.rating - 1] }</small></span>
                     </SwipeRow>
                 {/each}
             </div>
-            <small class="muted">{ W.swipeHint }</small>
+            <small data-spotlog class="muted">{ W.swipeHint }</small>
         {/if}
     </div>
 
-    <button class="link danger" on:click={ () => spot && deleteSpot(spot) }>{ armed === 'spot' ? W.deleteSpotArmed : W.deleteSpot }</button>
+    <button data-spotlog class="link danger" on:click={ () => spot && deleteSpot(spot) }>{ armed === 'spot' ? W.deleteSpotArmed : W.deleteSpot }</button>
 
 <!-- ================= SNAPSHOT ================= -->
 {:else if view === 'snap' && snap}
     <SnapCard title={ snapDraft ? fill(W.snapNow, { time: fmtTime(snap.ts) }) : fmtDayTime(snap.ts) } sub={ snapDraft ? W.snapDraftSub : fill(W.snapSavedSub, { time: fmtDayTime(snap.savedAt) }) } model={ modelLabel(snap.primary) } wind={ primaryOf(snap) } waves={ snap.waves } models={ snap.models } u={ S } />
-    <small class="muted sl-note">{ snap.series ? fill(W.snapSeries, { time: fmtTime(snap.series.ts[0]), n: Object.keys(snap.series.models).length }) : W.snapOld } { W.snapUses }</small>
-    <div class="card">
-        <div class="row">
-            <span class="ico"><i class="dot-s" class:off={ !snap.spotId }></i></span>
-            <span class="grow"><small>{ W.spotLabel }</small><b>{ spotById(snap.spotId)?.name || W.snapNoSpot }</b></span>
-            <button class="btn ghost small" on:click={ () => (linkOpen = !linkOpen) }>{ linkOpen ? W.done : snap.spotId ? W.editLinked : W.linkSpot }</button>
+    <small data-spotlog class="muted sl-note">{ snap.series ? fill(W.snapSeries, { time: fmtTime(snap.series.ts[0]), n: Object.keys(snap.series.models).length }) : W.snapOld } { W.snapUses }</small>
+    <div data-spotlog class="card">
+        <div data-spotlog class="row">
+            <span data-spotlog class="ico"><i data-spotlog class="dot-s" class:off={ !snap.spotId }></i></span>
+            <span data-spotlog class="grow"><small data-spotlog>{ W.spotLabel }</small><b data-spotlog>{ spotById(snap.spotId)?.name || W.snapNoSpot }</b></span>
+            <button data-spotlog class="btn ghost small" on:click={ () => (linkOpen = !linkOpen) }>{ linkOpen ? W.done : snap.spotId ? W.editLinked : W.linkSpot }</button>
         </div>
         {#if linkOpen}
-            <div class="chips">
+            <div data-spotlog class="chips">
                 {#each nearestSpots(snap.lat, snap.lon).slice(0, 5) as s (s.id)}
-                    <button class="chip" class:on={ snap.spotId === s.id } on:click={ () => { linkSnap(s.id); linkOpen = false; } }>{ s.name }</button>
+                    <button data-spotlog class="chip" class:on={ snap.spotId === s.id } on:click={ () => { linkSnap(s.id); linkOpen = false; } }>{ s.name }</button>
                 {/each}
-                <button class="chip dash" on:click={ () => snap && startSpotForm({ lat: snap.lat, lon: snap.lon }, 'snap') }>{ W.newSpotHere }</button>
-                {#if snap.spotId}<button class="chip" on:click={ () => { linkSnap(null); linkOpen = false; } }>{ W.noSpot }</button>{/if}
+                <button data-spotlog class="chip dash" on:click={ () => snap && startSpotForm({ lat: snap.lat, lon: snap.lon }, 'snap') }>{ W.newSpotHere }</button>
+                {#if snap.spotId}<button data-spotlog class="chip" on:click={ () => { linkSnap(null); linkOpen = false; } }>{ W.noSpot }</button>{/if}
             </div>
         {/if}
     </div>
-    <label class="field"><span class="lbl">{ W.note }</span><textarea rows="3" bind:value={ snapNote } on:change={ saveSnapNote } placeholder={ W.notePh }></textarea></label>
-    <div class="btns">
+    <label data-spotlog class="field"><span data-spotlog class="lbl">{ W.note }</span><textarea data-spotlog rows="3" bind:value={ snapNote } on:change={ saveSnapNote } placeholder={ W.notePh }></textarea></label>
+    <div data-spotlog class="btns">
         {#if snapDraft && replaceOf}
-            <div class="replace">
-                <b>{ fill(W.replaceTitle, { spot: spotById(replaceOf.spotId)?.name || '' }) }</b>
-                <small>{ fill(W.replaceText, { time: fmtDayTime(replaceOf.savedAt) }) }</small>
-                <div class="btns">
-                    <button class="btn primary" on:click={ () => confirmSnap(true) }>{ W.replace }</button>
-                    <button class="btn ghost" on:click={ () => (replaceOf = null) }>{ W.keepOld }</button>
+            <div data-spotlog class="replace">
+                <b data-spotlog>{ fill(W.replaceTitle, { spot: spotById(replaceOf.spotId)?.name || '' }) }</b>
+                <small data-spotlog>{ fill(W.replaceText, { time: fmtDayTime(replaceOf.savedAt) }) }</small>
+                <div data-spotlog class="btns">
+                    <button data-spotlog class="btn primary" on:click={ () => confirmSnap(true) }>{ W.replace }</button>
+                    <button data-spotlog class="btn ghost" on:click={ () => (replaceOf = null) }>{ W.keepOld }</button>
                 </div>
             </div>
         {:else if snapDraft}
-            <button class="btn primary" on:click={ () => confirmSnap(false) }>{ W.actSaveForecast }</button>
-            <button class="btn ghost" on:click={ back }>{ W.cancel }</button>
+            <button data-spotlog class="btn primary" on:click={ () => confirmSnap(false) }>{ W.actSaveForecast }</button>
+            <button data-spotlog class="btn ghost" on:click={ back }>{ W.cancel }</button>
         {:else}
-            <button class="btn primary" on:click={ back }>{ W.done }</button>
-            <button class="btn ghost" on:click={ () => snap && deleteSnap(snap) }>{ W.delete }</button>
+            <button data-spotlog class="btn primary" on:click={ back }>{ W.done }</button>
+            <button data-spotlog class="btn ghost" on:click={ () => snap && deleteSnap(snap) }>{ W.delete }</button>
         {/if}
     </div>
 
@@ -678,131 +560,131 @@
             models={ logView.models }
             u={ S }
         />
-        {#if logView.note}<small class="muted sl-note">{ logView.note }</small>{/if}
+        {#if logView.note}<small data-spotlog class="muted sl-note">{ logView.note }</small>{/if}
         {#if logView.otherDay && f.lat !== undefined && !capturing}
-            <button class="btn ghost" on:click={ () => captureForLog() }>{ f.dateStr === dateStrOf(Date.now()) ? W.logUseHours : fill(W.logSaveFor, { day: fmtDay(sessionFocus(f) ?? Date.now()) }) }</button>
+            <button data-spotlog class="btn ghost" on:click={ () => captureForLog() }>{ f.dateStr === dateStrOf(Date.now()) ? W.logUseHours : fill(W.logSaveFor, { day: fmtDay(sessionFocus(f) ?? Date.now()) }) }</button>
         {/if}
     {:else}
-        <div class="snapless">
+        <div data-spotlog class="snapless">
             {#if capturing}
-                <span>{ W.logSaving }</span>
+                <span data-spotlog>{ W.logSaving }</span>
             {:else if f.lat !== undefined}
-                <span class="grow">{ captureError || W.logNoFc }</span>
-                <button class="btn primary small" on:click={ () => f && captureForLog() }>{ W.logSaveNow }</button>
+                <span data-spotlog class="grow">{ captureError || W.logNoFc }</span>
+                <button data-spotlog class="btn primary small" on:click={ () => f && captureForLog() }>{ W.logSaveNow }</button>
             {:else}
-                <span class="grow">{ W.logNoPlace }</span>
+                <span data-spotlog class="grow">{ W.logNoPlace }</span>
             {/if}
         </div>
     {/if}
 
-    <div class="field"><span class="lbl">{ W.when }</span>
-        <div class="when" class:one={ isMobile }>
-            <input type="date" bind:value={ f.dateStr } aria-label="Date" />
-            <div class="row start times">
+    <div data-spotlog class="field"><span data-spotlog class="lbl">{ W.when }</span>
+        <div data-spotlog class="when" class:one={ isMobile }>
+            <input data-spotlog type="date" bind:value={ f.dateStr } aria-label={ W.dateLabel } />
+            <div data-spotlog class="row start times">
                 <TimeWheel bind:value={ f.start } placeholder={ W.start } />
-                <span class="to">→</span>
+                <span data-spotlog class="to">→</span>
                 <TimeWheel bind:value={ f.end } placeholder={ W.end } align={ isMobile ? 'end' : 'center' } />
             </div>
         </div>
-        {#if f.start && f.end && f.end < f.start}<small class="muted">{ W.nextDay }</small>{/if}
-        {#if !f.start && !f.checked}<small class="muted">{ W.startNeeded }</small>{:else if f.start && !f.end}<small class="muted">{ W.endHelps }</small>{/if}
-        {#if logLate}<small class="muted">{ W.logLateFc }</small>{/if}
+        {#if f.start && f.end && f.end < f.start}<small data-spotlog class="muted">{ W.nextDay }</small>{/if}
+        {#if !f.start && !f.checked}<small data-spotlog class="muted">{ W.startNeeded }</small>{:else if f.start && !f.end}<small data-spotlog class="muted">{ W.endHelps }</small>{/if}
+        {#if logLate}<small data-spotlog class="muted">{ W.logLateFc }</small>{/if}
     </div>
 
-    <div class="card">
-        <div class="row">
-            <span class="ico"><i class="dot-s"></i></span>
-            <span class="grow"><small>{ W.spotLabel }</small><b>{ spotById(f.spotId)?.name || W.noSpotYet }</b></span>
-            {#if f.spotId}<button class="link" on:click={ () => f && (f = { ...f, spotId: null }) }>{ W.change }</button>{/if}
+    <div data-spotlog class="card">
+        <div data-spotlog class="row">
+            <span data-spotlog class="ico"><i data-spotlog class="dot-s"></i></span>
+            <span data-spotlog class="grow"><small data-spotlog>{ W.spotLabel }</small><b data-spotlog>{ spotById(f.spotId)?.name || W.noSpotYet }</b></span>
+            {#if f.spotId}<button data-spotlog class="link" on:click={ () => f && (f = { ...f, spotId: null }) }>{ W.change }</button>{/if}
         </div>
         {#if f.spotId}
             <!-- the sport of this session (any sport: a new one is added to the spot); spots learn per sport -->
-            <div class="chips sep" role="radiogroup" aria-label={ W.sessionSport }>
+            <div data-spotlog class="chips sep" role="radiogroup" aria-label={ W.sessionSport }>
                 {#each sportChoices(spotById(f.spotId)?.sports || [], f.sport) as sp}
-                    <button class="chip" class:on={ otherFor !== 'log' && logSport(f) === sp } role="radio" aria-checked={ otherFor !== 'log' && logSport(f) === sp } on:click={ () => { otherFor = null; if (f) {f = { ...f, sport: sp };} } }>{ sportLbl(sp) }</button>
+                    <button data-spotlog class="chip" class:on={ otherFor !== 'log' && logSport(f) === sp } role="radio" aria-checked={ otherFor !== 'log' && logSport(f) === sp } on:click={ () => { otherFor = null; if (f) {f = { ...f, sport: sp };} } }>{ sportLbl(sp) }</button>
                 {/each}
-                <button class="chip" class:on={ otherFor === 'log' } aria-expanded={ otherFor === 'log' } on:click={ () => openOther('log') }>{ W.sportAddOther }</button>
+                <button data-spotlog class="chip" class:on={ otherFor === 'log' } aria-expanded={ otherFor === 'log' } on:click={ () => openOther('log') }>{ W.sportAddOther }</button>
             </div>
             {#if otherFor === 'log'}
-                <div class="other-sport">
-                    <input bind:value={ otherName } maxlength="20" placeholder={ W.sportNameHint } aria-label={ W.sportNameHint } on:keydown={ e => e.key === 'Enter' && addOther() } />
-                    <button class="btn primary small" disabled={ !otherName.trim() } on:click={ addOther }>{ W.sportAdd }</button>
+                <div data-spotlog class="other-sport">
+                    <input data-spotlog bind:value={ otherName } maxlength="20" placeholder={ W.sportNameHint } aria-label={ W.sportNameHint } on:keydown={ e => e.key === 'Enter' && addOther() } />
+                    <button data-spotlog class="btn primary small" disabled={ !otherName.trim() } on:click={ addOther }>{ W.sportAdd }</button>
                 </div>
             {/if}
         {/if}
         {#if !f.spotId}
-            <div class="chips">
+            <div data-spotlog class="chips">
                 {#each (f.lat !== undefined ? nearestSpots(f.lat, f.lon ?? 0) : data.spots).slice(0, 5) as s (s.id)}
-                    <button class="chip" on:click={ () => assignSpot(s) }>{ s.name }</button>
+                    <button data-spotlog class="chip" on:click={ () => assignSpot(s) }>{ s.name }</button>
                 {/each}
-                <button class="chip dash" on:click={ newSpotFromLog }>{ W.newSpot }</button>
+                <button data-spotlog class="chip dash" on:click={ newSpotFromLog }>{ W.newSpot }</button>
             </div>
-            <small class="muted">{ W.noSpotNote }</small>
+            <small data-spotlog class="muted">{ W.noSpotNote }</small>
         {/if}
     </div>
 
-    <div class="section">
-        <b class="h2">{ W.howWas }</b>
-        <div class="ratings">
+    <div data-spotlog class="section">
+        <b data-spotlog class="h2">{ W.howWas }</b>
+        <div data-spotlog class="ratings">
             {#each RATE as r, i}
-                <button class="rate" class:on={ !f.checked && f.rating === i + 1 } style={ !f.checked && f.rating === i + 1 ? `background: ${ RATING_BG[i] }; border-color: ${ RATING_BG[i] }; color: ${ RATING_FG[i] }` : '' } on:click={ () => f && (f = { ...f, rating: i + 1, checked: false }) }><b>{ i + 1 }</b><span>{ r }</span></button>
+                <button data-spotlog class="rate" class:on={ !f.checked && f.rating === i + 1 } style={ !f.checked && f.rating === i + 1 ? `background: ${ RATING_BG[i] }; border-color: ${ RATING_BG[i] }; color: ${ RATING_FG[i] }` : '' } on:click={ () => f && (f = { ...f, rating: i + 1, checked: false }) }><b data-spotlog>{ i + 1 }</b><span data-spotlog>{ r }</span></button>
             {/each}
         </div>
         <!-- a day you checked and didn't go: it teaches spotlog what doesn't work, but isn't a session on the water -->
-        <button class="chip notworth" class:on={ f.checked } aria-pressed={ !!f.checked } on:click={ () => f && (f = { ...f, checked: !f.checked }) }>{ W.notWorth }</button>
-        {#if f.checked}<small class="muted">{ W.notWorthNote }</small>{/if}
+        <button data-spotlog class="chip notworth" class:on={ f.checked } aria-pressed={ !!f.checked } on:click={ () => f && (f = { ...f, checked: !f.checked }) }>{ W.notWorth }</button>
+        {#if f.checked}<small data-spotlog class="muted">{ W.notWorthNote }</small>{/if}
     </div>
 
-    <div class="field"><span class="lbl">{ W.gear }</span>
+    <div data-spotlog class="field"><span data-spotlog class="lbl">{ W.gear }</span>
         {#each logGearGroups as grp (grp.sport)}
-            {#if logGearGroups.length > 1}<small class="muted">{ sportLbl(grp.sport) }</small>{/if}
-            <div class="chips">
+            {#if logGearGroups.length > 1}<small data-spotlog class="muted">{ sportLbl(grp.sport) }</small>{/if}
+            <div data-spotlog class="chips">
                 {#each grp.items as g (g.id)}
-                    <button class="chip" class:on={ f.gearIds.includes(g.id) } on:click={ () => f && (f = { ...f, gearIds: toggle(f.gearIds, g.id) }) }><span class="k">{ g.kind }</span>{ g.name }</button>
+                    <button data-spotlog class="chip" class:on={ f.gearIds.includes(g.id) } on:click={ () => f && (f = { ...f, gearIds: toggle(f.gearIds, g.id) }) }><span data-spotlog class="k">{ gearLbl(g.kind) }</span>{ g.name }</button>
                 {/each}
             </div>
         {/each}
-        <div class="row">
-            <input bind:value={ f.gear } placeholder={ data.gear.length ? W.gearPhAny : W.gearPhFirst } />
-            {#if f.gear.trim()}<button class="btn ghost small" on:click={ saveTypedGear }>{ W.saveToGear }</button>{/if}
+        <div data-spotlog class="row">
+            <input data-spotlog bind:value={ f.gear } placeholder={ data.gear.length ? W.gearPhAny : W.gearPhFirst } />
+            {#if f.gear.trim()}<button data-spotlog class="btn ghost small" on:click={ saveTypedGear }>{ W.saveToGear }</button>{/if}
         </div>
     </div>
 
-    <div class="card">
-        <div class="row">
-            <span class="grow"><b>{ W.gpsTitle }</b><small>{ f.track ? f.track.source : W.gpsSub }</small></span>
+    <div data-spotlog class="card">
+        <div data-spotlog class="row">
+            <span data-spotlog class="grow"><b data-spotlog>{ W.gpsTitle }</b><small data-spotlog>{ f.track ? f.track.source : W.gpsSub }</small></span>
             {#if f.track}
-                <button class="link" on:click={ () => f?.track && drawTrack(f.track, true) }>{ W.gpsShow }</button>
+                <button data-spotlog class="link" on:click={ () => f?.track && drawTrack(f.track, true) }>{ W.gpsShow }</button>
             {:else}
-                <label class="btn ghost small">{ W.gpsAdd }<input type="file" accept=".gpx,.tcx,.fit,application/gpx+xml" on:change={ onTrackFile } hidden /></label>
+                <label data-spotlog class="btn ghost small">{ W.gpsAdd }<input data-spotlog type="file" accept=".gpx,.tcx,.fit,application/gpx+xml" on:change={ onTrackFile } hidden /></label>
             {/if}
         </div>
-        {#if trackError}<small class="err">{ trackError }</small>{/if}
+        {#if trackError}<small data-spotlog class="err">{ trackError }</small>{/if}
         {#if f.track}
-            <div class="stats sep">
-                <div><span class="lbl">{ W.distance }</span><span class="big">{ fmtDistance(f.track.distanceKm, S.height) }</span></div>
-                <div><span class="lbl">{ W.time }</span><span class="big">{ Math.floor(f.track.durationMin / 60) }:{ String(Math.round(f.track.durationMin % 60)).padStart(2, '0') } <small>h</small></span></div>
-                <div><span class="lbl">{ W.topSpeed }</span><span class="big">{ fmtWind(f.track.maxSpeed, S.wind) } <small>{ windLabel(S.wind) }</small></span></div>
+            <div data-spotlog class="stats sep">
+                <div data-spotlog><span data-spotlog class="lbl">{ W.distance }</span><span data-spotlog class="big">{ fmtDistance(f.track.distanceKm, S.height) }</span></div>
+                <div data-spotlog><span data-spotlog class="lbl">{ W.time }</span><span data-spotlog class="big">{ Math.floor(f.track.durationMin / 60) }:{ String(Math.round(f.track.durationMin % 60)).padStart(2, '0') } <small data-spotlog>h</small></span></div>
+                <div data-spotlog><span data-spotlog class="lbl">{ W.topSpeed }</span><span data-spotlog class="big">{ fmtWind(f.track.maxSpeed, S.wind) } <small data-spotlog>{ windLabel(S.wind) }</small></span></div>
             </div>
-            <button class="link danger" on:click={ removeTrack }>{ W.removeTrack }</button>
+            <button data-spotlog class="link danger" on:click={ removeTrack }>{ W.removeTrack }</button>
         {/if}
     </div>
 
-    <label class="field"><span class="lbl">{ W.notes }</span><textarea rows="4" bind:value={ f.notes } placeholder={ W.notesPh }></textarea></label>
+    <label data-spotlog class="field"><span data-spotlog class="lbl">{ W.notes }</span><textarea data-spotlog rows="4" bind:value={ f.notes } placeholder={ W.notesPh }></textarea></label>
 
     <!-- a new session needs its start time: that's how the forecast from before it is found ("didn't go" days don't) -->
-    <button class="btn primary wide" disabled={ !f.id && !f.start && !f.checked } on:click={ saveSession }>{ f.id ? W.saveChanges : W.saveSession }</button>
+    <button data-spotlog class="btn primary wide" disabled={ !f.id && !f.start && !f.checked } on:click={ saveSession }>{ f.id ? W.saveChanges : W.saveSession }</button>
     {#if f.id}
-        <button class="link danger" on:click={ () => { const se = data.sessions.find(x => x.id === f?.id); if (se) {deleteSession(se, true);} } }>{ W.deleteSession }</button>
+        <button data-spotlog class="link danger" on:click={ () => { const se = data.sessions.find(x => x.id === f?.id); if (se) {deleteSession(se, true);} } }>{ W.deleteSession }</button>
     {/if}
 {/if}
 
 {/if}
 
 {#if toast}
-    <div class="toast" role="status">
-        <span class="grow">{ toast.msg }</span>
-        {#if toast.undo}<button class="undo" on:click={ runUndo }>{ toast.label || W.undo }</button>{/if}
+    <div data-spotlog class="toast" role="status">
+        <span data-spotlog class="grow">{ toast.msg }</span>
+        {#if toast.undo}<button data-spotlog class="undo" on:click={ runUndo }>{ toast.label || W.undo }</button>{/if}
     </div>
 {/if}
 
@@ -821,26 +703,43 @@
     import { onDestroy, onMount, tick } from 'svelte';
     import { hapticCleanup } from './lib/haptic';
 
+    import { installPreviewBridge } from './lib/preview/bridge';
+    import APPLICATION_CSS from './ui/application.less';
     import config from './pluginConfig';
     import { load, save, exportJson, importJson, uid, emptyData, normalise, mergeData, storageKey, useWindyUser } from './lib/storage';
     import { waveValueAt, modelValueAt, conditionsNow, hoursToday, hoursBetween, predictability, tideToday, trimWaves, captureDay, seriesAt, covers, availableModels, ALL_MODELS } from './lib/forecast';
     import { cloudAvailable, pull, push } from './lib/cloud';
+    import { createLearningController } from './lib/controllers/learning';
+    import { createLifetime } from './lib/controllers/lifetime';
+    import { createSyncController } from './lib/controllers/sync';
+    import { createForecastController } from './lib/controllers/forecasts';
+    import { baseline, commitChanges, commitSettings, settingsBaseline, canonical } from './lib/diary/revisions';
+    import { editSpot as editSpotEntity, replaceEntity } from './lib/diary/commands';
+    import { popupHtml as renderPopup } from './lib/map/popup';
+    import { sessionTip as renderSessionTip, spotPin, heatPin } from './lib/map/pins';
+    import { createTrackLayer } from './lib/map/tracks';
+    import { createMarkerLayer } from './lib/map/markers';
+    import { indexDiary } from './lib/diary/selectors';
+    import { outingTimes, clockInstant, dayKey } from './lib/time';
     import { FEEDBACK_URL, TIDE_REPORT_URL } from './lib/links';
     import { configureTides } from './lib/tides/tides';
     import { FONT_CSS } from './lib/fonts';
-    import { THEME, THEME_CSS, themeCss, guessColours, lightsUp, sessionMarkStyle } from './lib/theme';
+    import { THEME, THEME_CSS, themeCss, guessColours, sessionMarkStyle } from './lib/theme';
     import {
-        DIRS, SPORTS, RATING_BG, RATING_FG, GEAR_SPORTS, GEAR_BY_SPORT, ratingBg, ratingFg, dirName, dirsLabel, windColor, modelLabel,
+        DIRS, SPORTS, RATING_BG, RATING_FG, GEAR_SPORTS, ratingBg, ratingFg, dirName, dirsLabel, windColor, modelLabel,
         distanceKm, fmtDay, fmtDayTime, fmtTime,
     } from './lib/wind';
-    import { fmtWind, fmtWind0, fmtHeight, fmtTemp, fmtDistance, windLabel, fromWind, toWind, windStep } from './lib/units';
+    import { fmtWind, fmtWind0, fmtHeight, fmtTemp, fmtDistance, windLabel, fromWind, toWind, windStep, toHeight, fromHeight, toTemperature, fromTemperature } from './lib/units';
     import {
-        rateBest, conditionsOf, toFeatures, suggestWindow, bestToday, learnSpot, trainTreesInBackground, learningModel,
-        nextDays, learnedWindow, gearHints, isCircular, allFeatures, fitRange, mattersLevel, modelSkill,
+        rateBest, conditionsOf, toFeatures, suggestWindow, trainTreesInBackground, learningModel,
+        nextDays, learnedWindow, gearHints, isCircular, allFeatures, fitRange, mattersLevel,
     } from './lib/predict';
     import { words, w, t as tr, fill, rich, setWords } from './lib/copy';
-    import { readTrack } from './lib/gpx';
+    import { readTrack, TrackError } from './lib/gpx';
 
+    import SpotFormScreen from './ui/screens/SpotForm.svelte';
+    import About from './ui/screens/About.svelte';
+    import GearScreen from './ui/screens/Gear.svelte';
     import SnapCard from './ui/SnapCard.svelte';
     import TimeWheel from './ui/TimeWheel.svelte';
     import SwipeRow from './ui/SwipeRow.svelte';
@@ -853,6 +752,7 @@
 
     // tide errors from Windy are reported (no coordinates, no user) once the endpoint in links.ts is set
     configureTides({ reportUrl: TIDE_REPORT_URL, pluginVersion: config.version });
+    import type { SpotForm } from './ui/forms';
     import type { TideDay, TideResult } from './lib/forecast';
     import type { Result, DayBest, Hour, SportModel, RangeRow, Feature } from './lib/predict';
     import type { WindyAuth } from './lib/cloud';
@@ -863,10 +763,6 @@
     type PickFor = 'snap' | 'log' | 'spot';
     interface Loc { lat: number; lon: number; name?: string }
     interface Now { wind: ModelValue | null; waves: WaveValue | null }
-    interface SpotForm {
-        id?: string; name: string; place: string; lat: number; lon: number; sports: string[];
-        dirs: Dir8[]; dMin: number; dMax: number; windUnknown: boolean; created?: number;
-    }
     interface LogForm {
         id?: string; spotId: string | null; lat?: number; lon?: number; snapshotId: string | null;
         dateStr: string; rating: number;
@@ -874,6 +770,7 @@
         gearIds: string[]; gear: string; start: string; end: string; notes: string; track: Track | null;
         /** snapshot this log created by itself (may be replaced when the date changes) */
         autoSnap?: string | null;
+        tz?: string;
     }
     interface Frame { view: View; spotId: string | null; snapId: string | null }
 
@@ -1059,7 +956,7 @@
                 errBox.addEventListener('click', () => { errBox?.remove(); errBox = null; });
                 document.body.appendChild(errBox);
             }
-            errBox.textContent = `Spotlog ${version} problem (tap to hide): ${msg}`;
+            errBox.textContent = tr('phoneProblem', { version, message: msg });
         } catch {
             /* nothing more we can do */
         }
@@ -1104,8 +1001,8 @@
 
     let data: SpotlogData = load();
     /** ids present at the last save: anything missing now was deleted (-> tombstone, so sync won't bring it back) */
-    const allIds = (d: SpotlogData) => new Set([...d.spots, ...d.snapshots, ...d.sessions, ...d.gear].map(x => x.id));
-    let knownIds = allIds(data);
+    let savedBaseline = baseline(data);
+    const lifetime = createLifetime();
     let storageWarned = false;
     let view: View = 'home';
     let hist: Frame[] = [];
@@ -1147,8 +1044,6 @@
     let capturing = false;
     let armed: '' | 'spot' | 'all' = '';
     let armTimer: ReturnType<typeof setTimeout> | undefined;
-    let gearSport = 'Windsurf';
-    let gearKind = 'Board';
     let captureError = '';
     let captureErrorDay = '';
     // account sync
@@ -1156,24 +1051,23 @@
     let syncState: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
     let syncAt = 0;
     let syncError = '';
-    let pushTimer: ReturnType<typeof setTimeout> | undefined;
+
     let recaptureTimer: ReturnType<typeof setTimeout> | undefined;
-    let gearName = '';
     let toast: { msg: string; undo?: () => void; label?: string } | null = null;
     let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let spotMarkers: any[] = [];
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let tempMarker: any = null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let trackLayers: any[] = [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let popup: any = null;
     /** spot whose popup is shown on the map ("Show on map" switched on) */
     let mapShown: string | null = null;
 
     /* ---------- derived ---------- */
+    $: diaryIndex = indexDiary(data);
     $: S = data.settings;
     $: unitsLabel = `${windLabel(S.wind)} · ${S.height} · °${S.temp}`;
     $: allSessions = [...data.sessions].sort((a, b) => b.date - a.date);
@@ -1198,7 +1092,7 @@
     $: spotBest = spot ? bestOf(spot) : null;
     $: spotLearnedWindow = spot && !spot.windUnknown ? learnedWindow(spot, spotLearned[0]) : null;
     $: spotGear = gearHints(spotLearned);
-    $: trust = spot ? modelSkill(spot, data.sessions, data.snapshots) : [];
+    $: trust = spot ? learningState.skills.get(spot.id) || [] : [];
     $: spotOutlook = spot ? outlookOf(spot.id, outlookBySpot) : null;
     $: spotDays = spot && spotOutlook ? nextDays(spotLearned, spotOutlook.hours) : [];
     /** no forecast saved here today: today's session couldn't teach spotlog */
@@ -1216,7 +1110,7 @@
     $: synced = cloudOn && !!wUser;
     $: syncLabel = syncState === 'saving' ? W.syncSaving : syncState === 'error' ? W.syncError : syncAt ? fill(W.syncAt, { time: fmtTime(syncAt) }) : W.syncLinked;
     /** the forecast attached to this log was saved after the session started: it stays, but can't teach */
-    $: logLate = !!(logSnap && f?.start && logSnap.savedAt > new Date(`${f.dateStr}T${f.start}`).getTime());
+    $: logLate = !!(logSnap && f?.start && logSnap.savedAt > clockInstant(f.dateStr, f.start, f.tz));
     $: nearSpot = place ? nearestWithin(place.lat, place.lon, 5) : null;
     $: spotsByCentre = view === 'pick' ? nearestSpots(centre().lat, centre().lon) : [];
     let mapTs = currentTs();
@@ -1254,11 +1148,10 @@
         otherFor = null;
         otherName = '';
     }
-    const spotById = (id: string | null) => (id ? data.spots.find(s => s.id === id) : undefined);
+    const spotById = (id: string | null) => (id ? indexDiary(data).spots.get(id) : undefined);
         const pad = (n: number) => String(n).padStart(2, '0');
     const dateStrOf = (ts: number) => { const d = new Date(ts); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
     const hhmmOf = (ts: number) => { const d = new Date(ts); return `${pad(d.getHours())}:${pad(d.getMinutes() - (d.getMinutes() % 5))}`; };
-    const escapeHtml = (t: string) => t.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
     const gearUse = (id: string) => data.sessions.filter(s => s.gearIds?.includes(id)).length;
 
     /**
@@ -1299,14 +1192,20 @@
         const changed = (u?.id || null) !== (wUser?.id || null);
         wUser = u && u.id ? u : null;
         if (!changed) {return;}
+        lifetime.invalidate();
+        syncController.reset();
+        learningController.clear();
+        resetForecasts();
+        capturing = false;
+        clearTimeout(recaptureTimer);
         useWindyUser(wUser?.id);
         data = load();
-        knownIds = allIds(data);
+        savedBaseline = baseline(data);
         syncAt = 0;
         goHome();
         if (wUser) {syncNow();}
     }
-    const gearHint = (sport: string, kind: string) => GEAR_BY_SPORT[sport]?.find(k => k.kind === kind)?.hint || 'Name';
+    $: gearLbl = (kind: string) => W['gearKind' + kind] || kind;
     function groupGear(list: Gear[], order: string[]): { sport: string; items: Gear[] }[] {
         const sports = Array.from(new Set([...order.filter(x => GEAR_SPORTS.includes(x)), ...GEAR_SPORTS, 'Other']));
         return sports
@@ -1314,16 +1213,12 @@
             .filter(g => g.items.length);
     }
     /** The moment a session is about: middle of start–end, or the start, on the chosen date */
-    function sessionFocus(lf: LogForm): number | null {
-        if (!lf.start) {return null;}
-        const a = new Date(`${lf.dateStr}T${lf.start}`).getTime();
-        if (!isFinite(a)) {return null;}
-        if (lf.end) {
-            let b = new Date(`${lf.dateStr}T${lf.end}`).getTime();
-            if (b < a) {b += 864e5;}
-            return a + (b - a) / 2;
-        }
-        return a;
+    function sessionFocus(form: LogForm): number | null {
+        if (!form.start) {return null;}
+        const start = clockInstant(form.dateStr, form.start, form.tz);
+        if (!Number.isFinite(start)) {return null;}
+        const times = outingTimes({ date: start, start: form.start, end: form.end, tz: form.tz } as Session);
+        return times.end === null ? start : (start + times.end) / 2;
     }
     function viewFor(sn: Snapshot, focus: number | null) {
         if (focus !== null && covers(sn.series, focus) && sn.series) {
@@ -1340,7 +1235,13 @@
         return { ts: sn.ts, models: sn.models, waves: sn.waves, matches: false, otherDay: otherDay || outside, note };
     }
     /** the model each spot learns and recommends from: ECMWF (or a fallback), until another one foretold your sessions there better */
-    $: learnModels = new Map<string, string>(data.spots.map(s => [s.id, learningModel(s, data.sessions, data.snapshots)]));
+    const learningController = createLearningController();
+    let learningState = learningController.update(emptyData(), 0);
+    $: {
+        const nextLearning = learningController.update(data, treesReady);
+        if (nextLearning !== learningState) {learningState = nextLearning;}
+    }
+    $: learnModels = learningState.models;
     const modelFor = (s: Spot, _dep = learnModels): string => _dep?.get(s.id) || learningModel(s, data.sessions, data.snapshots);
     // a spot whose learning model changed (another one foretold your sessions better) loads its conditions again
     $: reloadFor(learnModels);
@@ -1349,14 +1250,16 @@
         const changed = data.spots.filter(s => lastModels.has(s.id) && lastModels.get(s.id) !== models.get(s.id));
         lastModels = models;
         changed.forEach(s => {
-            delete outlookBySpot[s.id];
-            outlookBySpot = outlookBySpot;
+            invalidateSpot(s.id);
             loadNow(s);
             if (view === 'spot' && spot?.id === s.id) {loadOutlook(s);}
         });
     }
     /** conditions-now cache: the spot's own model under the spot id (tiles, map), other models as id:model (spot page) */
-    const nowKey = (id: string, model: string) => (model === modelFor(spotById(id) as Spot) ? id : `${id}:${model}`);
+    function nowKey(id: string, model: string) {
+        const current = data.spots.find(item => item.id === id);
+        return current && model === modelFor(current) ? id : `${id}:${model}`;
+    }
     const outlookOf = (id: string, _dep = outlookBySpot): Outlook | null => { const o = _dep[id]; return o && o !== 'loading' ? o : null; };
     function nowOf(id: string, _dep = nowBySpot): Now | null {
         const n = _dep[id];
@@ -1364,13 +1267,12 @@
     }
     /** what spotlog has learned per spot and sport, worked out once per change of the diary (and when trees are ready) */
     let treesReady = 0;
-    const learnAll = (d: SpotlogData, models: Map<string, string>, _ready: number) =>
-        new Map<string, SportModel[]>(d.spots.map(s => [s.id, learnSpot(s, d.spots, d.sessions, d.snapshots, models.get(s.id))]));
-    $: modelMap = learnAll(data, learnModels, treesReady);
+    $: modelMap = learningState.learned;
     // boosted trees train in the background where a spot has lots of outings; the spots are learned again when they're ready
     $: trainLater(modelMap);
     function trainLater(learned: Map<string, SportModel[]>) {
-        trainTreesInBackground([...learned.values()].flat()).then(changed => { if (changed) {treesReady++;} });
+        const valid = lifetime.capture();
+        trainTreesInBackground([...learned.values()].flat()).then(changed => { if (valid() && changed) {treesReady++;} });
     }
     const modelsOf = (s: Spot, _dep = modelMap): SportModel[] => _dep.get(s.id) || [];
     $: guessOf = (s: Spot): Result | null => {
@@ -1380,7 +1282,7 @@
     /** the best stretch of the rest of today (ECMWF), so a good evening shows up in the afternoon already */
     $: bestOf = (s: Spot): DayBest | null => {
         const h = dayBySpot[s.id];
-        return h ? bestToday(modelsOf(s, modelMap), h) : null;
+        return h ? learningController.best(s.id, modelsOf(s, modelMap), h) : null;
     };
     /** what a tag is based on, or why it's "Not sure yet" (shown as the tag's tooltip and under the forecast card's tag) */
     $: guessNote = (g: Result | DayBest | null): string => {
@@ -1394,7 +1296,7 @@
     $: paramName = (k: Feature): string => W['param' + k[0].toUpperCase() + k.slice(1)];
     /** a range in your units: "8–13 kn", "up to 1.2 m", "W–SW"; separate spans joined with " · " */
     $: rangeText = (r: RangeRow): string => {
-        if (r.dirs) {return dirsLabel(r.dirs);}
+        if (r.dirs) {return !r.dirs.length || r.dirs.length === 8 ? W.anyDirection : dirsLabel(r.dirs);}
         const isWind = r.key === 'wind' || r.key === 'gust';
         const fmt = (v: number) => (isWind ? fmtWind0(v, S.wind) : r.key === 'period' ? `${Math.round(v)}` : r.key === 'temp' ? fmtTemp(v, S.temp).replace(/\s*°.*/, '') : r.key === 'rain' || r.key === 'power' ? `${Math.round(v * 10) / 10}` : fmtHeight(v, S.height));
         const unit = isWind ? windLabel(S.wind) : r.key === 'period' ? 's' : r.key === 'temp' ? `°${S.temp}` : r.key === 'rain' ? 'mm' : r.key === 'power' ? 'kW/m' : S.height;
@@ -1425,17 +1327,14 @@
     function primaryOf(sn: Snapshot): ModelValue | null {
         return sn.models.find(m => m.model === sn.primary) || sn.models[0] || null;
     }
-    function durationH(a: string, b: string): number {
-        if (!a || !b) {return 0;}
-        const [ah, am] = a.split(':').map(Number);
-        const [bh, bm] = b.split(':').map(Number);
-        const d = (bh * 60 + bm - (ah * 60 + am)) / 60;
-        return d > 0 ? d : 0;
-    }
-    const sessionHours = (s: Session) => durationH(s.start, s.end) || (s.track ? s.track.durationMin / 60 : 0);
+    const sessionHours = (session: Session) => {
+        const times = outingTimes(session);
+        return times.end === null ? (session.track?.durationMin || 0) / 60 : (times.end - times.start) / 3600e3;
+    };
     function nearestSpots(lat: number, lon: number): Spot[] {
         return [...data.spots].sort((a, b) => distanceKm(a, { lat, lon }) - distanceKm(b, { lat, lon }));
     }
+    function directionText(dirs: Dir8[]) {return dirsLabel(dirs) || W.anyDirection;}
     function nearestWithin(lat: number, lon: number, km: number): { s: Spot; d: number } | null {
         const n = data.spots.map(s => ({ s, d: distanceKm(s, { lat, lon }) })).sort((a, b) => a.d - b.d)[0];
         return n && n.d < km ? n : null;
@@ -1515,23 +1414,16 @@
         armTimer = setTimeout(() => (armed = ''), 3500);
         return false;
     }
-    function persist() {
-        const now = Date.now();
-        const cur = allIds(data);
-        const deleted = { ...(data.deleted || {}) };
-        const revived = { ...(data.revived || {}) };
-        knownIds.forEach(id => { if (!cur.has(id)) {deleted[id] = now;} });
-        // undo brings an item back: remembered, so another open tab doesn't delete it again
-        cur.forEach(id => { if (deleted[id]) { delete deleted[id]; revived[id] = now; } });
-        knownIds = cur;
-        data.deleted = deleted;
-        data.revived = revived;
-        data.updatedAt = now;
+    function saveLocal(preferencesOnly = false) {
         if (!save(data) && !storageWarned) {
             storageWarned = true;
             showToast(w(synced ? 'toastFullSynced' : 'toastFull'));
         }
-        data = data;
+        savedBaseline = preferencesOnly ? settingsBaseline(data, savedBaseline) : baseline(data);
+    }
+    function persist(preferencesOnly = false) {
+        data = preferencesOnly ? commitSettings(data, savedBaseline) : commitChanges(data, savedBaseline);
+        saveLocal(preferencesOnly);
         drawSpotMarkers();
         schedulePush();
     }
@@ -1547,68 +1439,50 @@
         }
         return { id: wUser.id, token };
     };
-    function schedulePush() {
-        if (!synced) {return;}
-        clearTimeout(pushTimer);
-        pushTimer = setTimeout(async () => {
-            const a = windyAuth();
-            if (!a) {return;}
-            syncState = 'saving';
-            try {
-                await push(a, data);
-                syncState = 'saved';
-                syncAt = Date.now();
-            } catch (e) {
-                syncState = 'error';
-                syncError = (e as Error).message;
-                pushTimer = setTimeout(schedulePush, 30e3);
-            }
-        }, 1200);
-    }
-    /** Merges this browser's diary with the one stored for this Windy user (by id, newer wins, deletions stay deleted) */
-    async function syncNow() {
-        const a = windyAuth();
-        if (!cloudOn || !a) {return;}
-        syncState = 'saving';
-        try {
-            const remote = await pull(a);
-            if (remote) {
-                const r = normalise(remote.data);
-                r.updatedAt = Math.max(r.updatedAt || 0, remote.updatedAt || 0);
-                data = mergeData(r, data);
-            }
-            data.updatedAt = Date.now();
-            knownIds = allIds(data);
-            save(data);
-            await push(a, data);
-            data = data;
-            drawSpotMarkers();
-            loadAllNow();
-            syncState = 'saved';
-            syncAt = Date.now();
-        } catch (e) {
-            syncState = 'error';
-            syncError = (e as Error).message;
+    const syncController = createSyncController({
+        auth: windyAuth, read: () => data, pull, push,
+        accept: acceptDiary,
+        state: (nextState, error) => {
+            syncState = nextState;
+            syncError = error || '';
+            if (nextState === 'saved') {syncAt = Date.now();}
+        },
+    });
+    function schedulePush() {if (synced) {syncController.schedule();}}
+    function syncNow() {return cloudOn ? syncController.sync() : Promise.resolve();}
+
+    function acceptDiary(merged: SpotlogData, write = true) {
+        const previousSpots = data.spots;
+        data = merged;
+        for (const previousSpot of previousSpots) {
+            const current = spotById(previousSpot.id);
+            if (!current || current.lat !== previousSpot.lat || current.lon !== previousSpot.lon || current.recommendationModel !== previousSpot.recommendationModel) {invalidateSpot(previousSpot.id);}
         }
+        if (spot) {
+            spot = spotById(spot.id) || null;
+            if (!spot && view === 'spot') {goHome();}
+        }
+        if (snap && !snapDraft) {snap = data.snapshots.find(item => item.id === snap?.id) || null;}
+        if (write) {saveLocal();} else {savedBaseline = baseline(data);}
+        drawSpotMarkers(); loadAllNow();
+        if (view === 'spot' && spot) {void loadOutlook(spot);}
     }
+
     /** Another Windy tab saved the diary: merge it in, so two open tabs never overwrite each other */
-    const sig = (d: SpotlogData) => JSON.stringify([[...allIds(d)].sort(), Object.keys(d.deleted || {}).sort(), Object.keys(d.revived || {}).sort(), d.settings]);
+    const sig = (d: SpotlogData) => canonical(d);
     function onStorage(e: StorageEvent) {
         if (e.key !== storageKey() || !e.newValue) {return;}
         try {
             const other = normalise(JSON.parse(e.newValue));
             const merged = mergeData(other, data);
-            data = merged;
-            knownIds = allIds(data);
-            if (sig(merged) !== sig(other)) {save(merged);}
-            drawSpotMarkers();
+            acceptDiary(merged, sig(merged) !== sig(other));
         } catch (err) {
             console.info('[spotlog] could not read the other tab\'s data', err);
         }
     }
     function setSettings(s: SettingsT) {
         data.settings = s;
-        persist();
+        persist(true);
     }
 
     /* ---------- beta: the diary lives in this browser; a downloaded copy can be uploaded again ---------- */
@@ -1617,14 +1491,17 @@
         const file = input.files?.[0];
         input.value = '';
         if (!file) {return;}
+        const valid = lifetime.capture('upload');
         try {
-            data = await importJson(file, data);
+            const incoming = await importJson(file, data);
+            if (!valid()) {return;}
+            data = mergeData(incoming, data);
             persist();
             drawSpotMarkers();
             loadAllNow();
             showToast(tr('toastImported', { spots: data.spots.length, sessions: data.sessions.length }));
         } catch {
-            showToast(w('toastImportFail'));
+            if (valid()) {showToast(w('toastImportFail'));}
         }
     }
 
@@ -1700,10 +1577,7 @@
         return [...groups.values()];
     }
     function sessionTip(list: Session[]): string {
-        const sp = spotById(list[0].spotId);
-        const head = `<b>${escapeHtml(sp?.name || w('tipYour'))}</b>${list.length > 1 ? ` · ${escapeHtml(tr('tipSessions', { n: list.length }))}` : ''}`;
-        const rows = list.slice(0, 5).map(se => `<span><i style="background:${ratingBg(se.rating)}"></i>${escapeHtml(fmtDay(se.date))} · ${escapeHtml(w('rate' + se.rating))}</span>`).join('');
-        return head + rows + (list.length > 5 ? `<small>${escapeHtml(tr('tipMore', { n: list.length - 5 }))}</small>` : '');
+        return renderSessionTip(list, spotById(list[0].spotId)?.name || w('tipYour'));
     }
     /** many changes in one go (conditions arriving for 10 spots) redraw the pins once */
     let drawQueued = false;
@@ -1716,116 +1590,53 @@
             if (!destroyed) {drawSpotMarkersNow();}
         });
     }
+    const markerLayer = createMarkerLayer((descriptor, click) => {
+        const icon = L.divIcon({ className: 'spotlog-marker', html: descriptor.html, iconSize: [0, 0], iconAnchor: [0, 0] });
+        const marker = new L.Marker({ lat: descriptor.lat, lng: descriptor.lon },
+            { icon, ...(descriptor.glow ? { keyboard: false, zIndexOffset: -1000 } : {}) }).addTo(map);
+        if (descriptor.click) {marker.on('click', click);}
+        return marker;
+    });
     function drawSpotMarkersNow() {
-        spotMarkers.forEach(m => m.remove());
-        spotMarkers = [];
         if (typeof L === 'undefined' || !map) {return;}
-        const st = data.settings;
+        const settings = data.settings;
         const activeId = view === 'spot' ? spot?.id : view === 'log' ? f?.spotId : view === 'snap' ? snap?.spotId : null;
-        if (st.mapSessions) {
-            // just a glow, no click: many sessions at one place overlap and get brighter (heat map feel); hover for dates
-            for (const p of sessionPlaces()) {
-                const mark = sessionMarkStyle(p.list.length);
+        const descriptors: import('./lib/map/markers').MarkerDescriptor[] = [];
+        if (settings.mapSessions) {
+            for (const location of sessionPlaces()) {
+                const mark = sessionMarkStyle(location.list.length);
                 if (!mark) {break;}
                 const core = THEME.sessCore && THEME.sessStyle !== 'dot' ? ' core' : '';
-                const icon = L.divIcon({
-                    className: 'spotlog-marker',
-                    html: `<div class="spotlog-heat${core}" style="${mark.css}"><div class="spotlog-tip">${sessionTip(p.list)}</div></div>`,
-                    iconSize: [0, 0],
-                    iconAnchor: [0, 0],
-                });
-                spotMarkers.push(new L.Marker({ lat: p.lat, lng: p.lon }, { icon, keyboard: false, zIndexOffset: -1000 }).addTo(map));
+                descriptors.push({ id: `glow:${location.lat}:${location.lon}`, lat: location.lat, lon: location.lon, glow: true,
+                    html: heatPin(mark.css, core, sessionTip(location.list)) });
             }
         }
-        for (const s of data.spots) {
-            const on = activeId === s.id;
-            if (!st.mapSpots && !on) {continue;}
-            // the pin sits on top of its own glow, so hovering the pin shows that spot's sessions
-            const here = st.mapSessions ? data.sessions.filter(x => x.spotId === s.id && !x.checked).sort((a, b) => b.date - a.date) : [];
-            const tip = here.length ? `<div class="spotlog-tip">${sessionTip(here)}</div>` : '';
-            // a spot whose guess reaches the chosen level lights up in the guess colour; otherwise it stays grey
-            // lights up when the rest of today has a good stretch; "great 18:00" when it's later on
-            const best = bestOf(s);
-            const level = best?.level ?? 0;
-            const good = level > 0 && lightsUp(level);
-            const [gb, gf] = good ? guessColours(level) : ['', ''];
-            const word = good && THEME.goodWord ? `<em>${escapeHtml(w('rate' + level))}${best && !best.now ? ' ' + escapeHtml(fmtTime(best.start)) : ''}</em>` : '';
-            let html: string;
-            if (compactMarkers) {
-                // zoomed out: a plain dot, guess colour or grey (outline only if the theme turns it on)
-                html = `<div class="spotlog-cdot" style="background:${good ? gb : 'var(--sl-compact-dot)'}">${tip || `<div class="spotlog-tip"><b>${escapeHtml(s.name)}</b></div>`}</div>`;
-            } else if (on) {
-                // selected: its own label colour; the dot shows the conditions
-                html = `<div class="spotlog-pin active"><i style="background:${good ? gb : 'var(--sl-active-dot)'}"></i>${escapeHtml(s.name)}${word}${tip}</div>`;
-            } else {
-                let style = '';
-                let dot = '';
-                if (good && THEME.goodStyle === 'pin') { style = `background:${gb};color:${gf};`; dot = gf; }
-                if (good && THEME.goodStyle === 'dot') {dot = gb;}
-                if (good && THEME.goodStyle === 'outline') { style = `box-shadow:0 0 0 2px ${gb}, 0 2px 8px rgba(0,0,0,.35);`; dot = gb; }
-                html = `<div class="spotlog-pin${good ? ' good' : ''}" style="${style}"><i${dot ? ` style="background:${dot}"` : ''}></i>${escapeHtml(s.name)}${word}${tip}</div>`;
-            }
-            const icon = L.divIcon({ className: 'spotlog-marker', html, iconSize: [0, 0], iconAnchor: [0, 0] });
-            const m = new L.Marker({ lat: s.lat, lng: s.lon }, { icon }).addTo(map);
-            m.on('click', () => onMapPick({ lat: s.lat, lon: s.lon }, s));
-            spotMarkers.push(m);
+        for (const item of data.spots) {
+            const active = activeId === item.id;
+            if (!settings.mapSpots && !active) {continue;}
+            const sessions = settings.mapSessions ? (diaryIndex.sessionsBySpot.get(item.id) || []).filter(session => !session.checked).sort((a, b) => b.date - a.date) : [];
+            descriptors.push({ id: `spot:${item.id}`, lat: item.lat, lon: item.lon,
+                html: spotPin(item, bestOf(item), active, compactMarkers, sessions.length ? sessionTip(sessions) : ''),
+                click: () => onMapPick({ lat: item.lat, lon: item.lon }, item) });
         }
+        markerLayer.reconcile(descriptors);
     }
     // conditions arrive one spot at a time: redraw so good spots light up
     $: if (nowBySpot && dayBySpot && modelMap && mapReady) {drawSpotMarkers();}
-    function drawTrack(t: Track | null, fit = false) {
-        trackLayers.forEach(l => l.remove());
-        trackLayers = [];
-        if (!t || !t.points.length || typeof L === 'undefined' || !map) {return;}
-        try {
-            // route colours and widths come from the theme (a thin line with a faint edge)
-            const casing = L.polyline(t.points, { color: THEME.casingColor, weight: THEME.routeWidth + THEME.casingWidth * 2, opacity: THEME.casingWidth > 0 ? THEME.casingAlpha : 0, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(map);
-            const line = L.polyline(t.points, { color: THEME.routeColor, weight: THEME.routeWidth, opacity: 1, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(map);
-            const first = t.points[0];
-            const last = t.points[t.points.length - 1];
-            const dot = (cls: string) => L.divIcon({ className: 'spotlog-marker', html: `<div class="spotlog-dot ${cls}"></div>`, iconSize: [0, 0], iconAnchor: [0, 0] });
-            const start = new L.Marker({ lat: first[0], lng: first[1] }, { icon: dot('start'), interactive: false }).addTo(map);
-            const end = new L.Marker({ lat: last[0], lng: last[1] }, { icon: dot('end'), interactive: false }).addTo(map);
-            // label next to the point furthest from the start, so it sits at the outer end of the route
-            let far = first;
-            let farD = -1;
-            for (const pt of t.points) {
-                const d = (pt[0] - first[0]) ** 2 + (pt[1] - first[1]) ** 2;
-                if (d > farD) { farD = d; far = pt; }
-            }
-            const h = Math.floor(t.durationMin / 60);
-            const m = String(Math.round(t.durationMin % 60)).padStart(2, '0');
-            const label = L.divIcon({
-                className: 'spotlog-marker',
-                html: `<div class="spotlog-route-label">${fmtDistance(t.distanceKm, S.height)} · ${h}:${m} h</div>`,
-                iconSize: [0, 0],
-                iconAnchor: [0, 0],
-            });
-            const lab = new L.Marker({ lat: far[0], lng: far[1] }, { icon: label, interactive: false }).addTo(map);
-            trackLayers = [casing, line, start, end, lab];
-            if (fit) {map.fitBounds?.(line.getBounds(), { padding: [60, 60], maxZoom: 15 });}
-        } catch (e) {
-            console.info('[spotlog] could not draw the track', e);
-        }
+    const trackLayer = createTrackLayer({
+        line: (points, options) => L.polyline(points, { ...options, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(map),
+        point: (lat, lon, html) => new L.Marker({ lat, lng: lon }, { icon: L.divIcon({ className: 'spotlog-marker', html, iconSize: [0, 0], iconAnchor: [0, 0] }), interactive: false }).addTo(map),
+        fit: bounds => map.fitBounds?.(bounds as L.LatLngBounds, { padding: [60, 60], maxZoom: 15 }),
+    });
+    function drawTrack(track: Track | null, fit = false) {
+        if (typeof L !== 'undefined' && map) {trackLayer.draw(track, S, fit);}
     }
     function popupHtml(sp: Spot, n: Now | null, loading = false): string {
-        const wv = n?.wind;
-        const g = n ? rateBest(modelsOf(sp, modelMap), conditionsOf(n.wind, n.waves)) : null;
+        const guess = n ? rateBest(modelsOf(sp, modelMap), conditionsOf(n.wind, n.waves)) : null;
         const best = bestOf(sp);
-        const tile = (label: string, val: string, bg: string, unit = '') =>
-            `<div class="sl-t" style="background:${bg}"><span>${label}</span><b>${val}</b><small>${unit || '&nbsp;'}</small></div>`;
-        const many = isMobile && data.spots.length > 1;
-        const nav = isMobile
-            ? `<span class="sl-nav">${many ? '<button data-act="prev" aria-label="Previous spot">‹</button><button data-act="next" aria-label="Next spot">›</button>' : ''}<button class="sl-x" data-act="close" aria-label="Close">✕</button></span>`
-            : '';
-        const L = (k: string) => escapeHtml(w(k));
-        return `<div class="sl-pop"><div class="sl-h"><span><b>${escapeHtml(sp.name)}</b><small>${L('cardNow')}</small></span>${nav}</div>` +
-            (wv ? `<div class="sl-tiles">${tile(L('fcWind'), fmtWind0(wv.wind, S.wind), windColor(wv.wind), windLabel(S.wind))}${tile(L('fcGusts'), fmtWind0(wv.gust, S.wind), windColor(wv.gust), windLabel(S.wind))}${tile(L('fcFrom'), dirName(wv.dir), 'var(--sl-dirTile, #e9e8e3)')}${n?.waves ? tile(L('fcWaves'), fmtHeight(n.waves.waves, S.height), 'var(--sl-wavesTile, #dbe6f2)', S.height) : ''}</div>` : loading ? `<small>${L('cardLoading')}</small>` : `<small>${L('fcEmpty')}</small>`) +
-            (wv ? `<small>${fmtTemp(wv.temp, S.temp)}</small>` : '') +
-            (g ? `<span class="sl-b" style="background:${guessCol(g.level)[0]};color:${guessCol(g.level)[1]}">${escapeHtml(guessLbl(g.level, g.sport))}</span>` : '') +
-            (best && !best.now ? `<small class="sl-best">${L('bestToday')}: <b>${escapeHtml(guessLbl(best.level, best.sport))}</b> ${escapeHtml(bestRange(best))}</small>` : '') +
-            (isMobile ? `<div class="sl-acts"><button data-act="snap">${L('cardSave')}</button><button data-act="log">${L('cardLog')}</button><button data-act="open">${L('cardDetails')}</button></div>` : '') +
-            '</div>';
+        return renderPopup({ spot: sp, now: n, loading, mobile: isMobile, many: data.spots.length > 1, settings: S,
+            badge: guess ? guessLbl(guess.level, guess.sport) : '', colours: guessCol(guess?.level || 0),
+            best: best && !best.now ? { label: guessLbl(best.level, best.sport), range: bestRange(best) } : null });
     }
     /** "Show on map" is a switch: the popup stays at the spot until you switch it off or leave the spot */
     async function toggleShowOnMap(sp: Spot) {
@@ -1913,6 +1724,7 @@
     }
 
     async function onMapPick(ev: { lat: number; lon: number }, known?: Spot) {
+        const valid = lifetime.capture('mapPick');
         const { lat, lon } = ev;
         const near = known ? { s: known, d: 0 } : nearestWithin(lat, lon, 1);
         if (!(known && mapShown === known.id)) {clearPopup();}
@@ -1922,13 +1734,13 @@
             const old = sf;
             sf = { ...sf, lat, lon };
             const pn = await placeName(lat, lon);
-            if (sf && sf.lat === lat) {sf = { ...sf, place: pn, name: old.name && old.name !== old.place ? old.name : pn };}
+            if (valid() && view === 'spotForm' && sf && sf.lat === lat && sf.lon === lon) {sf = { ...sf, place: pn, name: old.name && old.name !== old.place ? old.name : pn };}
             return;
         }
         if (view === 'pick') {
             const loc: Loc = near ? { lat: near.s.lat, lon: near.s.lon, name: near.s.name } : { lat, lon };
             if (!near || pickFor === 'spot') {loc.name = await placeName(lat, lon);}
-            actOn(pickFor, loc, pickFor === 'spot' ? undefined : near?.s);
+            if (valid() && view === 'pick') {actOn(pickFor, loc, pickFor === 'spot' ? undefined : near?.s);}
             return;
         }
         if (near) {
@@ -1948,10 +1760,10 @@
         placeLoading = true;
         go('place');
         const n = await placeName(lat, lon);
-        if (n && place && place.lat === lat) {place = { ...place, name: n };}
+        if (valid() && view === 'place' && n && place && place.lat === lat && place.lon === lon) {place = { ...place, name: n };}
         const ts = currentTs();
         const [mv, wv] = await Promise.all([modelValueAt(currentModel(), lat, lon, ts), waveValueAt(lat, lon, ts)]);
-        if (place && place.lat === lat) {
+        if (valid() && view === 'place' && place && place.lat === lat && place.lon === lon) {
             placeNow = mv;
             placeWaves = trimWaves(wv, data.settings.layers);
             placeLoading = false;
@@ -1961,6 +1773,7 @@
     /* ---------- navigation ---------- */
     function go(v: View, remember = true, phonePanel = true) {
         if (remember && view !== v) {hist = [...hist, { view, spotId: spot?.id ?? null, snapId: snap?.id ?? null }];}
+        if (view === 'log' && v !== 'log' && v !== 'spotForm') {formGeneration++; capturing = false; clearTimeout(recaptureTimer);}
         view = v;
         showUnits = false;
         unitsOpen = false;
@@ -2011,12 +1824,11 @@
         loadOutlook(s);
         loadNow(s);
     }
-    const modelsLoading = new Set<string>();
+    const forecastController = createForecastController({ conditionsNow, hoursToday, hoursBetween, predictability, tideToday, availableModels });
     async function loadModels(s: Spot) {
-        if (modelsBySpot[s.id] || modelsLoading.has(s.id)) {return;}
-        modelsLoading.add(s.id);
-        const list = await availableModels(s.lat, s.lon);
-        modelsBySpot = { ...modelsBySpot, [s.id]: list };
+        const valid = lifetime.capture();
+        const list = await forecastController.models(s.lat, s.lon);
+        if (valid() && sameSpot(s)) {modelsBySpot = { ...modelsBySpot, [s.id]: list };}
     }
     function setSpotModel(s: Spot, m: string) {
         spotModel = m;
@@ -2059,9 +1871,11 @@
     async function useMyLocation() {
         if (locating) {return;}
         const what = pickFor;
+        const valid = lifetime.capture('location');
         locating = true;
         locError = '';
         const c = await myPosition();
+        if (!valid()) {return;}
         locating = false;
         if (view !== 'pick' || pickFor !== what) {return;}
         if (!c) {
@@ -2070,7 +1884,7 @@
         }
         const near = what === 'spot' ? null : nearestWithin(c.lat, c.lon, 1);
         const loc: Loc = { ...c, name: near?.s.name || (await placeName(c.lat, c.lon)) };
-        actOn(what, loc, near?.s);
+        if (valid() && view === 'pick' && pickFor === what) {actOn(what, loc, near?.s);}
     }
     function actOn(what: PickFor, loc: Loc, s?: Spot) {
         waitingForMap = false;
@@ -2081,6 +1895,7 @@
 
     /* ---------- spots ---------- */
     async function startSpotForm(loc: Loc, ret: 'log' | 'snap' | null) {
+        const valid = lifetime.capture('spotForm');
         sfReturn = ret;
         const isPin = !loc.name || loc.name === 'Dropped pin';
         sf = {
@@ -2091,7 +1906,7 @@
         setTemp(loc.lat, loc.lon);
         if (isPin) {
             const n = await placeName(loc.lat, loc.lon);
-            if (sf && !sf.id && sf.lat === loc.lat && n) {sf = { ...sf, place: n, name: sf.name || n };}
+            if (valid() && sf && !sf.id && sf.lat === loc.lat && sf.lon === loc.lon && n) {sf = { ...sf, place: n, name: sf.name || n };}
         }
     }
     function editSpot(s: Spot) {
@@ -2110,15 +1925,16 @@
     }
     function saveSpotForm() {
         if (!sf || !sf.name.trim()) {return;}
-        const s: Spot = {
+        const editable: Spot = {
             id: sf.id || uid(), name: sf.name.trim(), place: sf.place, lat: sf.lat, lon: sf.lon, sports: sf.sports,
             dirs: sf.windUnknown ? [] : sf.dirs, min: Math.round(fromWind(sf.dMin, S.wind) * 10) / 10, max: Math.round(fromWind(sf.dMax, S.wind) * 10) / 10,
             windUnknown: sf.windUnknown, created: sf.created || Date.now(),
         };
         const isNew = !sf.id;
-        const old = data.spots.find(x => x.id === s.id);
-        if (old?.ranges) {s.ranges = old.ranges;} // your own ranges stay
-        data.spots = isNew ? [...data.spots, s] : data.spots.map(x => (x.id === s.id ? s : x));
+        const old = data.spots.find(x => x.id === editable.id);
+        const s = editSpotEntity(old, editable);
+        invalidateSpot(s.id);
+        data.spots = replaceEntity(data.spots, s);
         delete outlookBySpot[s.id];
         persist();
         loadNow(s);
@@ -2195,9 +2011,11 @@
     }
     /** Loads the forecast and shows it for checking; nothing is stored until "Save forecast" */
     async function saveForecastAt(t: { lat: number; lon: number; spot?: Spot }) {
+        const valid = lifetime.capture('forecastCapture');
         capturing = true;
         try {
             const sn = await capture(t.lat, t.lon, t.spot?.id ?? null);
+            if (!valid()) {return;}
             if (view === 'pick') {view = 'home';} // don't come back to the picker
             snapDraft = true;
             snap = sn;
@@ -2207,9 +2025,9 @@
             go('snap');
             markSnapPlace(sn);
         } catch (e) {
-            showToast((e as Error).message === NO_DAY ? w('toastNoDay') : w('toastNoFc'));
+            if (valid()) {showToast((e as Error).message === NO_DAY ? w('toastNoDay') : w('toastNoFc'));}
         } finally {
-            capturing = false;
+            if (valid()) {capturing = false;}
         }
     }
     function removeSnap(id: string) {
@@ -2282,10 +2100,13 @@
     function emptyForm(): LogForm {
         return {
             spotId: null, snapshotId: null, dateStr: dateStrOf(Date.now()), rating: 4, sport: null,
-            gearIds: [], gear: '', start: '', end: '', notes: '', track: null,
+            gearIds: [], gear: '', start: '', end: '', notes: '', track: null, tz: deviceTz(),
         };
     }
+    let formGeneration = 0;
     function startLog(o: { spot?: Spot; lat?: number; lon?: number; snap?: Snapshot }) {
+        formGeneration++;
+        capturing = false;
         trackError = '';
         const nf = emptyForm();
         if (o.snap) {
@@ -2320,6 +2141,10 @@
      */
     async function captureForLog() {
         if (!f || f.lat === undefined) {return;}
+        const active = lifetime.capture('logCapture');
+        const capturedForm = formGeneration;
+        const capturedInput = canonical([f.dateStr, f.start, f.end, f.lat, f.lon, f.spotId]);
+        const valid = () => active() && !!f && capturedForm === formGeneration && capturedInput === canonical([f.dateStr, f.start, f.end, f.lat, f.lon, f.spotId]);
         const focus = sessionFocus(f) ?? (f.dateStr === dateStrOf(Date.now()) ? Date.now() : new Date(`${f.dateStr}T12:00`).getTime());
         capturing = true;
         captureError = '';
@@ -2327,11 +2152,13 @@
             // from the start of the session (Windy still has today's earlier hours), read at the session's middle
             const from = f.start && isFinite(new Date(`${f.dateStr}T${f.start}`).getTime()) ? new Date(`${f.dateStr}T${f.start}`).getTime() : focus;
             const sn = await capture(f.lat, f.lon ?? 0, f.spotId, Math.min(from, focus), focus);
+            if (!valid() || !f) {return;}
             const old = f.autoSnap;
             data.snapshots = [...data.snapshots.filter(x => !(old && x.id === old)), sn];
             persist();
             if (f) {f = { ...f, snapshotId: sn.id, autoSnap: sn.id };}
         } catch (e) {
+            if (!valid()) {return;}
             captureError = (e as Error).message;
             captureErrorDay = f?.dateStr || '';
             if (f && f.autoSnap) {
@@ -2342,7 +2169,7 @@
                 persist();
             }
         } finally {
-            capturing = false;
+            if (active() && capturedForm === formGeneration) {capturing = false;}
         }
     }
     /** When the session moves to another day, a forecast Spotlog saved by itself follows it */
@@ -2360,11 +2187,13 @@
         }, 500);
     }
     function openSession(se: Session) {
+        formGeneration++;
+        capturing = false;
         trackError = '';
         const sp = spotById(se.spotId);
         f = {
             id: se.id, spotId: se.spotId, lat: se.lat ?? sp?.lat, lon: se.lon ?? sp?.lon, snapshotId: se.snapshotId,
-            dateStr: dateStrOf(se.date), rating: se.rating, sport: se.sport ?? null, checked: !!se.checked, gearIds: [...(se.gearIds || [])], gear: se.gear || '',
+            dateStr: dayKey(se.date, se.tz), tz: se.tz, rating: se.rating, sport: se.sport ?? null, checked: !!se.checked, gearIds: [...(se.gearIds || [])], gear: se.gear || '',
             start: se.start, end: se.end, notes: se.notes, track: se.track || null,
         };
         go('log');
@@ -2387,7 +2216,7 @@
         if (!f) {return;}
         const sn = data.snapshots.find(x => x.id === f?.snapshotId);
         let date: number;
-        if (f.start) {date = new Date(`${f.dateStr}T${f.start}`).getTime();}
+        if (f.start) {date = clockInstant(f.dateStr, f.start, f.tz);}
         else if (sn && dateStrOf(sn.ts) === f.dateStr) {date = sn.ts;}
         else if (f.track?.start && dateStrOf(f.track.start) === f.dateStr) {date = f.track.start;}
         else {date = new Date(`${f.dateStr}T12:00`).getTime();}
@@ -2396,9 +2225,9 @@
             id: f.id || uid(), spotId: f.spotId, lat: f.lat, lon: f.lon, snapshotId: f.snapshotId, date, rating: f.checked ? 2 : f.rating,
             ...(f.checked ? { checked: true } : {}),
             sport: logSport(f) || null, gearIds: f.gearIds, gear: f.gear.trim(), start: f.start, end: f.end, notes: f.notes, track: f.track,
-            tz: deviceTz(),
+            tz: f.tz || deviceTz(),
         };
-        data.sessions = f.id ? data.sessions.map(x => (x.id === se.id ? se : x)) : [...data.sessions, se];
+        data.sessions = replaceEntity(data.sessions, se);
         // a sport the spot didn't have yet: the spot gets it (and learns it from now on)
         const ofSpot = spotById(se.spotId);
         if (ofSpot && se.sport && !ofSpot.sports.includes(se.sport)) {
@@ -2448,9 +2277,12 @@
         input.value = '';
         if (!file || !f) {return;}
         trackError = '';
+        const active = lifetime.capture('track');
+        const capturedForm = formGeneration;
+        const valid = () => active() && capturedForm === formGeneration;
         try {
             const t = await readTrack(file);
-            if (!f) {return;}
+            if (!f || !valid()) {return;}
             const nf: LogForm = { ...f, track: t };
             if (t.start) {
                 nf.dateStr = dateStrOf(t.start);
@@ -2466,7 +2298,7 @@
             drawTrack(t, true);
             showToast(fill(w('toastTrack'), { dist: fmtDistance(t.distanceKm, S.height) }));
         } catch (err) {
-            trackError = (err as Error).message || w('trackError');
+            if (valid()) {trackError = err instanceof TrackError ? w(err.code) : w('trackError');}
         }
     }
     function removeTrack() {
@@ -2476,10 +2308,8 @@
     }
 
     /* ---------- gear ---------- */
-    function addGear() {
-        if (!gearName.trim()) {return;}
-        data.gear = [...data.gear, { id: uid(), name: gearName.trim(), kind: gearKind, sport: gearSport }];
-        gearName = '';
+    function addGear(gear: { name: string; kind: string; sport: string }) {
+        data.gear = [...data.gear, { id: uid(), ...gear }];
         persist();
     }
     function saveTypedGear() {
@@ -2499,53 +2329,79 @@
     }
 
     /* ---------- conditions + matches ---------- */
+    function sameSpot(s: Spot): boolean {
+        const current = spotById(s.id);
+        return !!current && current.lat === s.lat && current.lon === s.lon;
+    }
+    function invalidateSpot(id: string) {
+        delete nowBySpot[id];
+        Object.keys(nowBySpot).filter(key => key.startsWith(id + ':')).forEach(key => {delete nowBySpot[key];});
+        delete dayBySpot[id];
+        delete outlookBySpot[id];
+        delete modelsBySpot[id];
+        nowBySpot = { ...nowBySpot }; dayBySpot = { ...dayBySpot };
+        outlookBySpot = { ...outlookBySpot }; modelsBySpot = { ...modelsBySpot };
+    }
+    function resetForecasts() {
+        nowBySpot = {}; dayBySpot = {}; outlookBySpot = {}; modelsBySpot = {};
+        forecastController.clear();
+        nowAt = 0;
+    }
     async function loadNow(s: Spot, model = modelFor(s)): Promise<Now | null> {
-        const k = nowKey(s.id, model);
-        const cur = nowBySpot[k];
-        // the spot's model can change (a fallback chosen): then load again
-        if (cur && cur !== 'loading' && (cur.wind?.model ?? model) === model) {return cur;}
-        nowBySpot = { ...nowBySpot, [k]: 'loading' };
+        const valid = lifetime.capture();
         const own = model === modelFor(s);
-        const [n, hours] = await Promise.all([conditionsNow(s.lat, s.lon, model), own ? hoursToday(s.lat, s.lon, model) : Promise.resolve(null)]);
-        if (hours) {dayBySpot = { ...dayBySpot, [s.id]: hours };}
-        nowBySpot = { ...nowBySpot, [k]: n };
-        if (own && !n?.wind && !s.recommendationModel) {chooseFallbackModel(s);}
-        return n;
+        const key = nowKey(s.id, model);
+        if (!nowBySpot[key]) {nowBySpot = { ...nowBySpot, [key]: 'loading' };}
+        try {
+            const result = await forecastController.now(s.lat, s.lon, model, own);
+            if (!valid() || !sameSpot(s) || (own && modelFor(s) !== model)) {return null;}
+            if (result.hours) {dayBySpot = { ...dayBySpot, [s.id]: result.hours };}
+            nowBySpot = { ...nowBySpot, [key]: result.now };
+            if (own && !result.now.wind && !s.recommendationModel) {void chooseFallbackModel(s);}
+            return result.now;
+        } catch (error) {
+            if (valid() && sameSpot(s)) {delete nowBySpot[key]; nowBySpot = { ...nowBySpot };}
+            console.info('[spotlog] conditions unavailable', error);
+            return null;
+        }
     }
-    /** ECMWF has no forecast here: pick one model that covers the spot, once, and keep it (learning and tags use it) */
     async function chooseFallbackModel(s: Spot) {
-        const m = (await availableModels(s.lat, s.lon)).find(x => x !== 'ecmwf');
-        if (!m) {return;}
-        data.spots = data.spots.map(x => (x.id === s.id ? { ...x, recommendationModel: m } : x));
-        if (spot?.id === s.id) {spot = spotById(s.id) || spot;}
+        const valid = lifetime.capture();
+        const models = await forecastController.models(s.lat, s.lon);
+        const fallback = models.find(item => item !== 'ecmwf');
+        if (!valid() || !sameSpot(s) || !fallback || spotById(s.id)?.recommendationModel) {return;}
+        data.spots = data.spots.map(item => item.id === s.id ? { ...item, recommendationModel: fallback } : item);
+        if (spot?.id === s.id) {spot = data.spots.find(item => item.id === s.id) || spot;}
+        invalidateSpot(s.id);
         persist();
-        delete outlookBySpot[s.id];
-        loadNow(spotById(s.id) as Spot);
+        void loadNow(data.spots.find(item => item.id === s.id) as Spot, fallback);
     }
-    /** conditions are kept for 20 minutes; after that (Windy left open, the phone back from the pocket) they load again */
     let nowAt = 0;
     function loadAllNow() {
         if (Date.now() - nowAt > 20 * 60e3) {
             if (nowAt) {
-                nowBySpot = {};
-                outlookBySpot = {};
-                if (view === 'spot' && spot) {loadOutlook(spot);}
+                nowBySpot = {}; dayBySpot = {}; outlookBySpot = {}; modelsBySpot = {};
+                if (view === 'spot' && spot) {void loadOutlook(spot);}
             }
             nowAt = Date.now();
         }
-        data.spots.forEach(s => loadNow(s));
+        data.spots.forEach(s => {void loadNow(s);});
     }
     function onVisible() {
         if (document.visibilityState === 'visible') {loadAllNow();}
     }
-    /** the next 6 days for a spot: hours (the spot's model), Windy's predictability per day, today's tides */
     async function loadOutlook(s: Spot) {
-        if (outlookBySpot[s.id] !== undefined) {return;}
-        outlookBySpot = { ...outlookBySpot, [s.id]: 'loading' };
-        const m = modelFor(s);
-        const from = Date.now();
-        const [hours, pred, tide] = await Promise.all([hoursBetween(s.lat, s.lon, from, from + 6 * 864e5, m), predictability(s.lat, s.lon, m), tideToday(s.lat, s.lon)]);
-        outlookBySpot = { ...outlookBySpot, [s.id]: { hours, pred, tide } };
+        const valid = lifetime.capture();
+        const model = modelFor(s);
+        const capturedPremium = premium;
+        if (!outlookBySpot[s.id]) {outlookBySpot = { ...outlookBySpot, [s.id]: 'loading' };}
+        try {
+            const result = await forecastController.outlook(s.lat, s.lon, model, premium);
+            if (valid() && sameSpot(s) && modelFor(s) === model && premium === capturedPremium) {outlookBySpot = { ...outlookBySpot, [s.id]: result };}
+        } catch (error) {
+            if (valid() && sameSpot(s)) {delete outlookBySpot[s.id]; outlookBySpot = { ...outlookBySpot };}
+            console.info('[spotlog] outlook unavailable', error);
+        }
     }
     const predOfDay = (day: number, o: Outlook | null): number | null => o?.pred[new Date(day).toDateString()] ?? null;
     /** "High 2:18 · Low 8:30 · High 14:42" */
@@ -2569,10 +2425,10 @@
     type OwnRange = { lo?: number; hi?: number; dirs?: Dir8[] };
     /** inputs are in your units; ranges are stored in m/s, m, °C */
     const toUnit = (k: Feature, v: number): number =>
-        k === 'wind' || k === 'gust' ? Math.round(toWind(v, S.wind) * 10) / 10 : (k === 'waves' || k === 'swell') && S.height === 'ft' ? Math.round(v * 3.28084 * 10) / 10
-            : k === 'temp' && S.temp === 'F' ? Math.round(v * 1.8 + 32) : Math.round(v * 100) / 100;
+        k === 'wind' || k === 'gust' ? Math.round(toWind(v, S.wind) * 10) / 10 : (k === 'waves' || k === 'swell') && S.height === 'ft' ? Math.round(toHeight(v, S.height) * 10) / 10
+            : k === 'temp' && S.temp === 'F' ? Math.round(toTemperature(v, S.temp)) : Math.round(v * 100) / 100;
     const fromUnit = (k: Feature, v: number): number =>
-        k === 'wind' || k === 'gust' ? fromWind(v, S.wind) : (k === 'waves' || k === 'swell') && S.height === 'ft' ? v / 3.28084 : k === 'temp' && S.temp === 'F' ? (v - 32) / 1.8 : v;
+        k === 'wind' || k === 'gust' ? fromWind(v, S.wind) : (k === 'waves' || k === 'swell') && S.height === 'ft' ? fromHeight(v, S.height) : k === 'temp' && S.temp === 'F' ? fromTemperature(v, S.temp) : v;
     /** a row's outer edges (all its spans together) */
     const outer = (r: RangeRow | undefined): { lo?: number; hi?: number } => {
         const spans = r?.spans || [];
@@ -2702,11 +2558,11 @@
      * The Style Lab's live preview only (its page sets __spotlogDesignHost before Spotlog starts; Windy never does):
      * the lab can change colours, shapes and wording while you edit, and jump to any screen.
      */
+    let removePreview = () => {};
     function designHook() {
-        const win = window as unknown as { __spotlogDesignHost?: { ready?: () => void }; __spotlogDesign?: unknown };
-        if (!win.__spotlogDesignHost) {return;}
         const T = THEME as unknown as Record<string, unknown>;
-        win.__spotlogDesign = {
+        removePreview = installPreviewBridge({
+            inspect: () => ({ learning: { ...learningController.stats }, forecasts: forecastController.sizes }),
             apply(d: { tokens?: Record<string, unknown>; words?: Record<string, string> }) {
                 if (d.tokens) {
                     for (const [k, v] of Object.entries(d.tokens)) {if (k in T && typeof v === typeof T[k]) {T[k] = v;}}
@@ -2760,13 +2616,19 @@
                     }
                 }
             },
-        };
-        win.__spotlogDesignHost.ready?.();
+        });
     }
 
     onMount(() => {
-        setTimeout(paintPane, 120);
-        setTimeout(designHook, 0);
+        const mounted = lifetime.capture();
+        setTimeout(() => {if (mounted()) {paintPane();}}, 120);
+        setTimeout(() => {if (mounted()) {designHook();}}, 0);
+        if (!document.getElementById('spotlog-ui')) {
+            const stylesheet = document.createElement('style');
+            stylesheet.id = 'spotlog-ui';
+            stylesheet.textContent = APPLICATION_CSS;
+            document.head.appendChild(stylesheet);
+        }
         // fonts are bundled in the plugin: no requests to Google Fonts (privacy, works offline)
         if (!document.getElementById('spotlog-theme')) {
             const th = document.createElement('style');
@@ -2782,7 +2644,11 @@
         }
         try {
             userListener = store.on('user', (v: WindyUser | null) => onWindyUser(v));
-            subsListener = store.on('subscription', (v: string | null) => (premium = v === 'premium'));
+            subsListener = store.on('subscription', (v: string | null) => {
+                premium = v === 'premium';
+                outlookBySpot = {}; forecastController.clearOutlook();
+                if (view === 'spot' && spot) {void loadOutlook(spot);}
+            });
         } catch (e) {
             console.info('[spotlog] Windy account not observable', e);
         }
@@ -2809,7 +2675,7 @@
     onDestroy(() => {
         destroyed = true;
         document.removeEventListener('visibilitychange', onVisible);
-        delete (window as unknown as { __spotlogDesign?: unknown }).__spotlogDesign;
+        removePreview();
         unpaintPane();
         hapticCleanup();
         clearTimeout(kbTimer);
@@ -2826,389 +2692,17 @@
         if (tsListener !== null) {store.off(tsListener);}
         if (userListener !== null) {store.off(userListener);}
         if (subsListener !== null) {store.off(subsListener);}
-        spotMarkers.forEach(m => m.remove());
+        markerLayer.clear();
         clearTemp();
         clearPopup();
         drawTrack(null);
         clearTimeout(toastTimer);
         clearTimeout(armTimer);
         clearTimeout(recaptureTimer);
-        clearTimeout(pushTimer);
+        syncController.dispose();
+        learningController.clear();
+        void trainTreesInBackground([]);
+        lifetime.dispose();
+        forecastController.clear();
     });
 </script>
-
-<style lang="less">
-    /* colours come from the theme (src/lib/theme.ts → CSS variables --sl-*) */
-    @ground: var(--sl-ground, #2e2e2e);
-    @card: var(--sl-card, #3c3c3c);
-    @line: var(--sl-line, #4d4d4d);
-    @outline: var(--sl-uOutline, #5a5a5a);
-    @text: var(--sl-text, #f8f8f8);
-    @sub: var(--sl-sub, #b0b0b0);
-    @ink: var(--sl-uInk, #1c1c1c);
-    @orange: var(--sl-accent, #d49500);
-
-    .spotlog {
-        background: @ground;
-        color: @text;
-        font-family: 'Instrument Sans', system-ui, sans-serif;
-        font-size: var(--sl-textSize, 14px);
-        padding: 14px 16px 20px;
-        display: flex;
-        flex-direction: column;
-        gap: var(--sl-panelGap, 16px);
-        /* the panel scrolls itself: Windy's pane doesn't scroll plugin content for us */
-        height: 100%;
-        max-height: 100vh;
-        overflow-y: auto;
-        overscroll-behavior: contain;
-        -webkit-overflow-scrolling: touch;
-        box-sizing: border-box;
-        position: relative;
-
-        button { font: inherit; color: inherit; cursor: pointer; }
-        button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid @orange; outline-offset: 1px; }
-        small { color: @sub; font-size: 12px; }
-        b { font-weight: 600; }
-        input, textarea {
-            box-sizing: border-box; width: 100%; font: inherit; color: var(--sl-inputText, #f8f8f8); background: var(--sl-inputBg, #3c3c3c);
-            border: 1px solid var(--sl-inputLine, #5a5a5a); border-radius: var(--sl-radiusButton, 12px); padding: 11px 14px; outline: none; min-width: 0;
-        }
-        input[type='date'] { color-scheme: dark; }
-        textarea { resize: vertical; line-height: 1.45; }
-    }
-    .spotlog > :global(*) { flex-shrink: 0; }
-    /* desktop: the scrollbar's room is always kept (thin), so every tab is equally wide and nothing gets cut off
-       when a long tab shows the scrollbar; the right padding gives back what the scrollbar takes */
-    .spotlog:not(.m) { scrollbar-gutter: stable; scrollbar-width: thin; padding-right: 8px; }
-    /* phones: the panel sits in Windy's small pane under the timeline, half the screen high, and scrolls
-       (the layout that works on real phones, 0.5.2–0.6; 0.7.0's bar + sheet showed an empty pane) */
-    /* desktop (and the phone fallback): the wrappers don't exist for layout, the pages flow in the panel as before */
-    .mwrap, .body { display: contents; }
-    .body > :global(*) { flex-shrink: 0; }
-    /* phones: a compact bar sits in Windy's pane under the timeline (explicit height: Windy's pane needs one) */
-    .spotlog.m.bar { height: 150px; max-height: none; min-height: 150px; padding: 0; gap: 0; display: block; overflow: visible; position: relative; }
-    .spotlog.m.bar.gatebar { height: 108px; min-height: 108px; }
-    .mbar { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 9px; }
-    .mrow { display: flex; align-items: center; gap: 10px; min-height: 30px; .wordmark { font-size: 18px; } .units { height: 28px; } }
-    .mhint { flex: 1; min-width: 0; text-align: right; font-size: 12px; color: @sub; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mlink { border: 0; background: none; padding: 4px 0; color: @orange !important; font-weight: 600; font-size: 13px; }
-    .macts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-    .mact { height: 42px; padding: 0 6px; border-radius: var(--sl-radiusButton, 12px); border: 1px solid var(--sl-actLine, #5a5a5a); background: var(--sl-actBg, #3c3c3c); color: var(--sl-actText, #f8f8f8) !important; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12.5px !important; font-weight: 600;
-        span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } &:disabled { opacity: 0.6; } }
-    /* very narrow phones (iPhone SE 1st gen, 320 px): the words fit without the icons */
-    @media (max-width: 359px) { .mact { padding: 0 4px; :global(svg) { display: none; } } }
-    .mtabs { display: flex; gap: 3px; padding: 3px; border-radius: var(--sl-radiusButton, 12px); background: var(--sl-tabsBg, #3c3c3c);
-        button { flex: 1 1 auto; height: 30px; border: 0; border-radius: var(--sl-radiusSmall, 9px); background: transparent; color: var(--sl-tabText, #d0d0d0) !important; font-size: 12px !important; padding: 0 5px; white-space: nowrap; }
-        button.on { background: var(--sl-sel-bg, #f8f8f8); color: var(--sl-sel-text, #1c1c1c) !important; font-weight: 600; }
-        .cnt { display: inline-block; margin-left: 6px; min-width: 16px; padding: 1px 5px; box-sizing: border-box; border-radius: 8px; background: rgba(248, 248, 248, 0.14); color: inherit; font-size: 10.5px; line-height: 14px; font-weight: 600; font-variant-numeric: tabular-nums; vertical-align: 1px; }
-        button.on .cnt { background: rgba(28, 28, 28, 0.12); } }
-    /* the panel rises from the bar over the timeline and the map, like The Buoy's list; it scrolls inside */
-    .mwrap.on { display: flex; flex-direction: column; position: absolute; left: 8px; right: 8px; bottom: calc(100% + 8px); z-index: 30;
-        /* the top stays clear of Windy's own bar (it shows up when you touch the map) */
-        height: calc(100vh - 340px); height: calc(100dvh - 340px - env(safe-area-inset-top, 0px)); min-height: 260px;
-        touch-action: pan-y; overscroll-behavior: contain;
-        background: @ground; border-radius: 18px; box-shadow: 0 10px 34px rgba(0, 0, 0, 0.5); overflow: hidden;
-        transform-origin: 50% 100%; transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.18s ease; }
-    .mwrap.on:not(.open) { opacity: 0; transform: translateY(14px) scale(0.98); pointer-events: none; visibility: hidden; transition: transform 0.18s ease, opacity 0.15s ease, visibility 0s 0.18s; }
-    /* it scrolls up and down only: nothing in it can push it sideways */
-    .mwrap.on .body { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 0 12px 16px; touch-action: pan-y; }
-    /* the page header (back, title, units, ✕) stays put while the page scrolls under it */
-    .mwrap.on .topbar { position: sticky; top: 0; z-index: 8; margin: 0 -12px -4px; padding: 10px 8px 8px 12px; background: @ground; }
-    .mwrap.on .topbar .title { font-size: 16px; }
-    .mclose { flex-shrink: 0; width: 34px; height: 34px; margin-left: -4px; border: 0; border-radius: 17px; background: none; color: @sub !important; font-size: 16px; line-height: 1; padding: 0; }
-    /* the units page covers the page you were on (which stays as it was underneath) */
-    .mwrap.on.unitspage .body > :global(:not(.upage)) { display: none !important; }
-    /* room below the last field, so it can scroll up above the keyboard */
-    .mwrap.on.kb .body { padding-bottom: 55vh; }
-    .when { display: contents; }
-    .when.one { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 2fr); gap: 6px;
-        input[type='date'] { height: 44px; padding: 0 8px; font-size: 14px; text-align: center; -webkit-appearance: none; appearance: none; }
-        .times { gap: 6px; .to { display: none; } } }
-    /* inside the phone panel the bar already shows the logo, the actions and the tabs */
-    .mwrap.on :global(.home-head), .mwrap.on :global(.home-acts), .mwrap.on :global(.home-tabs) { display: none !important; }
-    @media (prefers-reduced-motion: reduce) { .mwrap.on, .mwrap.on:not(.open) { transition: none; } }
-    .spotlog.m { padding: 8px 10px 16px; gap: 10px; height: 50vh; height: 50dvh; max-height: 50dvh; touch-action: pan-y;
-        .head { padding: 10px 14px; gap: 8px; }
-        .head .stats, .head .sync { display: none; }
-        .act { min-height: 0; padding: 8px 10px; small { display: none; } }
-        .wordmark { font-size: 20px; }
-        .stats .big { font-size: 18px; }
-        .act b { font-size: 13px; }
-        .act :global(svg) { margin-bottom: 2px; }
-        .tile { min-height: 110px; padding: 12px; }
-        .topbar .round { width: 34px; height: 34px; }
-        .title { font-size: 16px; } }
-    /* beta: a small tag by the wordmark, a quiet line under the tabs, a card on How it works */
-    .beta { padding: 2px 6px 1px; border-radius: 7px; border: 1px solid @outline; color: @sub; font: 600 9.5px 'Instrument Sans', system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; line-height: 1.2; align-self: center; }
-    .beta-note { display: block; margin-top: 2px; color: var(--sl-uQuiet, #7a7a7a); font-size: 11.5px; line-height: 1.45; text-align: center; text-wrap: balance; }
-    .beta-card .btns { flex-wrap: wrap; }
-    .beta-card .btn { min-width: 0; }
-    /* welcome: once, for someone new */
-    .welcome { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 6px 2px 4px;
-        .brand { margin-bottom: 6px; } .h2 { font-size: 20px; text-wrap: balance; } .p { color: @sub; line-height: 1.5; max-width: 34em; }
-        .btn { margin-top: 4px; } .link { align-self: center; } }
-    .mwrap.on .welcome { padding-top: 0; }
-    .wordmark { font-family: 'Doto', monospace; font-weight: 900; font-size: var(--sl-wordmarkSize, 24px); letter-spacing: 0.06em; }
-    .card { background: @card; border: 1px solid @line; border-radius: var(--sl-radiusCard, 18px); padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
-    .row { display: flex; align-items: center; gap: 10px; &.start { align-items: flex-start; } }
-    .card.row { flex-direction: row; }
-    .sep { padding-top: 12px; border-top: 1px solid @line; }
-    .grow { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .title { font-size: var(--sl-titleSize, 17px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .lbl { font-size: 12px; color: @sub; }
-    .big { font-size: 22px; font-weight: 500; line-height: 1; small { font-size: 12px; } }
-    .big2 { font-size: 26px; font-weight: 600; line-height: 1.1; small { font-size: 13px; } }
-    .muted { color: @sub; font-size: 13px; }
-    .p { margin: 0; line-height: 1.45; }
-    .small { margin: 0; font-size: 12px; color: @sub; }
-    .r { text-align: right; }
-    .err { color: var(--sl-danger, #ff9a9a) !important; line-height: 1.4; }
-    .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); > div { display: flex; flex-direction: column; gap: 4px; } }
-    .units { height: 30px; padding: 0 10px; border-radius: 15px; border: 1px solid @outline; background: @ground; font-size: 12px !important; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
-    .chev { display: inline-block; transition: transform 0.2s; &.up { transform: rotate(180deg); } }
-    .round { width: 38px; height: 38px; flex-shrink: 0; border-radius: 19px; background: @card; border: 1px solid @line; font-size: 16px; }
-    /* Windy's own closing ✕ sits outside the pane (desktop) or in the sheet's header (phones): the units pill takes the top-right corner */
-    .topbar { display: flex; align-items: center; gap: 10px; }
-    .brand { display: inline-flex; align-items: center; gap: 8px; }
-    .grow-b { flex: 1; min-width: 0; }
-    /* desktop: a plain chevron before the wordmark goes back to Windy's menu (like other plugins) */
-    .back-menu { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 30px; margin: 0 -2px 0 -6px; padding: 0; border: 0; background: none; color: @text; opacity: 0.85;
-        &:hover { opacity: 1; } }
-    /* map switches under the spot tiles */
-    .map-toggles { gap: 14px; }
-    .maptog { display: flex; align-items: center; gap: 12px; border: 0; background: none; padding: 0; text-align: left;
-        small { display: block; margin-top: 2px; } }
-    .switch { width: 40px; height: 24px; border-radius: 12px; background: var(--sl-switchOff, #5a5a5a); position: relative; flex-shrink: 0; transition: background 0.15s;
-        i { position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 9px; background: var(--sl-switchKnob, #f8f8f8); transition: transform 0.18s; }
-        &.on { background: var(--sl-switch, #d49500); i { transform: translateX(16px); } } }
-    .sync { display: block; margin-top: -4px; color: @sub; &.err { color: var(--sl-danger, #ff9a9a); } }
-    .coffee { align-self: center; display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: var(--sl-radiusChip, 18px); border: 1px solid var(--sl-ghostLine, #5a5a5a); color: var(--sl-ghostText, #f8f8f8); text-decoration: none; font-weight: 600; font-size: 13px;
-        &:hover { border-color: @orange; } }
-    .ver { font-size: 11px; color: var(--sl-uQuiet, #7a7a7a); }
-    /* About: friendly how-to, and the low-key signature */
-    .about { display: flex; flex-direction: column; gap: 12px; }
-    .h3 { font-size: 15px; }
-    .steps { gap: 14px; }
-    .step { display: flex; gap: 12px; align-items: flex-start; b { font-size: 14px; } small { line-height: 1.45; font-size: 12.5px; } }
-    .n { width: 24px; height: 24px; flex-shrink: 0; border-radius: 12px; border: 1px solid @outline; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: @sub; }
-    .data-links { gap: 18px; .link { font-size: 13px; padding: 2px 0; } }
-    .credits { display: block; text-align: center; font-size: 11px; line-height: 1.45; padding: 4px 10px 0; }
-    .sig { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0 4px; .coffee { margin-top: 6px; } }
-    .data-links { flex-wrap: wrap; }
-    /* one forecast per spot: saving another asks before replacing */
-    .replace { flex: 1; display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 14px; border: 1px solid @orange; background: @card;
-        .btns { margin-top: 8px; } }
-    .models-pick { display: flex; flex-wrap: wrap; gap: 4px; margin-top: -6px;
-        button { height: 28px; padding: 0 11px; border-radius: var(--sl-radiusChip, 18px); border: 1px solid var(--sl-chipLine, #5a5a5a); background: transparent; font-size: 12px !important; color: @sub !important; }
-        button.on { background: var(--sl-sel-bg, #f8f8f8); border-color: var(--sl-sel-bg, #f8f8f8); color: var(--sl-sel-text, #1c1c1c) !important; font-weight: 600; } }
-    .sl-note { margin-top: -8px; padding: 0 4px; line-height: 1.4; }
-
-    /* the three actions are equals: same grey tile, an icon, a name and a short line */
-    .actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-    .act { min-height: 78px; padding: 10px 9px 10px 10px; min-width: 0; border-radius: calc(var(--sl-radiusButton, 12px) + 2px); border: 1px solid var(--sl-actLine, #5a5a5a); background: var(--sl-actBg, #3c3c3c); color: var(--sl-actText, #f8f8f8) !important; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 3px; text-align: left;
-        :global(svg) { color: var(--sl-actIcon, #f8f8f8); margin-bottom: 4px; }
-        b { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; } small { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; color: var(--sl-actSub, #b0b0b0); }
-        &:hover { border-color: var(--sl-uHoverLine, #777777); background: var(--sl-uHoverBg, #424242); }
-        &.on { border-color: var(--sl-accent, #d49500); :global(svg) { color: var(--sl-accent, #d49500); } }
-        &:disabled { opacity: 0.6; cursor: default; } }
-
-    .tabs, .seg { display: flex; gap: 4px; padding: 3px; background: var(--sl-tabsBg, #3c3c3c); border-radius: var(--sl-radiusButton, 12px);
-        button { flex: 1 1 auto; height: 34px; padding: 0 6px; border: 0; border-radius: var(--sl-radiusSmall, 9px); background: transparent; color: var(--sl-tabText, #d0d0d0); white-space: nowrap; }
-        button.on { background: var(--sl-sel-bg, #f8f8f8); color: var(--sl-sel-text, #1c1c1c) !important; font-weight: 600; } }
-    .seg { background: @ground; button { height: 30px; } }
-    .card .seg { background: @ground; }
-
-    .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-    .tile { text-align: left; min-height: 128px; padding: 14px; border-radius: var(--sl-radiusCard, 18px); background: var(--sl-tileBg, #3c3c3c); border: 1px solid var(--sl-tileLine, #4d4d4d); display: flex; flex-direction: column; gap: 10px; }
-    /* the tag sits at the bottom, so the wind boxes line up across tiles whatever the tag's length */
-    .tiles:not(.list) .t-tag { margin-top: auto; }
-    .t-name { font-size: 15px; font-weight: 600; }
-    .t-tag { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; .t-when { color: @sub; font-size: 12px; white-space: nowrap; } }
-    @media (max-width: 360px) { .tiles:not(.list) .t-tag .tag { font-size: 11px; padding: 3px 8px; } }
-    /* − / + above the spots: compact list or tiles */
-    .viewtog { align-self: flex-end; display: flex; gap: 2px; padding: 2px; margin-bottom: -8px; border-radius: var(--sl-radiusSmall, 9px); background: var(--sl-tabsBg, #3c3c3c);
-        button { width: 30px; height: 24px; border: 0; border-radius: 7px; background: transparent; color: @sub !important; font-size: 17px !important; line-height: 1; padding: 0; }
-        button.on { background: var(--sl-sel-bg, #f8f8f8); color: var(--sl-sel-text, #1c1c1c) !important; font-weight: 600; } }
-    /* the list rows share the list's columns (subgrid): name · wind · tag, so the wind boxes line up whatever the tag */
-    .tiles.list { display: grid; grid-template-columns: minmax(0, 1fr) auto max-content; gap: 6px 10px;
-        .tile { grid-column: ~"1 / -1"; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-columns: subgrid; min-height: 0; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; border-radius: 14px; }
-        .t-name { flex: 1; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .now { flex: 0 0 auto; }
-        .wdir { min-width: 34px; }
-        .now-t, .now-sub { display: none; }
-        .sw { width: 30px; height: 30px; border-radius: 9px; font-size: 13px; }
-        .t-tag { flex: 0 0 auto; justify-self: start; .t-when { display: none; } }
-        .tag { font-size: 11px; padding: 3px 9px; } }
-    /* small phones: a long tag takes two lines, so the spot names keep their room */
-    @media (max-width: 380px) { .tiles.list .tag { max-width: 86px; line-height: 1.2; text-align: center; } }
-    .now { display: flex; align-items: center; gap: 8px; min-width: 0; }
-    .now-t { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; b { font-size: 13px; } }
-    .now-sub { display: flex; flex-wrap: wrap; gap: 1px 10px; margin-top: -4px; small { color: @sub; font-size: 12.5px; white-space: nowrap; } }
-    .wdir { display: flex; flex-direction: column; align-items: center; gap: 1px; flex-shrink: 0; min-width: 28px; color: @text;
-        svg { display: block; } small { font-size: 11px; font-weight: 600; color: @sub; } }
-    .tag { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;
-        &.ghost { border: 1px solid var(--sl-ghostTagLine, #5a5a5a); color: @sub; font-weight: 400; font-size: 11px; } }
-    .empty { padding: 20px; border: 1px dashed @outline; border-radius: 14px; color: @sub; text-align: center; line-height: 1.45; }
-    .list { display: flex; flex-direction: column; }
-    .item { display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 6px 2px; border: 0; border-bottom: 1px solid @line; background: transparent; text-align: left;
-        &:last-child { border-bottom: 0; } }
-    .plain { border: 0; background: none; padding: 0; text-align: left; }
-    /* row icons: simple line icons and plain dots, no filled circle behind them */
-    .ico { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: @sub;
-        &.live { color: @orange; } }
-    .dot-s { display: block; width: 8px; height: 8px; border-radius: 4px; background: @orange; &.off { background: transparent; border: 1.5px solid @outline; box-sizing: border-box; } }
-    .kind { min-width: 58px; height: 26px; padding: 0 8px; border-radius: 8px; background: @ground; font-size: 11px; color: @sub; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
-    .dot { width: 30px; height: 30px; flex-shrink: 0; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; }
-    .sw { width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--sl-windText, #1c1c1c); font-weight: 600; }
-    .mini { height: 30px; padding: 0 10px; border-radius: var(--sl-radiusSmall, 9px); border: 1px solid var(--sl-ghostLine, #5a5a5a); color: var(--sl-ghostText, #f8f8f8) !important; background: transparent; font-size: 12px !important;
-        &.danger { color: var(--sl-danger, #ff9a9a) !important; border-color: var(--sl-dangerLine, #6a4444); } }
-    .btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .btn { height: 46px; padding: 0 16px; border-radius: var(--sl-radiusButton, 12px); font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex: 1; box-sizing: border-box; white-space: nowrap;
-        &.primary { background: var(--sl-primary-bg, #d49500); color: var(--sl-primary-text, #fff) !important; border: 0; }
-        &.ghost { background: transparent; border: 1px solid var(--sl-ghostLine, #5a5a5a); color: var(--sl-ghostText, #f8f8f8) !important; }
-        &.wide { width: 100%; flex: none; }
-        &.small { height: 36px; flex: none; padding: 0 14px; font-size: 13px; }
-        &:disabled { opacity: 0.5; cursor: default; } }
-    label.btn { cursor: pointer; }
-    .link { background: none; border: 0; color: var(--sl-linkText, #d49500) !important; font-weight: 600; padding: 6px 0; align-self: flex-start; flex-shrink: 0;
-        &.danger { color: var(--sl-danger, #ff9a9a) !important; } }
-    .link-card { text-align: left; align-items: center; }
-    .field { display: flex; flex-direction: column; gap: 8px; }
-    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-    /* spot page: save nudge, "checked, not worth it" */
-    .nudge { display: block; margin: -2px 2px 0; font-size: 12px; line-height: 1.45; }
-    /* spot page: the recommendation, today and the next days */
-    .reco { gap: 0; padding-top: 4px; padding-bottom: 12px; display: grid; grid-template-columns: max-content max-content minmax(0, 1fr); column-gap: 12px; }
-    /* one row per day with a match: the day (and how sure Windy is) · the guess · the hours.
-       The rows share the card's columns (subgrid), so each column is as wide as its longest entry and the hours stay on one line */
-    .reco-row { grid-column: ~"1 / -1"; display: grid; grid-template-columns: 104px auto minmax(0, 1fr); grid-template-columns: subgrid; align-items: center; column-gap: 12px; padding: 9px 0; border-bottom: 1px solid @line;
-        &:last-of-type { border-bottom: 0; }
-        .r-day { display: flex; flex-direction: column; gap: 1px; color: @sub; font-size: 13px; white-space: nowrap; line-height: 1.25; }
-        .tag { justify-self: start; }
-        .r-time { font-weight: 600; font-size: 13.5px; line-height: 1.3; span { white-space: nowrap; } }
-        .r-pred { color: var(--sl-uQuiet, #8a8a8a); font-size: 11px; } }
-    .r-later { padding-top: 8px; grid-column: ~"1 / -1"; }
-    .other-sport { display: flex; gap: 8px; margin-top: 8px; align-items: center;
-        input { flex: 1; min-width: 0; height: 36px; padding: 0 12px; border-radius: var(--sl-radiusSmall, 9px); border: 1px solid var(--sl-inputLine, #5a5a5a); background: var(--sl-inputBg, #2e2e2e); color: var(--sl-inputText, #f8f8f8); font: inherit; } }
-    .chip.notworth { align-self: flex-start; height: 32px; font-size: 13px; }
-    /* spot page: what works here for you, folded to one line or open */
-    .works-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; border: 0; background: none; padding: 0; color: inherit !important; text-align: left; cursor: pointer;
-        .chev { display: inline-block; font-size: 22px; line-height: 1; font-weight: 600; color: @sub; transition: transform 0.2s; } .chev.open { transform: rotate(90deg); } }
-    .works-sum { text-align: left; gap: 6px; cursor: pointer; color: inherit !important;
-        .ws-line { display: flex; gap: 10px; align-items: baseline; font-size: 13.5px; b { font-weight: 600; min-width: 74px; } span { color: @sub; } } }
-    .works { gap: 14px;
-        .w-sport { display: flex; flex-direction: column; gap: 10px; }
-        .w-sport + .w-sport { border-top: 1px solid @line; padding-top: 14px; }
-        .w-head { display: flex; align-items: baseline; gap: 10px; b { font-size: 14px; } .link { padding: 0; } }
-        .w-grid { display: grid; grid-template-columns: minmax(64px, max-content) max-content max-content minmax(0, 1fr); column-gap: 18px; row-gap: 9px; align-items: center; font-size: 13.5px; }
-        .w-h { font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sl-uQuiet, #8a8a8a); }
-        .w-r, .w-now { text-align: right; justify-self: end; }
-        .w-name { color: @sub; white-space: nowrap; }
-        .w-you { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--sl-linkText, #d49500); margin-left: 6px; vertical-align: 2px; }
-        .w-range { font-weight: 600; justify-self: start; line-height: 1.3; }
-        .w-imp { color: @sub; white-space: nowrap; font-size: 12.5px; &.imp3 { color: @text; font-weight: 600; } }
-        .w-now { color: @sub; white-space: nowrap; }
-        .w-now.ok { color: var(--sl-r4bg, #50b450); } .w-now.near { color: var(--sl-linkText, #d49500); }
-        .w-grid.edit { grid-template-columns: minmax(0, 96px) minmax(0, 1fr); row-gap: 8px; }
-        .w-inputs { display: flex; align-items: center; gap: 6px; color: @sub;
-            input { width: 64px; height: 34px; padding: 0 8px; border-radius: var(--sl-radiusSmall, 9px); border: 1px solid var(--sl-inputLine, #5a5a5a); background: var(--sl-inputBg, #2e2e2e); color: var(--sl-inputText, #f8f8f8); font: inherit; }
-            small { font-size: 12px; } }
-        .w-dirs { display: flex; flex-wrap: wrap; gap: 4px; }
-        .dchip { height: 30px; min-width: 36px; padding: 0 8px; border-radius: var(--sl-radiusChip, 18px); border: 1px solid var(--sl-chipLine, #5a5a5a); background: transparent; color: var(--sl-chipText, #f8f8f8) !important; font-size: 12px;
-            &.on { background: var(--sl-chipOnBg, #f8f8f8); color: var(--sl-chipOnText, #1c1c1c) !important; border-color: var(--sl-chipOnBg, #f8f8f8); } }
-        .gear-hint { font-size: 12.5px; color: @sub; }
-        .btns { margin-top: 0; } }
-    @media (max-width: 480px) { .reco, .reco-row { column-gap: 10px; } .reco-row .r-time { font-size: 13px; } }
-    @media (max-width: 380px) { .works .w-grid { column-gap: 9px; font-size: 12.5px; grid-template-columns: minmax(56px, max-content) minmax(0, max-content) max-content max-content; justify-content: space-between; } .works .w-h { letter-spacing: 0.02em; } .reco { column-gap: 8px; } .reco-row { column-gap: 8px; .tag { font-size: 11px; padding: 3px 8px; } .r-time { font-size: 12.5px; } } }
-    label.link { cursor: pointer; }
-    .chip { height: 36px; padding: 0 15px; border-radius: var(--sl-radiusChip, 18px); border: 1px solid var(--sl-chipLine, #5a5a5a); background: transparent; color: var(--sl-chipText, #f8f8f8) !important; display: inline-flex; align-items: center; gap: 6px;
-        .k { font-size: 11px; opacity: 0.65; }
-        &.on { background: var(--sl-chipOnBg, #f8f8f8); color: var(--sl-chipOnText, #1c1c1c) !important; border-color: var(--sl-chipOnBg, #f8f8f8); }
-        &.dash { border-style: dashed; color: @orange !important; } }
-    .dirs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-    .dir { height: 50px; border-radius: var(--sl-radiusButton, 12px); border: 1px solid var(--sl-chipLine, #5a5a5a); color: var(--sl-chipText, #f8f8f8) !important; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px;
-        &.on { background: var(--sl-chipOnBg, #f8f8f8); color: var(--sl-chipOnText, #1c1c1c) !important; border-color: var(--sl-chipOnBg, #f8f8f8); } }
-    .stepper { display: flex; align-items: center; gap: 4px; small { margin-right: 2px; } .round { width: 34px; height: 34px; } }
-    .arrow { display: inline-block; font-size: 11px; line-height: 1; &.o { display: inline-flex; color: @orange; margin-right: 2px; } }
-    .arrows { display: flex; }
-    .suggest { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: calc(var(--sl-radiusButton, 12px) + 2px); background: var(--sl-lightBg, #f8f8f8); color: var(--sl-lightText, #1c1c1c); small { color: var(--sl-lightSub, #6b6b6b); } }
-    .section { display: flex; flex-direction: column; gap: 8px; }
-    .h2 { font-size: 20px; }
-    .score { display: flex; align-items: center; gap: 10px; font-size: 13px;
-        .m { width: 64px; &.best { color: @orange; font-weight: 600; } }
-        .missbar { flex: 1; height: 6px; border-radius: 3px; background: @line; display: flex; i { display: block; border-radius: 3px; background: @sub; &.best { background: @orange; } } } }
-    .ratings { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
-    .rate { height: 62px; border-radius: calc(var(--sl-radiusButton, 12px) + 2px); border: 1px solid @line; background: @card; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-        b { font-size: 19px; } span { font-size: 11px; } }
-    .times { gap: 8px; .to { height: 44px; display: flex; align-items: center; color: @sub; } }
-    .snapless { display: flex; align-items: center; gap: 10px; min-height: 60px; padding: 12px 14px; border-radius: var(--sl-radiusCard, 18px); background: var(--sl-lightBg, #f8f8f8); color: var(--sl-lightText, #1c1c1c); box-sizing: border-box; }
-    /* every way of choosing a place looks the same: one rectangular row each */
-    .opts { display: flex; flex-direction: column; gap: 6px; }
-    .opt { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 14px 8px 10px; border-radius: calc(var(--sl-radiusButton, 12px) + 2px); border: 1px solid @line; background: @card; text-align: left; width: 100%; box-sizing: border-box;
-        &:hover { border-color: @outline; }
-        &.on { border-color: @orange; } }
-    .chev-r { color: @sub; font-size: 18px; }
-    /* the spot popup: grows in from its tip, fades out when switched off */
-    :global(.spotlog-popup .leaflet-popup-content-wrapper), :global(.spotlog-popup .leaflet-popup-tip-container) { transform-origin: 50% 100%; animation: sl-pop-in 0.22s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
-    :global(.spotlog-popup.sl-closing .leaflet-popup-content-wrapper), :global(.spotlog-popup.sl-closing .leaflet-popup-tip-container) { animation: sl-pop-out 0.17s ease-in both; }
-    @keyframes -global-sl-pop-in { from { opacity: 0; transform: translateY(8px) scale(0.94); } to { opacity: 1; transform: none; } }
-    @keyframes -global-sl-pop-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(6px) scale(0.96); } }
-    @media (prefers-reduced-motion: reduce) { :global(.spotlog-popup .leaflet-popup-content-wrapper), :global(.spotlog-popup .leaflet-popup-tip-container) { animation: none; } }
-    .toast { position: sticky; bottom: 12px; z-index: 5; display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 16px; border-radius: 14px; background: var(--sl-toast-bg, #f8f8f8); color: var(--sl-toast-text, #1c1c1c); font-weight: 600; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45); }
-    .undo { height: 32px; padding: 0 14px; border-radius: 10px; border: 0; background: var(--sl-undo, #1c1c1c); color: var(--sl-toast-bg, #f8f8f8) !important; font-weight: 600; }
-
-    :global(.spotlog-marker) { background: none; border: 0; }
-    :global(.spotlog-pin) {
-        position: absolute; transform: translate(-10px, -50%); display: flex; align-items: center; gap: 6px; white-space: nowrap;
-        height: 26px; padding: 0 10px 0 6px; border-radius: 13px; background: var(--sl-pin-bg, #2e2e2e); color: var(--sl-pin-text, #f8f8f8);
-        font: 600 12px 'Instrument Sans', system-ui, sans-serif; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); cursor: pointer;
-    }
-    :global(.spotlog-pin i) { width: 10px; height: 10px; border-radius: 5px; background: var(--sl-pin-dot, #5a5a5a); display: block; flex-shrink: 0; }
-    :global(.spotlog-pin.active) { background: var(--sl-active-bg, #f8f8f8); color: var(--sl-active-text, #1c1c1c); }
-    :global(.spotlog-pin em) { font-style: normal; font-weight: 600; font-size: 11px; opacity: 0.9; margin-left: 2px; }
-    /* zoomed out: a plain dot */
-    :global(.spotlog-cdot) { position: absolute; left: calc(var(--sl-compact-size, 10px) / -2); top: calc(var(--sl-compact-size, 10px) / -2); width: var(--sl-compact-size, 10px); height: var(--sl-compact-size, 10px);
-        border-radius: 50%; box-shadow: var(--sl-compact-ring, none); cursor: pointer; }
-    /* sessions: one mark per place (style, colour and growth from the theme); hover for dates */
-    :global(.spotlog-heat) { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); cursor: default; }
-    :global(.spotlog-heat.core::after) { content: ''; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 3px; background: var(--sl-sess-color, #ff3d8b); box-shadow: 0 0 0 1.5px var(--sl-sess-core-ring, #ffffff); }
-    :global(.spotlog-tip) { display: none; position: absolute; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); z-index: 5; flex-direction: column; gap: 3px; min-width: 130px; padding: 8px 10px; border-radius: 10px;
-        background: var(--sl-tip-bg, #2e2e2e); color: var(--sl-tip-text, #f8f8f8); font: 12px 'Instrument Sans', system-ui, sans-serif; white-space: nowrap; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45); pointer-events: none; }
-    :global(.spotlog-tip span) { display: flex; align-items: center; gap: 6px; opacity: 0.85; }
-    :global(.spotlog-tip i) { width: 8px; height: 8px; border-radius: 4px; display: block; }
-    :global(.spotlog-tip small) { opacity: 0.6; font-size: 11px; }
-    :global(.spotlog-heat:hover .spotlog-tip), :global(.spotlog-pin:hover .spotlog-tip), :global(.spotlog-cdot:hover .spotlog-tip) { display: flex; }
-    :global(.spotlog-pin .spotlog-tip) { left: 10px; transform: translateX(-50%); bottom: calc(100% + 6px); font-weight: 400; }
-    :global(.spotlog-pin .spotlog-tip b) { font-weight: 600; }
-    :global(.spotlog-dot) { position: absolute; left: -8px; top: -8px; width: 16px; height: 16px; border-radius: 8px; box-sizing: border-box; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45); }
-    :global(.spotlog-dot.start) { left: -6px; top: -6px; width: 12px; height: 12px; background: var(--sl-start-fill, #ff3d8b); border: 2.5px solid var(--sl-start-border, #f8f8f8); }
-    :global(.spotlog-dot.end) { left: -5px; top: -5px; width: 10px; height: 10px; background: var(--sl-end-fill, #1c1c1c); border: 2.5px solid var(--sl-end-border, #ff3d8b); }
-    :global(.spotlog-route-label) { position: absolute; transform: translate(12px, -50%); white-space: nowrap; font: 600 13px 'Instrument Sans', system-ui, sans-serif; color: var(--sl-route-label, #f8f8f8); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 0, 0, 0.35); }
-    :global(.spotlog-popup .leaflet-popup-content-wrapper) { background: var(--sl-popup-bg, #f8f8f8); color: var(--sl-popup-text, #1c1c1c); border-radius: 16px; }
-    :global(.spotlog-popup .leaflet-popup-content) { margin: 12px; }
-    :global(.sl-pop) { display: flex; flex-direction: column; gap: 8px; min-width: 220px; font: 13px 'Instrument Sans', system-ui, sans-serif; color: var(--sl-popup-text, #1c1c1c); }
-    :global(.sl-pop small) { color: var(--sl-popupSub, #6b6b6b); font-size: 12px; }
-    :global(.sl-h) { display: flex; align-items: flex-start; gap: 8px; }
-    :global(.sl-h > span:first-child) { flex: 1; display: flex; flex-direction: column; gap: 1px; }
-    :global(.sl-nav) { display: flex; gap: 4px; flex-shrink: 0; }
-    :global(.sl-pop:has(.sl-acts)) { min-width: 264px; }
-    :global(.sl-nav button), :global(.sl-acts button) { font: 600 13px 'Instrument Sans', system-ui, sans-serif; color: var(--sl-popupBtnText, #1c1c1c); background: var(--sl-popupBtnBg, #ececea); border: 0; border-radius: 10px; cursor: pointer; }
-    :global(.sl-nav button) { width: 30px; height: 30px; font-size: 18px; line-height: 1; padding: 0; }
-    /* the name inside a phrase (copy.ts {spotlog}): normal text font, with the pixel star */
-    :global(.sl-brand) { display: inline-flex; align-items: center; gap: 0.22em; white-space: nowrap; vertical-align: -0.06em; line-height: 1; }
-    :global(.sl-star) { display: inline-block; flex-shrink: 0; color: var(--sl-star, #d49500); }
-    :global(.sl-nav .sl-x) { background: transparent; color: var(--sl-popupSub, #6b6b6b); font-size: 15px; margin-left: 2px; }
-    :global(.sl-acts) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin-top: 2px; }
-    :global(.sl-acts) { grid-template-columns: 1.3fr 1.1fr 0.9fr !important; }
-    :global(.sl-acts button) { height: 36px; padding: 0 4px; white-space: nowrap; font-size: 12.5px !important; overflow: hidden; text-overflow: ellipsis; }
-    :global(.sl-acts button:first-child) { background: var(--sl-primary-bg, #d49500); color: var(--sl-primary-text, #fff); }
-    :global(.sl-h b) { font-size: 14px; }
-    :global(.sl-tiles) { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
-    :global(.sl-t) { display: flex; flex-direction: column; justify-content: space-between; gap: 6px; min-height: 58px; padding: 7px 8px; border-radius: 9px; font-size: 11px; color: var(--sl-windText, #1c1c1c); box-sizing: border-box; }
-    :global(.sl-t span) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    :global(.sl-t b) { display: block; font: 900 20px 'Doto', ui-monospace, monospace; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: clip; }
-    :global(.sl-pop .sl-t small) { display: block; font: 600 10px 'Instrument Sans', system-ui, sans-serif; color: inherit; opacity: 0.7; line-height: 1; white-space: nowrap; }
-    :global(.sl-pop .sl-best b) { font-weight: 600; color: inherit; }
-    :global(.sl-b) { align-self: flex-start; padding: 3px 9px; border-radius: 10px; font-size: 12px; font-weight: 600; }
-</style>

@@ -1,8 +1,9 @@
 {
     "compilerOptions": {
         "baseUrl": ".",
+        "skipLibCheck": true,
         "module": "ESNext",
-        "lib": ["es2022", "webworker", "DOM"],
+        "lib": ["es2022", "DOM"],
         "noImplicitAny": true,
         "removeComments": true,
         "outDir": "dist",
@@ -31,6 +32,6 @@
         }
     },
     "include": ["**/*.ts", "**/*.svelte"],
-    // the sync server runs on Supabase (Deno) and the tide error endpoint on Cloudflare, not in Windy: they have their own types there
-    "exclude": ["node_modules", "dist", "supabase", "tide-worker"],
+    // the tide error endpoint runs on Cloudflare, not in Windy: it has its own types there
+    "exclude": ["node_modules", "dist", "tide-worker"],
 }

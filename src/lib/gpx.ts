@@ -1,13 +1,19 @@
-import { distanceKm } from './wind';
+import { distanceKm } from './geo';
 import type { Track } from './types';
 
+export class TrackError extends Error {
+    constructor(public readonly code: string) {super(code);}
+}
+
 interface Pt { lat: number; lon: number; t: number | null }
+
+const validTime = (value: string | null): number | null => { const time = Date.parse(value || ''); return Number.isFinite(time) ? time : null; };
 
 const parseGpx = (doc: Document): Pt[] =>
     Array.from(doc.getElementsByTagName('trkpt')).map(n => ({
         lat: parseFloat(n.getAttribute('lat') || ''),
         lon: parseFloat(n.getAttribute('lon') || ''),
-        t: n.getElementsByTagName('time')[0] ? Date.parse(n.getElementsByTagName('time')[0].textContent || '') : null,
+        t: n.getElementsByTagName('time')[0] ? validTime(n.getElementsByTagName('time')[0].textContent) : null,
     }));
 
 const parseTcx = (doc: Document): Pt[] =>
@@ -16,23 +22,23 @@ const parseTcx = (doc: Document): Pt[] =>
             const lat = n.getElementsByTagName('LatitudeDegrees')[0]?.textContent;
             const lon = n.getElementsByTagName('LongitudeDegrees')[0]?.textContent;
             const t = n.getElementsByTagName('Time')[0]?.textContent;
-            return { lat: parseFloat(lat || ''), lon: parseFloat(lon || ''), t: t ? Date.parse(t) : null };
+            return { lat: parseFloat(lat || ''), lon: parseFloat(lon || ''), t: t ? validTime(t) : null };
         });
 
 /** Reads a GPX or TCX file (what Garmin Connect, Strava & co. export) into a compact track */
 export const readTrack = async (file: File): Promise<Track> => {
     const name = file.name.toLowerCase();
-    if (file.size > 40 * 1024 * 1024) {throw new Error('That file is larger than 40 MB. Export a single activity as GPX or TCX.');}
+    if (file.size > 40 * 1024 * 1024) {throw new TrackError('trackTooLarge');}
     if (name.endsWith('.fit')) {
-        throw new Error('FIT files are not supported yet. In Garmin Connect choose “Export to GPX” (or TCX) and add that file.');
+        throw new TrackError('trackFitUnsupported');
     }
     const text = await file.text();
     const doc = new DOMParser().parseFromString(text, 'application/xml');
-    if (doc.getElementsByTagName('parsererror').length) {throw new Error('This file could not be read as GPX or TCX.');}
+    if (doc.getElementsByTagName('parsererror').length) {throw new TrackError('trackUnreadable');}
     let pts = parseGpx(doc);
     if (!pts.length) {pts = parseTcx(doc);}
-    pts = pts.filter(p => isFinite(p.lat) && isFinite(p.lon));
-    if (pts.length < 2) {throw new Error('No track points found in this file.');}
+    pts = pts.filter(p => isFinite(p.lat) && Math.abs(p.lat) <= 90 && isFinite(p.lon) && Math.abs(p.lon) <= 180);
+    if (pts.length < 2) {throw new TrackError('trackNoPoints');}
 
     let dist = 0;
     let maxSpeed: number | null = null;

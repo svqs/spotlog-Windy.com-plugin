@@ -2,7 +2,7 @@
  * Ranges: your own ones (set with Adjust, and your wind window) as a starting preference, and the
  * descriptive "What works here" ranges: where your well-rated outings' forecasts were.
  */
-import { DIRS } from '../wind';
+import { DIRS } from '../directions';
 import { PRIOR, RANGES, SCALE, TOLERANCE } from './config';
 import { allFeatures, diff, featuresOf, has, isCircular, type Feature, type Features } from './features';
 import type { Dir8, Spot } from '../types';

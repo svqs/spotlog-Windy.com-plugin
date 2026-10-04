@@ -1,0 +1,189 @@
+{
+  "machine": "macOS-26.7.1-arm64-arm-64bit-Mach-O",
+  "browser": "153.0.8010.12",
+  "fixture": "fixed distinct-day qualified outings; 3 models at one spot",
+  "runs": [
+    {
+      "version": "before",
+      "outings": 100,
+      "repeat": 0,
+      "startupMs": 702.7,
+      "unitsMs": 241.2,
+      "preferenceSkillCalls": 2,
+      "preferenceExampleCalls": 7,
+      "unitsLongTaskMaxMs": 168
+    },
+    {
+      "version": "before",
+      "outings": 100,
+      "repeat": 1,
+      "startupMs": 1080.6,
+      "unitsMs": 255.1,
+      "preferenceSkillCalls": 2,
+      "preferenceExampleCalls": 7,
+      "unitsLongTaskMaxMs": 178
+    },
+    {
+      "version": "before",
+      "outings": 100,
+      "repeat": 2,
+      "startupMs": 1072.4,
+      "unitsMs": 239.0,
+      "preferenceSkillCalls": 2,
+      "preferenceExampleCalls": 7,
+      "unitsLongTaskMaxMs": 174
+    },
+    {
+      "version": "before",
+      "outings": 300,
+      "repeat": 0,
+      "startupMs": 1458.5,
+      "unitsMs": 861.2,
+      "preferenceSkillCalls": 2,
+      "preferenceExampleCalls": 7,
+      "unitsLongTaskMaxMs": 731
+    },
+    {
+      "version": "before",
+      "outings": 300,
+      "repeat": 1,
+      "startupMs": 1445.0,
+      "unitsMs": 853.2,
+      "preferenceSkillCalls": 2,
+      "preferenceExampleCalls": 7,
+      "unitsLongTaskMaxMs": 748
+    },
+    {
+      "version": "before",
+      "outings": 300,
+      "repeat": 2,
+      "startupMs": 948.0,
+      "unitsMs": 829.0,
+      "preferenceSkillCalls": 2,
+      "preferenceExampleCalls": 7,
+      "unitsLongTaskMaxMs": 722
+    },
+    {
+      "version": "before",
+      "outings": 600,
+      "repeat": 0,
+      "startupMs": 1692.5,
+      "unitsMs": 2353.5,
+      "preferenceSkillCalls": 2,
+      "preferenceExampleCalls": 7,
+      "unitsLongTaskMaxMs": 2167
+    },
+    {
+      "version": "before",
+      "outings": 600,
+      "repeat": 1,
+      "startupMs": 1838.2,
+      "unitsMs": 2291.1,
+      "preferenceSkillCalls": 2,
+      "preferenceExampleCalls": 7,
+      "unitsLongTaskMaxMs": 2136
+    },
+    {
+      "version": "before",
+      "outings": 600,
+      "repeat": 2,
+      "startupMs": 1613.5,
+      "unitsMs": 2298.8,
+      "preferenceSkillCalls": 2,
+      "preferenceExampleCalls": 7,
+      "unitsLongTaskMaxMs": 2113
+    },
+    {
+      "version": "after",
+      "outings": 100,
+      "repeat": 0,
+      "startupMs": 991.8,
+      "unitsMs": 82.2,
+      "preferenceSkillCalls": 0,
+      "preferenceExampleCalls": 0,
+      "unitsLongTaskMaxMs": 0
+    },
+    {
+      "version": "after",
+      "outings": 100,
+      "repeat": 1,
+      "startupMs": 991.1,
+      "unitsMs": 86.6,
+      "preferenceSkillCalls": 0,
+      "preferenceExampleCalls": 0,
+      "unitsLongTaskMaxMs": 0
+    },
+    {
+      "version": "after",
+      "outings": 100,
+      "repeat": 2,
+      "startupMs": 984.4,
+      "unitsMs": 83.2,
+      "preferenceSkillCalls": 0,
+      "preferenceExampleCalls": 0,
+      "unitsLongTaskMaxMs": 0
+    },
+    {
+      "version": "after",
+      "outings": 300,
+      "repeat": 0,
+      "startupMs": 1192.5,
+      "unitsMs": 129.2,
+      "preferenceSkillCalls": 0,
+      "preferenceExampleCalls": 0,
+      "unitsLongTaskMaxMs": 0
+    },
+    {
+      "version": "after",
+      "outings": 300,
+      "repeat": 1,
+      "startupMs": 1170.7,
+      "unitsMs": 138.9,
+      "preferenceSkillCalls": 0,
+      "preferenceExampleCalls": 0,
+      "unitsLongTaskMaxMs": 0
+    },
+    {
+      "version": "after",
+      "outings": 300,
+      "repeat": 2,
+      "startupMs": 1163.0,
+      "unitsMs": 137.5,
+      "preferenceSkillCalls": 0,
+      "preferenceExampleCalls": 0,
+      "unitsLongTaskMaxMs": 0
+    },
+    {
+      "version": "after",
+      "outings": 600,
+      "repeat": 0,
+      "startupMs": 1706.5,
+      "unitsMs": 213.2,
+      "preferenceSkillCalls": 0,
+      "preferenceExampleCalls": 0,
+      "unitsLongTaskMaxMs": 0
+    },
+    {
+      "version": "after",
+      "outings": 600,
+      "repeat": 1,
+      "startupMs": 1708.3,
+      "unitsMs": 194.2,
+      "preferenceSkillCalls": 0,
+      "preferenceExampleCalls": 0,
+      "unitsLongTaskMaxMs": 0
+    },
+    {
+      "version": "after",
+      "outings": 600,
+      "repeat": 2,
+      "startupMs": 1719.9,
+      "unitsMs": 203.7,
+      "preferenceSkillCalls": 0,
+      "preferenceExampleCalls": 0,
+      "unitsLongTaskMaxMs": 0
+    }
+  ],
+  "cpu": "Apple M1 Pro",
+  "node": "v24.19.0"
+}

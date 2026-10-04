@@ -1,30 +1,8 @@
 import { THEME } from './theme';
-import type { Dir8 } from './types';
 
-export const DIRS: Dir8[] = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-/** the usual sports (your own ones are typed in under "Other…" and kept by name) */
+export { DIRS, dirName, dirsLabel } from './directions';
+export { distanceKm } from './geo';
 export const SPORTS = ['Surf', 'Windsurf', 'Kite', 'Wing'];
-
-/** Degrees (wind FROM) to one of 16 compass names */
-export const dirName = (deg: number | null): string => {
-    if (deg === null) {
-        return '–';
-    }
-    const names = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
-    return names[Math.round((((deg % 360) + 360) % 360) / 22.5) % 16];
-};
-
-/** Is the wind direction inside one of the spot's 8 sectors (±22.5°)? */
-export const dirMatches = (deg: number, dirs: Dir8[]): boolean => {
-    if (!dirs.length) {
-        return true;
-    }
-    return dirs.some(d => {
-        const center = DIRS.indexOf(d) * 45;
-        const diff = Math.abs((((deg - center) % 360) + 540) % 360 - 180);
-        return diff <= 22.5;
-    });
-};
 
 /** Windy-like colours for wind in m/s */
 export const windColor = (ms: number | null): string => {
@@ -38,32 +16,6 @@ export const windColor = (ms: number | null): string => {
     return `var(--sl-${key}, ${THEME[key]})`;
 };
 
-export const round1 = (v: number | null): string => (v === null ? '–' : (Math.round(v * 10) / 10).toString());
-export const round0 = (v: number | null): string => (v === null ? '–' : Math.round(v).toString());
-
-export const dirsLabel = (dirs: Dir8[]): string => {
-    if (!dirs.length) {
-        return 'any direction';
-    }
-    if (dirs.length === 8) {
-        return 'any direction';
-    }
-    // Group neighbouring sectors (the compass wraps around) into runs like "E–SE"
-    const on = DIRS.map(d => dirs.includes(d));
-    const startAt = on.findIndex((v, i) => v && !on[(i + 7) % 8]);
-    const runs: string[] = [];
-    for (let k = 0; k < 8; k++) {
-        const i = (startAt + k) % 8;
-        if (on[i] && !on[(i + 7) % 8]) {
-            let j = i;
-            while (on[(j + 1) % 8] && (j + 1) % 8 !== i) {j = (j + 1) % 8;}
-            runs.push(i === j ? DIRS[i] : `${DIRS[i]}–${DIRS[j]}`);
-        }
-    }
-    return runs.join(', ');
-};
-
-export const RATINGS = ['flat', 'meh', 'good', 'great', 'epic'];
 /** Rating colours 1–5, from the theme (src/lib/theme.ts, designed in the Style Lab) */
 // as CSS variables, so a design change shows everywhere at once
 export const RATING_BG = [1, 2, 3, 4, 5].map(i => `var(--sl-r${i}bg, ${(THEME as Record<string, unknown>)[`r${i}bg`]})`);
@@ -72,44 +24,33 @@ export const ratingBg = (r: number): string => RATING_BG[Math.max(0, Math.min(4,
 export const ratingFg = (r: number): string => RATING_FG[Math.max(0, Math.min(4, Math.round(r) - 1))];
 export const GEAR_SPORTS = ['Windsurf', 'Surf', 'Kite', 'Wing'];
 /** What you can save per sport, with an example name for the input */
-export const GEAR_BY_SPORT: Record<string, { kind: string; hint: string }[]> = {
+export const GEAR_BY_SPORT: Record<string, { kind: string; hintKey: string }[]> = {
     Windsurf: [
-        { kind: 'Board', hint: 'e.g. Freewave 105 L' }, { kind: 'Sail', hint: 'e.g. 5.3 m² wave' }, { kind: 'Mast', hint: 'e.g. 400 RDM 100%' },
-        { kind: 'Boom', hint: 'e.g. 150–200 carbon' }, { kind: 'Fin', hint: 'e.g. 22 cm wave' }, { kind: 'Harness', hint: 'e.g. waist, 28" lines' },
-        { kind: 'Wetsuit', hint: 'e.g. 4/3 steamer' }, { kind: 'Other', hint: 'e.g. impact vest' },
+        { kind: 'Board', hintKey: 'hintWindsurfBoard' }, { kind: 'Sail', hintKey: 'hintWindsurfSail' }, { kind: 'Mast', hintKey: 'hintWindsurfMast' },
+        { kind: 'Boom', hintKey: 'hintWindsurfBoom' }, { kind: 'Fin', hintKey: 'hintWindsurfFin' }, { kind: 'Harness', hintKey: 'hintWindsurfHarness' },
+        { kind: 'Wetsuit', hintKey: 'hintWindsurfWetsuit' }, { kind: 'Other', hintKey: 'hintWindsurfOther' },
     ],
     Surf: [
-        { kind: 'Board', hint: "e.g. 6'2 shortboard" }, { kind: 'Fins', hint: 'e.g. thruster FCS II M' }, { kind: 'Leash', hint: "e.g. 6' comp" },
-        { kind: 'Wetsuit', hint: 'e.g. 3/2 fullsuit' }, { kind: 'Other', hint: 'e.g. booties, wax' },
+        { kind: 'Board', hintKey: 'hintSurfBoard' }, { kind: 'Fins', hintKey: 'hintSurfFins' }, { kind: 'Leash', hintKey: 'hintSurfLeash' },
+        { kind: 'Wetsuit', hintKey: 'hintSurfWetsuit' }, { kind: 'Other', hintKey: 'hintSurfOther' },
     ],
     Kite: [
-        { kind: 'Kite', hint: 'e.g. 9 m freeride' }, { kind: 'Board', hint: 'e.g. twintip 138' }, { kind: 'Bar', hint: 'e.g. 24 m lines' },
-        { kind: 'Harness', hint: 'e.g. waist, size M' }, { kind: 'Foil', hint: 'e.g. 1000 cm² front wing' }, { kind: 'Wetsuit', hint: 'e.g. 4/3 steamer' },
-        { kind: 'Other', hint: 'e.g. helmet' },
+        { kind: 'Kite', hintKey: 'hintKiteKite' }, { kind: 'Board', hintKey: 'hintKiteBoard' }, { kind: 'Bar', hintKey: 'hintKiteBar' },
+        { kind: 'Harness', hintKey: 'hintKiteHarness' }, { kind: 'Foil', hintKey: 'hintKiteFoil' }, { kind: 'Wetsuit', hintKey: 'hintKiteWetsuit' },
+        { kind: 'Other', hintKey: 'hintKiteOther' },
     ],
     Wing: [
-        { kind: 'Wing', hint: 'e.g. 5 m' }, { kind: 'Board', hint: 'e.g. 95 L' }, { kind: 'Foil', hint: 'e.g. 1500 cm² front wing' },
-        { kind: 'Mast', hint: 'e.g. 85 cm aluminium' }, { kind: 'Leash', hint: 'e.g. waist + wrist' }, { kind: 'Wetsuit', hint: 'e.g. 4/3 steamer' },
-        { kind: 'Other', hint: 'e.g. impact vest' },
+        { kind: 'Wing', hintKey: 'hintWingWing' }, { kind: 'Board', hintKey: 'hintWingBoard' }, { kind: 'Foil', hintKey: 'hintWingFoil' },
+        { kind: 'Mast', hintKey: 'hintWingMast' }, { kind: 'Leash', hintKey: 'hintWingLeash' }, { kind: 'Wetsuit', hintKey: 'hintWingWetsuit' },
+        { kind: 'Other', hintKey: 'hintWingOther' },
     ],
 };
-/** kept for older data */
-export const GEAR_KINDS = ['Board', 'Sail', 'Fin', 'Wetsuit', 'Wing', 'Kite', 'Other'];
 
 export const MODEL_LABEL: Record<string, string> = {
     ecmwf: 'ECMWF', gfs: 'GFS', icon: 'ICON', iconEu: 'ICON-EU', arome: 'AROME',
     iconD2: 'ICON-D2', ukv: 'UKV', mblue: 'mBlue', namConus: 'NAM',
 };
 export const modelLabel = (m: string): string => MODEL_LABEL[m] || m.toUpperCase();
-
-/** Distance in km (haversine) */
-export const distanceKm = (a: { lat: number; lon: number }, b: { lat: number; lon: number }): number => {
-    const R = 6371;
-    const dLat = ((b.lat - a.lat) * Math.PI) / 180;
-    const dLon = ((b.lon - a.lon) * Math.PI) / 180;
-    const x = Math.sin(dLat / 2) ** 2 + Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
-    return 2 * R * Math.asin(Math.sqrt(x));
-};
 
 export const fmtDay = (ts: number): string =>
     new Date(ts).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });

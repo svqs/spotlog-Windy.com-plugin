@@ -1,20 +1,8 @@
 /** Quick checks of the learning (src/lib/predict.ts) in Node:  npm run test:predict */
-import { execFileSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
+import { compileTests } from './compile-tests.mjs';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const out = path.join(root, 'node_modules/.cache/spotlog-predict');
-mkdirSync(out, { recursive: true });
-try {
-    execFileSync(path.join(root, 'node_modules/.bin/tsc'), ['--outDir', out, '--module', 'commonjs', '--target', 'es2020', '--skipLibCheck', '--noEmitOnError', 'false',
-        path.join(root, 'src/lib/predict.ts'), path.join(root, 'src/lib/tides/tideCore.ts')], { stdio: 'pipe' });
-} catch { /* type noise from Windy's types: the JS is still written */ }
-writeFileSync(path.join(out, 'package.json'), '{"type":"commonjs"}');
-const require = createRequire(path.join(out, 'x.js'));
+const require = compileTests();
 const P = require('./predict.js');
 const F = require('./learn/features.js');
 const S = require('./learn/similar.js');
@@ -203,7 +191,7 @@ const ok = m => { n++; console.log('✓', m); };
     ok(`which forecast to trust: ECMWF foretold your sessions best (${skill[0].miss.toFixed(1)} vs ${skill[1].miss.toFixed(1)} off); a clearly better one becomes the learning model after 10 sessions`);
 }
 
-/* ---------- 3. when to go: two-hour windows, no gaps, per sport ---------- */
+/* ---------- 3. when to go: hourly windows, no gaps, per sport ---------- */
 {
     const sp = spot({ sports: ['Windsurf', 'Surf'] });
     const m = learn(sp, { snaps: [], sessions: [] });
@@ -261,6 +249,19 @@ const ok = m => { n++; console.log('✓', m); };
         assert.equal(P.rate(learn(sp, big)[0], x(10, 260)).source, 'boosted trees');
         const more = { snaps: big.snaps, sessions: [...big.sessions, session(big.snaps[0], DAY0 + 15 * H, 1, 2)] };
         assert.equal(learn(sp, more)[0].trees, null, 'a changed diary needs new trees');
+    }
+    if (a) {
+        const cached = learn(sp, big)[0].trees;
+        const changed = structuredClone(big);
+        changed.snaps.forEach(sn => {sn.series.models.ecmwf.wind = sn.series.models.ecmwf.wind.map(wind => wind + 2);});
+        assert.equal(learn(sp, changed)[0].trees, null, 'changed forecast features invalidate trees');
+        assert.ok(cached);
+        let progressed = false;
+        const timer = setTimeout(() => {progressed = true;}, 0);
+        assert.deepEqual(await T.trainTreesAsync(m.sport, m.local, m.nearby, m.prior), a, 'cooperative training agrees with reference');
+        clearTimeout(timer);
+        assert.equal(progressed, true, 'event loop progresses during training');
+        assert.equal(await T.trainTreesAsync(m.sport, m.local, m.nearby, m.prior, () => false), null, 'obsolete job cancels');
     }
     ok(`boosted trees: not with 20 outings; with 120 deterministic (${a ? `on, error ${a.check.maeTrees.toFixed(2)} vs ${a.check.maeSimilar.toFixed(2)}` : 'stayed off: similar sessions were as good'})`);
 }

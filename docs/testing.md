@@ -11,9 +11,9 @@ Chromium via Playwright.
 | 1 | `npm run build` | It compiles (Rollup + Svelte + TS) | ~10 s |
 | 2 | `npm run lint` | ESLint clean (no-use-before-define, no-shadow, braces, imports…) | ~10 s |
 | 3 | `python3 scripts/check-words.py` | Every phrase used exists in `copy.ts`, none duplicated, none unused | 1 s |
-| 4 | `node scripts/test-predict.mjs` | 15 recommendation checks (examples, similar sessions, gates, which forecast to trust, windows, trees, tide) | ~10 s |
-| 5 | `npx -y svelte-check@3 --workspace . --threshold warning` | Types and Svelte warnings: 0 errors, 0 warnings | ~20 s |
-| 6 | `python3 harness/e2e.py <dir>` | 51 end-to-end steps through every flow | ~2 min |
+| 4 | `node scripts/test-predict.mjs` | 16 recommendation groups plus tree-key/scheduling assertions (examples, similar sessions, gates, which forecast to trust, windows, trees, tide) | ~10 s |
+| 5 | `npm run check:types` | Types and Svelte warnings: 0 errors, 0 warnings | ~20 s |
+| 6 | `python3 harness/e2e.py <dir>` | 50 end-to-end steps through every flow | ~2 min |
 | 7 | `python3 harness/scenarios.py <dir>` | Data sizes, odd data, viewports, units, time zones, learning, phone cross-check | ~4 min |
 
 Checks 6 and 7 need a static server on port 8765 from the project root:
@@ -80,7 +80,8 @@ Helpers:
 
 ## Unit checks for the learning (scripts/test-predict.mjs)
 
-The script compiles `src/lib/predict.ts` (and `learn/`) with `tsc` into `node_modules/.cache/spotlog-predict` and
+The script uses `compile-tests.mjs` and `tsconfig.tests.json` to compile lib modules into a fresh temporary output
+directory. Unexpected diagnostics stop the run before execution; output is removed on process exit. It then
 asserts behaviour, not numbers to the decimal:
 - **examples:** a forecast saved after the start doesn't teach; one saved day shared by two sessions gives each its own
   hours; overnight and daylight-saving outings; start-only and old single-hour saves are marked limited; gaps and
@@ -122,3 +123,50 @@ These must be checked in real Windy:
   windy.com/plugins. That installs it for her account, so it reaches her phone too.
 
 Either way, look around without changing the real diary.
+
+## Locked tooling and validation workflow (0.18)
+
+Use Node 20+ (validated here on Node 24.19.0; CI uses Node 22) and Python 3.13. Direct build/compiler/lint tools and
+Svelte 4 are declared and locked; use `npm ci`, rather than a floating install. For browser checks:
+
+```sh
+python3 -m venv /tmp/spotlog-tests
+/tmp/spotlog-tests/bin/pip install -r harness/requirements.txt
+/tmp/spotlog-tests/bin/python -m playwright install chromium
+```
+
+Use that Python interpreter for the browser scripts (or activate the environment). `npm run check:fast` covers
+lint, words, version consistency, Svelte/TS, core behavior, learning and optional-service boundary tests.
+`npm run check` additionally builds. After `npm run rebuild:harness`, start the :8765 server and run
+`npm run check:browser` (e2e + scenarios + focused regressions). Browser scripts create their output directories.
+Inspect the phone screenshots after they pass. The e2e clock and seeded GPX use 2026-10-04 at noon UTC, so assertions
+about Today do not depend on the real time of day; scenarios independently test real timezone/local-date behavior.
+Current fixture builders omit removed hand-entered conditions; the legacy builder intentionally includes them.
+
+`harness/regressions.py` checks metadata after movement/rename, reversed same-latitude place responses, delayed
+account A after switching to B, reverse-order track imports, malformed series/duplicate ids through reload,
+and the extracted Style Lab screens with live copy overrides.
+`scripts/test-core.mjs` covers command/merge/lifetime/cache/sync boundaries, SI round trips and midnight/DST clocks.
+`test-services.mjs` uses runtime-specific Cloudflare types and actual Worker HTTP/KV behavior; it checks
+malformed/null JSON and the shared byte-bounded streaming body reader, including multibyte oversize bodies.
+The retained backend-neutral sync controller is tested with injected transports and the harness mock.
+
+The optional tide worker also has its own type check:
+
+```sh
+npx --no-install tsc --project tide-worker/tsconfig.json
+```
+
+Supabase/Deno files and their checks were removed in 0.18.1. No diary sync server is included or enabled.
+
+`.github/workflows/validate.yml` has read-only repository permissions, uses `npm ci`, rebuilds and compares committed
+pages, runs browser checks and uploads screenshots. The separate publish workflow remains manual and secret-gated.
+Rollup forwards all warnings except the named host accessibility case; Svelte-check still fails warnings.
+`skipLibCheck` isolates errors in Windy's supplied declaration packages, not application diagnostics.
+
+To reproduce the performance comparison, supply the original 0.17 bundle:
+`python3 harness/performance.py /tmp/spotlog-performance /path/to/original/dist/plugin.js`.
+It instruments skill/example calls in each compiled bundle and measures three runs for 100/300/600 qualified
+outings at one spot with three models. The report records the browser/OS, startup, units changes and long tasks.
+Budgets and evidence are in the implementation review; those hardware timings are diagnostic, while zero redundant
+learning calls is asserted. Full-document saves and initial leave-one-day-out model skill still scale with diary size.

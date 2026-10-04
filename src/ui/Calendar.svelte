@@ -1,8 +1,8 @@
 <div class="cal">
     <div class="head">
-        <button type="button" class="nav" aria-label="Previous month" on:click={ () => shift(-1) }>‹</button>
+        <button type="button" class="nav" aria-label={ $words.previousMonth } on:click={ () => shift(-1) }>‹</button>
         <b>{ monthLabel }</b>
-        <button type="button" class="nav" aria-label="Next month" on:click={ () => shift(1) }>›</button>
+        <button type="button" class="nav" aria-label={ $words.nextMonth } on:click={ () => shift(1) }>›</button>
     </div>
     <div class="grid">
         {#each weekdays as w}<span class="wd">{ w }</span>{/each}

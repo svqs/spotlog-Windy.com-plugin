@@ -46,3 +46,4 @@ the owner, then update this page.
 | **Name:** "spotlog" lowercase + pixel star in text; the wordmark SPOTLOG | 0.10 |
 | **Dark background;** don't change the desktop UI unless asked | standing |
 | The diary is kept in the browser for the beta; "Download a copy" / "Upload a copy" (upload merges, never replaces) | 0.11–0.12 |
+| **No Supabase:** the unused server module is removed. Production remains browser-only; the backend-neutral sync client/mock stays disabled outside tests. | 0.18.1 |

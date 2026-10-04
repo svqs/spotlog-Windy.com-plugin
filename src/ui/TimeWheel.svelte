@@ -3,17 +3,17 @@
         { value ? fmtClock(value) : placeholder }
     </button>
     {#if open}
-        <div class="tw-pop" class:below class:end={ align === 'end' } role="dialog" aria-label="Choose time">
+        <div class="tw-pop" class:below class:end={ align === 'end' } role="dialog" aria-label={ $words.chooseTime }>
             <div class="wheels" class:three={ h12 }>
                 <div class="band"></div>
-                <div class="col" bind:this={ hEl } on:scroll={ () => scrolled('h') } aria-label="Hour">
+                <div class="col" bind:this={ hEl } on:scroll={ () => scrolled('h') } aria-label={ $words.hourLabel }>
                     {#each hours as h, i}<button type="button" class="it" class:sel={ i === hi } on:click={ () => jump('h', i) }>{ h12 ? h : String(h).padStart(2, '0') }</button>{/each}
                 </div>
-                <div class="col" bind:this={ mEl } on:scroll={ () => scrolled('m') } aria-label="Minutes">
+                <div class="col" bind:this={ mEl } on:scroll={ () => scrolled('m') } aria-label={ $words.minutesLabel }>
                     {#each minutes as m, i}<button type="button" class="it" class:sel={ i === mi } on:click={ () => jump('m', i) }>{ String(m).padStart(2, '0') }</button>{/each}
                 </div>
                 {#if h12}
-                    <div class="col" bind:this={ aEl } on:scroll={ () => scrolled('a') } aria-label="AM or PM">
+                    <div class="col" bind:this={ aEl } on:scroll={ () => scrolled('a') } aria-label={ $words.meridiemLabel }>
                         {#each ['AM', 'PM'] as a, i}<button type="button" class="it" class:sel={ i === ai } on:click={ () => jump('a', i) }>{ a }</button>{/each}
                     </div>
                 {/if}

@@ -2,10 +2,11 @@
 
 Run:  python3 -m http.server 8765  (from the project root), then  python3 harness/scenarios.py <screenshot dir>
 """
-import json, sys, time, random, math
+import json, sys, time, random, math, os
 from playwright.sync_api import sync_playwright
 URL = 'http://localhost:8765/harness/index.html'
 OUT = sys.argv[1]
+os.makedirs(OUT, exist_ok=True)
 KEY = 'windy-plugin-spotlog:v1:u12345'
 findings = []
 def note(ok, msg):
@@ -32,9 +33,8 @@ def big_data(n_spots=30, n_sessions=500, n_snaps=200, legacy=False):
         sn = snaps[i % n_snaps] if i % 3 else None
         sp = spots[i % n_spots]
         d = (sn['ts'] if sn else now - int(random.uniform(0, 400)) * 86400000)
-        s = {'id': f'se{i}', 'spotId': sp['id'], 'snapshotId': sn['id'] if sn else None, 'date': d, 'rating': random.randint(1, 5), 'felt': round(random.uniform(4, 13), 1),
-             'gusts': random.choice([None, 'Steady', 'Gusty']), 'water': random.choice([None, 'Flat', 'Chop']), 'gearIds': [], 'gear': '', 'start': '14:00', 'end': '16:30', 'notes': 'n' * random.randint(0, 200)}
-        if not legacy: s.update({'tide': random.choice([None, 'Low', 'High']), 'tideMove': random.choice([None, 'Rising'])})
+        s = {'id': f'se{i}', 'spotId': sp['id'], 'snapshotId': sn['id'] if sn else None, 'date': d, 'rating': random.randint(1, 5), 'gearIds': [], 'gear': '', 'start': '14:00', 'end': '16:30', 'notes': 'n' * random.randint(0, 200)}
+        if legacy: s.update({'felt': round(random.uniform(4, 13), 1), 'gusts': random.choice([None, 'Steady', 'Gusty']), 'water': random.choice([None, 'Flat', 'Chop']), 'tide': random.choice([None, 'Low', 'High']), 'tideMove': random.choice([None, 'Rising'])})
         sessions.append(s)
     d = {'version': 1, 'spots': spots, 'snapshots': snaps, 'sessions': sessions, 'gear': [{'id': 'g1', 'name': 'Board 105', 'kind': 'Board'}], 'settings': {'wind': 'ms', 'height': 'm', 'temp': 'C'}}
     if not legacy: d['settings']['welcomed'] = True

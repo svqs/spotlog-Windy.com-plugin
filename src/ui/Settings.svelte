@@ -25,7 +25,7 @@
         <div class="chips">
             {#each [$words.fcWind, $words.fcGusts, $words.setDirection] as a}<span class="chip fixed">{ a }</span>{/each}
             {#each LAYERS as l}
-                <button type="button" class="chip" class:on={ settings.layers.includes(l.id) } aria-pressed={ settings.layers.includes(l.id) } on:click={ () => toggleLayer(l.id) }>{ $words[l.key] || l.label }</button>
+                <button type="button" class="chip" class:on={ settings.layers.includes(l.id) } aria-pressed={ settings.layers.includes(l.id) } on:click={ () => toggleLayer(l.id) }>{ $words[l.key] }</button>
             {/each}
         </div>
     </div>
@@ -58,11 +58,11 @@
     const dispatch = createEventDispatcher();
 
     const LAYERS = [
-        { id: 'temp', label: 'Temperature', key: 'layerTemp' },
-        { id: 'waves', label: 'Waves', key: 'layerWaves' },
-        { id: 'swell1', label: 'Swell 1', key: 'layerSwell' },
-        { id: 'wavesPeriod', label: 'Wave period', key: 'layerPeriod' },
-        { id: 'wavesPower', label: 'Wave power', key: 'layerPower' },
+        { id: 'temp', key: 'layerTemp' },
+        { id: 'waves', key: 'layerWaves' },
+        { id: 'swell1', key: 'layerSwell' },
+        { id: 'wavesPeriod', key: 'layerPeriod' },
+        { id: 'wavesPower', key: 'layerPower' },
     ];
 
     function set(patch: Partial<Settings>) {

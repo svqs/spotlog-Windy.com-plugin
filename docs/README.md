@@ -10,7 +10,7 @@ Start with **[AGENTS.md](../AGENTS.md)**. It has what spotlog is, the ground rul
 | [forecast.md](forecast.md) | touch forecasts, models, snapshots, predictability, the model a spot uses, tides |
 | [ui-and-copy.md](ui-and-copy.md) | change wording, the look, or apply a Style Lab design; the layout rules |
 | [testing.md](testing.md) | run or add tests; the fake Windy; what only real Windy can show |
-| [operations.md](operations.md) | build, version, publish (owner's OK only), the sync server, security and privacy |
+| [operations.md](operations.md) | build, version, publish (owner's OK only), browser storage / future sync, security and privacy |
 | [decisions.md](decisions.md) | are about to change something the owner already decided |
 | [review-checklist.md](review-checklist.md) | review a change before it ships |
 

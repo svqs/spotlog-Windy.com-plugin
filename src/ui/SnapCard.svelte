@@ -9,17 +9,17 @@
         <div class="loading">{ empty || $words.fcEmpty }</div>
     {:else}
         <div class="cells">
-            <div class="cell" style="background: { windColor(wind.wind) }"><span>{ $words.fcWind }</span><b class="px">{ fmtWind0(wind.wind, u.wind) }</b><span>{ windLabel(u.wind) }</span></div>
-            <div class="cell" style="background: { windColor(wind.gust) }"><span>{ $words.fcGusts }</span><b class="px">{ fmtWind0(wind.gust, u.wind) }</b><span>{ windLabel(u.wind) }</span></div>
-            <div class="cell light"><span>{ $words.fcFrom }</span><b class="dirv"><span class="arrow" style="transform: rotate({ (wind.dir ?? 0) + 180 }deg)">↑</span></b><span>{ dirName(wind.dir) }</span></div>
-            <div class="cell blue"><span>{ $words.fcWaves }</span><b class="px">{ fmtHeight(waves?.waves ?? null, u.height) }</b><span>{ u.height }</span></div>
+            <div class="cell" style="background: { display.windBackground }"><span>{ $words.fcWind }</span><b class="px">{ display.wind }</b><span>{ display.windUnit }</span></div>
+            <div class="cell" style="background: { display.gustBackground }"><span>{ $words.fcGusts }</span><b class="px">{ display.gust }</b><span>{ display.windUnit }</span></div>
+            <div class="cell light"><span>{ $words.fcFrom }</span><b class="dirv"><span class="arrow" style="transform: rotate({ display.directionAngle }deg)">↑</span></b><span>{ display.direction }</span></div>
+            <div class="cell blue"><span>{ $words.fcWaves }</span><b class="px">{ display.waves }</b><span>{ u.height }</span></div>
         </div>
         {#if badge}
             <div class="badge-row"><span class="badge" style="background: { badgeBg }; color: { badgeFg }">{ badge }</span>{#if badgeNote}<small>{ badgeNote }</small>{/if}</div>
         {/if}
         {#if full}
             <div class="rows">
-                <div><span>{ $words.fcTemp }</span><b>{ fmtTemp(wind.temp, u.temp) }</b></div>
+                <div><span>{ $words.fcTemp }</span><b>{ display.temperature }</b></div>
                 {#if tide}<div><span>{ $words.fcTide }</span><b>{ tide }</b></div>{:else if tidePremium}<div title={ tidePremium }><span>{ $words.fcTide }</span><b class="quiet">{ $words.fcTidePremium }</b></div>{/if}
                 {#if waves}
                     <div><span>{ $words.fcSwell }</span><b>{ fmtHeight(waves.swell1, u.height, true) } · { waves.swell1Period === null ? '–' : Math.round(waves.swell1Period) + ' s' }</b></div>
@@ -40,8 +40,9 @@
 </div>
 
 <script lang="ts">
-    import { windColor, dirName, modelLabel } from '../lib/wind';
-    import { fmtWind, fmtWind0, fmtHeight, fmtTemp, windLabel } from '../lib/units';
+    import { forecastDisplay } from '../lib/forecast-display';
+    import { modelLabel } from '../lib/wind';
+    import { fmtWind, fmtHeight } from '../lib/units';
     import { words } from '../lib/copy';
     import type { ModelValue, WaveValue, Settings } from '../lib/types';
 
@@ -64,6 +65,7 @@
     export let badgeBg = 'var(--sl-dirTile, #e9e8e3)';
     export let badgeFg = 'var(--sl-lightText, #1c1c1c)';
     export let u: Settings;
+    $: display = forecastDisplay(wind, waves, u);
 </script>
 
 <style lang="less">

@@ -1,17 +1,20 @@
-"""End-to-end check of the compiled Spotlog plugin (v0.2) inside the fake-Windy harness.
+"""End-to-end check of the compiled Spotlog plugin (current build) inside the fake-Windy harness.
 
 Run:  python3 -m http.server 8765  (from the project root), then  python3 harness/e2e.py <screenshot dir>
 """
-import json, sys, os, re
+import json, sys, os, re, datetime
 from playwright.sync_api import sync_playwright
 
 URL = 'http://localhost:8765/harness/index.html'
 OUT = sys.argv[1] if len(sys.argv) > 1 else '.'
+os.makedirs(OUT, exist_ok=True)
 GPX = os.path.join(os.path.dirname(__file__), 'session.gpx')
-# the track must be from today (Windy only has forecasts from today on): regenerate it for every run
+# Fixed browser day and seeded track make Today/next-day checks independent of the real clock.
+TEST_DAY = '2026-10-04'
+TEST_TIME = datetime.datetime(2026, 10, 4, 12, tzinfo=datetime.timezone.utc)
 import subprocess, tempfile
 GPX = os.path.join(tempfile.gettempdir(), 'spotlog-session.gpx')
-subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), 'make_gpx.py'), GPX], check=True, capture_output=True)
+subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), 'make_gpx.py'), GPX, TEST_DAY], check=True, capture_output=True)
 errors, steps = [], []
 
 
@@ -34,8 +37,9 @@ def stored(pg):
 
 with sync_playwright() as p:
     b = p.chromium.launch()
-    ctx = b.new_context(viewport={'width': 1440, 'height': 900}, locale='en-GB')
+    ctx = b.new_context(viewport={'width': 1440, 'height': 900}, locale='en-GB', timezone_id='UTC')
     pg = ctx.new_page()
+    pg.clock.install(time=TEST_TIME)
     pg.on('pageerror', lambda e: errors.append(str(e)))
     requests = []
     pg.on('request', lambda r: requests.append(r.url))
@@ -105,8 +109,7 @@ with sync_playwright() as p:
     pg.wait_for_selector('.toast:has-text("Forecast saved")', timeout=8000)
     assert len(stored(pg)['snapshots']) == 1
     s0 = stored(pg)['snapshots'][0]
-    import datetime as _dt0
-    now_h = _dt0.datetime.now().replace(minute=0, second=0, microsecond=0).timestamp() * 1000
+    now_h = pg.evaluate('Math.floor(Date.now() / 3600000) * 3600000')
     assert s0['series']['ts'][0] == now_h and len(s0['series']['ts']) == 25, (s0['series']['ts'][0], now_h, len(s0['series']['ts']))
     ok('save forecast: preview, then save; keeps now + the next 24 hours')
     pg.click('.toast .undo')
@@ -421,6 +424,7 @@ with sync_playwright() as p:
     ok(f'download, delete everything, upload: all {len(full["spots"])} spots and {len(full["sessions"])} sessions come back (and stay after a reload)')
     # the same with a second Windy tab open: that tab still remembers "all deleted" and must not wipe the upload again
     other = ctx.new_page()
+    other.clock.install(time=TEST_TIME)
     other.goto(URL)
     other.wait_for_selector('.spotlog')
     pg.click('.tabs button:has-text("How it works")')
@@ -438,6 +442,7 @@ with sync_playwright() as p:
 
     # --- two Windy tabs open at once must not overwrite each other
     pg2 = ctx.new_page()
+    pg2.clock.install(time=TEST_TIME)
     pg2.goto(URL)
     pg2.wait_for_selector('.spotlog')
     pg2.click('.tabs button:has-text("Gear")')
@@ -611,8 +616,11 @@ with sync_playwright() as p:
     pg.click('.mwrap.open .topbar .mclose')
     pg.wait_for_timeout(250)
     ok('phone: units open as their own page (back + ✕), tabs have a ✕ in the header')
-    # spot card: ✕ closes it, switching spots keeps the zoom
-    pg.locator('.spotlog-pin').first.click()
+    # Marker reconciliation preserves unchanged DOM nodes, so DOM order isn't diary order.
+    # Centre the intended spot and address its name rather than whichever pin was inserted first.
+    first_spot = stored(pg)['spots'][0]
+    pg.evaluate('(s) => W.map.centerMap({lat: s.lat, lon: s.lon, zoom: W.map.map.getZoom()})', first_spot)
+    pg.locator('.spotlog-pin').filter(has_text=first_spot['name']).first.click()
     pg.wait_for_selector('.mock-popup .sl-x', timeout=5000)
     z0 = pg.evaluate("W.map.map.getZoom()")
     pg.click('.mock-popup .sl-nav button[data-act="next"]')
@@ -624,8 +632,9 @@ with sync_playwright() as p:
     assert pg.locator('.mock-popup').count() == 0, 'card closes with ✕'
     ok('phone: the spot card keeps your zoom from spot to spot and closes with ✕')
     # --- a touch phone: a tap types where you tapped, and nothing switches page by itself
-    tctx = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, locale='en-GB', storage_state=ctx.storage_state())
+    tctx = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, locale='en-GB', timezone_id='UTC', storage_state=ctx.storage_state())
     tp = tctx.new_page()
+    tp.clock.install(time=TEST_TIME)
     tp.on('pageerror', lambda e: errors.append(str(e)))
     tp.goto(URL.replace('index.html', 'index.html?m'))
     tp.wait_for_selector('#pane .mbar')

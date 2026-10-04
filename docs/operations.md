@@ -3,7 +3,7 @@
 ## Build
 
 ```bash
-npm install
+npm ci
 npm run build                 # dist/plugin.js, dist/plugin.min.js, dist/plugin.json
 python3 harness/assemble.py   # harness/sandbox.html (single file: fake Windy + example data + the plugin)
 node scripts/build-lab.mjs    # harness/stylelab/index.html + preview.html
@@ -48,20 +48,16 @@ the version.
   computer, it syncs that clone after each push. One way is a git bundle copied over, then
   `git fetch ./x.bundle main:refs/remotes/origin/main && git merge --ff-only origin/main`.
 
-## Account sync server (optional, `supabase/`)
+## Browser storage and future account sync
 
-Windy's plugin API has no per-user storage, so the diary can live in a small Supabase project:
+Supabase was removed in 0.18.1 after the decision not to use it. This repository includes no diary sync server.
+Production keeps `src/lib/cloudConfig.ts → functionUrl` empty, so diaries remain in browser `localStorage`;
+"Download a copy" / "Upload a copy" are the backup and device-transfer flow.
 
-1. Create a project in an EU region.
-2. Run `supabase/setup.sql` (table `spotlog_diary`, row-level security, no public access).
-3. `supabase functions deploy spotlog --no-verify-jwt`. The function checks the Windy login itself.
-4. Secrets:
-   - `ALLOW_UNVERIFIED_TEST_IDS=<windy user ids>` for private testing;
-   - `WINDY_VERIFY_URL=…` once Windy says how to verify their token.
-5. Put the function URL into `src/lib/cloudConfig.ts`, then build and publish.
-
-**Open question for Windy:** may a plugin send `userToken` to its own server, and how does the server verify it? Until
-that's answered, only allow-listed test ids may sync. Never release sync publicly without verification.
+The backend-neutral client/controller and harness mock remain for testing account isolation and conditional-write
+conflicts. They do not enable production sync. A future backend would need verified Windy authentication and the
+revision-aware protocol before configuring an endpoint; the old Supabase deployment instructions no longer apply.
+Removing repository files does not delete any previously deployed external service or its data.
 
 ## Security and privacy
 

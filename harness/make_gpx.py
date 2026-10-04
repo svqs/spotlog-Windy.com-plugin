@@ -4,7 +4,8 @@ random.seed(7)
 M_LAT = 1 / 111320
 M_LON = 1 / (111320 * math.cos(math.radians(36.06)))
 lat, lon, heading = 36.0655, -5.6935, 205.0
-t = dt.datetime.now().replace(hour=14, minute=5, second=0, microsecond=0)
+day = dt.datetime.strptime(sys.argv[2], '%Y-%m-%d').replace(tzinfo=dt.timezone.utc) if len(sys.argv) > 2 else dt.datetime.now()
+t = day.replace(hour=14, minute=5, second=0, microsecond=0)
 pts = [(lat, lon, t)]
 for leg in range(12):
     length, bend = 1300 + random.random() * 900, (random.random() - 0.5) * 0.02

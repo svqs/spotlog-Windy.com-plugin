@@ -1,8 +1,12 @@
-import * as wfetch from '@windy/fetch';
+import { pointForecast } from './adapters/windy';
+import { createRequestCache } from './controllers/requests';
+import { weatherValue, waveValue, waveHour } from './forecast-values';
+import { celsiusFromKelvin } from './units';
 import { takeTideSnapshot, isPremium } from './tides/tides';
 import { highsAndLows } from './tides/tideCore';
 import type { TideSnapshotResult } from './tides/tides';
 
+import type { PointForecast, PointForecastData } from './adapters/windy';
 import type { ModelValue, WaveValue, DaySeries } from './types';
 import type { Hour } from './predict';
 
@@ -34,35 +38,26 @@ const nearestIndex = (tsList: number[], ts: number): number => {
 };
 
 // Small cache so the home screen, spot page and "show on map" don't refetch the same forecast
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const cache = new Map<string, { at: number; p: Promise<any | null> }>();
-const TTL = 20 * 60e3;
+const cache = createRequestCache<PointForecast | null>(20 * 60e3, 512);
 
 /**
  * One point forecast: hourly steps where the model has them, plus (for weather models) Windy's daily summary
  * with its predictability % and the sunrise/sunset of the place.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const fetchPayload = (model: string, lat: number, lon: number): Promise<any | null> => {
-    const key = `${model}|${lat.toFixed(3)}|${lon.toFixed(3)}`;
-    const hit = cache.get(key);
-    if (hit && Date.now() - hit.at < TTL) {return hit.p;}
-    const p = (async () => {
+const fetchPayload = (model: string, lat: number, lon: number): Promise<PointForecast | null> => {
+    const key = `${model}|${lat}|${lon}`;
+    return cache.get(key, async () => {
         try {
-            const extra = model.endsWith('Waves') ? null : { summary: true, celestial: true };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const res: any = await wfetch.getPointForecastData(model as any, { lat, lon, step: 1 }, extra);
-            return res?.data?.data ? res.data : null;
+            const result = await pointForecast(model, lat, lon);
+            if (!result) {throw new Error('forecast unavailable');}
+            return result;
         } catch (e) {
             console.info(`[spotlog] ${model} not available here`, e);
-            return null;
+            throw e;
         }
-    })();
-    cache.set(key, { at: Date.now(), p });
-    return p;
+    }).catch(() => null);
 };
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const fetchData = async (model: string, lat: number, lon: number): Promise<any | null> => (await fetchPayload(model, lat, lon))?.data ?? null;
+const fetchData = async (model: string, lat: number, lon: number): Promise<PointForecastData | null> => (await fetchPayload(model, lat, lon))?.data ?? null;
 
 /** Windy's predictability of each day (0–100 %, by the day's midnight), when Windy sends it */
 export const predictability = async (lat: number, lon: number, model = 'ecmwf'): Promise<Record<string, number>> => {
@@ -75,8 +70,7 @@ export const predictability = async (lat: number, lon: number, model = 'ecmwf'):
 };
 
 /** Daylight for an hour: Windy's day flag, else sunrise–sunset of the place, else 6:00–21:00 */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const daylight = (p: any, i: number, ts: number): boolean => {
+const daylight = (p: PointForecast | null, i: number, ts: number): boolean => {
     const d = p?.data;
     if (Array.isArray(d?.isDay) && typeof d.isDay[i] === 'number') {return d.isDay[i] > 0;}
     const c = p?.celestial;
@@ -93,16 +87,11 @@ export const modelValueAt = async (model: string, lat: number, lon: number, ts: 
     if (!d || !Array.isArray(d.ts) || !d.ts.length) {return null;}
     const i = nearestIndex(d.ts, ts);
     if (Math.abs(d.ts[i] - ts) > 3 * 3600e3) {return null;}
-    const tempK = num(d.temperature?.[i]);
-    return {
-        model,
-        ts: d.ts[i],
-        wind: num(d.wind?.[i]),
-        gust: num(d.windGust?.[i]),
-        dir: num(d.windDir?.[i]),
-        temp: tempK === null ? null : Math.round((tempK - 273.15) * 10) / 10,
-        rain: num(d.precipAmount?.[i]),
-    };
+    return weatherValue(model, d.ts[i], column => {
+        const source = { gust: 'windGust', dir: 'windDir', temp: 'temperature', rain: 'precipAmount' }[column] || column;
+        const value = num(d[source]?.[i]);
+        return column === 'temp' ? celsiusFromKelvin(value) : value;
+    });
 };
 
 export const waveValueAt = async (lat: number, lon: number, ts: number): Promise<WaveValue | null> => {
@@ -110,16 +99,7 @@ export const waveValueAt = async (lat: number, lon: number, ts: number): Promise
         const d = await fetchData(model, lat, lon);
         if (!d || !Array.isArray(d.ts) || !d.ts.length || !Array.isArray(d.waves)) {continue;}
         const i = nearestIndex(d.ts, ts);
-        const v: WaveValue = {
-            model,
-            waves: num(d.waves?.[i]),
-            wavesPeriod: num(d.wavesPeriod?.[i]),
-            wavesPower: num(d.wavesPower?.[i]),
-            wavesDir: num(d.wavesDir?.[i]),
-            swell1: num(d.swell1?.[i]),
-            swell1Period: num(d.swell1Period?.[i]),
-            swell1Dir: num(d.swell1Dir?.[i]),
-        };
+        const v = waveValue(model, column => num(d[column]?.[i]));
         if (v.waves !== null) {return v;}
     }
     return null;
@@ -148,15 +128,12 @@ export const hoursBetween = async (lat: number, lon: number, from: number, to: n
         const tempK = num(d.temperature?.[i]);
         const h0: Hour = {
             ts, wind: num(d.wind?.[i]), gust: num(d.windGust?.[i]), dir: num(d.windDir?.[i]), waves: null, day: daylight(p, i, ts),
-            temp: tempK === null ? null : Math.round((tempK - 273.15) * 10) / 10, rain: num(d.precipAmount?.[i]),
+            temp: celsiusFromKelvin(tempK), rain: num(d.precipAmount?.[i]),
         };
-        if (waveTs.length) {
+        if (waveTs.length && wd) {
             const j = nearestIndex(waveTs, ts);
             if (Math.abs(waveTs[j] - ts) <= 2 * HOUR) {
-                Object.assign(h0, {
-                    waves: num(wd.waves[j]), period: num(wd.wavesPeriod?.[j]), wavesDir: num(wd.wavesDir?.[j]), power: num(wd.wavesPower?.[j]),
-                    swell: num(wd.swell1?.[j]), swellPeriod: num(wd.swell1Period?.[j]), swellDir: num(wd.swell1Dir?.[j]),
-                });
+                Object.assign(h0, waveHour(waveValue(WAVE_MODELS[0], column => num(wd[column]?.[j]))));
             }
         }
         out.push(h0);
@@ -178,14 +155,10 @@ export interface TideDay { highs: number[]; lows: number[]; highsM?: number[]; l
 export interface TideResult { day: TideDay | null; needsPremium: boolean }
 
 /** One answer per place for a few minutes: the spot page and Save forecast often ask for the same place */
-const tideCache = new Map<string, { at: number; res: Promise<TideSnapshotResult> }>();
+const tideCache = createRequestCache<TideSnapshotResult>(10 * 60e3, 128);
 const snapshotFor = (lat: number, lon: number): Promise<TideSnapshotResult> => {
     const key = `${lat.toFixed(3)},${lon.toFixed(3)},${isPremium()}`;
-    const hit = tideCache.get(key);
-    if (hit && Date.now() - hit.at < 10 * 60e3) {return hit.res;}
-    const res = takeTideSnapshot(lat, lon);
-    tideCache.set(key, { at: Date.now(), res });
-    return res;
+    return tideCache.get(key, () => takeTideSnapshot(lat, lon));
 };
 
 /** High and low tides at a place between two times. Never throws; `needsPremium` when the user has no Windy Premium */
@@ -204,13 +177,6 @@ export const tideToday = async (lat: number, lon: number): Promise<TideResult> =
     const inDay = (t: number) => t >= start.getTime() && t < start.getTime() + 864e5;
     const d = res.day;
     return { ...res, day: { highs: d.highs.filter(inDay), lows: d.lows.filter(inDay) } };
-};
-
-/** Collects every model (in parallel) for one place and time */
-export const captureModels = async (lat: number, lon: number, ts: number, primary: string, allModels: boolean): Promise<ModelValue[]> => {
-    const list = allModels ? Array.from(new Set([primary, ...SNAPSHOT_MODELS])) : [primary];
-    const results = await Promise.all(list.map(m => modelValueAt(m, lat, lon, ts)));
-    return results.filter((r): r is ModelValue => !!r && r.wind !== null);
 };
 
 /** Removes the layers the user chose not to keep */
@@ -245,16 +211,14 @@ export const covers = (series: DaySeries | undefined | null, ts: number): boolea
 export const seriesAt = (series: DaySeries, ts: number): { models: ModelValue[]; waves: WaveValue | null } => {
     const i = nearestIndex(series.ts, ts);
     const t = series.ts[i];
-    const models: ModelValue[] = Object.entries(series.models)
-        .map(([model, v]) => ({ model, ts: t, wind: v.wind[i] ?? null, gust: v.gust[i] ?? null, dir: v.dir[i] ?? null, temp: v.temp[i] ?? null, rain: v.rain?.[i] ?? null }))
-        .filter(m => m.wind !== null);
-    const w = series.waves;
-    const waves: WaveValue | null = w
-        ? {
-            model: w.model, waves: w.waves[i] ?? null, wavesPeriod: w.wavesPeriod[i] ?? null, wavesPower: w.wavesPower[i] ?? null,
-            wavesDir: w.wavesDir[i] ?? null, swell1: w.swell1[i] ?? null, swell1Period: w.swell1Period[i] ?? null, swell1Dir: w.swell1Dir[i] ?? null,
-        }
-        : null;
+    const models = Object.entries(series.models)
+        .map(([model, values]) => weatherValue(model, t, column => values[column as keyof typeof values]?.[i] ?? null))
+        .filter(value => value.wind !== null);
+    const columns = series.waves;
+    const waves = columns ? waveValue(columns.model, column => {
+        const values = columns[column as keyof typeof columns];
+        return Array.isArray(values) ? values[i] ?? null : null;
+    }) : null;
     const anyWave = waves && [waves.waves, waves.swell1, waves.wavesPeriod, waves.wavesPower].some(v => v !== null);
     return { models, waves: anyWave ? waves : null };
 };
@@ -272,7 +236,7 @@ export const captureDay = async (
     const datas = await Promise.all(list.map(m => fetchData(m, lat, lon)));
     const grid: number[] = [];
     for (let t = from; t <= to; t += HOUR) {grid.push(t);}
-    const pick = (d: any, key: string, t: number): number | null => {
+    const pick = (d: PointForecastData | null, key: string, t: number): number | null => {
         if (!d || !Array.isArray(d.ts) || !d.ts.length) {return null;}
         const i = nearestIndex(d.ts, t);
         if (Math.abs(d.ts[i] - t) > 1.6 * HOUR) {return null;}
@@ -290,7 +254,7 @@ export const captureDay = async (
             dir: grid.map(t => pick(d, 'windDir', t)),
             temp: grid.map(t => {
                 const k2 = pick(d, 'temperature', t);
-                return keepTemp && k2 !== null ? Math.round((k2 - 273.15) * 10) / 10 : null;
+                return keepTemp ? celsiusFromKelvin(k2) : null;
             }),
             rain: grid.map(t => pick(d, 'precipAmount', t)),
         };

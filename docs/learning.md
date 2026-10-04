@@ -5,7 +5,7 @@ forecast you saved before an outing** with **how the outing went (1–5)**. It t
 similar past outings, per spot and per sport. Everything runs in the browser on your own diary. There is no shared
 data and no server.
 
-`node scripts/test-predict.mjs` checks the behaviour (15 checks). Run it after any change here.
+`node scripts/test-predict.mjs` checks the behaviour (16 groups, with extra cache and scheduling assertions). Run it after any change here.
 
 ## The modules
 
@@ -161,8 +161,21 @@ Small gradient-boosted regression trees on the same features.
 - the same evidence gates apply;
 - outside the range of core values the trees saw: "Not sure yet".
 
-**Training** runs in the background between frames, after a diary change (`trainTreesInBackground`). It is cached per
-spot, sport, data and algorithm version, and a failure falls back to similar sessions.
+**Training** uses deterministic cooperative generator batches, with an 8 ms yield target checked between fitted
+trees, and a serial job queue. An individual tree can exceed the target; this is cooperative scheduling, not a hard
+real-time guarantee. Unit checks confirm timer progress, cancellation and equality with synchronous reference math.
+No worker-loading assumption is introduced into Windy.
+
+Exact sorted effective-input keys include algorithm version, spot/sport, prior, model/features, outcome, kind, day,
+start and coverage/provenance. Cached successes, failures and pending jobs share that identity; obsolete jobs cannot
+commit. Only current model keys remain cached. Failures retain similar-session fallback. Thresholds and algorithm
+version are unchanged because scoring math did not change.
+
+The learning controller indexes sessions/snapshots, shares model examples between skill and sport models, reuses skill
+for model selection and trust display, and caches today's best per model/hour identity and minute. Units, navigation
+and notes-only edits do not evaluate examples/skill or train trees. Entity arrays are immutable command outputs;
+a meaningful edit invalidates its spot and relevant neighbors. Recorded timezone helpers live in `lib/time.ts`, with
+bounded formatter reuse. Performance evidence and remaining costs: [0.18 implementation](reviews/code-optimization-implementation-2026-10-04.md).
 
 ## 6. When to go (windows.ts)
 
