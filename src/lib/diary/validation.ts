@@ -3,7 +3,7 @@ import type { SpotlogData, Settings, Spot, Snapshot, Session, Gear, Track, Model
 export const DEFAULT_LAYERS = ['temp', 'waves', 'swell1', 'wavesPeriod', 'wavesPower'];
 export const defaultSettings = (): Settings => ({ wind: 'ms', height: 'm', temp: 'C', allModels: true, models: ['ecmwf'],
     layers: [...DEFAULT_LAYERS], mapSpots: true, mapSessions: true, spotView: 'tiles', phoneSheet: false,
-    welcomed: false, worksOpen: false });
+    welcomed: false, worksOpen: false, spotOrder: [] });
 export const emptyData = (): SpotlogData => ({ version: 1, spots: [], snapshots: [], sessions: [], gear: [], settings: defaultSettings() });
 
 type RecordValue = Record<string, unknown>;
@@ -143,6 +143,7 @@ export function normalise(input: unknown): SpotlogData {
     settings.spotView = preferences.spotView === 'list' ? 'list' : 'tiles';
     settings.phoneSheet = preferences.phoneSheet === true;
     settings.worksOpen = preferences.worksOpen === true;
+    settings.spotOrder = strings(preferences.spotOrder).slice(0, 2000);
     settings.welcomed = preferences.welcomed === true || ['spots', 'sessions', 'snapshots', 'gear'].some(key => Array.isArray(value[key]) && (value[key] as unknown[]).length > 0);
     // Keep duplicates as distinct recovered items; existing references continue to target the first id.
     const seen = new Set<string>();

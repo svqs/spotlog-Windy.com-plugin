@@ -15,6 +15,7 @@ const { exampleOf } = require('./predict.js');
 const { clockInstant, dayKey } = require('./time.js');
 const { toHeight, fromHeight, toTemperature, fromTemperature } = require('./units.js');
 const { createForecastController } = require('./controllers/forecasts.js');
+const { orderSpots, moveId } = require('./spot-order.js');
 const clone = data => structuredClone(data);
 const deferred = () => { let resolve; let reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; };
 const spot = { id: 's', name: 'Spot', lat: 0, lon: 0, sports: ['Windsurf'], dirs: ['W'], min: 6, max: 12, created: 1, recommendationModel: 'gfs', ranges: { Windsurf: { wind: { lo: 6 } } } };
@@ -157,4 +158,14 @@ const spot = { id: 's', name: 'Spot', lat: 0, lon: 0, sports: ['Windsurf'], dirs
     await controller.now(0,0,'ecmwf',true); assert.equal(calls, 3, 'an unavailable response can recover on the next load');
     controller.clear(); assert.equal(controller.sizes.conditions, 0);
 }
-console.log('Core checks passed: entity preservation, concurrent edits, revisions, malformed diaries, lifetime, bounded requests, sync races/conflicts, learning invalidation.');
+{
+    // the home screen's spot order (dragging): stored ids first, new spots after, in the diary's order
+    const spots = ['a', 'b', 'c', 'd'].map(id => ({ id }));
+    assert.deepEqual(orderSpots(spots, []).map(x => x.id), ['a', 'b', 'c', 'd']);
+    assert.deepEqual(orderSpots(spots, ['c', 'a', 'gone']).map(x => x.id), ['c', 'a', 'b', 'd']);
+    assert.deepEqual(moveId(['a', 'b', 'c', 'd'], 'd', 0), ['d', 'a', 'b', 'c']);
+    assert.deepEqual(moveId(['a', 'b', 'c', 'd'], 'a', 2), ['b', 'c', 'a', 'd']);
+    assert.deepEqual(normalise({ settings: { spotOrder: ['a', 7, 'b'] } }).settings.spotOrder, ['a', 'b']);
+    assert.deepEqual(normalise({ settings: {} }).settings.spotOrder, [], 'an old diary has no order yet');
+}
+console.log('Core checks passed: spot order, entity preservation, concurrent edits, revisions, malformed diaries, lifetime, bounded requests, sync races/conflicts, learning invalidation.');

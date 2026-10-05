@@ -326,6 +326,8 @@ with sync_playwright() as p:
     # the other spot's name sits next to (under) the open card in the sandbox: names stay above the cards (0.18.5)
     pg.locator('.spotlog-pin:not(.active)').first.hover(); pg.wait_for_timeout(1200); hovered = cards(pg)
     pg.mouse.move(5, 5); pg.wait_for_timeout(300); left = cards(pg)
+    # like a person: the mouse comes onto the card first (the card then comes to the front, above the names), then the link
+    pg.locator('.spotlog-popup:not(.sl-hover) .sl-h').first.hover(); pg.wait_for_timeout(200)
     pg.locator('.sl-detail').first.click(); pg.wait_for_timeout(300)
     windy = any('rqstOpen detail' in m and 'wind' in m for m in logs)
     note(len(first) == 1 and first[0].startswith('card:') and on == 1 and off == [] and again == first and hovered[:1] == first and len(hovered) == 2 and hovered[1].startswith('hover:') and left == first and windy,
@@ -341,6 +343,46 @@ with sync_playwright() as p:
     panel = pg.evaluate("!!document.querySelector('.mwrap.open')"); shown = cards(pg)
     note(len(tapped) == 1 and details == [] and lit == 0 and not panel and shown == tapped,
          f'phone map: tile shows the card {tapped}; Details opens the page without it {details} (lit: {lit}); Show on map shows it {shown} and the panel steps aside (open: {panel})')
+    ctx.close()
+
+    # 10. drag to rearrange the spots (0.18.6): mouse on desktop (tiles and list), press-hold-move on phones;
+    #     a quick swipe on a phone doesn't drag, and a plain click still opens the spot
+    KEY = 'windy-plugin-spotlog:v1:u12345'
+    names = lambda pg: pg.locator('.tiles .t-name').all_inner_texts()
+    def mouse_drag(pg, a, b2):
+        ra = pg.locator('.tiles .tile').nth(a).bounding_box(); rb = pg.locator('.tiles .tile').nth(b2).bounding_box()
+        pg.mouse.move(ra['x'] + 30, ra['y'] + 12); pg.mouse.down()
+        pg.mouse.move(rb['x'] + 30, rb['y'] + 12, steps=20); pg.wait_for_timeout(250); pg.mouse.up(); pg.wait_for_timeout(500)
+    ctx = b.new_context(viewport={'width': 1440, 'height': 900}); pg = ctx.new_page()
+    pg.goto(SANDBOX); pg.wait_for_selector('.tile', timeout=10000); pg.wait_for_timeout(1000)
+    pg.evaluate(f"""() => {{ const d = JSON.parse(localStorage.getItem('{KEY}')); const s0 = d.spots[0];
+        ['Los Lances', 'Punta Paloma', 'Tarifa town', 'Zahara'].forEach((n, i) => d.spots.push({{ ...s0, id: 'x' + i, name: n, lat: s0.lat - 0.02 * (i + 1) }}));
+        d.updatedAt = Date.now(); localStorage.setItem('{KEY}', JSON.stringify(d)); }}""")
+    pg.reload(); pg.wait_for_selector('.tile'); pg.wait_for_timeout(1500)
+    before = names(pg)
+    mouse_drag(pg, 5, 0); tiles_after = names(pg); opened = pg.locator('.reco').count()
+    pg.click('.viewtog button[aria-label="List"]'); pg.wait_for_timeout(400)
+    mouse_drag(pg, 0, 3); list_after = names(pg)
+    pg.reload(); pg.wait_for_selector('.tile'); pg.wait_for_timeout(1000); kept = names(pg)
+    pg.locator('.tile').first.click(); pg.wait_for_timeout(800); clicks = pg.locator('.reco').count() > 0
+    note(tiles_after == [before[5]] + before[:5] and opened == 0 and list_after == tiles_after[1:4] + tiles_after[:1] + tiles_after[4:] and kept == list_after and clicks,
+         f'desktop drag: tiles {tiles_after}, list {list_after}, kept after reload {kept == list_after}, no spot opened by a drag, a click still opens: {clicks}')
+    ctx.close()
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, is_mobile=True); pg = ctx.new_page()
+    pg.goto(SANDBOX); pg.wait_for_timeout(2500)
+    if pg.locator('.mtabs button:has-text("Spots")').count(): pg.locator('.mtabs button:has-text("Spots")').first.click(); pg.wait_for_timeout(800)
+    cdp = ctx.new_cdp_session(pg)
+    touch = lambda kind, x, y: cdp.send('Input.dispatchTouchEvent', {'type': kind, 'touchPoints': [] if kind == 'touchEnd' else [{'x': x, 'y': y}]})
+    def finger(hold):
+        ra = pg.locator('.tiles .tile').nth(0).bounding_box(); rb = pg.locator('.tiles .tile').nth(1).bounding_box()
+        x0, y0, x1, y1 = ra['x'] + ra['width'] / 2, ra['y'] + ra['height'] / 2, rb['x'] + rb['width'] / 2, rb['y'] + rb['height'] / 2
+        touch('touchStart', x0, y0); pg.wait_for_timeout(hold)
+        for i in range(1, 13): touch('touchMove', x0 + (x1 - x0) * i / 12, y0 + (y1 - y0) * i / 12); pg.wait_for_timeout(20)
+        touch('touchEnd', 0, 0); pg.wait_for_timeout(600)
+    p0 = names(pg); finger(0); swipe = names(pg)
+    finger(500); held = names(pg)
+    note(swipe == p0 and held == [p0[1], p0[0]] + p0[2:] and pg.locator('.spotlog-popup').count() == 0,
+         f'phone drag: a quick swipe leaves {swipe}, press-hold-move gives {held}, no card opened')
     ctx.close()
     b.close()
 print('FINDINGS:', json.dumps(findings, indent=1))

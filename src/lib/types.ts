@@ -148,6 +148,8 @@ export interface Settings {
     welcomed: boolean;
     /** "What works here for you" folded open on spot pages */
     worksOpen: boolean;
+    /** the order of the spots on the home screen (ids, set by dragging); spots not in it follow in the diary's order */
+    spotOrder: string[];
 }
 
 export interface SpotlogData {

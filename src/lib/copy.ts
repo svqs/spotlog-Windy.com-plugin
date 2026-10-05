@@ -213,7 +213,7 @@ export const COPY_GROUPS: CopyGroup[] = [
         ['tidePremium', 'Windy Premium adds tide to every session you log, so {spotlog} can learn which tides work at each spot.'], ['fcSwell', 'Swell 1'], ['fcPeriod', 'Wave period · power'],
         ['fcModels', 'Wind at this time in every model'], ['fcMore', 'Full snapshot'], ['fcLess', 'Show less'],
         ['cardNow', 'Right now · ECMWF', 'Card on the map'], ['cardLoading', 'Loading conditions…'],
-        ['cardSave', 'Save forecast'], ['cardLog', 'Log session'], ['cardDetails', 'Details'], ['cardPointForecast', 'Windy forecast for this spot', 'Desktop map card: opens Windy\'s own point forecast'],
+        ['cardSave', 'Save forecast'], ['cardLog', 'Log session'], ['cardDetails', 'Details'], ['cardPointForecast', 'Forecast for this spot', 'Desktop map card: opens Windy\'s own point forecast'],
         ['tipSessions', '{n} sessions', 'Hover box over session marks'], ['tipMore', '+ {n} more'], ['tipYour', 'Your session'],
         ['setWind', 'Wind'], ['setWaves', 'Waves'], ['setTemp', 'Temperature'], ['setSaved', 'Saved in every forecast'],
         ['setDirection', 'Direction'], ['layerTemp', 'Temperature'], ['layerWaves', 'Waves'], ['layerSwell', 'Swell 1'], ['layerPeriod', 'Wave period'], ['layerPower', 'Wave power'],

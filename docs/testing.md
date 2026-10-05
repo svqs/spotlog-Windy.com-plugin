@@ -73,6 +73,7 @@ One long story. Each `ok(...)` is a step:
 | 7 | "Not worth it, didn't go"; the map card (rating, no symbol list); linking earlier sessions to a new spot; the phone spot page |
 | 8 | **Phone cross-check:** every screen (spots, map card, spot page parts, Adjust, log form + "Other…", spot form, tabs) at 320/360/390/430, with screenshots `x<width>-<screen>.png` |
 | 9 | The spot on the map: desktop opens a spot with its card, its name brings the card back, hovering another name shows its card, the Windy forecast link; phones: Details without the card, Show on map shows it and the panel steps aside |
+| 10 | Drag to rearrange the spots: mouse on desktop (tiles and list, kept after a reload, a click still opens), press-hold-move on phones (a quick swipe doesn't drag) |
 
 Helpers:
 - `overflow(pg)`: elements outside the panel.

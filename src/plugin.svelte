@@ -147,9 +147,10 @@
                 <button data-spotlog class:on={ S.spotView === 'list' } aria-pressed={ S.spotView === 'list' } aria-label={ W.viewList } title={ W.viewList } on:click={ () => setSettings({ ...S, spotView: 'list' }) }>−</button>
                 <button data-spotlog class:on={ S.spotView !== 'list' } aria-pressed={ S.spotView !== 'list' } aria-label={ W.viewTiles } title={ W.viewTiles } on:click={ () => setSettings({ ...S, spotView: 'tiles' }) }>+</button>
             </div>
-            <div data-spotlog class="tiles" class:list={ S.spotView === 'list' }>
-                {#each data.spots as s (s.id)}
-                    <button data-spotlog class="tile" on:click={ () => (barMode ? spotOnMap(s) : openSpotOnMap(s)) }>
+            <!-- drag a spot to move it (mouse: press and move; phones: press and hold, then move) -->
+            <div data-spotlog class="tiles" class:list={ S.spotView === 'list' } use:dragSort={ sortSpots }>
+                {#each homeSpots as s (s.id)}
+                    <button data-spotlog class="tile" data-drag-id={ s.id } animate:flip={ { duration: s.id === dragId ? 0 : 180 } } on:click={ () => (barMode ? spotOnMap(s) : openSpotOnMap(s)) }>
                         <span data-spotlog class="t-name">{ s.name }</span>
                         {#if nowOf(s.id, nowBySpot)}
                             <span data-spotlog class="now">
@@ -702,7 +703,10 @@
     import * as rootScope from '@windy/rootScope';
     import * as geo from '@windy/geolocation';
     import { onDestroy, onMount, tick } from 'svelte';
-    import { hapticCleanup } from './lib/haptic';
+    import { flip } from 'svelte/animate';
+    import { haptic, hapticCleanup } from './lib/haptic';
+    import { orderSpots, moveId } from './lib/spot-order';
+    import { dragSort } from './ui/dragSort';
 
     import { installPreviewBridge } from './lib/preview/bridge';
     import APPLICATION_CSS from './ui/application.less';
@@ -1076,6 +1080,26 @@
     /* ---------- derived ---------- */
     $: diaryIndex = indexDiary(data);
     $: S = data.settings;
+    /** the spots on the home screen in the order you dragged them into (while dragging: the order under your finger) */
+    let dragOrder: string[] | null = null;
+    let dragId = '';
+    $: homeSpots = orderSpots(data.spots, dragOrder || S.spotOrder);
+    const sortSpots = {
+        start: () => haptic(),
+        move: (id: string, index: number) => {
+            dragId = id;
+            const next = moveId(homeSpots.map(x => x.id), id, index);
+            if (next.join() !== homeSpots.map(x => x.id).join()) {
+                dragOrder = next;
+                haptic();
+            }
+        },
+        done: () => {
+            if (dragOrder) {setSettings({ ...S, spotOrder: dragOrder });}
+            dragOrder = null;
+            dragId = '';
+        },
+    };
     $: unitsLabel = `${windLabel(S.wind)} · ${S.height} · °${S.temp}`;
     $: allSessions = [...data.sessions].sort((a, b) => b.date - a.date);
     $: lastSnap = [...data.snapshots].sort((a, b) => b.savedAt - a.savedAt)[0] || null;
@@ -1534,6 +1558,7 @@
         tempMarker = null;
     }
     function clearPopup() {
+        namesOnTop(true);
         const p = popup;
         popup = null; // first, so its 'remove' handler knows this was on purpose
         mapShown = null;
@@ -1601,6 +1626,11 @@
      * under its card (it can still be hovered and clicked). Phones keep the cards on top (their buttons need the taps).
      */
     let pinPane: string | null = null;
+    let pinPaneEl: HTMLElement | null = null;
+    /** while the mouse is on a card, the card comes to the front (its link stays clickable); then the names again */
+    function namesOnTop(on: boolean) {
+        if (pinPaneEl) {pinPaneEl.style.zIndex = on ? '710' : '650';}
+    }
     function namesPane(): string {
         if (pinPane !== null) {return pinPane;}
         pinPane = '';
@@ -1610,6 +1640,7 @@
             const el = m.getPane?.('spotlogNames') || m.createPane?.('spotlogNames');
             if (el) {
                 el.style.zIndex = '710'; // Leaflet's cards (popupPane) are at 700
+                pinPaneEl = el;
                 pinPane = 'spotlogNames';
             }
         } catch {
@@ -1761,6 +1792,8 @@
             const el: HTMLElement | null = p.getElement?.() || null;
             if (el && !el.dataset.slWired) {
                 el.dataset.slWired = '1';
+                el.addEventListener('mouseenter', () => namesOnTop(false));
+                el.addEventListener('mouseleave', () => namesOnTop(true));
                 el.addEventListener('click', (e: MouseEvent) => {
                     const b = (e.target as HTMLElement).closest('[data-act]') as HTMLElement | null;
                     if (!b) {return;}
@@ -1787,8 +1820,8 @@
             drawSpotMarkers();
         }
         else if (act === 'prev' || act === 'next') {
-            const i = data.spots.findIndex(x => x.id === sp.id);
-            const n = data.spots[(i + (act === 'next' ? 1 : data.spots.length - 1)) % data.spots.length];
+            const i = homeSpots.findIndex(x => x.id === sp.id);
+            const n = homeSpots[(i + (act === 'next' ? 1 : homeSpots.length - 1)) % homeSpots.length];
             if (n) {
                 openSpot(n, false, !barMode);
                 showSpotCard(n);

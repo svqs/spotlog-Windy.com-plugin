@@ -57,7 +57,7 @@
             el.addEventListener('mouseenter', e => (this.handlers.mouseover || []).forEach(h => h(e)));
             el.addEventListener('mouseleave', e => (this.handlers.mouseout || []).forEach(h => h(e)));
             // (Leaflet's 700+ means above the cards; here cards are at 20)
-            if (this.opts.pane && panes[this.opts.pane]) el.style.zIndex = Number(panes[this.opts.pane].style.zIndex) >= 700 ? '21' : '';
+            if (this.opts.pane && panes[this.opts.pane]) { panes[this.opts.pane].els.add(el); el.style.zIndex = Number(panes[this.opts.pane].style.zIndex) >= 700 ? '21' : ''; }
             mapEl().appendChild(el);
             this.el = el;
             this.place();
@@ -66,7 +66,7 @@
         }
         on(ev, h) { (this.handlers[ev] = this.handlers[ev] || []).push(h); return this; }
         getElement() { return this.el || null; }
-        remove() { this.el?.remove(); live.delete(this); return this; }
+        remove() { if (this.opts.pane && panes[this.opts.pane]) panes[this.opts.pane].els.delete(this.el); this.el?.remove(); live.delete(this); return this; }
     }
     // map panes (Leaflet's createPane / getPane): only their z-index matters here; cards (popups) are at 20
     const panes = {};
@@ -146,7 +146,17 @@
     const leafletMap = {
         getCenter: centre,
         getZoom: () => Math.round(11 - Math.log2(view.k)),
-        createPane: name => (panes[name] = panes[name] || { style: {} }),
+        createPane: name => {
+            if (!panes[name]) {
+                // a z-index change moves the pane's markers above (700+) or below the cards, like Leaflet's panes
+                let z = '';
+                const els = new Set();
+                const style = {};
+                Object.defineProperty(style, 'zIndex', { get: () => z, set: v => { z = String(v); els.forEach(el => { el.style.zIndex = Number(z) >= 700 ? '21' : ''; }); } });
+                panes[name] = { style, els };
+            }
+            return panes[name];
+        },
         getPane: name => panes[name],
         on: (ev, f) => { if (ev === 'zoomend' || ev === 'moveend') moveSubs.push(f); },
         off: (ev, f) => { const i = moveSubs.indexOf(f); if (i >= 0) moveSubs.splice(i, 1); },

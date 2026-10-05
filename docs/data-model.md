@@ -24,7 +24,8 @@ SpotlogData {
                           // checked? (Not worth it, didn't go), sport?,
                           // gearIds[], gear (free text), start/end "HH:MM", notes, track?, tz
   gear:      Gear[]       // id, name, kind, sport?
-  settings:  Settings     // units, models/layers to save, map toggles, spotView, phoneSheet, welcomed, worksOpen
+  settings:  Settings     // units, models/layers to save, map toggles, spotView, phoneSheet, welcomed, worksOpen,
+                          // spotOrder (ids, the home screen's order from dragging; new spots follow)
   updatedAt?: number      // last local change; fallback only for legacy entities without revisions
   revisions?: {id: ms}     // last entity edit, preserved independently of unrelated changes
   settingsAt?: number     // last settings edit (whole-object conflict resolution)
