@@ -31,7 +31,8 @@ def open_spot(pg):
     pg.locator('.tile').first.click()
     if pg.viewport_size['width'] < 760:
         pg.locator('.sl-acts button[data-act="open"]').click()
-        pg.locator('.sl-x[data-act="close"]').click()
+        # since 0.18.4 Details closes the card by itself (no ✕ to tap): wait until it's gone
+        pg.wait_for_selector('.spotlog-popup', state='detached')
     pg.wait_for_selector('.works-sec')
 
 def summary(pg, outings, great):
