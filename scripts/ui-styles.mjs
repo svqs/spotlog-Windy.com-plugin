@@ -26,6 +26,15 @@ export async function compileUiStyles(source, filename) {
             });
         }).processSync(rule.selector);
     });
+    // Remove formatting only: keep values and selector whitespace (including descendant combinators) intact.
+    css.walkComments(comment => comment.remove());
+    css.raws.after = '';
+    css.walk(node => {
+        node.raws.before = '';
+        node.raws.after = '';
+        if (node.type === 'decl') node.raws.between = ':';
+        if (node.type === 'rule' || node.type === 'atrule') node.raws.between = '';
+    });
     return css.toString();
 }
 

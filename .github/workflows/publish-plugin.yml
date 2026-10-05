@@ -20,15 +20,11 @@ jobs:
                     echo "Secret WINDY_API_KEY is not configured" >&2
                     exit 1
                   fi
-                  cd dist
                   echo "Creating plugin archive..."
-                  echo "{\"repositoryName\": \"${{ github.repository }}\", \"commitSha\": \"${{ github.sha }}\", \"repositoryOwner\": \"${{ github.repository_owner }}\"}" > /tmp/plugin-info.json
-                  mv plugin.json /tmp
-                  jq -s '.[0] * .[1]' /tmp/plugin.json /tmp/plugin-info.json > plugin.json
-                  tar cf ../plugin.tar .
+                  node scripts/package-plugin.mjs
                   echo "Publishing plugin..."
                   set +e
-                  curl -s --fail-with-body -o /tmp/response.txt -w '%{http_code}' -XPOST 'https://node.windy.com/plugins/v1.0/upload' -H "x-windy-api-key: ${WINDY_API_KEY}" -F "plugin_archive=@../plugin.tar" > /tmp/status.txt
+                  curl -s --fail-with-body -o /tmp/response.txt -w '%{http_code}' -XPOST 'https://node.windy.com/plugins/v1.0/upload' -H "x-windy-api-key: ${WINDY_API_KEY}" -F "plugin_archive=@plugin.tar" > /tmp/status.txt
                   ok=$?
                   set -e
                   echo ""

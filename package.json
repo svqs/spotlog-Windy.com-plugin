@@ -1,6 +1,6 @@
 {
     "name": "windy-plugin-spotlog",
-    "version": "0.18.2",
+    "version": "0.18.3",
     "description": "Spotlog: session diary for Windy",
     "main": "dist/plugin.min.js",
     "type": "module",
@@ -14,6 +14,8 @@
         "check-words": "python3 scripts/check-words.py",
         "lint": "eslint --ext .ts,.svelte src",
         "publish:windy": "./scripts/publish.sh",
+        "package:windy": "node scripts/package-plugin.mjs",
+        "test:package": "node scripts/test-package.mjs",
         "test:e2e": "python3 harness/e2e.py /tmp",
         "test:predict": "node scripts/test-predict.mjs",
         "check": "npm run check:fast && npm run build",

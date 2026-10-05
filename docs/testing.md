@@ -151,6 +151,13 @@ and the extracted Style Lab screens with live copy overrides.
 malformed/null JSON and the shared byte-bounded streaming body reader, including multibyte oversize bodies.
 The retained backend-neutral sync controller is tested with injected transports and the harness mock.
 
+After a build, `npm run test:package` verifies that the upload archive contains the minified bundle and required
+metadata only, preserves the bundle bytes and leaves the local manifest intact. CI also repeats the e2e flow
+against the minified bundle: `SPOTLOG_TEST_URL='http://localhost:8765/harness/index.html?bundle=min' python3 harness/e2e.py /tmp/spotlog-e2e-min`.
+The Design Lab continues to use the development bundle.
+Embedded preview pages clear only the generated manifest's build timestamps, so rebuilding them is reproducible;
+the plugin and upload manifest keep their real timestamps.
+
 `npm run test:learning` adds 46 synthetic diary scenarios through validation, direct learning and the application's
 cached controller: four-log reconciliation, excluded forecasts, multiple sports/spots, sequential saves/edits/undo,
 reload/import/merge, legacy/DST coverage, gear/model gates and up to 600 long-term outings. It also characterizes

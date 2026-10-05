@@ -21,6 +21,8 @@ writeFileSync(h('stylelab/index.html'), lab);
 // the preview: the sandbox page, told it runs inside the lab
 const mock = readFileSync(h('mock-windy.js'), 'utf8');
 let plugin = readFileSync(path.join(root, 'dist/plugin.js'), 'utf8');
+// Preview pages are committed and compared in CI; only the uploaded build needs volatile timestamps.
+plugin = plugin.replace(/"built": \d+/, '"built": 0').replace(/"builtReadable": "[^"]*"/, '"builtReadable": ""');
 plugin = plugin.replace(/\nexport \{[^}]*\};?\s*/, '\n').replace(/\/\/# sourceMappingURL=.*/, '').replace(/<\/script/g, '<\\/script');
 const bridge = readFileSync(h('preview-bridge.js'), 'utf8');
 const sandbox = readFileSync(h('sandbox.src.html'), 'utf8')

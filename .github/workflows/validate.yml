@@ -20,6 +20,7 @@ jobs:
                   python-version: '3.13'
             - run: npm ci
             - run: npm run check
+            - run: npm run test:package
             - run: npm run rebuild:harness
             - run: python3 -m pip install -r harness/requirements.txt
             - run: python3 -m playwright install --with-deps chromium
@@ -29,6 +30,7 @@ jobs:
                   python3 -m http.server 8765 >/tmp/spotlog-server.log 2>&1 &
                   for attempt in 1 2 3 4 5; do curl -fsS http://localhost:8765/harness/index.html >/dev/null && break || sleep 1; done
                   npm run check:browser
+                  SPOTLOG_TEST_URL='http://localhost:8765/harness/index.html?bundle=min' python3 harness/e2e.py /tmp/spotlog-e2e-min
             - name: Generated pages match source
               run: git diff --exit-code -- harness/sandbox.html harness/stylelab/index.html harness/stylelab/preview.html
             - uses: actions/upload-artifact@v4
@@ -37,6 +39,7 @@ jobs:
                   name: browser-evidence
                   path: |
                       /tmp/spotlog-e2e
+                      /tmp/spotlog-e2e-min
                       /tmp/spotlog-scenarios
                       /tmp/spotlog-regressions
                       /tmp/spotlog-learning

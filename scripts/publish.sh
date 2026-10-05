@@ -10,17 +10,9 @@ if [ -z "${WINDY_API_KEY:-}" ]; then
   echo "Set WINDY_API_KEY first (https://api.windy.com/keys)" >&2
   exit 1
 fi
-command -v jq >/dev/null || { echo "jq is needed (brew install jq / apt install jq)" >&2; exit 1; }
-
 npm run build
-cd dist
-tmp="$(mktemp -d)"
-mv plugin.json "$tmp/plugin.json"
-echo '{"repositoryName": "local", "commitSha": "local", "repositoryOwner": "local"}' > "$tmp/info.json"
-jq -s '.[0] * .[1]' "$tmp/plugin.json" "$tmp/info.json" > plugin.json
-tar cf ../plugin.tar .
-cd ..
-echo "Publishing $(jq -r .version dist/plugin.json)…"
+node scripts/package-plugin.mjs
+echo "Publishing $(node -p "JSON.parse(require('fs').readFileSync('dist/plugin.json')).version")…"
 curl -s --fail-with-body -XPOST 'https://node.windy.com/plugins/v1.0/upload' \
   -H "x-windy-api-key: ${WINDY_API_KEY}" \
   -F "plugin_archive=@plugin.tar"

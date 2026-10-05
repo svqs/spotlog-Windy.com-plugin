@@ -5,7 +5,7 @@ Run:  python3 -m http.server 8765  (from the project root), then  python3 harnes
 import json, sys, os, re, datetime
 from playwright.sync_api import sync_playwright
 
-URL = 'http://localhost:8765/harness/index.html'
+URL = os.environ.get('SPOTLOG_TEST_URL', 'http://localhost:8765/harness/index.html')
 OUT = sys.argv[1] if len(sys.argv) > 1 else '.'
 os.makedirs(OUT, exist_ok=True)
 GPX = os.path.join(os.path.dirname(__file__), 'session.gpx')

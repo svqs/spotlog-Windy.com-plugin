@@ -58,7 +58,8 @@
 </div>
 <script src="./mock-windy.js"></script>
 <script type="module">
-  import Plugin from '../dist/plugin.js';
+  const { default: Plugin } = await import(new URLSearchParams(location.search).get('bundle') === 'min'
+    ? '../dist/plugin.min.js' : '../dist/plugin.js');
   const mapEl = document.getElementById('map');
   const { project, unproject, singleclick, store, PLACES } = W.__mock;
   const NAME = 'windy-plugin-spotlog';

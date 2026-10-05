@@ -9,7 +9,13 @@ python3 harness/assemble.py   # harness/sandbox.html (single file: fake Windy + 
 node scripts/build-lab.mjs    # harness/stylelab/index.html + preview.html
 ```
 
-`plugin.min.js` is ~400 KB (~140 KB gzipped). That includes ~48 KB of embedded fonts and the CSS; the rest is compiled Svelte.
+`plugin.min.js` is ~409 KiB (~143 KiB gzipped) in 0.18.3. That includes ~48 KB of embedded fonts, CSS,
+compiled Svelte and application logic. Shared CSS is compacted without changing selector or value semantics.
+
+`npm run package:windy` creates `plugin.tar` locally without uploading. The archive includes only
+`plugin.min.js`, `plugin.json`, `package.json` and the manifest's screenshot if present. Development JS and source
+maps stay in `dist/` for debugging and the Style Lab, but are excluded from uploads. `npm run test:package`
+verifies the actual archive contents and metadata after a build.
 
 ## Versions
 
@@ -22,7 +28,7 @@ the version.
 > installs it on her phone herself.
 
 - **From GitHub:** Actions › **publish-plugin** › Run workflow (`.github/workflows/publish-plugin.yml`, on `main`).
-  It builds, then uploads `dist/` to `https://node.windy.com/plugins/v1.0/upload` with the `WINDY_API_KEY` secret. The
+  It builds, packages the runtime files, then uploads to `https://node.windy.com/plugins/v1.0/upload` with the `WINDY_API_KEY` secret. The
   run summary shows the **install URL**:
   `https://windy-plugins.com/<user id>/windy-plugin-spotlog/<version>/plugin.min.js`.
 - **From a terminal:** `WINDY_API_KEY=… ./scripts/publish.sh`. It does the same steps.
