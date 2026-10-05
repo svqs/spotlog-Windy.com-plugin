@@ -1,6 +1,6 @@
 # AGENTS.md: start here
 
-This is the entry point for anyone (human or agent) changing or reviewing **spotlog**, a private Windy.com plugin.
+This is the entry point for anyone (human or agent) changing or reviewing **spotlog**, a Windy.com plugin (public since 0.18.7, reviewed by Windy for the plugin gallery).
 Read this page first, then the doc in `docs/` that matches your task.
 
 ## What spotlog is

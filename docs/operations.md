@@ -41,6 +41,10 @@ the version.
   computer as the browser.
 - The key is a "Windy Plugins API" key from <https://api.windy.com/keys>. It lives **only** in GitHub › Settings ›
   Secrets › Actions › `WINDY_API_KEY`. Never put it in a file, a commit, a log or chat.
+- **Public plugin:** `private: false` and `repository` in `src/pluginConfig.ts`. Only a public plugin shows up in Windy's
+  plugin publisher for review (a private one only works from its install URL). Every upload carries the repository and
+  commit it came from (`scripts/package-plugin.mjs`), so publish from GitHub (the workflow), not from a terminal, when a
+  version is meant for review.
 - **If an upload fails** (exit 22 = Windy answered with an error), the reason is in the step log ("Windy answered:").
   Common causes:
   - the version already exists (bump it);
@@ -49,7 +53,7 @@ the version.
 
 ## Repository and the owner's Mac
 
-- GitHub: `svqs/spotlog-windy.com-plugin` (private). Work lands on `main`.
+- GitHub: `svqs/spotlog-Windy.com-plugin` (public since 0.18.7, so Windy's team can review the code behind each upload). Work lands on `main`.
 - The owner keeps a clone in `~/Documents/SophisVibe/spotlog-Windy.com-plugin`. When an agent has access to her
   computer, it syncs that clone after each push. One way is a git bundle copied over, then
   `git fetch ./x.bundle main:refs/remotes/origin/main && git merge --ff-only origin/main`.

@@ -33,8 +33,10 @@ npm start            # watch mode, serves https://localhost:9999/plugin.js
    version, install the new link on the desktop, remove older Spotlog entries from the installed plugins, then fully reload
    windy.com on the phone. The version number at the bottom of Spotlog's home screen shows which one is running. Works on desktop and on phones (in the phone it sits in Windy's small bottom panel under the timeline). Testers need to be logged in to Windy.
 
-`private: true` in `src/pluginConfig.ts` keeps it out of the public gallery; only people with the URL can load it.
-Going public later = `private: false` + a review request on the Windy community forum.
+Spotlog is **public** since 0.18.7 (`private: false` in `src/pluginConfig.ts`, with `repository` pointing at this repo):
+after a publish it shows up in Windy's plugin publisher, and the Windy team reviews it for the plugin gallery
+(tell them on the Windy community forum, or your contact at Windy, when a version is ready). Until it's approved,
+people can still load it from its install URL.
 
 ## Sandbox (no Windy needed)
 
