@@ -29,7 +29,7 @@ SpotlogData {
   revisions?: {id: ms}     // last entity edit, preserved independently of unrelated changes
   settingsAt?: number     // last settings edit (whole-object conflict resolution)
   deleted?:  {id: ms}     // tombstones, kept 90 days
-  revived?:  {id: ms}     // brought back by upload/undo after a delete: newer than the delete wins
+  revived?:  {id: ms}     // brought back by upload after a delete: newer than the delete wins
 }
 ```
 

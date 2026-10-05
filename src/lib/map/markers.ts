@@ -5,11 +5,13 @@ export interface MarkerDescriptor {
     html: string;
     glow?: boolean;
     click?: () => void;
+    /** desktop: the mouse is over the marker (true) or left it (false) */
+    hover?: (on: boolean) => void;
 }
 interface Marker { remove(): void }
 
 /** Reconcile only changed visuals; listeners always use the latest entity callback. */
-export function createMarkerLayer(create: (descriptor: MarkerDescriptor, click: () => void) => Marker) {
+export function createMarkerLayer(create: (descriptor: MarkerDescriptor, click: () => void, hover: (on: boolean) => void) => Marker) {
     const entries = new Map<string, { marker: Marker; signature: string; descriptor: MarkerDescriptor }>();
     return {
         reconcile(descriptors: MarkerDescriptor[]): void {
@@ -21,7 +23,7 @@ export function createMarkerLayer(create: (descriptor: MarkerDescriptor, click: 
                 if (existing?.signature === signature) {existing.descriptor = descriptor; continue;}
                 existing?.marker.remove();
                 const entry = { marker: null as unknown as Marker, signature, descriptor };
-                entry.marker = create(descriptor, () => entry.descriptor.click?.());
+                entry.marker = create(descriptor, () => entry.descriptor.click?.(), on => entry.descriptor.hover?.(on));
                 entries.set(descriptor.id, entry);
             }
         },

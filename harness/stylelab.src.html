@@ -364,7 +364,7 @@
       rng('compactBelow', 'Labels become dots below zoom', 4, 10, 1, '', 'Windy zoom 7 ≈ a whole coastline'),
     ] },
     { kind: 'map', id: 'popup', title: 'Card on the map', note: 'Show on map, and the phone’s spot card', screen: 'card', items: [
-      col('popupBg', 'Card'), col('popupText', 'Text'), col('popupSub', 'Quiet text and ✕'), col('popupBtnBg', 'Buttons'), col('popupBtnText', 'Button text'),
+      col('popupBg', 'Card'), col('popupText', 'Text'), col('popupSub', 'Quiet text and ✕'), col('popupBtnBg', 'Buttons'), col('popupBtnText', 'Button text'), col('popupLink', 'Windy forecast link'),
     ] },
     { kind: 'map', id: 'sessions', title: 'Sessions on the map', note: 'One mark per place, bigger and brighter the more often you were there', screen: 'card', items: [
       seg('sessStyle', 'Mark', [['glow', 'Glow'], ['dot', 'Dot'], ['ring', 'Ring'], ['off', 'None']]),
@@ -811,7 +811,7 @@
     [...openSeg.children].forEach(b => b.classList.toggle('on', (b.dataset.o === '1') === openGood));
     const withOpen = s => (s.openSpot ? { ...s, guess: openGood ? (s.guess ?? 3.8) : null } : s);
     const W = m.clientWidth || 600, H = m.clientHeight || 480;
-    ['pinBg', 'pinText', 'pinDot', 'activeBg', 'activeText', 'activeDot', 'sessColor', 'sessCoreRing', 'tipBg', 'tipText', 'routeLabel', 'popupBg', 'popupText', 'popupSub', 'popupBtnBg', 'popupBtnText', 'primaryBg', 'primaryText', 'windText']
+    ['pinBg', 'pinText', 'pinDot', 'activeBg', 'activeText', 'activeDot', 'sessColor', 'sessCoreRing', 'tipBg', 'tipText', 'routeLabel', 'popupBg', 'popupText', 'popupSub', 'popupBtnBg', 'popupBtnText', 'popupLink', 'primaryBg', 'primaryText', 'windText']
       .forEach(k => m.style.setProperty('--' + k, state[k]));
     const coast = `<svg class="coast" viewBox="0 0 1000 800" preserveAspectRatio="none" aria-hidden="true"><path d="M0 130 C120 170 220 260 300 330 C360 380 420 420 480 450 C540 480 600 520 640 560 C700 540 760 500 820 480 L840 520 L860 470 C910 420 960 400 1000 390" fill="none" stroke="#141414" stroke-opacity=".5" stroke-width="1.3"/><path d="M380 800 C470 710 560 680 650 672 C720 666 800 680 860 712 C910 705 960 690 1000 700" fill="none" stroke="#141414" stroke-opacity=".5" stroke-width="1.3"/></svg>`;
     let html = coast;

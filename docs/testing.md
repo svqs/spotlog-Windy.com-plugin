@@ -45,11 +45,11 @@ Pages:
 
 One long story. Each `ok(...)` is a step:
 - add a spot from the map;
-- save a forecast (preview, undo);
+- save a forecast (preview; no undo bar);
 - show on map;
 - log a session (no felt ruler/gusts/water; Save waits for a start time; rating, gear, time wheel, GPX), then check the stored session and that the
   tides were saved with the forecast;
-- open, swipe-delete and undo;
+- open and swipe-delete (no undo bar);
 - units;
 - forecast at my location;
 - log from the last forecast; log without a place, then link it;
@@ -72,6 +72,7 @@ One long story. Each `ok(...)` is a step:
 | 6 | Learning per spot and sport (multi-sport spot, What works per sport, the sport chips, your own sport under "Other…") |
 | 7 | "Not worth it, didn't go"; the map card (rating, no symbol list); linking earlier sessions to a new spot; the phone spot page |
 | 8 | **Phone cross-check:** every screen (spots, map card, spot page parts, Adjust, log form + "Other…", spot form, tabs) at 320/360/390/430, with screenshots `x<width>-<screen>.png` |
+| 9 | The spot on the map: desktop opens a spot with its card, its name brings the card back, hovering another name shows its card, the Windy forecast link; phones: Details without the card, Show on map shows it and the panel steps aside |
 
 Helpers:
 - `overflow(pg)`: elements outside the panel.

@@ -359,6 +359,10 @@
     :global(.sl-brand) { display: inline-flex; align-items: center; gap: 0.22em; white-space: nowrap; vertical-align: -0.06em; line-height: 1; }
     :global(.sl-star) { display: inline-block; flex-shrink: 0; color: var(--sl-star, #d49500); }
     :global(.sl-nav .sl-x) { background: transparent; color: var(--sl-popupSub, #6b6b6b); font-size: 15px; margin-left: 2px; }
+    /* desktop card: Windy's own forecast for the spot; the hover card can't be clicked (the mouse stays on the name) */
+    :global(.sl-detail) { align-self: flex-start; padding: 0; border: 0; background: none; cursor: pointer; font: 600 12.5px 'Instrument Sans', system-ui, sans-serif; color: var(--sl-popupLink, #b07a00); }
+    :global(.sl-detail:hover) { text-decoration: underline; }
+    :global(.spotlog-popup.sl-hover), :global(.spotlog-popup.sl-hover *) { pointer-events: none !important; }
     :global(.sl-acts) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin-top: 2px; }
     :global(.sl-acts) { grid-template-columns: 1.3fr 1.1fr 0.9fr !important; }
     :global(.sl-acts button) { height: 36px; padding: 0 4px; white-space: nowrap; font-size: 12.5px !important; overflow: hidden; text-overflow: ellipsis; }

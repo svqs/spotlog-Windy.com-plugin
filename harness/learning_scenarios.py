@@ -37,7 +37,8 @@ def open_spot(pg):
 def summary(pg, outings, great):
     pg.locator('.w-head').first.scroll_into_view_if_needed()
     expect(pg.locator('.w-head .grow').first).to_be_visible()
-    expect(pg.locator('.w-head .grow').first).to_have_text(f'learned from {outings} sessions, {great} great')
+    # the counts are checked in scripts/test-learning-scenarios.mjs; on screen the line stays general (0.18.4)
+    expect(pg.locator('.w-head .grow').first).to_have_text('learned from your logged sessions')
 
 def time_wheel(pg, index, hour):
     wheel = pg.locator('.tw').nth(index)

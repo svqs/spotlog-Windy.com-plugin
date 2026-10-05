@@ -149,7 +149,7 @@
             </div>
             <div data-spotlog class="tiles" class:list={ S.spotView === 'list' }>
                 {#each data.spots as s (s.id)}
-                    <button data-spotlog class="tile" on:click={ () => (barMode ? spotOnMap(s) : openSpot(s, true)) }>
+                    <button data-spotlog class="tile" on:click={ () => (barMode ? spotOnMap(s) : openSpotOnMap(s)) }>
                         <span data-spotlog class="t-name">{ s.name }</span>
                         {#if nowOf(s.id, nowBySpot)}
                             <span data-spotlog class="now">
@@ -315,7 +315,8 @@
     <div data-spotlog class="actions">
         <button data-spotlog class="act" disabled={ capturing } on:click={ () => spot && saveForecastAt({ lat: spot.lat, lon: spot.lon, spot }) }><Icon name="weather" /><b data-spotlog>{ capturing ? W.actLoading : W.actSaveForecast }</b><small data-spotlog>{ W.actSaveForecastSub }</small></button>
         <button data-spotlog class="act" on:click={ () => spot && startLog({ spot }) }><Icon name="pen" /><b data-spotlog>{ W.actLogSession }</b><small data-spotlog>{ W.spotLogSub }</small></button>
-        <button data-spotlog class="act" class:on={ mapShown === spot.id } aria-pressed={ mapShown === spot.id } on:click={ () => spot && toggleShowOnMap(spot) }><Icon name="map" /><b data-spotlog>{ W.showOnMap }</b>{#if mapShown === spot.id}<small data-spotlog>{ W.showOnMapHide }</small>{/if}</button>
+        <!-- desktop: a switch (on when you open a spot); phones: shows the spot's card on the map and the panel steps aside (Details brings it back) -->
+        <button data-spotlog class="act" class:on={ !barMode && mapShown === spot.id } aria-pressed={ !barMode && mapShown === spot.id } on:click={ () => spot && (barMode ? spotOnMap(spot) : toggleShowOnMap(spot)) }><Icon name="map" /><b data-spotlog>{ W.showOnMap }</b>{#if !barMode && mapShown === spot.id}<small data-spotlog>{ W.showOnMapHide }</small>{/if}</button>
     </div>
 
     {#if !savedToday}
@@ -402,7 +403,7 @@
                         <div data-spotlog class="w-head">
                             <b data-spotlog>{ sportLbl(m.sport) }</b>
                             <!-- where the ranges come from: your sessions, else your wind window or your own ranges; nothing when nothing is known yet -->
-                            <small data-spotlog class="muted grow">{ m.outings ? fill(W.learnedFromShort, { n: m.outings, g: m.great }) : m.rows.some(r => r.from === 'window') ? W.fromWindowShort : m.rows.some(r => r.from === 'you') ? W.setByYou : '' }</small>
+                            <small data-spotlog class="muted grow">{ m.outings ? W.learnedFromShort : m.rows.some(r => r.from === 'window') ? W.fromWindowShort : m.rows.some(r => r.from === 'you') ? W.setByYou : '' }</small>
                             {#if editSport !== m.sport}<button data-spotlog class="link" on:click={ () => startEdit(m) }>{ W.adjust }</button>{/if}
                         </div>
                         {#if editSport === m.sport}
@@ -684,7 +685,7 @@
 {#if toast}
     <div data-spotlog class="toast" role="status">
         <span data-spotlog class="grow">{ toast.msg }</span>
-        {#if toast.undo}<button data-spotlog class="undo" on:click={ runUndo }>{ toast.label || W.undo }</button>{/if}
+        {#if toast.action}<button data-spotlog class="undo" on:click={ runToastAction }>{ toast.label }</button>{/if}
     </div>
 {/if}
 
@@ -924,6 +925,11 @@
             if (bodyEl) {bodyEl.style.paddingBottom = '';}
         }, 250);
     }
+    /** Desktop: open a spot with "Show on map" on (its card on the map; switch it off on the spot page) */
+    function openSpotOnMap(s: Spot) {
+        openSpot(s);
+        showSpotCard(s);
+    }
     /** Phones: a spot from the list goes to the map (its card), the panel steps aside */
     function spotOnMap(s: Spot) {
         openSpot(s, false, false);
@@ -1053,7 +1059,8 @@
     let syncError = '';
 
     let recaptureTimer: ReturnType<typeof setTimeout> | undefined;
-    let toast: { msg: string; undo?: () => void; label?: string } | null = null;
+    /** a short message; `action` is an offer like "Link them" (no undo: things can be deleted later instead) */
+    let toast: { msg: string; action?: () => void; label?: string } | null = null;
     let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1393,13 +1400,13 @@
             console.info('[spotlog] could not open the Windy menu', e);
         }
     }
-    function showToast(msg: string, undo?: () => void, label?: string) {
-        toast = { msg, undo, label };
+    function showToast(msg: string, action?: () => void, label?: string) {
+        toast = { msg, action, label };
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => (toast = null), undo ? 6000 : 2600);
+        toastTimer = setTimeout(() => (toast = null), action ? 6000 : 2600);
     }
-    function runUndo() {
-        const u = toast?.undo;
+    function runToastAction() {
+        const u = toast?.action;
         toast = null;
         clearTimeout(toastTimer);
         u?.();
@@ -1590,13 +1597,48 @@
             if (!destroyed) {drawSpotMarkersNow();}
         });
     }
-    const markerLayer = createMarkerLayer((descriptor, click) => {
+    const markerLayer = createMarkerLayer((descriptor, click, hover) => {
         const icon = L.divIcon({ className: 'spotlog-marker', html: descriptor.html, iconSize: [0, 0], iconAnchor: [0, 0] });
         const marker = new L.Marker({ lat: descriptor.lat, lng: descriptor.lon },
             { icon, ...(descriptor.glow ? { keyboard: false, zIndexOffset: -1000 } : {}) }).addTo(map);
         if (descriptor.click) {marker.on('click', click);}
+        if (descriptor.hover) {
+            marker.on('mouseover', () => hover(true));
+            marker.on('mouseout', () => hover(false));
+        }
         return marker;
     });
+    /** Desktop: hovering a spot's name on the map shows its card for as long as the mouse is there */
+    let hoverCard: any = null;
+    let hoverId: string | null = null;
+    function clearHoverCard() {
+        hoverId = null;
+        hoverCard?.remove();
+        hoverCard = null;
+    }
+    async function hoverSpot(sp: Spot, on: boolean) {
+        if (!on) {
+            if (hoverId === sp.id) {clearHoverCard();}
+            return;
+        }
+        if (isMobile || compactMarkers || mapShown === sp.id || typeof L === 'undefined' || !map || !L.popup) {return;}
+        clearHoverCard();
+        hoverId = sp.id;
+        const cached = nowOf(sp.id);
+        try {
+            hoverCard = L.popup({ className: 'spotlog-popup sl-hover', closeButton: false, autoClose: false, closeOnClick: false, autoPan: false, offset: [0, -8] })
+                .setLatLng([sp.lat, sp.lon])
+                .setContent(popupHtml(sp, cached, !cached, true));
+            hoverCard.openOn(map);
+        } catch (e) {
+            console.info('[spotlog] hover card not available', e);
+            return;
+        }
+        if (!cached) {
+            const n = await loadNow(sp);
+            if (hoverId === sp.id && hoverCard) {hoverCard.setContent(popupHtml(sp, n, false, true));}
+        }
+    }
     function drawSpotMarkersNow() {
         if (typeof L === 'undefined' || !map) {return;}
         const settings = data.settings;
@@ -1615,9 +1657,12 @@
             const active = activeId === item.id;
             if (!settings.mapSpots && !active) {continue;}
             const sessions = settings.mapSessions ? (diaryIndex.sessionsBySpot.get(item.id) || []).filter(session => !session.checked).sort((a, b) => b.date - a.date) : [];
+            // desktop: hovering a name shows the spot's card, so the name doesn't get its own little tip box
+            const tip = sessions.length && (isMobile || compactMarkers) ? sessionTip(sessions) : '';
             descriptors.push({ id: `spot:${item.id}`, lat: item.lat, lon: item.lon,
-                html: spotPin(item, bestOf(item), active, compactMarkers, sessions.length ? sessionTip(sessions) : ''),
-                click: () => onMapPick({ lat: item.lat, lon: item.lon }, item) });
+                html: spotPin(item, bestOf(item), active, compactMarkers, tip),
+                click: () => onMapPick({ lat: item.lat, lon: item.lon }, item),
+                ...(isMobile ? {} : { hover: (on: boolean) => hoverSpot(item, on) }) });
         }
         markerLayer.reconcile(descriptors);
     }
@@ -1631,10 +1676,10 @@
     function drawTrack(track: Track | null, fit = false) {
         if (typeof L !== 'undefined' && map) {trackLayer.draw(track, S, fit);}
     }
-    function popupHtml(sp: Spot, n: Now | null, loading = false): string {
+    function popupHtml(sp: Spot, n: Now | null, loading = false, hover = false): string {
         const guess = n ? rateBest(modelsOf(sp, modelMap), conditionsOf(n.wind, n.waves)) : null;
         const best = bestOf(sp);
-        return renderPopup({ spot: sp, now: n, loading, mobile: isMobile, many: data.spots.length > 1, settings: S,
+        return renderPopup({ spot: sp, now: n, loading, mobile: isMobile, hover, many: data.spots.length > 1, settings: S,
             badge: guess ? guessLbl(guess.level, guess.sport) : '', colours: guessCol(guess?.level || 0),
             best: best && !best.now ? { label: guessLbl(best.level, best.sport), range: bestRange(best) } : null });
     }
@@ -1671,6 +1716,7 @@
         return z >= compactBelow() ? z : 9;
     }
     function openSpotPopup(sp: Spot, n: Now | null, loading = false) {
+        clearHoverCard();
         try {
             // not closed by map clicks or other popups; if Windy still closes it, it comes straight back
             const p = L.popup({ className: 'spotlog-popup', closeButton: false, autoClose: false, closeOnClick: false, autoPan: isMobile, autoPanPadding: [12, 70], offset: [0, -8] })
@@ -1702,7 +1748,12 @@
     function cardAction(act: string, sp: Spot) {
         if (act === 'snap') {saveForecastAt({ lat: sp.lat, lon: sp.lon, spot: sp });}
         else if (act === 'log') {startLog({ spot: sp });}
-        else if (act === 'open') {openSpot(sp);}
+        else if (act === 'open') {
+            // phones: Details opens the spot's page and the card leaves the map ("Show on map" brings it back)
+            clearPopup();
+            openSpot(sp);
+        }
+        else if (act === 'detail') {bcast.emit('rqstOpen', 'detail', { lat: sp.lat, lon: sp.lon, name: sp.name, display: 'wind' });}
         else if (act === 'close') {
             clearPopup();
             drawSpotMarkers();
@@ -1748,8 +1799,7 @@
                 openSpot(near.s, false, false);
                 showSpotCard(near.s);
             } else {
-                openSpot(near.s);
-                if (isMobile) {showSpotCard(near.s);}
+                openSpotOnMap(near.s);
             }
             return;
         }
@@ -1781,6 +1831,7 @@
         if (v !== 'log') {drawTrack(null);}
         if (v !== 'place' && v !== 'spotForm') {clearTemp();}
         if (v !== 'spot') {clearPopup();}
+        clearHoverCard();
         drawSpotMarkers();
         // phones: a page opens the panel over the map (not while waiting for a tap on the map)
         if (barMode && phonePanel && !waitingForMap && v !== 'home') {openModal();}
@@ -1964,16 +2015,11 @@
     }
     function deleteSpot(s: Spot) {
         if (!arm('spot')) {return;}
-        const before = { spots: data.spots, sessions: data.sessions, snapshots: data.snapshots };
         data.spots = data.spots.filter(x => x.id !== s.id);
         data.sessions = data.sessions.filter(x => x.spotId !== s.id);
         data.snapshots = data.snapshots.filter(x => x.spotId !== s.id);
         persist();
         goHome();
-        showToast(tr('toastDeleted', { name: s.name }), () => {
-            Object.assign(data, before);
-            persist();
-        });
     }
     function applySuggestion() {
         if (!spot || !suggestion) {return;}
@@ -2037,10 +2083,6 @@
     }
     function deleteSnap(sn: Snapshot) {
         removeSnap(sn.id);
-        showToast(w('toastFcDeleted'), () => {
-            data.snapshots = [...data.snapshots, sn];
-            persist();
-        });
     }
     function confirmSnap(replace: boolean) {
         if (!snap || !snapDraft) {return;}
@@ -2056,10 +2098,6 @@
         replaceOf = null;
         persist();
         back();
-        showToast(removed ? w('toastFcReplaced') : tr('toastFcSaved', { time: fmtTime(sn.series?.ts[0] ?? sn.ts) }), () => {
-            data.snapshots = [...data.snapshots.filter(x => x.id !== sn.id), ...(removed ? [removed] : [])];
-            persist();
-        });
     }
     function openSnap(sn: Snapshot) {
         snapDraft = false;
@@ -2266,10 +2304,6 @@
         data.sessions = data.sessions.filter(x => x.id !== se.id);
         persist();
         if (leave) {back();}
-        showToast(w('toastSessDeleted'), () => {
-            data.sessions = [...data.sessions, se];
-            persist();
-        });
     }
     async function onTrackFile(e: Event) {
         const input = e.target as HTMLInputElement;
@@ -2322,10 +2356,8 @@
         showToast(w('toastGearSaved'));
     }
     function deleteGear(id: string) {
-        const g = data.gear.find(x => x.id === id);
         data.gear = data.gear.filter(x => x.id !== id);
         persist();
-        if (g) {showToast(tr('toastGearRemoved', { name: g.name }), () => { data.gear = [...data.gear, g]; persist(); });}
     }
 
     /* ---------- conditions + matches ---------- */
@@ -2411,16 +2443,10 @@
     /* ---------- what works here: "Use what spotlog learned", your own ranges, checked days ---------- */
     function useLearnedWindow() {
         if (!spot || !spotLearnedWindow) {return;}
-        const before = spot;
         const after: Spot = { ...spot, dirs: spotLearnedWindow.dirs, min: spotLearnedWindow.min, max: spotLearnedWindow.max };
         data.spots = data.spots.map(x => (x.id === after.id ? after : x));
         spot = after;
         persist();
-        showToast(w('toastWindowUsed'), () => {
-            data.spots = data.spots.map(x => (x.id === before.id ? before : x));
-            if (spot?.id === before.id) {spot = before;}
-            persist();
-        });
     }
     type OwnRange = { lo?: number; hi?: number; dirs?: Dir8[] };
     /** inputs are in your units; ranges are stored in m/s, m, °C */
@@ -2514,10 +2540,8 @@
     /* ---------- data ---------- */
     function clearAll() {
         if (!arm('all')) {return;}
-        const before = data;
         data = { ...emptyData(), settings: { ...data.settings, welcomed: true } }; // not new: the upload stays right here
         persist();
-        showToast(w('toastAllDeleted'), () => { data = before; persist(); });
     }
 
     /* ---------- lifecycle ---------- */

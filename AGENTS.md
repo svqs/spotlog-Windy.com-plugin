@@ -42,7 +42,7 @@ These rules come from the owner (Sophia, a designer at Windy). Breaking one is a
 
 **Code and data**
 - **Never lose user data.** Every new stored field is validated in `storage.ts → normalise()` (the validator is in `src/lib/diary/validation.ts`; see `docs/data-model.md`). Old diaries must keep
-  loading. Deletes use tombstones (`deleted`) and undo/upload use `revived`.
+  loading. Deletes use tombstones (`deleted`) and upload uses `revived`. There is no undo bar (owner's decision, 0.18.4).
 - **Secrets:** the `WINDY_API_KEY` lives only in GitHub Actions secrets. Never write it to a file, a log or the repo.
 - **Publishing** (`publish-plugin` workflow or `scripts/publish.sh`) uploads a new version to windy-plugins.com. **Only
   run it when the owner explicitly asks for it in this conversation.** She publishes to her phone herself.
@@ -131,3 +131,4 @@ docs/specifications/   proposed behavior and implementation plans (index: docs/s
   - `summary` predictability
   - regional models
   - the tide endpoint
+  - opening Windy's point forecast from the map card (`rqstOpen detail`, display `wind`)

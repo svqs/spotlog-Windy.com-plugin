@@ -53,6 +53,9 @@
             el.className = 'mock-marker ' + (this.opts.icon?.className || 'pulse');
             el.innerHTML = this.opts.icon?.html || '<span class="pulse-dot"></span>';
             el.addEventListener('click', e => { e.stopPropagation(); (this.handlers.click || []).forEach(h => h(e)); });
+            // like Leaflet: mouseover / mouseout on the marker
+            el.addEventListener('mouseenter', e => (this.handlers.mouseover || []).forEach(h => h(e)));
+            el.addEventListener('mouseleave', e => (this.handlers.mouseout || []).forEach(h => h(e)));
             mapEl().appendChild(el);
             this.el = el;
             this.place();

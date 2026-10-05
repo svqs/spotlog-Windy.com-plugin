@@ -99,30 +99,28 @@ with sync_playwright() as p:
     assert pg.locator('.act:has-text("Show on map") small').count() == 0
     shot('03-spot')
 
-    # --- Save forecast: preview first, nothing stored until "Save forecast"; then undo
+    # --- Save forecast: preview first, nothing stored until "Save forecast"; no undo bar afterwards (0.18.4)
     pg.click('.act:has-text("Save forecast")')
     pg.wait_for_selector('.snap:has-text("Not saved yet")', timeout=8000)
     assert len(stored(pg).get('snapshots', [])) == 0
     assert pg.locator('text=Log a session with this').count() == 0
     shot('03b-forecast-preview')
     pg.click('.btn.primary:has-text("Save forecast")')
-    pg.wait_for_selector('.toast:has-text("Forecast saved")', timeout=8000)
+    pg.wait_for_selector('.mini:has-text("Edit")', timeout=8000)
     assert len(stored(pg)['snapshots']) == 1
     s0 = stored(pg)['snapshots'][0]
     now_h = pg.evaluate('Math.floor(Date.now() / 3600000) * 3600000')
     assert s0['series']['ts'][0] == now_h and len(s0['series']['ts']) == 25, (s0['series']['ts'][0], now_h, len(s0['series']['ts']))
     ok('save forecast: preview, then save; keeps now + the next 24 hours')
-    pg.click('.toast .undo')
-    pg.wait_for_timeout(200)
-    assert len(stored(pg)['snapshots']) == 0
-    ok('undo removes a just-saved forecast')
-    pg.click('.act:has-text("Save forecast")')
-    pg.wait_for_selector('.btn.primary:has-text("Save forecast")', timeout=8000)
-    pg.click('.btn.primary:has-text("Save forecast")')
-    pg.wait_for_selector('.mini:has-text("Edit")')
+    assert pg.locator('.toast .undo').count() == 0 and pg.locator('.toast:has-text("Forecast saved")').count() == 0
+    ok('no undo bar after saving (things can be deleted later instead)')
     ok('saved forecast row has Edit + Delete')
 
-    # --- Show on map -> popup with current conditions
+    # --- Show on map -> popup with current conditions (a switch on desktop)
+    if pg.locator('.mock-popup .sl-pop').count():
+        pg.click('.act:has-text("Show on map")')
+        pg.wait_for_timeout(300)
+    assert pg.locator('.mock-popup .sl-pop').count() == 0
     pg.click('.act:has-text("Show on map")')
     pg.wait_for_selector('.mock-popup .sl-pop', timeout=300)  # right away, no waiting for the map
     pg.wait_for_selector('.mock-popup .sl-tiles', timeout=5000)
@@ -234,17 +232,23 @@ with sync_playwright() as p:
     pg.mouse.up()
     pg.wait_for_timeout(300)
     shot('07-swipe-delete')
+    kept = stored(pg)['sessions'][0]
     pg.click('.sw .del >> nth=0')
-    pg.wait_for_selector('.toast:has-text("Session deleted")')
+    pg.wait_for_timeout(300)
     assert len(stored(pg)['sessions']) == 0
-    pg.click('.toast .undo')
-    pg.wait_for_timeout(200)
-    assert len(stored(pg)['sessions']) == 1
-    ok('swipe left reveals delete, undo brings it back')
+    assert pg.locator('.toast .undo').count() == 0, 'no undo bar after deleting'
+    # the rest of the story goes on with that session: put it back in the diary as it was
+    pg.evaluate("""s => { const k = localStorage.getItem('windy-plugin-spotlog:v1:u12345') ? 'windy-plugin-spotlog:v1:u12345' : 'windy-plugin-spotlog:v1'; const d = JSON.parse(localStorage.getItem(k));
+        d.sessions.push(s); delete (d.deleted || {})[s.id]; d.revived = { ...(d.revived || {}), [s.id]: Date.now() }; d.updatedAt = Date.now(); localStorage.setItem(k, JSON.stringify(d)); }""", kept)
+    pg.reload()
+    pg.wait_for_selector('.spotlog')
+    pg.wait_for_function("() => [...document.querySelectorAll('.stats .big')].some(x => x.textContent.trim() === '1')")
+    ok('swipe left reveals delete; no undo bar')
 
     # --- home: tiles show current conditions; units switch to knots
     top()
-    pg.click('button[aria-label="Back"]')
+    if pg.locator('button[aria-label="Back"]').count():  # (after the reload above we're already home)
+        pg.click('button[aria-label="Back"]')
     pg.wait_for_selector('.tile .now .sw', timeout=8000)
     pg.click('.units')
     pg.click('.seg button:has-text("kt")')
@@ -284,10 +288,10 @@ with sync_playwright() as p:
     pg.wait_for_timeout(300)
     if pg.locator('.replace').count():
         pg.click('.replace .btn:has-text("Replace")')
-        pg.wait_for_selector('.toast:has-text("Forecast replaced")')
+        pg.wait_for_timeout(600)  # (no "Forecast replaced" bar since 0.18.4: no undo)
         assert len(stored(pg)['snapshots']) == n0
     else:
-        pg.wait_for_selector('.toast:has-text("Forecast saved")')
+        pg.wait_for_timeout(600)  # (no "Forecast saved" bar since 0.18.4: no undo)
         assert len(stored(pg)['snapshots']) == n0 + 1
     last = max(stored(pg)['snapshots'], key=lambda x: x['savedAt'])
     assert last['note'] == 'Maybe after work', last
@@ -304,7 +308,7 @@ with sync_playwright() as p:
     n1 = len(stored(pg)['snapshots'])
     pg.click('.btn.primary:has-text("Save forecast")')
     pg.click('.replace .btn:has-text("Replace")')
-    pg.wait_for_selector('.toast:has-text("Forecast replaced")')
+    pg.wait_for_timeout(600)  # (no "Forecast replaced" bar since 0.18.4: no undo)
     sd = stored(pg)
     used = {x['snapshotId'] for x in sd['sessions']}
     pend = [x for x in sd['snapshots'] if x['spotId'] and x['id'] not in used]
@@ -412,7 +416,7 @@ with sync_playwright() as p:
     full = stored(pg)
     pg.click('.link.danger')
     pg.click('.link.danger')
-    pg.wait_for_selector('.toast:has-text("All data deleted")')
+    pg.wait_for_timeout(600)  # (no "All data deleted" bar since 0.18.4: no undo)
     assert len(stored(pg)['spots']) == 0 and pg.locator('.welcome').count() == 0, 'after deleting, How it works stays (no welcome)'
     pg.set_input_files('.beta-card input[type=file]', copy_path)
     pg.wait_for_selector('.toast:has-text("Copy uploaded")')
@@ -430,7 +434,7 @@ with sync_playwright() as p:
     pg.click('.tabs button:has-text("How it works")')
     pg.click('.link.danger')
     pg.click('.link.danger')
-    pg.wait_for_selector('.toast:has-text("All data deleted")')
+    pg.wait_for_timeout(600)  # (no "All data deleted" bar since 0.18.4: no undo)
     other.wait_for_function("() => [...document.querySelectorAll('.stats .big')].some(x => x.textContent.trim() === '0')")
     pg.set_input_files('.beta-card input[type=file]', copy_path)
     pg.wait_for_selector('.toast:has-text("Copy uploaded")')

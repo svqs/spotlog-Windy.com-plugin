@@ -8,6 +8,8 @@ interface PopupDisplay {
     now: { wind: ModelValue | null; waves: WaveValue | null } | null;
     loading: boolean;
     mobile: boolean;
+    /** desktop's hover card: just the conditions, no buttons */
+    hover?: boolean;
     many: boolean;
     settings: Settings;
     badge: string;
@@ -17,7 +19,7 @@ interface PopupDisplay {
 
 /** Presentation only: callers provide the already-derived rating and best stretch. */
 export function popupHtml(display: PopupDisplay): string {
-    const { spot, now, loading, mobile, many, settings, badge, colours, best } = display;
+    const { spot, now, loading, mobile, hover, many, settings, badge, colours, best } = display;
     const wind = now?.wind;
     const values = forecastDisplay(wind ?? null, now?.waves ?? null, settings);
     const label = (key: string) => escapeHtml(w(key));
@@ -32,5 +34,6 @@ export function popupHtml(display: PopupDisplay): string {
     if (badge) {content += `<span class="sl-b" style="background:${colours[0]};color:${colours[1]}">${escapeHtml(badge)}</span>`;}
     if (best) {content += `<small class="sl-best">${label('bestToday')}: <b>${escapeHtml(best.label)}</b> ${escapeHtml(best.range)}</small>`;}
     if (mobile) {content += `<div class="sl-acts"><button data-act="snap">${label('cardSave')}</button><button data-act="log">${label('cardLog')}</button><button data-act="open">${label('cardDetails')}</button></div>`;}
+    else if (!hover) {content += `<button class="sl-detail" data-act="detail">${label('cardPointForecast')}</button>`;}
     return content + '</div>';
 }
