@@ -53,9 +53,11 @@
             el.className = 'mock-marker ' + (this.opts.icon?.className || 'pulse');
             el.innerHTML = this.opts.icon?.html || '<span class="pulse-dot"></span>';
             el.addEventListener('click', e => { e.stopPropagation(); (this.handlers.click || []).forEach(h => h(e)); });
-            // like Leaflet: mouseover / mouseout on the marker
+            // like Leaflet: mouseover / mouseout on the marker; a marker in a pane gets that pane's z-index
             el.addEventListener('mouseenter', e => (this.handlers.mouseover || []).forEach(h => h(e)));
             el.addEventListener('mouseleave', e => (this.handlers.mouseout || []).forEach(h => h(e)));
+            // (Leaflet's 700+ means above the cards; here cards are at 20)
+            if (this.opts.pane && panes[this.opts.pane]) el.style.zIndex = Number(panes[this.opts.pane].style.zIndex) >= 700 ? '21' : '';
             mapEl().appendChild(el);
             this.el = el;
             this.place();
@@ -63,8 +65,11 @@
             return this;
         }
         on(ev, h) { (this.handlers[ev] = this.handlers[ev] || []).push(h); return this; }
+        getElement() { return this.el || null; }
         remove() { this.el?.remove(); live.delete(this); return this; }
     }
+    // map panes (Leaflet's createPane / getPane): only their z-index matters here; cards (popups) are at 20
+    const panes = {};
     // ---- popups + polylines (the bits of Leaflet Spotlog uses) ----
     let openPopup = null;
     class Popup {
@@ -141,6 +146,8 @@
     const leafletMap = {
         getCenter: centre,
         getZoom: () => Math.round(11 - Math.log2(view.k)),
+        createPane: name => (panes[name] = panes[name] || { style: {} }),
+        getPane: name => panes[name],
         on: (ev, f) => { if (ev === 'zoomend' || ev === 'moveend') moveSubs.push(f); },
         off: (ev, f) => { const i = moveSubs.indexOf(f); if (i >= 0) moveSubs.splice(i, 1); },
         fitBounds: (b, o) => {

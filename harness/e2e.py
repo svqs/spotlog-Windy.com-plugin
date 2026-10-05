@@ -198,14 +198,14 @@ with sync_playwright() as p:
     waves = pg.locator('.w-grid.edit .w-name:text-is("Waves") + .w-inputs input').nth(1)
     waves.fill('0.4')
     pg.click('.works .btn.primary:has-text("Save")')
-    pg.wait_for_selector('.toast:has-text("Your ranges are saved")')
+    pg.wait_for_timeout(800)  # (no "Your ranges are saved" message since 0.18.5)
     sp = stored(pg)['spots'][0]
     assert abs(sp['ranges'][sp['sports'][0]]['waves']['hi'] - 0.4) < 0.01, sp.get('ranges')
     assert pg.locator('.works .w-you').count() >= 1
     ok('what works here: folded line, opens with ranges, how much each matters and today; your own range is saved and marked')
     pg.click('.works .w-head .link:has-text("Adjust")')
     pg.click('.works .link:has-text("Back to learned")')
-    pg.wait_for_selector('.toast:has-text("Back to what spotlog learned")')
+    pg.wait_for_timeout(800)  # (no "Back to what spotlog learned" message since 0.18.5)
     assert not stored(pg)['spots'][0].get('ranges'), stored(pg)['spots'][0].get('ranges')
     ok('"Back to learned" removes your own ranges')
     sd = stored(pg)
@@ -396,7 +396,7 @@ with sync_playwright() as p:
     n_spots = len(copy['spots'])
     copy['spots'].append({**copy['spots'][0], 'id': 'from-other-phone', 'name': 'Other phone spot', 'lat': copy['spots'][0]['lat'] + 0.6, 'lon': copy['spots'][0]['lon'] - 0.9})
     pg.set_input_files('.beta-card input[type=file]', files=[{'name': 'spotlog-copy.json', 'mimeType': 'application/json', 'buffer': json.dumps(copy).encode()}])
-    pg.wait_for_selector('.toast:has-text("Copy uploaded")')
+    pg.wait_for_timeout(800)  # (no "Copy uploaded" message since 0.18.5)
     after = stored(pg)
     assert len(after['spots']) == n_spots + 1 and any(x['id'] == 'from-other-phone' for x in after['spots'])
     pg.set_input_files('.beta-card input[type=file]', files=[{'name': 'notes.json', 'mimeType': 'application/json', 'buffer': b'{"hello": 1}'}])
@@ -419,7 +419,7 @@ with sync_playwright() as p:
     pg.wait_for_timeout(600)  # (no "All data deleted" bar since 0.18.4: no undo)
     assert len(stored(pg)['spots']) == 0 and pg.locator('.welcome').count() == 0, 'after deleting, How it works stays (no welcome)'
     pg.set_input_files('.beta-card input[type=file]', copy_path)
-    pg.wait_for_selector('.toast:has-text("Copy uploaded")')
+    pg.wait_for_timeout(800)  # (no "Copy uploaded" message since 0.18.5)
     back = stored(pg)
     assert len(back['spots']) == len(full['spots']) and len(back['sessions']) == len(full['sessions']) and not any(x['id'] in (back.get('deleted') or {}) for k in ('spots', 'sessions', 'snapshots', 'gear') for x in full[k]), (len(back['spots']), len(full['spots']), back.get('deleted'))  # older deletes may stay remembered
     pg.reload()
@@ -437,7 +437,7 @@ with sync_playwright() as p:
     pg.wait_for_timeout(600)  # (no "All data deleted" bar since 0.18.4: no undo)
     other.wait_for_function("() => [...document.querySelectorAll('.stats .big')].some(x => x.textContent.trim() === '0')")
     pg.set_input_files('.beta-card input[type=file]', copy_path)
-    pg.wait_for_selector('.toast:has-text("Copy uploaded")')
+    pg.wait_for_timeout(800)  # (no "Copy uploaded" message since 0.18.5)
     pg.wait_for_timeout(1500)
     assert len(stored(pg)['sessions']) == len(full['sessions']), len(stored(pg)['sessions'])
     other.wait_for_function(f"() => [...document.querySelectorAll('.stats .big')].some(x => x.textContent.trim() === '{len(full['sessions'])}')")

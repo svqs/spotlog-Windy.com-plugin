@@ -278,9 +278,11 @@
             el.className = 'mock-marker ' + (this.opts.icon?.className || 'pulse');
             el.innerHTML = this.opts.icon?.html || '<span class="pulse-dot"></span>';
             el.addEventListener('click', e => { e.stopPropagation(); (this.handlers.click || []).forEach(h => h(e)); });
-            // like Leaflet: mouseover / mouseout on the marker
+            // like Leaflet: mouseover / mouseout on the marker; a marker in a pane gets that pane's z-index
             el.addEventListener('mouseenter', e => (this.handlers.mouseover || []).forEach(h => h(e)));
             el.addEventListener('mouseleave', e => (this.handlers.mouseout || []).forEach(h => h(e)));
+            // (Leaflet's 700+ means above the cards; here cards are at 20)
+            if (this.opts.pane && panes[this.opts.pane]) el.style.zIndex = Number(panes[this.opts.pane].style.zIndex) >= 700 ? '21' : '';
             mapEl().appendChild(el);
             this.el = el;
             this.place();
@@ -288,8 +290,11 @@
             return this;
         }
         on(ev, h) { (this.handlers[ev] = this.handlers[ev] || []).push(h); return this; }
+        getElement() { return this.el || null; }
         remove() { this.el?.remove(); live.delete(this); return this; }
     }
+    // map panes (Leaflet's createPane / getPane): only their z-index matters here; cards (popups) are at 20
+    const panes = {};
     // ---- popups + polylines (the bits of Leaflet Spotlog uses) ----
     let openPopup = null;
     class Popup {
@@ -366,6 +371,8 @@
     const leafletMap = {
         getCenter: centre,
         getZoom: () => Math.round(11 - Math.log2(view.k)),
+        createPane: name => (panes[name] = panes[name] || { style: {} }),
+        getPane: name => panes[name],
         on: (ev, f) => { if (ev === 'zoomend' || ev === 'moveend') moveSubs.push(f); },
         off: (ev, f) => { const i = moveSubs.indexOf(f); if (i >= 0) moveSubs.splice(i, 1); },
         fitBounds: (b, o) => {
@@ -574,7 +581,7 @@
 <script type="module">
 const __pluginConfig =  {
   "name": "windy-plugin-spotlog",
-  "version": "0.18.4",
+  "version": "0.18.5",
   "icon": "🌊",
   "title": "spotlog ✦",
   "description": "Save forecasts for your spots, log how the session really was, and learn which forecast to trust.",
@@ -1719,7 +1726,7 @@ var APPLICATION_CSS = ".spotlog[data-spotlog]{background:var(--sl-ground, #2e2e2
 
 const config$1 = {
     name: 'windy-plugin-spotlog',
-    version: '0.18.4',
+    version: '0.18.5',
     title: 'spotlog ✦'};
 
 const DEFAULT_LAYERS = [
@@ -6949,20 +6956,8 @@ const COPY_GROUPS = [
     {
         id: 'toasts',
         title: 'Messages',
-        note: 'The bar that shows up for a few seconds at the bottom',
+        note: 'The bar that shows up for a few seconds at the bottom: only problems and offers, no "saved" messages',
         items: [
-            [
-                'toastSpotSaved',
-                'Spot saved'
-            ],
-            [
-                'toastSpotUpdated',
-                'Spot updated'
-            ],
-            [
-                'toastWindow',
-                'Wind window saved'
-            ],
             [
                 'toastNoFc',
                 'No forecast for this place'
@@ -6972,24 +6967,8 @@ const COPY_GROUPS = [
                 'No forecast for that day. Windy only keeps forecasts from today on.'
             ],
             [
-                'toastLinked',
-                'Linked to {spot}'
-            ],
-            [
-                'toastSessSaved',
-                'Session saved'
-            ],
-            [
                 'toastSessNoFc',
-                'Session saved. Without a forecast it can\'t teach spotlog: save one next time before you go'
-            ],
-            [
-                'toastRangesSaved',
-                'Your ranges are saved'
-            ],
-            [
-                'toastRangesReset',
-                'Back to what spotlog learned'
+                'This session has no forecast, so it can\'t teach {spotlog}. Save one next time before you go.'
             ],
             [
                 'toastLinkSessions',
@@ -7000,28 +6979,8 @@ const COPY_GROUPS = [
                 'Link them'
             ],
             [
-                'toastSessLinked',
-                '{n} session(s) linked to this spot'
-            ],
-            [
-                'toastSessUpdated',
-                'Session updated'
-            ],
-            [
-                'toastTrack',
-                'Track added · {dist}'
-            ],
-            [
                 'trackError',
                 'Could not read this file'
-            ],
-            [
-                'toastGearSaved',
-                'Saved to your gear'
-            ],
-            [
-                'toastImported',
-                'Copy uploaded: {spots} spots, {sessions} sessions'
             ],
             [
                 'toastImportFail',
@@ -14802,138 +14761,138 @@ const { Boolean: Boolean_1, Map: Map_1 } = globals;
 
 function get_each_context_16(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[456] = list[i];
+	child_ctx[458] = list[i];
 	return child_ctx;
 }
 
 function get_each_context_17(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[459] = list[i];
+	child_ctx[461] = list[i];
 	return child_ctx;
 }
 
 function get_each_context_18(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[462] = list[i];
-	child_ctx[430] = i;
+	child_ctx[464] = list[i];
+	child_ctx[432] = i;
 	return child_ctx;
 }
 
 function get_each_context_19(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[415] = list[i];
+	child_ctx[417] = list[i];
 	return child_ctx;
 }
 
 function get_each_context_20(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[466] = list[i];
+	child_ctx[468] = list[i];
 	return child_ctx;
 }
 
 function get_each_context_15(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[415] = list[i];
+	child_ctx[417] = list[i];
 	return child_ctx;
 }
 
 function get_each_context_3(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[418] = list[i];
+	child_ctx[420] = list[i];
 	return child_ctx;
 }
 
 function get_each_context_4(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[425] = list[i];
+	child_ctx[427] = list[i];
 	return child_ctx;
 }
 
 function get_each_context_5(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[428] = list[i];
-	child_ctx[430] = i;
+	child_ctx[430] = list[i];
+	child_ctx[432] = i;
 	return child_ctx;
 }
 
 function get_each_context_7(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[434] = list[i];
+	child_ctx[436] = list[i];
 	return child_ctx;
 }
 
 function get_each_context_8(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[431] = list[i];
+	child_ctx[433] = list[i];
 	return child_ctx;
 }
 
 function get_each_context_11(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[445] = list[i];
+	child_ctx[447] = list[i];
 	return child_ctx;
 }
 
 function get_each_context_9(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[439] = list[i];
-	child_ctx[440] = list;
-	child_ctx[441] = i;
+	child_ctx[441] = list[i];
+	child_ctx[442] = list;
+	child_ctx[443] = i;
 	return child_ctx;
 }
 
 function get_each_context_10(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[442] = list[i];
+	child_ctx[444] = list[i];
 	return child_ctx;
 }
 
 function get_each_context_6(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[431] = list[i];
+	child_ctx[433] = list[i];
 	return child_ctx;
 }
 
 function get_each_context_12(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[442] = list[i];
+	child_ctx[444] = list[i];
 	return child_ctx;
 }
 
 function get_each_context_13(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[442] = list[i];
+	child_ctx[444] = list[i];
 	return child_ctx;
 }
 
 function get_each_context_14(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[431] = list[i];
+	child_ctx[433] = list[i];
 	return child_ctx;
 }
 
 function get_each_context_2(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[415] = list[i];
+	child_ctx[417] = list[i];
 	return child_ctx;
 }
 
 function get_each_context_1(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[418] = list[i];
+	child_ctx[420] = list[i];
 	return child_ctx;
 }
 
 function get_each_context(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[415] = list[i];
+	child_ctx[417] = list[i];
 	return child_ctx;
 }
 
 function get_each_context_21(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[469] = list[i][0];
-	child_ctx[470] = list[i][1];
+	child_ctx[471] = list[i][0];
+	child_ctx[472] = list[i][1];
 	return child_ctx;
 }
 
@@ -15553,21 +15512,21 @@ function create_if_block_91(ctx) {
 // (32:16) {#each [['spots', W.tabSpots], ['sessions', W.tabSessions], ['gear', W.tabGear], ['about', W.tabAbout]] as [k, label]}
 function create_each_block_21(ctx) {
 	let button;
-	let t_value = /*label*/ ctx[470] + "";
+	let t_value = /*label*/ ctx[472] + "";
 	let t;
 	let mounted;
 	let dispose;
 
 	function select_block_type_2(ctx, dirty) {
-		if (/*k*/ ctx[469] === 'spots') return create_if_block_91;
-		if (/*k*/ ctx[469] === 'sessions') return create_if_block_92;
+		if (/*k*/ ctx[471] === 'spots') return create_if_block_91;
+		if (/*k*/ ctx[471] === 'sessions') return create_if_block_92;
 	}
 
 	let current_block_type = select_block_type_2(ctx);
 	let if_block = current_block_type && current_block_type(ctx);
 
 	function click_handler_5() {
-		return /*click_handler_5*/ ctx[197](/*k*/ ctx[469]);
+		return /*click_handler_5*/ ctx[197](/*k*/ ctx[471]);
 	}
 
 	return {
@@ -15576,7 +15535,7 @@ function create_each_block_21(ctx) {
 			t = text$1(t_value);
 			if (if_block) if_block.c();
 			attr(button, "data-spotlog", "");
-			toggle_class(button, "on", /*modalOpen*/ ctx[33] && /*view*/ ctx[2] === 'home' && /*tab*/ ctx[36] === /*k*/ ctx[469]);
+			toggle_class(button, "on", /*modalOpen*/ ctx[33] && /*view*/ ctx[2] === 'home' && /*tab*/ ctx[36] === /*k*/ ctx[471]);
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -15590,7 +15549,7 @@ function create_each_block_21(ctx) {
 		},
 		p(new_ctx, dirty) {
 			ctx = new_ctx;
-			if (dirty[0] & /*W*/ 32768 && t_value !== (t_value = /*label*/ ctx[470] + "")) set_data(t, t_value);
+			if (dirty[0] & /*W*/ 32768 && t_value !== (t_value = /*label*/ ctx[472] + "")) set_data(t, t_value);
 
 			if (current_block_type === (current_block_type = select_block_type_2(ctx)) && if_block) {
 				if_block.p(ctx, dirty);
@@ -15605,7 +15564,7 @@ function create_each_block_21(ctx) {
 			}
 
 			if (dirty[0] & /*view, W*/ 32772 | dirty[1] & /*modalOpen, tab*/ 36) {
-				toggle_class(button, "on", /*modalOpen*/ ctx[33] && /*view*/ ctx[2] === 'home' && /*tab*/ ctx[36] === /*k*/ ctx[469]);
+				toggle_class(button, "on", /*modalOpen*/ ctx[33] && /*view*/ ctx[2] === 'home' && /*tab*/ ctx[36] === /*k*/ ctx[471]);
 			}
 		},
 		d(detaching) {
@@ -17295,7 +17254,7 @@ function create_if_block_59(ctx) {
 
 	let if_block7 = /*f*/ ctx[10].checked && create_if_block_66(ctx);
 	let each_value_16 = ensure_array_like(/*logGearGroups*/ ctx[80]);
-	const get_key = ctx => /*grp*/ ctx[456].sport;
+	const get_key = ctx => /*grp*/ ctx[458].sport;
 
 	for (let i = 0; i < each_value_16.length; i += 1) {
 		let child_ctx = get_each_context_16(ctx, each_value_16, i);
@@ -18396,7 +18355,7 @@ function create_if_block_29(ctx) {
 	if_block3 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
 	let if_block4 = /*spotBest*/ ctx[89] && create_if_block_46(ctx);
 	let each_value_12 = ensure_array_like(/*spotDays*/ ctx[86].filter(func_2));
-	const get_key = ctx => /*d*/ ctx[442].day;
+	const get_key = ctx => /*d*/ ctx[444].day;
 
 	for (let i = 0; i < each_value_12.length; i += 1) {
 		let child_ctx = get_each_context_12(ctx, each_value_12, i);
@@ -20567,14 +20526,14 @@ function create_if_block_68(ctx) {
 // (604:16) {#each sportChoices(spotById(f.spotId)?.sports || [], f.sport) as sp}
 function create_each_block_20(ctx) {
 	let button;
-	let t_value = /*sportLbl*/ ctx[24](/*sp*/ ctx[466]) + "";
+	let t_value = /*sportLbl*/ ctx[24](/*sp*/ ctx[468]) + "";
 	let t;
 	let button_aria_checked_value;
 	let mounted;
 	let dispose;
 
 	function click_handler_62() {
-		return /*click_handler_62*/ ctx[279](/*sp*/ ctx[466]);
+		return /*click_handler_62*/ ctx[279](/*sp*/ ctx[468]);
 	}
 
 	return {
@@ -20584,8 +20543,8 @@ function create_each_block_20(ctx) {
 			attr(button, "data-spotlog", "");
 			attr(button, "class", "chip");
 			attr(button, "role", "radio");
-			attr(button, "aria-checked", button_aria_checked_value = /*otherFor*/ ctx[55] !== 'log' && /*logSport*/ ctx[61](/*f*/ ctx[10]) === /*sp*/ ctx[466]);
-			toggle_class(button, "on", /*otherFor*/ ctx[55] !== 'log' && /*logSport*/ ctx[61](/*f*/ ctx[10]) === /*sp*/ ctx[466]);
+			attr(button, "aria-checked", button_aria_checked_value = /*otherFor*/ ctx[55] !== 'log' && /*logSport*/ ctx[61](/*f*/ ctx[10]) === /*sp*/ ctx[468]);
+			toggle_class(button, "on", /*otherFor*/ ctx[55] !== 'log' && /*logSport*/ ctx[61](/*f*/ ctx[10]) === /*sp*/ ctx[468]);
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -20598,14 +20557,14 @@ function create_each_block_20(ctx) {
 		},
 		p(new_ctx, dirty) {
 			ctx = new_ctx;
-			if (dirty[0] & /*sportLbl, f*/ 16778240 | dirty[2] & /*sportChoices*/ 2048 && t_value !== (t_value = /*sportLbl*/ ctx[24](/*sp*/ ctx[466]) + "")) set_data(t, t_value);
+			if (dirty[0] & /*sportLbl, f*/ 16778240 | dirty[2] & /*sportChoices*/ 2048 && t_value !== (t_value = /*sportLbl*/ ctx[24](/*sp*/ ctx[468]) + "")) set_data(t, t_value);
 
-			if (dirty[0] & /*f*/ 1024 | dirty[1] & /*otherFor, logSport*/ 1090519040 | dirty[2] & /*sportChoices*/ 2048 && button_aria_checked_value !== (button_aria_checked_value = /*otherFor*/ ctx[55] !== 'log' && /*logSport*/ ctx[61](/*f*/ ctx[10]) === /*sp*/ ctx[466])) {
+			if (dirty[0] & /*f*/ 1024 | dirty[1] & /*otherFor, logSport*/ 1090519040 | dirty[2] & /*sportChoices*/ 2048 && button_aria_checked_value !== (button_aria_checked_value = /*otherFor*/ ctx[55] !== 'log' && /*logSport*/ ctx[61](/*f*/ ctx[10]) === /*sp*/ ctx[468])) {
 				attr(button, "aria-checked", button_aria_checked_value);
 			}
 
 			if (dirty[0] & /*f*/ 1024 | dirty[1] & /*otherFor, logSport*/ 1090519040 | dirty[2] & /*sportChoices*/ 2048 | dirty[3] & /*spotById*/ 16777216) {
-				toggle_class(button, "on", /*otherFor*/ ctx[55] !== 'log' && /*logSport*/ ctx[61](/*f*/ ctx[10]) === /*sp*/ ctx[466]);
+				toggle_class(button, "on", /*otherFor*/ ctx[55] !== 'log' && /*logSport*/ ctx[61](/*f*/ ctx[10]) === /*sp*/ ctx[468]);
 			}
 		},
 		d(detaching) {
@@ -20718,7 +20677,7 @@ function create_if_block_67(ctx) {
 	? /*nearestSpots*/ ctx[126](/*f*/ ctx[10].lat, /*f*/ ctx[10].lon ?? 0)
 	: /*data*/ ctx[1].spots).slice(0, 5));
 
-	const get_key = ctx => /*s*/ ctx[415].id;
+	const get_key = ctx => /*s*/ ctx[417].id;
 
 	for (let i = 0; i < each_value_19.length; i += 1) {
 		let child_ctx = get_each_context_19(ctx, each_value_19, i);
@@ -20800,13 +20759,13 @@ function create_if_block_67(ctx) {
 // (618:16) {#each (f.lat !== undefined ? nearestSpots(f.lat, f.lon ?? 0) : data.spots).slice(0, 5) as s (s.id)}
 function create_each_block_19(key_2, ctx) {
 	let button;
-	let t_value = /*s*/ ctx[415].name + "";
+	let t_value = /*s*/ ctx[417].name + "";
 	let t;
 	let mounted;
 	let dispose;
 
 	function click_handler_64() {
-		return /*click_handler_64*/ ctx[283](/*s*/ ctx[415]);
+		return /*click_handler_64*/ ctx[283](/*s*/ ctx[417]);
 	}
 
 	return {
@@ -20830,7 +20789,7 @@ function create_each_block_19(key_2, ctx) {
 		},
 		p(new_ctx, dirty) {
 			ctx = new_ctx;
-			if (dirty[0] & /*f, data*/ 1026 && t_value !== (t_value = /*s*/ ctx[415].name + "")) set_data(t, t_value);
+			if (dirty[0] & /*f, data*/ 1026 && t_value !== (t_value = /*s*/ ctx[417].name + "")) set_data(t, t_value);
 		},
 		d(detaching) {
 			if (detaching) {
@@ -20848,21 +20807,21 @@ function create_each_block_18(ctx) {
 	let button;
 	let b;
 	let span;
-	let t1_value = /*r*/ ctx[462] + "";
+	let t1_value = /*r*/ ctx[464] + "";
 	let t1;
 	let button_style_value;
 	let mounted;
 	let dispose;
 
 	function click_handler_65() {
-		return /*click_handler_65*/ ctx[284](/*i*/ ctx[430]);
+		return /*click_handler_65*/ ctx[284](/*i*/ ctx[432]);
 	}
 
 	return {
 		c() {
 			button = element("button");
 			b = element("b");
-			b.textContent = `${/*i*/ ctx[430] + 1}`;
+			b.textContent = `${/*i*/ ctx[432] + 1}`;
 			span = element("span");
 			t1 = text$1(t1_value);
 			attr(b, "data-spotlog", "");
@@ -20870,11 +20829,11 @@ function create_each_block_18(ctx) {
 			attr(button, "data-spotlog", "");
 			attr(button, "class", "rate");
 
-			attr(button, "style", button_style_value = !/*f*/ ctx[10].checked && /*f*/ ctx[10].rating === /*i*/ ctx[430] + 1
-			? `background: ${RATING_BG[/*i*/ ctx[430]]}; border-color: ${RATING_BG[/*i*/ ctx[430]]}; color: ${RATING_FG[/*i*/ ctx[430]]}`
+			attr(button, "style", button_style_value = !/*f*/ ctx[10].checked && /*f*/ ctx[10].rating === /*i*/ ctx[432] + 1
+			? `background: ${RATING_BG[/*i*/ ctx[432]]}; border-color: ${RATING_BG[/*i*/ ctx[432]]}; color: ${RATING_FG[/*i*/ ctx[432]]}`
 			: '');
 
-			toggle_class(button, "on", !/*f*/ ctx[10].checked && /*f*/ ctx[10].rating === /*i*/ ctx[430] + 1);
+			toggle_class(button, "on", !/*f*/ ctx[10].checked && /*f*/ ctx[10].rating === /*i*/ ctx[432] + 1);
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -20889,16 +20848,16 @@ function create_each_block_18(ctx) {
 		},
 		p(new_ctx, dirty) {
 			ctx = new_ctx;
-			if (dirty[3] & /*RATE*/ 16 && t1_value !== (t1_value = /*r*/ ctx[462] + "")) set_data(t1, t1_value);
+			if (dirty[3] & /*RATE*/ 16 && t1_value !== (t1_value = /*r*/ ctx[464] + "")) set_data(t1, t1_value);
 
-			if (dirty[0] & /*f*/ 1024 && button_style_value !== (button_style_value = !/*f*/ ctx[10].checked && /*f*/ ctx[10].rating === /*i*/ ctx[430] + 1
-			? `background: ${RATING_BG[/*i*/ ctx[430]]}; border-color: ${RATING_BG[/*i*/ ctx[430]]}; color: ${RATING_FG[/*i*/ ctx[430]]}`
+			if (dirty[0] & /*f*/ 1024 && button_style_value !== (button_style_value = !/*f*/ ctx[10].checked && /*f*/ ctx[10].rating === /*i*/ ctx[432] + 1
+			? `background: ${RATING_BG[/*i*/ ctx[432]]}; border-color: ${RATING_BG[/*i*/ ctx[432]]}; color: ${RATING_FG[/*i*/ ctx[432]]}`
 			: '')) {
 				attr(button, "style", button_style_value);
 			}
 
 			if (dirty[0] & /*f*/ 1024) {
-				toggle_class(button, "on", !/*f*/ ctx[10].checked && /*f*/ ctx[10].rating === /*i*/ ctx[430] + 1);
+				toggle_class(button, "on", !/*f*/ ctx[10].checked && /*f*/ ctx[10].rating === /*i*/ ctx[432] + 1);
 			}
 		},
 		d(detaching) {
@@ -20943,7 +20902,7 @@ function create_if_block_66(ctx) {
 // (641:12) {#if logGearGroups.length > 1}
 function create_if_block_65(ctx) {
 	let small;
-	let t_value = /*sportLbl*/ ctx[24](/*grp*/ ctx[456].sport) + "";
+	let t_value = /*sportLbl*/ ctx[24](/*grp*/ ctx[458].sport) + "";
 	let t;
 
 	return {
@@ -20958,7 +20917,7 @@ function create_if_block_65(ctx) {
 			append(small, t);
 		},
 		p(ctx, dirty) {
-			if (dirty[0] & /*sportLbl*/ 16777216 | dirty[2] & /*logGearGroups*/ 262144 && t_value !== (t_value = /*sportLbl*/ ctx[24](/*grp*/ ctx[456].sport) + "")) set_data(t, t_value);
+			if (dirty[0] & /*sportLbl*/ 16777216 | dirty[2] & /*logGearGroups*/ 262144 && t_value !== (t_value = /*sportLbl*/ ctx[24](/*grp*/ ctx[458].sport) + "")) set_data(t, t_value);
 		},
 		d(detaching) {
 			if (detaching) {
@@ -20972,15 +20931,15 @@ function create_if_block_65(ctx) {
 function create_each_block_17(key_2, ctx) {
 	let button;
 	let span;
-	let t0_value = /*gearLbl*/ ctx[72](/*g*/ ctx[459].kind) + "";
+	let t0_value = /*gearLbl*/ ctx[72](/*g*/ ctx[461].kind) + "";
 	let t0;
-	let t1_value = /*g*/ ctx[459].name + "";
+	let t1_value = /*g*/ ctx[461].name + "";
 	let t1;
 	let mounted;
 	let dispose;
 
 	function click_handler_67() {
-		return /*click_handler_67*/ ctx[286](/*g*/ ctx[459]);
+		return /*click_handler_67*/ ctx[286](/*g*/ ctx[461]);
 	}
 
 	return {
@@ -20995,7 +20954,7 @@ function create_each_block_17(key_2, ctx) {
 			attr(span, "class", "k");
 			attr(button, "data-spotlog", "");
 			attr(button, "class", "chip");
-			toggle_class(button, "on", /*f*/ ctx[10].gearIds.includes(/*g*/ ctx[459].id));
+			toggle_class(button, "on", /*f*/ ctx[10].gearIds.includes(/*g*/ ctx[461].id));
 			this.first = button;
 		},
 		m(target, anchor) {
@@ -21011,11 +20970,11 @@ function create_each_block_17(key_2, ctx) {
 		},
 		p(new_ctx, dirty) {
 			ctx = new_ctx;
-			if (dirty[2] & /*gearLbl, logGearGroups*/ 263168 && t0_value !== (t0_value = /*gearLbl*/ ctx[72](/*g*/ ctx[459].kind) + "")) set_data(t0, t0_value);
-			if (dirty[2] & /*logGearGroups*/ 262144 && t1_value !== (t1_value = /*g*/ ctx[459].name + "")) set_data(t1, t1_value);
+			if (dirty[2] & /*gearLbl, logGearGroups*/ 263168 && t0_value !== (t0_value = /*gearLbl*/ ctx[72](/*g*/ ctx[461].kind) + "")) set_data(t0, t0_value);
+			if (dirty[2] & /*logGearGroups*/ 262144 && t1_value !== (t1_value = /*g*/ ctx[461].name + "")) set_data(t1, t1_value);
 
 			if (dirty[0] & /*f*/ 1024 | dirty[2] & /*logGearGroups*/ 262144) {
-				toggle_class(button, "on", /*f*/ ctx[10].gearIds.includes(/*g*/ ctx[459].id));
+				toggle_class(button, "on", /*f*/ ctx[10].gearIds.includes(/*g*/ ctx[461].id));
 			}
 		},
 		d(detaching) {
@@ -21037,8 +20996,8 @@ function create_each_block_16(key_2, ctx) {
 	let each_blocks = [];
 	let each_1_lookup = new Map_1();
 	let if_block = /*logGearGroups*/ ctx[80].length > 1 && create_if_block_65(ctx);
-	let each_value_17 = ensure_array_like(/*grp*/ ctx[456].items);
-	const get_key = ctx => /*g*/ ctx[459].id;
+	let each_value_17 = ensure_array_like(/*grp*/ ctx[458].items);
+	const get_key = ctx => /*g*/ ctx[461].id;
 
 	for (let i = 0; i < each_value_17.length; i += 1) {
 		let child_ctx = get_each_context_17(ctx, each_value_17, i);
@@ -21092,7 +21051,7 @@ function create_each_block_16(key_2, ctx) {
 			}
 
 			if (dirty[0] & /*f*/ 1024 | dirty[2] & /*logGearGroups, gearLbl*/ 263168 | dirty[3] & /*toggle*/ 2097152) {
-				each_value_17 = ensure_array_like(/*grp*/ ctx[456].items);
+				each_value_17 = ensure_array_like(/*grp*/ ctx[458].items);
 				each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value_17, each_1_lookup, div, destroy_block, create_each_block_17, null, get_each_context_17);
 			}
 		},
@@ -21465,7 +21424,7 @@ function create_if_block_57(ctx) {
 	let mounted;
 	let dispose;
 	let each_value_15 = ensure_array_like(/*nearestSpots*/ ctx[126](/*snap*/ ctx[4].lat, /*snap*/ ctx[4].lon).slice(0, 5));
-	const get_key = ctx => /*s*/ ctx[415].id;
+	const get_key = ctx => /*s*/ ctx[417].id;
 
 	for (let i = 0; i < each_value_15.length; i += 1) {
 		let child_ctx = get_each_context_15(ctx, each_value_15, i);
@@ -21553,13 +21512,13 @@ function create_if_block_57(ctx) {
 // (524:16) {#each nearestSpots(snap.lat, snap.lon).slice(0, 5) as s (s.id)}
 function create_each_block_15(key_2, ctx) {
 	let button;
-	let t_value = /*s*/ ctx[415].name + "";
+	let t_value = /*s*/ ctx[417].name + "";
 	let t;
 	let mounted;
 	let dispose;
 
 	function click_handler_52() {
-		return /*click_handler_52*/ ctx[265](/*s*/ ctx[415]);
+		return /*click_handler_52*/ ctx[265](/*s*/ ctx[417]);
 	}
 
 	return {
@@ -21570,7 +21529,7 @@ function create_each_block_15(key_2, ctx) {
 			t = text$1(t_value);
 			attr(button, "data-spotlog", "");
 			attr(button, "class", "chip");
-			toggle_class(button, "on", /*snap*/ ctx[4].spotId === /*s*/ ctx[415].id);
+			toggle_class(button, "on", /*snap*/ ctx[4].spotId === /*s*/ ctx[417].id);
 			this.first = button;
 		},
 		m(target, anchor) {
@@ -21584,10 +21543,10 @@ function create_each_block_15(key_2, ctx) {
 		},
 		p(new_ctx, dirty) {
 			ctx = new_ctx;
-			if (dirty[0] & /*snap*/ 16 && t_value !== (t_value = /*s*/ ctx[415].name + "")) set_data(t, t_value);
+			if (dirty[0] & /*snap*/ 16 && t_value !== (t_value = /*s*/ ctx[417].name + "")) set_data(t, t_value);
 
 			if (dirty[0] & /*snap*/ 16 | dirty[4] & /*nearestSpots*/ 4) {
-				toggle_class(button, "on", /*snap*/ ctx[4].spotId === /*s*/ ctx[415].id);
+				toggle_class(button, "on", /*snap*/ ctx[4].spotId === /*s*/ ctx[417].id);
 			}
 		},
 		d(detaching) {
@@ -21930,14 +21889,14 @@ function create_if_block_53(ctx) {
 // (310:12) {#each spotModels as m}
 function create_each_block_14(ctx) {
 	let button;
-	let t_value = modelLabel(/*m*/ ctx[431]) + "";
+	let t_value = modelLabel(/*m*/ ctx[433]) + "";
 	let t;
 	let button_aria_checked_value;
 	let mounted;
 	let dispose;
 
 	function click_handler_35() {
-		return /*click_handler_35*/ ctx[243](/*m*/ ctx[431]);
+		return /*click_handler_35*/ ctx[243](/*m*/ ctx[433]);
 	}
 
 	return {
@@ -21946,8 +21905,8 @@ function create_each_block_14(ctx) {
 			t = text$1(t_value);
 			attr(button, "data-spotlog", "");
 			attr(button, "role", "radio");
-			attr(button, "aria-checked", button_aria_checked_value = /*spotModel*/ ctx[6] === /*m*/ ctx[431]);
-			toggle_class(button, "on", /*spotModel*/ ctx[6] === /*m*/ ctx[431]);
+			attr(button, "aria-checked", button_aria_checked_value = /*spotModel*/ ctx[6] === /*m*/ ctx[433]);
+			toggle_class(button, "on", /*spotModel*/ ctx[6] === /*m*/ ctx[433]);
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -21960,14 +21919,14 @@ function create_each_block_14(ctx) {
 		},
 		p(new_ctx, dirty) {
 			ctx = new_ctx;
-			if (dirty[2] & /*spotModels*/ 536870912 && t_value !== (t_value = modelLabel(/*m*/ ctx[431]) + "")) set_data(t, t_value);
+			if (dirty[2] & /*spotModels*/ 536870912 && t_value !== (t_value = modelLabel(/*m*/ ctx[433]) + "")) set_data(t, t_value);
 
-			if (dirty[0] & /*spotModel*/ 64 | dirty[2] & /*spotModels*/ 536870912 && button_aria_checked_value !== (button_aria_checked_value = /*spotModel*/ ctx[6] === /*m*/ ctx[431])) {
+			if (dirty[0] & /*spotModel*/ 64 | dirty[2] & /*spotModels*/ 536870912 && button_aria_checked_value !== (button_aria_checked_value = /*spotModel*/ ctx[6] === /*m*/ ctx[433])) {
 				attr(button, "aria-checked", button_aria_checked_value);
 			}
 
 			if (dirty[0] & /*spotModel*/ 64 | dirty[2] & /*spotModels*/ 536870912) {
-				toggle_class(button, "on", /*spotModel*/ ctx[6] === /*m*/ ctx[431]);
+				toggle_class(button, "on", /*spotModel*/ ctx[6] === /*m*/ ctx[433]);
 			}
 		},
 		d(detaching) {
@@ -22320,7 +22279,7 @@ function create_each_block_13(ctx) {
 
 	windarrow = new WindArrow({
 			props: {
-				from: DIRS.indexOf(/*d*/ ctx[442]) * 45,
+				from: DIRS.indexOf(/*d*/ ctx[444]) * 45,
 				size: 18
 			}
 		});
@@ -22339,7 +22298,7 @@ function create_each_block_13(ctx) {
 		},
 		p(ctx, dirty) {
 			const windarrow_changes = {};
-			if (dirty[0] & /*spot*/ 8) windarrow_changes.from = DIRS.indexOf(/*d*/ ctx[442]) * 45;
+			if (dirty[0] & /*spot*/ 8) windarrow_changes.from = DIRS.indexOf(/*d*/ ctx[444]) * 45;
 			windarrow.$set(windarrow_changes);
 		},
 		i(local) {
@@ -22756,7 +22715,7 @@ function create_if_block_45(ctx) {
 	let small;
 
 	let t_value = fill(/*W*/ ctx[15].predShort, {
-		p: Math.round(/*predOfDay*/ ctx[167](/*d*/ ctx[442].day, /*spotOutlook*/ ctx[29]) ?? 0)
+		p: Math.round(/*predOfDay*/ ctx[167](/*d*/ ctx[444].day, /*spotOutlook*/ ctx[29]) ?? 0)
 	}) + "";
 
 	let t;
@@ -22776,7 +22735,7 @@ function create_if_block_45(ctx) {
 		},
 		p(ctx, dirty) {
 			if (dirty[0] & /*W, spotOutlook*/ 536903680 | dirty[2] & /*spotDays*/ 16777216 && t_value !== (t_value = fill(/*W*/ ctx[15].predShort, {
-				p: Math.round(/*predOfDay*/ ctx[167](/*d*/ ctx[442].day, /*spotOutlook*/ ctx[29]) ?? 0)
+				p: Math.round(/*predOfDay*/ ctx[167](/*d*/ ctx[444].day, /*spotOutlook*/ ctx[29]) ?? 0)
 			}) + "")) set_data(t, t_value);
 
 			if (dirty[0] & /*W*/ 32768 && small_title_value !== (small_title_value = /*W*/ ctx[15].predTitle)) {
@@ -22794,17 +22753,17 @@ function create_if_block_45(ctx) {
 // (377:20) {#if d.best}
 function create_if_block_44(ctx) {
 	let span0;
-	let t0_value = /*guessLbl*/ ctx[64](/*d*/ ctx[442].best.level, /*d*/ ctx[442].best.sport) + "";
+	let t0_value = /*guessLbl*/ ctx[64](/*d*/ ctx[444].best.level, /*d*/ ctx[444].best.sport) + "";
 	let t0;
 	let span0_title_value;
 	let t1;
 	let b;
 	let span1;
-	let t2_value = fmtTime(/*d*/ ctx[442].best.start) + "";
+	let t2_value = fmtTime(/*d*/ ctx[444].best.start) + "";
 	let t2;
 	let t3;
 	let span2;
-	let t4_value = fmtTime(/*d*/ ctx[442].best.end) + "";
+	let t4_value = fmtTime(/*d*/ ctx[444].best.end) + "";
 	let t4;
 
 	return {
@@ -22820,9 +22779,9 @@ function create_if_block_44(ctx) {
 			t4 = text$1(t4_value);
 			attr(span0, "data-spotlog", "");
 			attr(span0, "class", "tag");
-			set_style(span0, "background", /*guessCol*/ ctx[105](/*d*/ ctx[442].best.level)[0]);
-			set_style(span0, "color", /*guessCol*/ ctx[105](/*d*/ ctx[442].best.level)[1]);
-			attr(span0, "title", span0_title_value = /*guessNote*/ ctx[70](/*d*/ ctx[442].best));
+			set_style(span0, "background", /*guessCol*/ ctx[105](/*d*/ ctx[444].best.level)[0]);
+			set_style(span0, "color", /*guessCol*/ ctx[105](/*d*/ ctx[444].best.level)[1]);
+			attr(span0, "title", span0_title_value = /*guessNote*/ ctx[70](/*d*/ ctx[444].best));
 			attr(span1, "data-spotlog", "");
 			attr(span2, "data-spotlog", "");
 			attr(b, "data-spotlog", "");
@@ -22840,22 +22799,22 @@ function create_if_block_44(ctx) {
 			append(span2, t4);
 		},
 		p(ctx, dirty) {
-			if (dirty[2] & /*guessLbl, spotDays*/ 16777220 && t0_value !== (t0_value = /*guessLbl*/ ctx[64](/*d*/ ctx[442].best.level, /*d*/ ctx[442].best.sport) + "")) set_data(t0, t0_value);
+			if (dirty[2] & /*guessLbl, spotDays*/ 16777220 && t0_value !== (t0_value = /*guessLbl*/ ctx[64](/*d*/ ctx[444].best.level, /*d*/ ctx[444].best.sport) + "")) set_data(t0, t0_value);
 
 			if (dirty[2] & /*spotDays*/ 16777216) {
-				set_style(span0, "background", /*guessCol*/ ctx[105](/*d*/ ctx[442].best.level)[0]);
+				set_style(span0, "background", /*guessCol*/ ctx[105](/*d*/ ctx[444].best.level)[0]);
 			}
 
 			if (dirty[2] & /*spotDays*/ 16777216) {
-				set_style(span0, "color", /*guessCol*/ ctx[105](/*d*/ ctx[442].best.level)[1]);
+				set_style(span0, "color", /*guessCol*/ ctx[105](/*d*/ ctx[444].best.level)[1]);
 			}
 
-			if (dirty[2] & /*guessNote, spotDays*/ 16777472 && span0_title_value !== (span0_title_value = /*guessNote*/ ctx[70](/*d*/ ctx[442].best))) {
+			if (dirty[2] & /*guessNote, spotDays*/ 16777472 && span0_title_value !== (span0_title_value = /*guessNote*/ ctx[70](/*d*/ ctx[444].best))) {
 				attr(span0, "title", span0_title_value);
 			}
 
-			if (dirty[2] & /*spotDays*/ 16777216 && t2_value !== (t2_value = fmtTime(/*d*/ ctx[442].best.start) + "")) set_data(t2, t2_value);
-			if (dirty[2] & /*spotDays*/ 16777216 && t4_value !== (t4_value = fmtTime(/*d*/ ctx[442].best.end) + "")) set_data(t4, t4_value);
+			if (dirty[2] & /*spotDays*/ 16777216 && t2_value !== (t2_value = fmtTime(/*d*/ ctx[444].best.start) + "")) set_data(t2, t2_value);
+			if (dirty[2] & /*spotDays*/ 16777216 && t4_value !== (t4_value = fmtTime(/*d*/ ctx[444].best.end) + "")) set_data(t4, t4_value);
 		},
 		d(detaching) {
 			if (detaching) {
@@ -22871,12 +22830,12 @@ function create_if_block_44(ctx) {
 function create_each_block_12(key_2, ctx) {
 	let div;
 	let span;
-	let t0_value = fmtDay(/*d*/ ctx[442].day) + "";
+	let t0_value = fmtDay(/*d*/ ctx[444].day) + "";
 	let t0;
-	let show_if = /*predOfDay*/ ctx[167](/*d*/ ctx[442].day, /*spotOutlook*/ ctx[29]) !== null;
+	let show_if = /*predOfDay*/ ctx[167](/*d*/ ctx[444].day, /*spotOutlook*/ ctx[29]) !== null;
 	let t1;
 	let if_block0 = show_if && create_if_block_45(ctx);
-	let if_block1 = /*d*/ ctx[442].best && create_if_block_44(ctx);
+	let if_block1 = /*d*/ ctx[444].best && create_if_block_44(ctx);
 
 	return {
 		key: key_2,
@@ -22904,8 +22863,8 @@ function create_each_block_12(key_2, ctx) {
 		},
 		p(new_ctx, dirty) {
 			ctx = new_ctx;
-			if (dirty[2] & /*spotDays*/ 16777216 && t0_value !== (t0_value = fmtDay(/*d*/ ctx[442].day) + "")) set_data(t0, t0_value);
-			if (dirty[0] & /*spotOutlook*/ 536870912 | dirty[2] & /*spotDays*/ 16777216) show_if = /*predOfDay*/ ctx[167](/*d*/ ctx[442].day, /*spotOutlook*/ ctx[29]) !== null;
+			if (dirty[2] & /*spotDays*/ 16777216 && t0_value !== (t0_value = fmtDay(/*d*/ ctx[444].day) + "")) set_data(t0, t0_value);
+			if (dirty[0] & /*spotOutlook*/ 536870912 | dirty[2] & /*spotDays*/ 16777216) show_if = /*predOfDay*/ ctx[167](/*d*/ ctx[444].day, /*spotOutlook*/ ctx[29]) !== null;
 
 			if (show_if) {
 				if (if_block0) {
@@ -22920,7 +22879,7 @@ function create_each_block_12(key_2, ctx) {
 				if_block0 = null;
 			}
 
-			if (/*d*/ ctx[442].best) {
+			if (/*d*/ ctx[444].best) {
 				if (if_block1) {
 					if_block1.p(ctx, dirty);
 				} else {
@@ -23013,7 +22972,7 @@ function create_else_block_11(ctx) {
 	let t2_value = /*W*/ ctx[15].worksLegend + "";
 	let t2;
 	let each_value_8 = ensure_array_like(/*spotLearned*/ ctx[16]);
-	const get_key = ctx => /*m*/ ctx[431].sport;
+	const get_key = ctx => /*m*/ ctx[433].sport;
 
 	for (let i = 0; i < each_value_8.length; i += 1) {
 		let child_ctx = get_each_context_8(ctx, each_value_8, i);
@@ -23022,7 +22981,7 @@ function create_else_block_11(ctx) {
 	}
 
 	let each_value_7 = ensure_array_like(/*spotGear*/ ctx[88]);
-	const get_key_1 = ctx => /*gh*/ ctx[434].gearId;
+	const get_key_1 = ctx => /*gh*/ ctx[436].gearId;
 
 	for (let i = 0; i < each_value_7.length; i += 1) {
 		let child_ctx = get_each_context_7(ctx, each_value_7, i);
@@ -23114,7 +23073,7 @@ function create_if_block_33(ctx) {
 	let mounted;
 	let dispose;
 	let each_value_6 = ensure_array_like(/*spotLearned*/ ctx[16]);
-	const get_key = ctx => /*m*/ ctx[431].sport;
+	const get_key = ctx => /*m*/ ctx[433].sport;
 
 	for (let i = 0; i < each_value_6.length; i += 1) {
 		let child_ctx = get_each_context_6(ctx, each_value_6, i);
@@ -23188,7 +23147,7 @@ function create_if_block_41(ctx) {
 	let dispose;
 
 	function click_handler_43() {
-		return /*click_handler_43*/ ctx[251](/*m*/ ctx[431]);
+		return /*click_handler_43*/ ctx[251](/*m*/ ctx[433]);
 	}
 
 	return {
@@ -23266,8 +23225,8 @@ function create_if_block_38(ctx) {
 	let t3;
 	let each_blocks = [];
 	let each_1_lookup = new Map_1();
-	let each_value_11 = ensure_array_like(/*spotParts*/ ctx[66](/*m*/ ctx[431]));
-	const get_key = ctx => /*row*/ ctx[445].r.key;
+	let each_value_11 = ensure_array_like(/*spotParts*/ ctx[66](/*m*/ ctx[433]));
+	const get_key = ctx => /*row*/ ctx[447].r.key;
 
 	for (let i = 0; i < each_value_11.length; i += 1) {
 		let child_ctx = get_each_context_11(ctx, each_value_11, i);
@@ -23325,7 +23284,7 @@ function create_if_block_38(ctx) {
 			if (dirty[0] & /*W*/ 32768 && t2_value !== (t2_value = /*W*/ ctx[15].colNow + "")) set_data(t2, t2_value);
 
 			if (dirty[0] & /*spotLearned, W, rangeText*/ 8486912 | dirty[2] & /*spotParts, nowText, paramName*/ 208) {
-				each_value_11 = ensure_array_like(/*spotParts*/ ctx[66](/*m*/ ctx[431]));
+				each_value_11 = ensure_array_like(/*spotParts*/ ctx[66](/*m*/ ctx[433]));
 				each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value_11, each_1_lookup, div, destroy_block, create_each_block_11, null, get_each_context_11);
 			}
 		},
@@ -23362,8 +23321,8 @@ function create_if_block_34(ctx) {
 	let t6;
 	let mounted;
 	let dispose;
-	let each_value_9 = ensure_array_like(allFeatures(/*m*/ ctx[431].sport));
-	const get_key = ctx => /*key*/ ctx[439];
+	let each_value_9 = ensure_array_like(allFeatures(/*m*/ ctx[433].sport));
+	const get_key = ctx => /*key*/ ctx[441];
 
 	for (let i = 0; i < each_value_9.length; i += 1) {
 		let child_ctx = get_each_context_9(ctx, each_value_9, i);
@@ -23371,7 +23330,7 @@ function create_if_block_34(ctx) {
 		each_1_lookup.set(key, each_blocks[i] = create_each_block_9(key, child_ctx));
 	}
 
-	let if_block = /*spot*/ ctx[3].ranges?.[/*m*/ ctx[431].sport] && create_if_block_35(ctx);
+	let if_block = /*spot*/ ctx[3].ranges?.[/*m*/ ctx[433].sport] && create_if_block_35(ctx);
 
 	return {
 		c() {
@@ -23437,7 +23396,7 @@ function create_if_block_34(ctx) {
 		},
 		p(ctx, dirty) {
 			if (dirty[0] & /*spotLearned, S, W*/ 229376 | dirty[1] & /*editRows*/ 131072 | dirty[2] & /*paramName*/ 128 | dirty[5] & /*toggleEditDir*/ 131072) {
-				each_value_9 = ensure_array_like(allFeatures(/*m*/ ctx[431].sport));
+				each_value_9 = ensure_array_like(allFeatures(/*m*/ ctx[433].sport));
 				each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value_9, each_1_lookup, div0, destroy_block, create_each_block_9, null, get_each_context_9);
 			}
 
@@ -23445,7 +23404,7 @@ function create_if_block_34(ctx) {
 			if (dirty[0] & /*W*/ 32768 && t3_value !== (t3_value = /*W*/ ctx[15].save + "")) set_data(t3, t3_value);
 			if (dirty[0] & /*W*/ 32768 && t5_value !== (t5_value = /*W*/ ctx[15].cancel + "")) set_data(t5, t5_value);
 
-			if (/*spot*/ ctx[3].ranges?.[/*m*/ ctx[431].sport]) {
+			if (/*spot*/ ctx[3].ranges?.[/*m*/ ctx[433].sport]) {
 				if (if_block) {
 					if_block.p(ctx, dirty);
 				} else {
@@ -23532,7 +23491,7 @@ function create_else_block_12(ctx) {
 // (440:36) {#if row.value !== null && row.fit !== null}
 function create_if_block_39(ctx) {
 	let span;
-	let t_value = /*nowText*/ ctx[68](/*row*/ ctx[445].r.key, /*row*/ ctx[445].value) + "";
+	let t_value = /*nowText*/ ctx[68](/*row*/ ctx[447].r.key, /*row*/ ctx[447].value) + "";
 	let t;
 
 	return {
@@ -23541,22 +23500,22 @@ function create_if_block_39(ctx) {
 			t = text$1(t_value);
 			attr(span, "data-spotlog", "");
 			attr(span, "class", "w-now");
-			toggle_class(span, "ok", /*row*/ ctx[445].fit >= 0.99);
-			toggle_class(span, "near", /*row*/ ctx[445].fit > 0 && /*row*/ ctx[445].fit < 0.99);
+			toggle_class(span, "ok", /*row*/ ctx[447].fit >= 0.99);
+			toggle_class(span, "near", /*row*/ ctx[447].fit > 0 && /*row*/ ctx[447].fit < 0.99);
 		},
 		m(target, anchor) {
 			insert(target, span, anchor);
 			append(span, t);
 		},
 		p(ctx, dirty) {
-			if (dirty[0] & /*spotLearned*/ 65536 | dirty[2] & /*nowText, spotParts*/ 80 && t_value !== (t_value = /*nowText*/ ctx[68](/*row*/ ctx[445].r.key, /*row*/ ctx[445].value) + "")) set_data(t, t_value);
+			if (dirty[0] & /*spotLearned*/ 65536 | dirty[2] & /*nowText, spotParts*/ 80 && t_value !== (t_value = /*nowText*/ ctx[68](/*row*/ ctx[447].r.key, /*row*/ ctx[447].value) + "")) set_data(t, t_value);
 
 			if (dirty[0] & /*spotLearned*/ 65536 | dirty[2] & /*spotParts*/ 16) {
-				toggle_class(span, "ok", /*row*/ ctx[445].fit >= 0.99);
+				toggle_class(span, "ok", /*row*/ ctx[447].fit >= 0.99);
 			}
 
 			if (dirty[0] & /*spotLearned*/ 65536 | dirty[2] & /*spotParts*/ 16) {
-				toggle_class(span, "near", /*row*/ ctx[445].fit > 0 && /*row*/ ctx[445].fit < 0.99);
+				toggle_class(span, "near", /*row*/ ctx[447].fit > 0 && /*row*/ ctx[447].fit < 0.99);
 			}
 		},
 		d(detaching) {
@@ -23570,23 +23529,23 @@ function create_if_block_39(ctx) {
 // (436:32) {#each spotParts(m) as row (row.r.key)}
 function create_each_block_11(key_2, ctx) {
 	let span0;
-	let t0_value = /*paramName*/ ctx[69](/*row*/ ctx[445].r.key) + "";
+	let t0_value = /*paramName*/ ctx[69](/*row*/ ctx[447].r.key) + "";
 	let t0;
 	let t1;
 	let b;
-	let t2_value = /*rangeText*/ ctx[23](/*row*/ ctx[445].r) + "";
+	let t2_value = /*rangeText*/ ctx[23](/*row*/ ctx[447].r) + "";
 	let t2;
 	let t3;
 	let span1;
-	let t4_value = /*W*/ ctx[15]['matter' + mattersLevel(/*row*/ ctx[445].r.matters)] + "";
+	let t4_value = /*W*/ ctx[15]['matter' + mattersLevel(/*row*/ ctx[447].r.matters)] + "";
 	let t4;
 	let span1_class_value;
 	let t5;
 	let if_block1_anchor;
-	let if_block0 = /*row*/ ctx[445].r.from === 'you' && create_if_block_40(ctx);
+	let if_block0 = /*row*/ ctx[447].r.from === 'you' && create_if_block_40(ctx);
 
 	function select_block_type_21(ctx, dirty) {
-		if (/*row*/ ctx[445].value !== null && /*row*/ ctx[445].fit !== null) return create_if_block_39;
+		if (/*row*/ ctx[447].value !== null && /*row*/ ctx[447].fit !== null) return create_if_block_39;
 		return create_else_block_12;
 	}
 
@@ -23614,7 +23573,7 @@ function create_each_block_11(key_2, ctx) {
 			attr(b, "data-spotlog", "");
 			attr(b, "class", "w-range");
 			attr(span1, "data-spotlog", "");
-			attr(span1, "class", span1_class_value = "w-imp imp" + mattersLevel(/*row*/ ctx[445].r.matters));
+			attr(span1, "class", span1_class_value = "w-imp imp" + mattersLevel(/*row*/ ctx[447].r.matters));
 			this.first = span0;
 		},
 		m(target, anchor) {
@@ -23633,9 +23592,9 @@ function create_each_block_11(key_2, ctx) {
 		},
 		p(new_ctx, dirty) {
 			ctx = new_ctx;
-			if (dirty[0] & /*spotLearned*/ 65536 | dirty[2] & /*paramName, spotParts*/ 144 && t0_value !== (t0_value = /*paramName*/ ctx[69](/*row*/ ctx[445].r.key) + "")) set_data(t0, t0_value);
+			if (dirty[0] & /*spotLearned*/ 65536 | dirty[2] & /*paramName, spotParts*/ 144 && t0_value !== (t0_value = /*paramName*/ ctx[69](/*row*/ ctx[447].r.key) + "")) set_data(t0, t0_value);
 
-			if (/*row*/ ctx[445].r.from === 'you') {
+			if (/*row*/ ctx[447].r.from === 'you') {
 				if (if_block0) {
 					if_block0.p(ctx, dirty);
 				} else {
@@ -23648,10 +23607,10 @@ function create_each_block_11(key_2, ctx) {
 				if_block0 = null;
 			}
 
-			if (dirty[0] & /*rangeText, spotLearned*/ 8454144 | dirty[2] & /*spotParts*/ 16 && t2_value !== (t2_value = /*rangeText*/ ctx[23](/*row*/ ctx[445].r) + "")) set_data(t2, t2_value);
-			if (dirty[0] & /*W, spotLearned*/ 98304 | dirty[2] & /*spotParts*/ 16 && t4_value !== (t4_value = /*W*/ ctx[15]['matter' + mattersLevel(/*row*/ ctx[445].r.matters)] + "")) set_data(t4, t4_value);
+			if (dirty[0] & /*rangeText, spotLearned*/ 8454144 | dirty[2] & /*spotParts*/ 16 && t2_value !== (t2_value = /*rangeText*/ ctx[23](/*row*/ ctx[447].r) + "")) set_data(t2, t2_value);
+			if (dirty[0] & /*W, spotLearned*/ 98304 | dirty[2] & /*spotParts*/ 16 && t4_value !== (t4_value = /*W*/ ctx[15]['matter' + mattersLevel(/*row*/ ctx[447].r.matters)] + "")) set_data(t4, t4_value);
 
-			if (dirty[0] & /*spotLearned*/ 65536 | dirty[2] & /*spotParts*/ 16 && span1_class_value !== (span1_class_value = "w-imp imp" + mattersLevel(/*row*/ ctx[445].r.matters))) {
+			if (dirty[0] & /*spotLearned*/ 65536 | dirty[2] & /*spotParts*/ 16 && span1_class_value !== (span1_class_value = "w-imp imp" + mattersLevel(/*row*/ ctx[447].r.matters))) {
 				attr(span1, "class", span1_class_value);
 			}
 
@@ -23697,17 +23656,17 @@ function create_if_block_37(ctx) {
 	let t3;
 	let small;
 
-	let t4_value = (/*key*/ ctx[439] === 'wind' || /*key*/ ctx[439] === 'gust'
+	let t4_value = (/*key*/ ctx[441] === 'wind' || /*key*/ ctx[441] === 'gust'
 	? windLabel(/*S*/ ctx[17].wind)
-	: /*key*/ ctx[439] === 'waves' || /*key*/ ctx[439] === 'swell'
+	: /*key*/ ctx[441] === 'waves' || /*key*/ ctx[441] === 'swell'
 		? /*S*/ ctx[17].height
-		: /*key*/ ctx[439] === 'period'
+		: /*key*/ ctx[441] === 'period'
 			? 's'
-			: /*key*/ ctx[439] === 'temp'
+			: /*key*/ ctx[441] === 'temp'
 				? '°' + /*S*/ ctx[17].temp
-				: /*key*/ ctx[439] === 'rain'
+				: /*key*/ ctx[441] === 'rain'
 					? 'mm'
-					: /*key*/ ctx[439] === 'power' ? 'kW/m' : '') + "";
+					: /*key*/ ctx[441] === 'power' ? 'kW/m' : '') + "";
 
 	let t4;
 	let t5;
@@ -23715,11 +23674,11 @@ function create_if_block_37(ctx) {
 	let dispose;
 
 	function input0_input_handler() {
-		/*input0_input_handler*/ ctx[253].call(input0, /*key*/ ctx[439]);
+		/*input0_input_handler*/ ctx[253].call(input0, /*key*/ ctx[441]);
 	}
 
 	function input1_input_handler() {
-		/*input1_input_handler*/ ctx[254].call(input1, /*key*/ ctx[439]);
+		/*input1_input_handler*/ ctx[254].call(input1, /*key*/ ctx[441]);
 	}
 
 	return {
@@ -23738,12 +23697,12 @@ function create_if_block_37(ctx) {
 			attr(input0, "data-spotlog", "");
 			attr(input0, "inputmode", "decimal");
 			attr(input0, "placeholder", "–");
-			attr(input0, "aria-label", input0_aria_label_value = /*paramName*/ ctx[69](/*key*/ ctx[439]) + ' ' + /*W*/ ctx[15].formMin);
+			attr(input0, "aria-label", input0_aria_label_value = /*paramName*/ ctx[69](/*key*/ ctx[441]) + ' ' + /*W*/ ctx[15].formMin);
 			attr(span, "data-spotlog", "");
 			attr(input1, "data-spotlog", "");
 			attr(input1, "inputmode", "decimal");
 			attr(input1, "placeholder", "–");
-			attr(input1, "aria-label", input1_aria_label_value = /*paramName*/ ctx[69](/*key*/ ctx[439]) + ' ' + /*W*/ ctx[15].formMax);
+			attr(input1, "aria-label", input1_aria_label_value = /*paramName*/ ctx[69](/*key*/ ctx[441]) + ' ' + /*W*/ ctx[15].formMax);
 			attr(small, "data-spotlog", "");
 			attr(div, "data-spotlog", "");
 			attr(div, "class", "w-inputs");
@@ -23751,12 +23710,12 @@ function create_if_block_37(ctx) {
 		m(target, anchor) {
 			insert(target, div, anchor);
 			append(div, input0);
-			set_input_value(input0, /*editRows*/ ctx[48][/*key*/ ctx[439]].lo);
+			set_input_value(input0, /*editRows*/ ctx[48][/*key*/ ctx[441]].lo);
 			append(div, t0);
 			append(div, span);
 			append(div, t2);
 			append(div, input1);
-			set_input_value(input1, /*editRows*/ ctx[48][/*key*/ ctx[439]].hi);
+			set_input_value(input1, /*editRows*/ ctx[48][/*key*/ ctx[441]].hi);
 			append(div, t3);
 			append(div, small);
 			append(small, t4);
@@ -23774,33 +23733,33 @@ function create_if_block_37(ctx) {
 		p(new_ctx, dirty) {
 			ctx = new_ctx;
 
-			if (dirty[0] & /*spotLearned, W*/ 98304 | dirty[2] & /*paramName*/ 128 && input0_aria_label_value !== (input0_aria_label_value = /*paramName*/ ctx[69](/*key*/ ctx[439]) + ' ' + /*W*/ ctx[15].formMin)) {
+			if (dirty[0] & /*spotLearned, W*/ 98304 | dirty[2] & /*paramName*/ 128 && input0_aria_label_value !== (input0_aria_label_value = /*paramName*/ ctx[69](/*key*/ ctx[441]) + ' ' + /*W*/ ctx[15].formMin)) {
 				attr(input0, "aria-label", input0_aria_label_value);
 			}
 
-			if (dirty[0] & /*spotLearned*/ 65536 | dirty[1] & /*editRows*/ 131072 && input0.value !== /*editRows*/ ctx[48][/*key*/ ctx[439]].lo) {
-				set_input_value(input0, /*editRows*/ ctx[48][/*key*/ ctx[439]].lo);
+			if (dirty[0] & /*spotLearned*/ 65536 | dirty[1] & /*editRows*/ 131072 && input0.value !== /*editRows*/ ctx[48][/*key*/ ctx[441]].lo) {
+				set_input_value(input0, /*editRows*/ ctx[48][/*key*/ ctx[441]].lo);
 			}
 
-			if (dirty[0] & /*spotLearned, W*/ 98304 | dirty[2] & /*paramName*/ 128 && input1_aria_label_value !== (input1_aria_label_value = /*paramName*/ ctx[69](/*key*/ ctx[439]) + ' ' + /*W*/ ctx[15].formMax)) {
+			if (dirty[0] & /*spotLearned, W*/ 98304 | dirty[2] & /*paramName*/ 128 && input1_aria_label_value !== (input1_aria_label_value = /*paramName*/ ctx[69](/*key*/ ctx[441]) + ' ' + /*W*/ ctx[15].formMax)) {
 				attr(input1, "aria-label", input1_aria_label_value);
 			}
 
-			if (dirty[0] & /*spotLearned*/ 65536 | dirty[1] & /*editRows*/ 131072 && input1.value !== /*editRows*/ ctx[48][/*key*/ ctx[439]].hi) {
-				set_input_value(input1, /*editRows*/ ctx[48][/*key*/ ctx[439]].hi);
+			if (dirty[0] & /*spotLearned*/ 65536 | dirty[1] & /*editRows*/ 131072 && input1.value !== /*editRows*/ ctx[48][/*key*/ ctx[441]].hi) {
+				set_input_value(input1, /*editRows*/ ctx[48][/*key*/ ctx[441]].hi);
 			}
 
-			if (dirty[0] & /*spotLearned, S*/ 196608 && t4_value !== (t4_value = (/*key*/ ctx[439] === 'wind' || /*key*/ ctx[439] === 'gust'
+			if (dirty[0] & /*spotLearned, S*/ 196608 && t4_value !== (t4_value = (/*key*/ ctx[441] === 'wind' || /*key*/ ctx[441] === 'gust'
 			? windLabel(/*S*/ ctx[17].wind)
-			: /*key*/ ctx[439] === 'waves' || /*key*/ ctx[439] === 'swell'
+			: /*key*/ ctx[441] === 'waves' || /*key*/ ctx[441] === 'swell'
 				? /*S*/ ctx[17].height
-				: /*key*/ ctx[439] === 'period'
+				: /*key*/ ctx[441] === 'period'
 					? 's'
-					: /*key*/ ctx[439] === 'temp'
+					: /*key*/ ctx[441] === 'temp'
 						? '°' + /*S*/ ctx[17].temp
-						: /*key*/ ctx[439] === 'rain'
+						: /*key*/ ctx[441] === 'rain'
 							? 'mm'
-							: /*key*/ ctx[439] === 'power' ? 'kW/m' : '') + "")) set_data(t4, t4_value);
+							: /*key*/ ctx[441] === 'power' ? 'kW/m' : '') + "")) set_data(t4, t4_value);
 		},
 		d(detaching) {
 			if (detaching) {
@@ -23890,17 +23849,17 @@ function create_each_block_10(ctx) {
 	let dispose;
 
 	function click_handler_44() {
-		return /*click_handler_44*/ ctx[252](/*key*/ ctx[439], /*d*/ ctx[442]);
+		return /*click_handler_44*/ ctx[252](/*key*/ ctx[441], /*d*/ ctx[444]);
 	}
 
 	return {
 		c() {
 			button = element("button");
-			t = text$1(/*d*/ ctx[442]);
+			t = text$1(/*d*/ ctx[444]);
 			attr(button, "data-spotlog", "");
 			attr(button, "class", "dchip");
-			attr(button, "aria-pressed", button_aria_pressed_value = /*editRows*/ ctx[48][/*key*/ ctx[439]]?.dirs.includes(/*d*/ ctx[442]));
-			toggle_class(button, "on", /*editRows*/ ctx[48][/*key*/ ctx[439]]?.dirs.includes(/*d*/ ctx[442]));
+			attr(button, "aria-pressed", button_aria_pressed_value = /*editRows*/ ctx[48][/*key*/ ctx[441]]?.dirs.includes(/*d*/ ctx[444]));
+			toggle_class(button, "on", /*editRows*/ ctx[48][/*key*/ ctx[441]]?.dirs.includes(/*d*/ ctx[444]));
 		},
 		m(target, anchor) {
 			insert(target, button, anchor);
@@ -23914,12 +23873,12 @@ function create_each_block_10(ctx) {
 		p(new_ctx, dirty) {
 			ctx = new_ctx;
 
-			if (dirty[0] & /*spotLearned*/ 65536 | dirty[1] & /*editRows*/ 131072 && button_aria_pressed_value !== (button_aria_pressed_value = /*editRows*/ ctx[48][/*key*/ ctx[439]]?.dirs.includes(/*d*/ ctx[442]))) {
+			if (dirty[0] & /*spotLearned*/ 65536 | dirty[1] & /*editRows*/ 131072 && button_aria_pressed_value !== (button_aria_pressed_value = /*editRows*/ ctx[48][/*key*/ ctx[441]]?.dirs.includes(/*d*/ ctx[444]))) {
 				attr(button, "aria-pressed", button_aria_pressed_value);
 			}
 
 			if (dirty[0] & /*spotLearned*/ 65536 | dirty[1] & /*editRows*/ 131072) {
-				toggle_class(button, "on", /*editRows*/ ctx[48][/*key*/ ctx[439]]?.dirs.includes(/*d*/ ctx[442]));
+				toggle_class(button, "on", /*editRows*/ ctx[48][/*key*/ ctx[441]]?.dirs.includes(/*d*/ ctx[444]));
 			}
 		},
 		d(detaching) {
@@ -23936,7 +23895,7 @@ function create_each_block_10(ctx) {
 // (411:32) {#each allFeatures(m.sport) as key (key)}
 function create_each_block_9(key_2, ctx) {
 	let span;
-	let t0_value = /*paramName*/ ctx[69](/*key*/ ctx[439]) + "";
+	let t0_value = /*paramName*/ ctx[69](/*key*/ ctx[441]) + "";
 	let t0;
 	let t1;
 	let show_if;
@@ -23944,9 +23903,9 @@ function create_each_block_9(key_2, ctx) {
 
 	function select_block_type_20(ctx, dirty) {
 		if (dirty[0] & /*spotLearned*/ 65536) show_if = null;
-		if (show_if == null) show_if = !!isCircular(/*key*/ ctx[439]);
+		if (show_if == null) show_if = !!isCircular(/*key*/ ctx[441]);
 		if (show_if) return create_if_block_36;
-		if (/*editRows*/ ctx[48][/*key*/ ctx[439]]) return create_if_block_37;
+		if (/*editRows*/ ctx[48][/*key*/ ctx[441]]) return create_if_block_37;
 	}
 
 	let current_block_type = select_block_type_20(ctx, [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
@@ -23974,7 +23933,7 @@ function create_each_block_9(key_2, ctx) {
 		},
 		p(new_ctx, dirty) {
 			ctx = new_ctx;
-			if (dirty[0] & /*spotLearned*/ 65536 | dirty[2] & /*paramName*/ 128 && t0_value !== (t0_value = /*paramName*/ ctx[69](/*key*/ ctx[439]) + "")) set_data(t0, t0_value);
+			if (dirty[0] & /*spotLearned*/ 65536 | dirty[2] & /*paramName*/ 128 && t0_value !== (t0_value = /*paramName*/ ctx[69](/*key*/ ctx[441]) + "")) set_data(t0, t0_value);
 
 			if (current_block_type === (current_block_type = select_block_type_20(ctx, dirty)) && if_block) {
 				if_block.p(ctx, dirty);
@@ -24011,7 +23970,7 @@ function create_if_block_35(ctx) {
 	let dispose;
 
 	function click_handler_46() {
-		return /*click_handler_46*/ ctx[256](/*m*/ ctx[431]);
+		return /*click_handler_46*/ ctx[256](/*m*/ ctx[433]);
 	}
 
 	return {
@@ -24050,27 +24009,27 @@ function create_each_block_8(key_2, ctx) {
 	let div1;
 	let div0;
 	let b;
-	let t0_value = /*sportLbl*/ ctx[24](/*m*/ ctx[431].sport) + "";
+	let t0_value = /*sportLbl*/ ctx[24](/*m*/ ctx[433].sport) + "";
 	let t0;
 	let t1;
 	let small;
 
-	let t2_value = (/*m*/ ctx[431].outings
+	let t2_value = (/*m*/ ctx[433].outings
 	? /*W*/ ctx[15].learnedFromShort
-	: /*m*/ ctx[431].rows.some(func_3)
+	: /*m*/ ctx[433].rows.some(func_3)
 		? /*W*/ ctx[15].fromWindowShort
-		: /*m*/ ctx[431].rows.some(func_4)
+		: /*m*/ ctx[433].rows.some(func_4)
 			? /*W*/ ctx[15].setByYou
 			: '') + "";
 
 	let t2;
 	let t3;
 	let t4;
-	let if_block0 = /*editSport*/ ctx[47] !== /*m*/ ctx[431].sport && create_if_block_41(ctx);
+	let if_block0 = /*editSport*/ ctx[47] !== /*m*/ ctx[433].sport && create_if_block_41(ctx);
 
 	function select_block_type_19(ctx, dirty) {
-		if (/*editSport*/ ctx[47] === /*m*/ ctx[431].sport) return create_if_block_34;
-		if (/*m*/ ctx[431].rows.length) return create_if_block_38;
+		if (/*editSport*/ ctx[47] === /*m*/ ctx[433].sport) return create_if_block_34;
+		if (/*m*/ ctx[433].rows.length) return create_if_block_38;
 		return create_else_block_13;
 	}
 
@@ -24116,17 +24075,17 @@ function create_each_block_8(key_2, ctx) {
 		},
 		p(new_ctx, dirty) {
 			ctx = new_ctx;
-			if (dirty[0] & /*sportLbl, spotLearned*/ 16842752 && t0_value !== (t0_value = /*sportLbl*/ ctx[24](/*m*/ ctx[431].sport) + "")) set_data(t0, t0_value);
+			if (dirty[0] & /*sportLbl, spotLearned*/ 16842752 && t0_value !== (t0_value = /*sportLbl*/ ctx[24](/*m*/ ctx[433].sport) + "")) set_data(t0, t0_value);
 
-			if (dirty[0] & /*spotLearned, W*/ 98304 && t2_value !== (t2_value = (/*m*/ ctx[431].outings
+			if (dirty[0] & /*spotLearned, W*/ 98304 && t2_value !== (t2_value = (/*m*/ ctx[433].outings
 			? /*W*/ ctx[15].learnedFromShort
-			: /*m*/ ctx[431].rows.some(func_3)
+			: /*m*/ ctx[433].rows.some(func_3)
 				? /*W*/ ctx[15].fromWindowShort
-				: /*m*/ ctx[431].rows.some(func_4)
+				: /*m*/ ctx[433].rows.some(func_4)
 					? /*W*/ ctx[15].setByYou
 					: '') + "")) set_data(t2, t2_value);
 
-			if (/*editSport*/ ctx[47] !== /*m*/ ctx[431].sport) {
+			if (/*editSport*/ ctx[47] !== /*m*/ ctx[433].sport) {
 				if (if_block0) {
 					if_block0.p(ctx, dirty);
 				} else {
@@ -24168,14 +24127,14 @@ function create_each_block_7(key_2, ctx) {
 
 	let t_value = fill(/*W*/ ctx[15].gearHint, {
 		gear: /*data*/ ctx[1].gear.find(func_5)?.name || /*W*/ ctx[15].gear,
-		range: `${fmtWind0(/*gh*/ ctx[434].lo, /*S*/ ctx[17].wind)}–${fmtWind0(/*gh*/ ctx[434].hi, /*S*/ ctx[17].wind)} ${windLabel(/*S*/ ctx[17].wind)}`,
-		n: /*gh*/ ctx[434].sessions
+		range: `${fmtWind0(/*gh*/ ctx[436].lo, /*S*/ ctx[17].wind)}–${fmtWind0(/*gh*/ ctx[436].hi, /*S*/ ctx[17].wind)} ${windLabel(/*S*/ ctx[17].wind)}`,
+		n: /*gh*/ ctx[436].sessions
 	}) + "";
 
 	let t;
 
 	function func_5(...args) {
-		return /*func_5*/ ctx[257](/*gh*/ ctx[434], ...args);
+		return /*func_5*/ ctx[257](/*gh*/ ctx[436], ...args);
 	}
 
 	return {
@@ -24197,8 +24156,8 @@ function create_each_block_7(key_2, ctx) {
 
 			if (dirty[0] & /*W, data, S*/ 163842 | dirty[2] & /*spotGear*/ 67108864 && t_value !== (t_value = fill(/*W*/ ctx[15].gearHint, {
 				gear: /*data*/ ctx[1].gear.find(func_5)?.name || /*W*/ ctx[15].gear,
-				range: `${fmtWind0(/*gh*/ ctx[434].lo, /*S*/ ctx[17].wind)}–${fmtWind0(/*gh*/ ctx[434].hi, /*S*/ ctx[17].wind)} ${windLabel(/*S*/ ctx[17].wind)}`,
-				n: /*gh*/ ctx[434].sessions
+				range: `${fmtWind0(/*gh*/ ctx[436].lo, /*S*/ ctx[17].wind)}–${fmtWind0(/*gh*/ ctx[436].hi, /*S*/ ctx[17].wind)} ${windLabel(/*S*/ ctx[17].wind)}`,
+				n: /*gh*/ ctx[436].sessions
 			}) + "")) set_data(t, t_value);
 		},
 		d(detaching) {
@@ -24213,10 +24172,10 @@ function create_each_block_7(key_2, ctx) {
 function create_each_block_6(key_2, ctx) {
 	let span1;
 	let b;
-	let t0_value = /*sportLbl*/ ctx[24](/*m*/ ctx[431].sport) + "";
+	let t0_value = /*sportLbl*/ ctx[24](/*m*/ ctx[433].sport) + "";
 	let t0;
 	let span0;
-	let t1_value = (/*worksLine*/ ctx[67](/*m*/ ctx[431]) || /*W*/ ctx[15].worksUnknown) + "";
+	let t1_value = (/*worksLine*/ ctx[67](/*m*/ ctx[433]) || /*W*/ ctx[15].worksUnknown) + "";
 	let t1;
 
 	return {
@@ -24230,7 +24189,7 @@ function create_each_block_6(key_2, ctx) {
 			t1 = text$1(t1_value);
 			attr(b, "data-spotlog", "");
 			attr(span0, "data-spotlog", "");
-			toggle_class(span0, "muted", !/*worksLine*/ ctx[67](/*m*/ ctx[431]));
+			toggle_class(span0, "muted", !/*worksLine*/ ctx[67](/*m*/ ctx[433]));
 			attr(span1, "data-spotlog", "");
 			attr(span1, "class", "ws-line");
 			this.first = span1;
@@ -24244,11 +24203,11 @@ function create_each_block_6(key_2, ctx) {
 		},
 		p(new_ctx, dirty) {
 			ctx = new_ctx;
-			if (dirty[0] & /*sportLbl, spotLearned*/ 16842752 && t0_value !== (t0_value = /*sportLbl*/ ctx[24](/*m*/ ctx[431].sport) + "")) set_data(t0, t0_value);
-			if (dirty[0] & /*spotLearned, W*/ 98304 | dirty[2] & /*worksLine*/ 32 && t1_value !== (t1_value = (/*worksLine*/ ctx[67](/*m*/ ctx[431]) || /*W*/ ctx[15].worksUnknown) + "")) set_data(t1, t1_value);
+			if (dirty[0] & /*sportLbl, spotLearned*/ 16842752 && t0_value !== (t0_value = /*sportLbl*/ ctx[24](/*m*/ ctx[433].sport) + "")) set_data(t0, t0_value);
+			if (dirty[0] & /*spotLearned, W*/ 98304 | dirty[2] & /*worksLine*/ 32 && t1_value !== (t1_value = (/*worksLine*/ ctx[67](/*m*/ ctx[433]) || /*W*/ ctx[15].worksUnknown) + "")) set_data(t1, t1_value);
 
 			if (dirty[0] & /*spotLearned*/ 65536 | dirty[2] & /*worksLine*/ 32) {
-				toggle_class(span0, "muted", !/*worksLine*/ ctx[67](/*m*/ ctx[431]));
+				toggle_class(span0, "muted", !/*worksLine*/ ctx[67](/*m*/ ctx[433]));
 			}
 		},
 		d(detaching) {
@@ -24369,12 +24328,12 @@ function create_if_block_32(ctx) {
 function create_each_block_5(ctx) {
 	let div;
 	let span0;
-	let t0_value = modelLabel(/*sc*/ ctx[428].model) + "";
+	let t0_value = modelLabel(/*sc*/ ctx[430].model) + "";
 	let t0;
 	let span1;
 	let i_1;
 	let span2;
-	let t1_value = fill(/*W*/ ctx[15].trustMiss, { v: /*sc*/ ctx[428].miss.toFixed(1) }) + "";
+	let t1_value = fill(/*W*/ ctx[15].trustMiss, { v: /*sc*/ ctx[430].miss.toFixed(1) }) + "";
 	let t1;
 
 	return {
@@ -24388,10 +24347,10 @@ function create_each_block_5(ctx) {
 			t1 = text$1(t1_value);
 			attr(span0, "data-spotlog", "");
 			attr(span0, "class", "m");
-			toggle_class(span0, "best", /*i*/ ctx[430] === 0);
+			toggle_class(span0, "best", /*i*/ ctx[432] === 0);
 			attr(i_1, "data-spotlog", "");
-			set_style(i_1, "width", /*closeness*/ ctx[125](/*sc*/ ctx[428].miss, /*trust*/ ctx[87]) + "%");
-			toggle_class(i_1, "best", /*i*/ ctx[430] === 0);
+			set_style(i_1, "width", /*closeness*/ ctx[125](/*sc*/ ctx[430].miss, /*trust*/ ctx[87]) + "%");
+			toggle_class(i_1, "best", /*i*/ ctx[432] === 0);
 			attr(span1, "data-spotlog", "");
 			attr(span1, "class", "missbar");
 			attr(span2, "data-spotlog", "");
@@ -24408,13 +24367,13 @@ function create_each_block_5(ctx) {
 			append(span2, t1);
 		},
 		p(ctx, dirty) {
-			if (dirty[2] & /*trust*/ 33554432 && t0_value !== (t0_value = modelLabel(/*sc*/ ctx[428].model) + "")) set_data(t0, t0_value);
+			if (dirty[2] & /*trust*/ 33554432 && t0_value !== (t0_value = modelLabel(/*sc*/ ctx[430].model) + "")) set_data(t0, t0_value);
 
 			if (dirty[2] & /*trust*/ 33554432) {
-				set_style(i_1, "width", /*closeness*/ ctx[125](/*sc*/ ctx[428].miss, /*trust*/ ctx[87]) + "%");
+				set_style(i_1, "width", /*closeness*/ ctx[125](/*sc*/ ctx[430].miss, /*trust*/ ctx[87]) + "%");
 			}
 
-			if (dirty[0] & /*W*/ 32768 | dirty[2] & /*trust*/ 33554432 && t1_value !== (t1_value = fill(/*W*/ ctx[15].trustMiss, { v: /*sc*/ ctx[428].miss.toFixed(1) }) + "")) set_data(t1, t1_value);
+			if (dirty[0] & /*W*/ 32768 | dirty[2] & /*trust*/ 33554432 && t1_value !== (t1_value = fill(/*W*/ ctx[15].trustMiss, { v: /*sc*/ ctx[430].miss.toFixed(1) }) + "")) set_data(t1, t1_value);
 		},
 		d(detaching) {
 			if (detaching) {
@@ -24430,7 +24389,7 @@ function create_else_block_9(ctx) {
 	let each_blocks = [];
 	let each_1_lookup = new Map_1();
 	let each_value_4 = ensure_array_like(/*spotSnapshots*/ ctx[28].slice(0, 8));
-	const get_key = ctx => /*sn*/ ctx[425].id;
+	const get_key = ctx => /*sn*/ ctx[427].id;
 
 	for (let i = 0; i < each_value_4.length; i += 1) {
 		let child_ctx = get_each_context_4(ctx, each_value_4, i);
@@ -24505,19 +24464,19 @@ function create_if_block_31(ctx) {
 function create_each_block_4(key_2, ctx) {
 	let div;
 	let span0;
-	let t0_value = fmtWind0(primaryOf(/*sn*/ ctx[425])?.wind ?? null, /*S*/ ctx[17].wind) + "";
+	let t0_value = fmtWind0(primaryOf(/*sn*/ ctx[427])?.wind ?? null, /*S*/ ctx[17].wind) + "";
 	let t0;
 	let t1;
 	let button0;
 	let span1;
-	let t2_value = fmtDayTime(/*sn*/ ctx[425].ts) + "";
+	let t2_value = fmtDayTime(/*sn*/ ctx[427].ts) + "";
 	let t2;
 	let small;
-	let t3_value = fill(/*W*/ ctx[15].modelsN, { n: /*sn*/ ctx[425].models.length }) + "";
+	let t3_value = fill(/*W*/ ctx[15].modelsN, { n: /*sn*/ ctx[427].models.length }) + "";
 	let t3;
 
-	let t4_value = (/*sn*/ ctx[425].note
-	? ' · ' + /*sn*/ ctx[425].note.slice(0, 24)
+	let t4_value = (/*sn*/ ctx[427].note
+	? ' · ' + /*sn*/ ctx[427].note.slice(0, 24)
 	: '') + "";
 
 	let t4;
@@ -24534,15 +24493,15 @@ function create_each_block_4(key_2, ctx) {
 	let dispose;
 
 	function click_handler_47() {
-		return /*click_handler_47*/ ctx[258](/*sn*/ ctx[425]);
+		return /*click_handler_47*/ ctx[258](/*sn*/ ctx[427]);
 	}
 
 	function click_handler_48() {
-		return /*click_handler_48*/ ctx[259](/*sn*/ ctx[425]);
+		return /*click_handler_48*/ ctx[259](/*sn*/ ctx[427]);
 	}
 
 	function click_handler_49() {
-		return /*click_handler_49*/ ctx[260](/*sn*/ ctx[425]);
+		return /*click_handler_49*/ ctx[260](/*sn*/ ctx[427]);
 	}
 
 	return {
@@ -24568,7 +24527,7 @@ function create_each_block_4(key_2, ctx) {
 			t9 = space();
 			attr(span0, "data-spotlog", "");
 			attr(span0, "class", "sw");
-			set_style(span0, "background", windColor(primaryOf(/*sn*/ ctx[425])?.wind ?? null));
+			set_style(span0, "background", windColor(primaryOf(/*sn*/ ctx[427])?.wind ?? null));
 			attr(span1, "data-spotlog", "");
 			attr(small, "data-spotlog", "");
 			attr(button0, "data-spotlog", "");
@@ -24612,17 +24571,17 @@ function create_each_block_4(key_2, ctx) {
 		},
 		p(new_ctx, dirty) {
 			ctx = new_ctx;
-			if (dirty[0] & /*spotSnapshots, S*/ 268566528 && t0_value !== (t0_value = fmtWind0(primaryOf(/*sn*/ ctx[425])?.wind ?? null, /*S*/ ctx[17].wind) + "")) set_data(t0, t0_value);
+			if (dirty[0] & /*spotSnapshots, S*/ 268566528 && t0_value !== (t0_value = fmtWind0(primaryOf(/*sn*/ ctx[427])?.wind ?? null, /*S*/ ctx[17].wind) + "")) set_data(t0, t0_value);
 
 			if (dirty[0] & /*spotSnapshots*/ 268435456) {
-				set_style(span0, "background", windColor(primaryOf(/*sn*/ ctx[425])?.wind ?? null));
+				set_style(span0, "background", windColor(primaryOf(/*sn*/ ctx[427])?.wind ?? null));
 			}
 
-			if (dirty[0] & /*spotSnapshots*/ 268435456 && t2_value !== (t2_value = fmtDayTime(/*sn*/ ctx[425].ts) + "")) set_data(t2, t2_value);
-			if (dirty[0] & /*W, spotSnapshots*/ 268468224 && t3_value !== (t3_value = fill(/*W*/ ctx[15].modelsN, { n: /*sn*/ ctx[425].models.length }) + "")) set_data(t3, t3_value);
+			if (dirty[0] & /*spotSnapshots*/ 268435456 && t2_value !== (t2_value = fmtDayTime(/*sn*/ ctx[427].ts) + "")) set_data(t2, t2_value);
+			if (dirty[0] & /*W, spotSnapshots*/ 268468224 && t3_value !== (t3_value = fill(/*W*/ ctx[15].modelsN, { n: /*sn*/ ctx[427].models.length }) + "")) set_data(t3, t3_value);
 
-			if (dirty[0] & /*spotSnapshots*/ 268435456 && t4_value !== (t4_value = (/*sn*/ ctx[425].note
-			? ' · ' + /*sn*/ ctx[425].note.slice(0, 24)
+			if (dirty[0] & /*spotSnapshots*/ 268435456 && t4_value !== (t4_value = (/*sn*/ ctx[427].note
+			? ' · ' + /*sn*/ ctx[427].note.slice(0, 24)
 			: '') + "")) set_data(t4, t4_value);
 
 			if (dirty[0] & /*W*/ 32768 && t6_value !== (t6_value = /*W*/ ctx[15].edit + "")) set_data(t6, t6_value);
@@ -24650,7 +24609,7 @@ function create_else_block_8(ctx) {
 	let t1;
 	let current;
 	let each_value_3 = ensure_array_like(/*spotSessions*/ ctx[21]);
-	const get_key = ctx => /*se*/ ctx[418].id;
+	const get_key = ctx => /*se*/ ctx[420].id;
 
 	for (let i = 0; i < each_value_3.length; i += 1) {
 		let child_ctx = get_each_context_3(ctx, each_value_3, i);
@@ -24761,22 +24720,22 @@ function create_if_block_30(ctx) {
 // (500:20) <SwipeRow on:open={ () => openSession(se) } on:delete={ () => deleteSession(se) }>
 function create_default_slot_1(ctx) {
 	let span0;
-	let t0_value = /*se*/ ctx[418].rating + "";
+	let t0_value = /*se*/ ctx[420].rating + "";
 	let t0;
 	let t1;
 	let span2;
 	let span1;
-	let t2_value = fmtDay(/*se*/ ctx[418].date) + "";
+	let t2_value = fmtDay(/*se*/ ctx[420].date) + "";
 	let t2;
-	let t3_value = (/*se*/ ctx[418].track ? ' · ' + /*W*/ ctx[15].gps : '') + "";
+	let t3_value = (/*se*/ ctx[420].track ? ' · ' + /*W*/ ctx[15].gps : '') + "";
 	let t3;
 	let small;
 
-	let t4_value = (/*se*/ ctx[418].checked
+	let t4_value = (/*se*/ ctx[420].checked
 	? /*W*/ ctx[15].checkedLabel
-	: /*se*/ ctx[418].notes
-		? /*se*/ ctx[418].notes.slice(0, 40)
-		: /*RATE*/ ctx[97][/*se*/ ctx[418].rating - 1]) + "";
+	: /*se*/ ctx[420].notes
+		? /*se*/ ctx[420].notes.slice(0, 40)
+		: /*RATE*/ ctx[97][/*se*/ ctx[420].rating - 1]) + "";
 
 	let t4;
 	let t5;
@@ -24795,8 +24754,8 @@ function create_default_slot_1(ctx) {
 			t5 = space();
 			attr(span0, "data-spotlog", "");
 			attr(span0, "class", "dot");
-			set_style(span0, "background", ratingBg(/*se*/ ctx[418].rating));
-			set_style(span0, "color", ratingFg(/*se*/ ctx[418].rating));
+			set_style(span0, "background", ratingBg(/*se*/ ctx[420].rating));
+			set_style(span0, "color", ratingFg(/*se*/ ctx[420].rating));
 			attr(span1, "data-spotlog", "");
 			attr(small, "data-spotlog", "");
 			attr(span2, "data-spotlog", "");
@@ -24815,24 +24774,24 @@ function create_default_slot_1(ctx) {
 			insert(target, t5, anchor);
 		},
 		p(ctx, dirty) {
-			if (dirty[0] & /*spotSessions*/ 2097152 && t0_value !== (t0_value = /*se*/ ctx[418].rating + "")) set_data(t0, t0_value);
+			if (dirty[0] & /*spotSessions*/ 2097152 && t0_value !== (t0_value = /*se*/ ctx[420].rating + "")) set_data(t0, t0_value);
 
 			if (dirty[0] & /*spotSessions*/ 2097152) {
-				set_style(span0, "background", ratingBg(/*se*/ ctx[418].rating));
+				set_style(span0, "background", ratingBg(/*se*/ ctx[420].rating));
 			}
 
 			if (dirty[0] & /*spotSessions*/ 2097152) {
-				set_style(span0, "color", ratingFg(/*se*/ ctx[418].rating));
+				set_style(span0, "color", ratingFg(/*se*/ ctx[420].rating));
 			}
 
-			if (dirty[0] & /*spotSessions*/ 2097152 && t2_value !== (t2_value = fmtDay(/*se*/ ctx[418].date) + "")) set_data(t2, t2_value);
-			if (dirty[0] & /*spotSessions, W*/ 2129920 && t3_value !== (t3_value = (/*se*/ ctx[418].track ? ' · ' + /*W*/ ctx[15].gps : '') + "")) set_data(t3, t3_value);
+			if (dirty[0] & /*spotSessions*/ 2097152 && t2_value !== (t2_value = fmtDay(/*se*/ ctx[420].date) + "")) set_data(t2, t2_value);
+			if (dirty[0] & /*spotSessions, W*/ 2129920 && t3_value !== (t3_value = (/*se*/ ctx[420].track ? ' · ' + /*W*/ ctx[15].gps : '') + "")) set_data(t3, t3_value);
 
-			if (dirty[0] & /*spotSessions, W*/ 2129920 | dirty[3] & /*RATE*/ 16 && t4_value !== (t4_value = (/*se*/ ctx[418].checked
+			if (dirty[0] & /*spotSessions, W*/ 2129920 | dirty[3] & /*RATE*/ 16 && t4_value !== (t4_value = (/*se*/ ctx[420].checked
 			? /*W*/ ctx[15].checkedLabel
-			: /*se*/ ctx[418].notes
-				? /*se*/ ctx[418].notes.slice(0, 40)
-				: /*RATE*/ ctx[97][/*se*/ ctx[418].rating - 1]) + "")) set_data(t4, t4_value);
+			: /*se*/ ctx[420].notes
+				? /*se*/ ctx[420].notes.slice(0, 40)
+				: /*RATE*/ ctx[97][/*se*/ ctx[420].rating - 1]) + "")) set_data(t4, t4_value);
 		},
 		d(detaching) {
 			if (detaching) {
@@ -24852,11 +24811,11 @@ function create_each_block_3(key_2, ctx) {
 	let current;
 
 	function open_handler_2() {
-		return /*open_handler_2*/ ctx[261](/*se*/ ctx[418]);
+		return /*open_handler_2*/ ctx[261](/*se*/ ctx[420]);
 	}
 
 	function delete_handler_1() {
-		return /*delete_handler_1*/ ctx[262](/*se*/ ctx[418]);
+		return /*delete_handler_1*/ ctx[262](/*se*/ ctx[420]);
 	}
 
 	swiperow = new SwipeRow({
@@ -24886,7 +24845,7 @@ function create_each_block_3(key_2, ctx) {
 			ctx = new_ctx;
 			const swiperow_changes = {};
 
-			if (dirty[0] & /*spotSessions, W*/ 2129920 | dirty[3] & /*RATE*/ 16 | dirty[15] & /*$$scope*/ 256) {
+			if (dirty[0] & /*spotSessions, W*/ 2129920 | dirty[3] & /*RATE*/ 16 | dirty[15] & /*$$scope*/ 1024) {
 				swiperow_changes.$$scope = { dirty, ctx };
 			}
 
@@ -25210,7 +25169,7 @@ function create_if_block_22(ctx) {
 	let each_blocks = [];
 	let each_1_lookup = new Map_1();
 	let each_value_2 = ensure_array_like(/*spotsByCentre*/ ctx[76]);
-	const get_key = ctx => /*s*/ ctx[415].id;
+	const get_key = ctx => /*s*/ ctx[417].id;
 
 	for (let i = 0; i < each_value_2.length; i += 1) {
 		let child_ctx = get_each_context_2(ctx, each_value_2, i);
@@ -25277,10 +25236,10 @@ function create_each_block_2(key_2, ctx) {
 	let t0;
 	let span2;
 	let span1;
-	let t1_value = /*s*/ ctx[415].name + "";
+	let t1_value = /*s*/ ctx[417].name + "";
 	let t1;
 	let small;
-	let t2_value = (/*s*/ ctx[415].place || /*W*/ ctx[15].yourSpot) + "";
+	let t2_value = (/*s*/ ctx[417].place || /*W*/ ctx[15].yourSpot) + "";
 	let t2;
 	let t3;
 	let span3;
@@ -25289,7 +25248,7 @@ function create_each_block_2(key_2, ctx) {
 	let dispose;
 
 	function click_handler_30() {
-		return /*click_handler_30*/ ctx[234](/*s*/ ctx[415]);
+		return /*click_handler_30*/ ctx[234](/*s*/ ctx[417]);
 	}
 
 	return {
@@ -25342,8 +25301,8 @@ function create_each_block_2(key_2, ctx) {
 		},
 		p(new_ctx, dirty) {
 			ctx = new_ctx;
-			if (dirty[2] & /*spotsByCentre*/ 16384 && t1_value !== (t1_value = /*s*/ ctx[415].name + "")) set_data(t1, t1_value);
-			if (dirty[0] & /*W*/ 32768 | dirty[2] & /*spotsByCentre*/ 16384 && t2_value !== (t2_value = (/*s*/ ctx[415].place || /*W*/ ctx[15].yourSpot) + "")) set_data(t2, t2_value);
+			if (dirty[2] & /*spotsByCentre*/ 16384 && t1_value !== (t1_value = /*s*/ ctx[417].name + "")) set_data(t1, t1_value);
+			if (dirty[0] & /*W*/ 32768 | dirty[2] & /*spotsByCentre*/ 16384 && t2_value !== (t2_value = (/*s*/ ctx[417].place || /*W*/ ctx[15].yourSpot) + "")) set_data(t2, t2_value);
 		},
 		d(detaching) {
 			if (detaching) {
@@ -25925,7 +25884,7 @@ function create_if_block_18(ctx) {
 	let t1;
 	let current;
 	let each_value_1 = ensure_array_like(/*allSessions*/ ctx[94]);
-	const get_key = ctx => /*se*/ ctx[418].id;
+	const get_key = ctx => /*se*/ ctx[420].id;
 
 	for (let i = 0; i < each_value_1.length; i += 1) {
 		let child_ctx = get_each_context_1(ctx, each_value_1, i);
@@ -26006,25 +25965,25 @@ function create_if_block_18(ctx) {
 // (205:24) <SwipeRow on:open={ () => openSession(se) } on:delete={ () => deleteSession(se) }>
 function create_default_slot(ctx) {
 	let span0;
-	let t0_value = /*se*/ ctx[418].rating + "";
+	let t0_value = /*se*/ ctx[420].rating + "";
 	let t0;
 	let t1;
 	let span2;
 	let span1;
-	let t2_value = (/*spotById*/ ctx[117](/*se*/ ctx[418].spotId)?.name || /*W*/ ctx[15].noSpotYet) + "";
+	let t2_value = (/*spotById*/ ctx[117](/*se*/ ctx[420].spotId)?.name || /*W*/ ctx[15].noSpotYet) + "";
 	let t2;
-	let t3_value = (/*se*/ ctx[418].track ? ' · ' + /*W*/ ctx[15].gps : '') + "";
+	let t3_value = (/*se*/ ctx[420].track ? ' · ' + /*W*/ ctx[15].gps : '') + "";
 	let t3;
 	let small;
-	let t4_value = fmtDay(/*se*/ ctx[418].date) + "";
+	let t4_value = fmtDay(/*se*/ ctx[420].date) + "";
 	let t4;
 	let t5;
 
-	let t6_value = (/*se*/ ctx[418].checked
+	let t6_value = (/*se*/ ctx[420].checked
 	? /*W*/ ctx[15].checkedLabel
-	: /*se*/ ctx[418].notes
-		? /*se*/ ctx[418].notes.slice(0, 38)
-		: /*RATE*/ ctx[97][/*se*/ ctx[418].rating - 1]) + "";
+	: /*se*/ ctx[420].notes
+		? /*se*/ ctx[420].notes.slice(0, 38)
+		: /*RATE*/ ctx[97][/*se*/ ctx[420].rating - 1]) + "";
 
 	let t6;
 	let t7;
@@ -26045,8 +26004,8 @@ function create_default_slot(ctx) {
 			t7 = space();
 			attr(span0, "data-spotlog", "");
 			attr(span0, "class", "dot");
-			set_style(span0, "background", ratingBg(/*se*/ ctx[418].rating));
-			set_style(span0, "color", ratingFg(/*se*/ ctx[418].rating));
+			set_style(span0, "background", ratingBg(/*se*/ ctx[420].rating));
+			set_style(span0, "color", ratingFg(/*se*/ ctx[420].rating));
 			attr(span1, "data-spotlog", "");
 			attr(small, "data-spotlog", "");
 			attr(span2, "data-spotlog", "");
@@ -26067,25 +26026,25 @@ function create_default_slot(ctx) {
 			insert(target, t7, anchor);
 		},
 		p(ctx, dirty) {
-			if (dirty[3] & /*allSessions*/ 2 && t0_value !== (t0_value = /*se*/ ctx[418].rating + "")) set_data(t0, t0_value);
+			if (dirty[3] & /*allSessions*/ 2 && t0_value !== (t0_value = /*se*/ ctx[420].rating + "")) set_data(t0, t0_value);
 
 			if (dirty[3] & /*allSessions*/ 2) {
-				set_style(span0, "background", ratingBg(/*se*/ ctx[418].rating));
+				set_style(span0, "background", ratingBg(/*se*/ ctx[420].rating));
 			}
 
 			if (dirty[3] & /*allSessions*/ 2) {
-				set_style(span0, "color", ratingFg(/*se*/ ctx[418].rating));
+				set_style(span0, "color", ratingFg(/*se*/ ctx[420].rating));
 			}
 
-			if (dirty[0] & /*W*/ 32768 | dirty[3] & /*allSessions*/ 2 && t2_value !== (t2_value = (/*spotById*/ ctx[117](/*se*/ ctx[418].spotId)?.name || /*W*/ ctx[15].noSpotYet) + "")) set_data(t2, t2_value);
-			if (dirty[0] & /*W*/ 32768 | dirty[3] & /*allSessions*/ 2 && t3_value !== (t3_value = (/*se*/ ctx[418].track ? ' · ' + /*W*/ ctx[15].gps : '') + "")) set_data(t3, t3_value);
-			if (dirty[3] & /*allSessions*/ 2 && t4_value !== (t4_value = fmtDay(/*se*/ ctx[418].date) + "")) set_data(t4, t4_value);
+			if (dirty[0] & /*W*/ 32768 | dirty[3] & /*allSessions*/ 2 && t2_value !== (t2_value = (/*spotById*/ ctx[117](/*se*/ ctx[420].spotId)?.name || /*W*/ ctx[15].noSpotYet) + "")) set_data(t2, t2_value);
+			if (dirty[0] & /*W*/ 32768 | dirty[3] & /*allSessions*/ 2 && t3_value !== (t3_value = (/*se*/ ctx[420].track ? ' · ' + /*W*/ ctx[15].gps : '') + "")) set_data(t3, t3_value);
+			if (dirty[3] & /*allSessions*/ 2 && t4_value !== (t4_value = fmtDay(/*se*/ ctx[420].date) + "")) set_data(t4, t4_value);
 
-			if (dirty[0] & /*W*/ 32768 | dirty[3] & /*allSessions, RATE*/ 18 && t6_value !== (t6_value = (/*se*/ ctx[418].checked
+			if (dirty[0] & /*W*/ 32768 | dirty[3] & /*allSessions, RATE*/ 18 && t6_value !== (t6_value = (/*se*/ ctx[420].checked
 			? /*W*/ ctx[15].checkedLabel
-			: /*se*/ ctx[418].notes
-				? /*se*/ ctx[418].notes.slice(0, 38)
-				: /*RATE*/ ctx[97][/*se*/ ctx[418].rating - 1]) + "")) set_data(t6, t6_value);
+			: /*se*/ ctx[420].notes
+				? /*se*/ ctx[420].notes.slice(0, 38)
+				: /*RATE*/ ctx[97][/*se*/ ctx[420].rating - 1]) + "")) set_data(t6, t6_value);
 		},
 		d(detaching) {
 			if (detaching) {
@@ -26105,11 +26064,11 @@ function create_each_block_1(key_2, ctx) {
 	let current;
 
 	function open_handler() {
-		return /*open_handler*/ ctx[223](/*se*/ ctx[418]);
+		return /*open_handler*/ ctx[223](/*se*/ ctx[420]);
 	}
 
 	function delete_handler() {
-		return /*delete_handler*/ ctx[224](/*se*/ ctx[418]);
+		return /*delete_handler*/ ctx[224](/*se*/ ctx[420]);
 	}
 
 	swiperow = new SwipeRow({
@@ -26139,7 +26098,7 @@ function create_each_block_1(key_2, ctx) {
 			ctx = new_ctx;
 			const swiperow_changes = {};
 
-			if (dirty[0] & /*W*/ 32768 | dirty[3] & /*allSessions, RATE*/ 18 | dirty[15] & /*$$scope*/ 256) {
+			if (dirty[0] & /*W*/ 32768 | dirty[3] & /*allSessions, RATE*/ 18 | dirty[15] & /*$$scope*/ 1024) {
 				swiperow_changes.$$scope = { dirty, ctx };
 			}
 
@@ -26189,7 +26148,7 @@ function create_else_block_2(ctx) {
 	let mounted;
 	let dispose;
 	let each_value = ensure_array_like(/*data*/ ctx[1].spots);
-	const get_key = ctx => /*s*/ ctx[415].id;
+	const get_key = ctx => /*s*/ ctx[417].id;
 
 	for (let i = 0; i < each_value.length; i += 1) {
 		let child_ctx = get_each_context(ctx, each_value, i);
@@ -26390,7 +26349,7 @@ function create_else_block_4(ctx) {
 function create_if_block_13(ctx) {
 	let span2;
 	let span0;
-	let t0_value = fmtWind0(/*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12])?.wind?.wind ?? null, /*S*/ ctx[17].wind) + "";
+	let t0_value = fmtWind0(/*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12])?.wind?.wind ?? null, /*S*/ ctx[17].wind) + "";
 	let t0;
 	let t1;
 	let span1;
@@ -26398,17 +26357,17 @@ function create_if_block_13(ctx) {
 	let t2_value = windLabel(/*S*/ ctx[17].wind) + "";
 	let t2;
 	let t3;
-	let show_if_1 = /*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12])?.wind?.dir != null;
+	let show_if_1 = /*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12])?.wind?.dir != null;
 	let t4;
 	let span3;
 	let small;
 
 	let t5_value = fill(/*W*/ ctx[15].tileGusts, {
-		v: fmtWind0(/*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12])?.wind?.gust ?? null, /*S*/ ctx[17].wind)
+		v: fmtWind0(/*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12])?.wind?.gust ?? null, /*S*/ ctx[17].wind)
 	}) + "";
 
 	let t5;
-	let show_if = /*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12])?.waves;
+	let show_if = /*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12])?.waves;
 	let if_block0 = show_if_1 && create_if_block_15(ctx);
 	let if_block1 = show_if && create_if_block_14(ctx);
 
@@ -26430,7 +26389,7 @@ function create_if_block_13(ctx) {
 			if (if_block1) if_block1.c();
 			attr(span0, "data-spotlog", "");
 			attr(span0, "class", "sw");
-			set_style(span0, "background", windColor(/*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12])?.wind?.wind ?? null));
+			set_style(span0, "background", windColor(/*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12])?.wind?.wind ?? null));
 			attr(b, "data-spotlog", "");
 			attr(span1, "data-spotlog", "");
 			attr(span1, "class", "now-t");
@@ -26457,14 +26416,14 @@ function create_if_block_13(ctx) {
 			if (if_block1) if_block1.m(span3, null);
 		},
 		p(ctx, dirty) {
-			if (dirty[0] & /*data, nowBySpot, S*/ 135170 && t0_value !== (t0_value = fmtWind0(/*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12])?.wind?.wind ?? null, /*S*/ ctx[17].wind) + "")) set_data(t0, t0_value);
+			if (dirty[0] & /*data, nowBySpot, S*/ 135170 && t0_value !== (t0_value = fmtWind0(/*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12])?.wind?.wind ?? null, /*S*/ ctx[17].wind) + "")) set_data(t0, t0_value);
 
 			if (dirty[0] & /*data, nowBySpot*/ 4098) {
-				set_style(span0, "background", windColor(/*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12])?.wind?.wind ?? null));
+				set_style(span0, "background", windColor(/*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12])?.wind?.wind ?? null));
 			}
 
 			if (dirty[0] & /*S*/ 131072 && t2_value !== (t2_value = windLabel(/*S*/ ctx[17].wind) + "")) set_data(t2, t2_value);
-			if (dirty[0] & /*data, nowBySpot*/ 4098) show_if_1 = /*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12])?.wind?.dir != null;
+			if (dirty[0] & /*data, nowBySpot*/ 4098) show_if_1 = /*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12])?.wind?.dir != null;
 
 			if (show_if_1) {
 				if (if_block0) {
@@ -26480,10 +26439,10 @@ function create_if_block_13(ctx) {
 			}
 
 			if (dirty[0] & /*W, data, nowBySpot, S*/ 167938 && t5_value !== (t5_value = fill(/*W*/ ctx[15].tileGusts, {
-				v: fmtWind0(/*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12])?.wind?.gust ?? null, /*S*/ ctx[17].wind)
+				v: fmtWind0(/*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12])?.wind?.gust ?? null, /*S*/ ctx[17].wind)
 			}) + "")) set_data(t5, t5_value);
 
-			if (dirty[0] & /*data, nowBySpot*/ 4098) show_if = /*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12])?.waves;
+			if (dirty[0] & /*data, nowBySpot*/ 4098) show_if = /*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12])?.waves;
 
 			if (show_if) {
 				if (if_block1) {
@@ -26518,7 +26477,7 @@ function create_if_block_15(ctx) {
 	let path;
 	let t0;
 	let small;
-	let t1_value = dirName(/*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12])?.wind?.dir ?? null) + "";
+	let t1_value = dirName(/*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12])?.wind?.dir ?? null) + "";
 	let t1;
 	let span_title_value;
 
@@ -26538,13 +26497,13 @@ function create_if_block_15(ctx) {
 			attr(svg, "height", "18");
 			attr(svg, "viewBox", "0 0 18 18");
 			attr(svg, "aria-hidden", "true");
-			set_style(svg, "transform", "rotate(" + ((/*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12])?.wind?.dir ?? 0) + 180) + "deg)");
+			set_style(svg, "transform", "rotate(" + ((/*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12])?.wind?.dir ?? 0) + 180) + "deg)");
 			attr(small, "data-spotlog", "");
 			attr(span, "data-spotlog", "");
 			attr(span, "class", "wdir");
 
 			attr(span, "title", span_title_value = fill(/*W*/ ctx[15].windFrom, {
-				direction: dirName(/*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12])?.wind?.dir ?? null)
+				direction: dirName(/*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12])?.wind?.dir ?? null)
 			}));
 		},
 		m(target, anchor) {
@@ -26557,13 +26516,13 @@ function create_if_block_15(ctx) {
 		},
 		p(ctx, dirty) {
 			if (dirty[0] & /*data, nowBySpot*/ 4098) {
-				set_style(svg, "transform", "rotate(" + ((/*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12])?.wind?.dir ?? 0) + 180) + "deg)");
+				set_style(svg, "transform", "rotate(" + ((/*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12])?.wind?.dir ?? 0) + 180) + "deg)");
 			}
 
-			if (dirty[0] & /*data, nowBySpot*/ 4098 && t1_value !== (t1_value = dirName(/*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12])?.wind?.dir ?? null) + "")) set_data(t1, t1_value);
+			if (dirty[0] & /*data, nowBySpot*/ 4098 && t1_value !== (t1_value = dirName(/*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12])?.wind?.dir ?? null) + "")) set_data(t1, t1_value);
 
 			if (dirty[0] & /*W, data, nowBySpot*/ 36866 && span_title_value !== (span_title_value = fill(/*W*/ ctx[15].windFrom, {
-				direction: dirName(/*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12])?.wind?.dir ?? null)
+				direction: dirName(/*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12])?.wind?.dir ?? null)
 			}))) {
 				attr(span, "title", span_title_value);
 			}
@@ -26581,7 +26540,7 @@ function create_if_block_14(ctx) {
 	let small;
 
 	let t_value = fill(/*W*/ ctx[15].tileWaves, {
-		v: fmtHeight(/*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12])?.waves?.waves ?? null, /*S*/ ctx[17].height, true)
+		v: fmtHeight(/*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12])?.waves?.waves ?? null, /*S*/ ctx[17].height, true)
 	}) + "";
 
 	let t;
@@ -26598,7 +26557,7 @@ function create_if_block_14(ctx) {
 		},
 		p(ctx, dirty) {
 			if (dirty[0] & /*W, data, nowBySpot, S*/ 167938 && t_value !== (t_value = fill(/*W*/ ctx[15].tileWaves, {
-				v: fmtHeight(/*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12])?.waves?.waves ?? null, /*S*/ ctx[17].height, true)
+				v: fmtHeight(/*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12])?.waves?.waves ?? null, /*S*/ ctx[17].height, true)
 			}) + "")) set_data(t, t_value);
 		},
 		d(detaching) {
@@ -26622,7 +26581,7 @@ function create_else_block_3(ctx) {
 			t = text$1(t_value);
 			attr(span, "data-spotlog", "");
 			attr(span, "class", "tag ghost");
-			attr(span, "title", span_title_value = /*guessNote*/ ctx[70](/*guessOf*/ ctx[71](/*s*/ ctx[415])));
+			attr(span, "title", span_title_value = /*guessNote*/ ctx[70](/*guessOf*/ ctx[71](/*s*/ ctx[417])));
 		},
 		m(target, anchor) {
 			insert(target, span, anchor);
@@ -26631,7 +26590,7 @@ function create_else_block_3(ctx) {
 		p(ctx, dirty) {
 			if (dirty[0] & /*W*/ 32768 && t_value !== (t_value = /*W*/ ctx[15].guessUnsure + "")) set_data(t, t_value);
 
-			if (dirty[0] & /*data*/ 2 | dirty[2] & /*guessNote, guessOf*/ 768 && span_title_value !== (span_title_value = /*guessNote*/ ctx[70](/*guessOf*/ ctx[71](/*s*/ ctx[415])))) {
+			if (dirty[0] & /*data*/ 2 | dirty[2] & /*guessNote, guessOf*/ 768 && span_title_value !== (span_title_value = /*guessNote*/ ctx[70](/*guessOf*/ ctx[71](/*s*/ ctx[417])))) {
 				attr(span, "title", span_title_value);
 			}
 		},
@@ -26646,11 +26605,11 @@ function create_else_block_3(ctx) {
 // (172:28) {#if bestOf(s)}
 function create_if_block_11(ctx) {
 	let span;
-	let t0_value = /*guessLbl*/ ctx[64](/*bestOf*/ ctx[19](/*s*/ ctx[415])?.level ?? 0, /*bestOf*/ ctx[19](/*s*/ ctx[415])?.sport) + "";
+	let t0_value = /*guessLbl*/ ctx[64](/*bestOf*/ ctx[19](/*s*/ ctx[417])?.level ?? 0, /*bestOf*/ ctx[19](/*s*/ ctx[417])?.sport) + "";
 	let t0;
 	let span_title_value;
 	let t1;
-	let show_if = !/*bestOf*/ ctx[19](/*s*/ ctx[415])?.now;
+	let show_if = !/*bestOf*/ ctx[19](/*s*/ ctx[417])?.now;
 	let if_block_anchor;
 	let if_block = show_if && create_if_block_12(ctx);
 
@@ -26663,9 +26622,9 @@ function create_if_block_11(ctx) {
 			if_block_anchor = empty();
 			attr(span, "data-spotlog", "");
 			attr(span, "class", "tag");
-			set_style(span, "background", /*guessCol*/ ctx[105](/*bestOf*/ ctx[19](/*s*/ ctx[415])?.level ?? 0)[0]);
-			set_style(span, "color", /*guessCol*/ ctx[105](/*bestOf*/ ctx[19](/*s*/ ctx[415])?.level ?? 0)[1]);
-			attr(span, "title", span_title_value = /*guessNote*/ ctx[70](/*bestOf*/ ctx[19](/*s*/ ctx[415])));
+			set_style(span, "background", /*guessCol*/ ctx[105](/*bestOf*/ ctx[19](/*s*/ ctx[417])?.level ?? 0)[0]);
+			set_style(span, "color", /*guessCol*/ ctx[105](/*bestOf*/ ctx[19](/*s*/ ctx[417])?.level ?? 0)[1]);
+			attr(span, "title", span_title_value = /*guessNote*/ ctx[70](/*bestOf*/ ctx[19](/*s*/ ctx[417])));
 		},
 		m(target, anchor) {
 			insert(target, span, anchor);
@@ -26675,21 +26634,21 @@ function create_if_block_11(ctx) {
 			insert(target, if_block_anchor, anchor);
 		},
 		p(ctx, dirty) {
-			if (dirty[0] & /*bestOf, data*/ 524290 | dirty[2] & /*guessLbl*/ 4 && t0_value !== (t0_value = /*guessLbl*/ ctx[64](/*bestOf*/ ctx[19](/*s*/ ctx[415])?.level ?? 0, /*bestOf*/ ctx[19](/*s*/ ctx[415])?.sport) + "")) set_data(t0, t0_value);
+			if (dirty[0] & /*bestOf, data*/ 524290 | dirty[2] & /*guessLbl*/ 4 && t0_value !== (t0_value = /*guessLbl*/ ctx[64](/*bestOf*/ ctx[19](/*s*/ ctx[417])?.level ?? 0, /*bestOf*/ ctx[19](/*s*/ ctx[417])?.sport) + "")) set_data(t0, t0_value);
 
 			if (dirty[0] & /*bestOf, data*/ 524290) {
-				set_style(span, "background", /*guessCol*/ ctx[105](/*bestOf*/ ctx[19](/*s*/ ctx[415])?.level ?? 0)[0]);
+				set_style(span, "background", /*guessCol*/ ctx[105](/*bestOf*/ ctx[19](/*s*/ ctx[417])?.level ?? 0)[0]);
 			}
 
 			if (dirty[0] & /*bestOf, data*/ 524290) {
-				set_style(span, "color", /*guessCol*/ ctx[105](/*bestOf*/ ctx[19](/*s*/ ctx[415])?.level ?? 0)[1]);
+				set_style(span, "color", /*guessCol*/ ctx[105](/*bestOf*/ ctx[19](/*s*/ ctx[417])?.level ?? 0)[1]);
 			}
 
-			if (dirty[0] & /*bestOf, data*/ 524290 | dirty[2] & /*guessNote*/ 256 && span_title_value !== (span_title_value = /*guessNote*/ ctx[70](/*bestOf*/ ctx[19](/*s*/ ctx[415])))) {
+			if (dirty[0] & /*bestOf, data*/ 524290 | dirty[2] & /*guessNote*/ 256 && span_title_value !== (span_title_value = /*guessNote*/ ctx[70](/*bestOf*/ ctx[19](/*s*/ ctx[417])))) {
 				attr(span, "title", span_title_value);
 			}
 
-			if (dirty[0] & /*bestOf, data*/ 524290) show_if = !/*bestOf*/ ctx[19](/*s*/ ctx[415])?.now;
+			if (dirty[0] & /*bestOf, data*/ 524290) show_if = !/*bestOf*/ ctx[19](/*s*/ ctx[417])?.now;
 
 			if (show_if) {
 				if (if_block) {
@@ -26721,7 +26680,7 @@ function create_if_block_12(ctx) {
 	let small;
 
 	let t_value = fill(/*W*/ ctx[15].from, {
-		v: fmtTime(/*bestOf*/ ctx[19](/*s*/ ctx[415])?.start ?? 0)
+		v: fmtTime(/*bestOf*/ ctx[19](/*s*/ ctx[417])?.start ?? 0)
 	}) + "";
 
 	let t;
@@ -26739,7 +26698,7 @@ function create_if_block_12(ctx) {
 		},
 		p(ctx, dirty) {
 			if (dirty[0] & /*W, bestOf, data*/ 557058 && t_value !== (t_value = fill(/*W*/ ctx[15].from, {
-				v: fmtTime(/*bestOf*/ ctx[19](/*s*/ ctx[415])?.start ?? 0)
+				v: fmtTime(/*bestOf*/ ctx[19](/*s*/ ctx[417])?.start ?? 0)
 			}) + "")) set_data(t, t_value);
 		},
 		d(detaching) {
@@ -26754,7 +26713,7 @@ function create_if_block_12(ctx) {
 function create_each_block(key_2, ctx) {
 	let button;
 	let span0;
-	let t0_value = /*s*/ ctx[415].name + "";
+	let t0_value = /*s*/ ctx[417].name + "";
 	let t0;
 	let t1;
 	let show_if_1;
@@ -26767,7 +26726,7 @@ function create_each_block(key_2, ctx) {
 
 	function select_block_type_10(ctx, dirty) {
 		if (dirty[0] & /*data, nowBySpot*/ 4098) show_if_1 = null;
-		if (show_if_1 == null) show_if_1 = !!/*nowOf*/ ctx[124](/*s*/ ctx[415].id, /*nowBySpot*/ ctx[12]);
+		if (show_if_1 == null) show_if_1 = !!/*nowOf*/ ctx[124](/*s*/ ctx[417].id, /*nowBySpot*/ ctx[12]);
 		if (show_if_1) return create_if_block_13;
 		return create_else_block_4;
 	}
@@ -26777,7 +26736,7 @@ function create_each_block(key_2, ctx) {
 
 	function select_block_type_11(ctx, dirty) {
 		if (dirty[0] & /*bestOf, data*/ 524290) show_if = null;
-		if (show_if == null) show_if = !!/*bestOf*/ ctx[19](/*s*/ ctx[415]);
+		if (show_if == null) show_if = !!/*bestOf*/ ctx[19](/*s*/ ctx[417]);
 		if (show_if) return create_if_block_11;
 		return create_else_block_3;
 	}
@@ -26786,7 +26745,7 @@ function create_each_block(key_2, ctx) {
 	let if_block1 = current_block_type_1(ctx);
 
 	function click_handler_22() {
-		return /*click_handler_22*/ ctx[218](/*s*/ ctx[415]);
+		return /*click_handler_22*/ ctx[218](/*s*/ ctx[417]);
 	}
 
 	return {
@@ -26828,7 +26787,7 @@ function create_each_block(key_2, ctx) {
 		},
 		p(new_ctx, dirty) {
 			ctx = new_ctx;
-			if (dirty[0] & /*data*/ 2 && t0_value !== (t0_value = /*s*/ ctx[415].name + "")) set_data(t0, t0_value);
+			if (dirty[0] & /*data*/ 2 && t0_value !== (t0_value = /*s*/ ctx[417].name + "")) set_data(t0, t0_value);
 
 			if (current_block_type === (current_block_type = select_block_type_10(ctx, dirty)) && if_block0) {
 				if_block0.p(ctx, dirty);
@@ -28406,11 +28365,6 @@ function instance($$self, $$props, $$invalidate) {
 			persist();
 			drawSpotMarkers();
 			loadAllNow();
-
-			showToast(t('toastImported', {
-				spots: data.spots.length,
-				sessions: data.sessions.length
-			}));
 		} catch {
 			if (valid()) {
 				showToast(w('toastImportFail'));
@@ -28540,6 +28494,34 @@ function instance($$self, $$props, $$invalidate) {
 		});
 	}
 
+	let pinPane = null;
+
+	function namesPane() {
+		if (pinPane !== null) {
+			return pinPane;
+		}
+
+		pinPane = '';
+
+		if (isMobile) {
+			return pinPane;
+		}
+
+		try {
+			const m = map;
+			const el = m.getPane?.('spotlogNames') || m.createPane?.('spotlogNames');
+
+			if (el) {
+				el.style.zIndex = '710';
+				pinPane = 'spotlogNames';
+			}
+		} catch {
+			
+		}
+
+		return pinPane;
+	}
+
 	const markerLayer = createMarkerLayer((descriptor, click, hover) => {
 		const icon = L.divIcon({
 			className: 'spotlog-marker',
@@ -28548,12 +28530,15 @@ function instance($$self, $$props, $$invalidate) {
 			iconAnchor: [0, 0]
 		});
 
+		const pane = descriptor.glow ? '' : namesPane();
+
 		const marker = new L.Marker({ lat: descriptor.lat, lng: descriptor.lon },
 		{
 				icon,
 				...descriptor.glow
 				? { keyboard: false, zIndexOffset: -1e3 }
-				: {}
+				: {},
+				...pane ? { pane } : {}
 			}).addTo(map);
 
 		if (descriptor.click) {
@@ -28561,8 +28546,15 @@ function instance($$self, $$props, $$invalidate) {
 		}
 
 		if (descriptor.hover) {
-			marker.on('mouseover', () => hover(true));
-			marker.on('mouseout', () => hover(false));
+			const el = marker.getElement?.() || null;
+
+			if (el) {
+				el.addEventListener('mouseenter', () => hover(true));
+				el.addEventListener('mouseleave', () => hover(false));
+			} else {
+				marker.on('mouseover', () => hover(true));
+				marker.on('mouseout', () => hover(false));
+			}
 		}
 
 		return marker;
@@ -29301,7 +29293,6 @@ function instance($$self, $$props, $$invalidate) {
 		delete outlookBySpot[s.id];
 		persist();
 		loadNow(s);
-		showToast(w(isNew ? 'toastSpotSaved' : 'toastSpotUpdated'));
 
 		if (isNew && sfReturn === 'log' && f) {
 			$$invalidate(10, f = {
@@ -29369,7 +29360,6 @@ function instance($$self, $$props, $$invalidate) {
 		delete outlookBySpot[s.id];
 		persist();
 		loadOutlook(s);
-		showToast(w('toastWindow'));
 	}
 
 	const modelsToSave = st => st.allModels || !st.models?.length ? [] : st.models;
@@ -29530,10 +29520,6 @@ function instance($$self, $$props, $$invalidate) {
 
 		if (snap) {
 			markSnapPlace(snap);
-		}
-
-		if (spotId) {
-			showToast(t('toastLinked', { spot: spotById(spotId)?.name || '' }));
 		}
 	}
 
@@ -29845,9 +29831,9 @@ function instance($$self, $$props, $$invalidate) {
 
 		persist();
 
-		showToast(w(f.id
-		? 'toastSessUpdated'
-		: se.snapshotId ? 'toastSessSaved' : 'toastSessNoFc'));
+		if (!f.id && !se.snapshotId) {
+			showToast(t('toastSessNoFc'));
+		}
 
 		const sp = spotById(se.spotId);
 
@@ -29917,10 +29903,6 @@ function instance($$self, $$props, $$invalidate) {
 
 			$$invalidate(10, f = nf);
 			drawTrack(t, true);
-
-			showToast(fill(w('toastTrack'), {
-				dist: fmtDistance(t.distanceKm, S.height)
-			}));
 		} catch(err) {
 			if (valid()) {
 				$$invalidate(46, trackError = err instanceof TrackError
@@ -29967,7 +29949,6 @@ function instance($$self, $$props, $$invalidate) {
 		});
 
 		persist();
-		showToast(w('toastGearSaved'));
 	}
 
 	function deleteGear(id) {
@@ -30254,7 +30235,6 @@ function instance($$self, $$props, $$invalidate) {
 		$$invalidate(3, spot = after);
 		$$invalidate(47, editSport = null);
 		persist();
-		showToast(w('toastRangesSaved'));
 	}
 
 	function resetEdit(sport) {
@@ -30270,7 +30250,6 @@ function instance($$self, $$props, $$invalidate) {
 		$$invalidate(1, data.spots = data.spots.map(x => x.id === after.id ? after : x), data);
 		$$invalidate(3, spot = after);
 		persist();
-		showToast(w('toastRangesReset'));
 	}
 
 	function toggleEditDir(key, d) {
@@ -30312,7 +30291,6 @@ function instance($$self, $$props, $$invalidate) {
 				);
 
 				persist();
-				showToast(fill(W.toastSessLinked, { n: loose.length }));
 			},
 			W.linkThem
 		);

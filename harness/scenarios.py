@@ -323,13 +323,12 @@ with sync_playwright() as p:
     first = cards(pg); on = pg.locator('.act.on:has-text("Show on map")').count()
     pg.locator('.act:has-text("Show on map")').click(); pg.wait_for_timeout(400); off = cards(pg)
     pg.locator('.spotlog-pin.active').click(); pg.wait_for_timeout(1200); again = cards(pg)
-    pg.locator('.act:has-text("Show on map")').click(); pg.wait_for_timeout(400)
+    # the other spot's name sits next to (under) the open card in the sandbox: names stay above the cards (0.18.5)
     pg.locator('.spotlog-pin:not(.active)').first.hover(); pg.wait_for_timeout(1200); hovered = cards(pg)
     pg.mouse.move(5, 5); pg.wait_for_timeout(300); left = cards(pg)
-    pg.locator('.act:has-text("Show on map")').click(); pg.wait_for_timeout(1200)
     pg.locator('.sl-detail').first.click(); pg.wait_for_timeout(300)
     windy = any('rqstOpen detail' in m and 'wind' in m for m in logs)
-    note(len(first) == 1 and first[0].startswith('card:') and on == 1 and off == [] and again == first and len(hovered) == 1 and hovered[0].startswith('hover:') and left == [] and windy,
+    note(len(first) == 1 and first[0].startswith('card:') and on == 1 and off == [] and again == first and hovered[:1] == first and len(hovered) == 2 and hovered[1].startswith('hover:') and left == first and windy,
          f'desktop map: open shows the card {first} (switch on: {on}), off {off}, own name brings it back {again}, hover {hovered} then {left}, Windy forecast link: {windy}')
     ctx.close()
     ctx = b.new_context(viewport={'width': 390, 'height': 844}); pg = ctx.new_page()

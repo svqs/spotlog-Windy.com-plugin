@@ -1506,7 +1506,6 @@
             persist();
             drawSpotMarkers();
             loadAllNow();
-            showToast(tr('toastImported', { spots: data.spots.length, sessions: data.sessions.length }));
         } catch {
             if (valid()) {showToast(w('toastImportFail'));}
         }
@@ -1597,14 +1596,43 @@
             if (!destroyed) {drawSpotMarkersNow();}
         });
     }
+    /**
+     * Desktop: spot names sit in their own map layer above the cards, so a name near the open spot is never hidden
+     * under its card (it can still be hovered and clicked). Phones keep the cards on top (their buttons need the taps).
+     */
+    let pinPane: string | null = null;
+    function namesPane(): string {
+        if (pinPane !== null) {return pinPane;}
+        pinPane = '';
+        if (isMobile) {return pinPane;}
+        try {
+            const m = map as unknown as { getPane?: (n: string) => HTMLElement | undefined; createPane?: (n: string) => HTMLElement };
+            const el = m.getPane?.('spotlogNames') || m.createPane?.('spotlogNames');
+            if (el) {
+                el.style.zIndex = '710'; // Leaflet's cards (popupPane) are at 700
+                pinPane = 'spotlogNames';
+            }
+        } catch {
+            /* no panes: names stay with the other markers */
+        }
+        return pinPane;
+    }
     const markerLayer = createMarkerLayer((descriptor, click, hover) => {
         const icon = L.divIcon({ className: 'spotlog-marker', html: descriptor.html, iconSize: [0, 0], iconAnchor: [0, 0] });
+        const pane = descriptor.glow ? '' : namesPane();
         const marker = new L.Marker({ lat: descriptor.lat, lng: descriptor.lon },
-            { icon, ...(descriptor.glow ? { keyboard: false, zIndexOffset: -1000 } : {}) }).addTo(map);
+            { icon, ...(descriptor.glow ? { keyboard: false, zIndexOffset: -1000 } : {}), ...(pane ? { pane } : {}) } as L.MarkerOptions).addTo(map);
         if (descriptor.click) {marker.on('click', click);}
         if (descriptor.hover) {
-            marker.on('mouseover', () => hover(true));
-            marker.on('mouseout', () => hover(false));
+            // the name's own element when there is one (Windy's map may not pass hover on to markers), else the marker's events
+            const el: HTMLElement | null = (marker as unknown as { getElement?: () => HTMLElement | null }).getElement?.() || null;
+            if (el) {
+                el.addEventListener('mouseenter', () => hover(true));
+                el.addEventListener('mouseleave', () => hover(false));
+            } else {
+                marker.on('mouseover', () => hover(true));
+                marker.on('mouseout', () => hover(false));
+            }
         }
         return marker;
     });
@@ -1989,7 +2017,6 @@
         delete outlookBySpot[s.id];
         persist();
         loadNow(s);
-        showToast(w(isNew ? 'toastSpotSaved' : 'toastSpotUpdated'));
         if (isNew && sfReturn === 'log' && f) {
             f = { ...f, spotId: s.id, lat: f.lat ?? s.lat, lon: f.lon ?? s.lon };
             back();
@@ -2029,7 +2056,6 @@
         delete outlookBySpot[s.id];
         persist();
         loadOutlook(s);
-        showToast(w('toastWindow'));
     }
 
     /* ---------- forecast snapshots ---------- */
@@ -2128,7 +2154,6 @@
         updateSnap({ spotId });
         replaceOf = null;
         if (snap) {markSnapPlace(snap);}
-        if (spotId) {showToast(tr('toastLinked', { spot: spotById(spotId)?.name || '' }));}
     }
     function saveSnapNote() {
         updateSnap({ note: snapNote.trim() });
@@ -2283,8 +2308,8 @@
             data.snapshots = data.snapshots.map(x => (x.id === sn.id ? upd : x));
         }
         persist();
-        // L1: a session without a forecast can't teach spotlog; say so at the moment it matters
-        showToast(w(f.id ? 'toastSessUpdated' : se.snapshotId ? 'toastSessSaved' : 'toastSessNoFc'));
+        // L1: a session without a forecast can't teach spotlog; say so at the moment it matters (no "saved" messages otherwise)
+        if (!f.id && !se.snapshotId) {showToast(tr('toastSessNoFc'));}
         const sp = spotById(se.spotId);
         if (!f.id && sp) {
             // land on the spot page, with home underneath
@@ -2330,7 +2355,6 @@
             }
             f = nf;
             drawTrack(t, true);
-            showToast(fill(w('toastTrack'), { dist: fmtDistance(t.distanceKm, S.height) }));
         } catch (err) {
             if (valid()) {trackError = err instanceof TrackError ? w(err.code) : w('trackError');}
         }
@@ -2353,7 +2377,6 @@
         data.gear = [...data.gear, g];
         f = { ...f, gear: '', gearIds: [...f.gearIds, g.id] };
         persist();
-        showToast(w('toastGearSaved'));
     }
     function deleteGear(id: string) {
         data.gear = data.gear.filter(x => x.id !== id);
@@ -2501,7 +2524,6 @@
         spot = after;
         editSport = null;
         persist();
-        showToast(w('toastRangesSaved'));
     }
     function resetEdit(sport: string) {
         editSport = null;
@@ -2512,7 +2534,6 @@
         data.spots = data.spots.map(x => (x.id === after.id ? after : x));
         spot = after;
         persist();
-        showToast(w('toastRangesReset'));
     }
     function toggleEditDir(key: string, d: Dir8) {
         const row = editRows[key];
@@ -2532,7 +2553,6 @@
             data.sessions = data.sessions.map(x => (ids.has(x.id) ? { ...x, spotId: s.id } : x));
             data.snapshots = data.snapshots.map(x => (snaps.has(x.id) && !x.spotId ? { ...x, spotId: s.id } : x));
             persist();
-            showToast(fill(W.toastSessLinked, { n: loose.length }));
         }, W.linkThem);
         return true;
     }
