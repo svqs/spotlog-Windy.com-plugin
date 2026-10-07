@@ -41,6 +41,9 @@ the version.
   computer as the browser.
 - The key is a "Windy Plugins API" key from <https://api.windy.com/keys>. It lives **only** in GitHub › Settings ›
   Secrets › Actions › `WINDY_API_KEY`. Never put it in a file, a commit, a log or chat.
+- **Gallery screenshot:** `src/screenshot.jpg` (a real Windy screenshot, 1416 × 1074, the template's 944 × 716 shape).
+  The build copies it to `dist/` and names it in `plugin.json`; `scripts/package-plugin.mjs` uploads it with the plugin.
+  Replace the file to change it (a `.png` or `.webp` named `screenshot` works too).
 - **Public plugin:** `private: false` and `repository` in `src/pluginConfig.ts`. Only a public plugin shows up in Windy's
   plugin publisher for review (a private one only works from its install URL). Every upload carries the repository and
   commit it came from (`scripts/package-plugin.mjs`), so publish from GitHub (the workflow), not from a terminal, when a
