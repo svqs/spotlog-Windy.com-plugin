@@ -565,12 +565,10 @@ with sync_playwright() as p:
     assert pg.locator('.mwrap.open').count() == 0, 'a spot tap shows the card, not the panel'
     pg.wait_for_timeout(300)
     shot('14c-phone-card')
-    first = pg.locator('.mock-popup .sl-h b').inner_text()
-    pg.click('.mock-popup .sl-nav button[data-act="next"]')
-    pg.wait_for_function(f"document.querySelector('.mock-popup .sl-h b') && document.querySelector('.mock-popup .sl-h b').textContent !== {first!r}", timeout=5000)
+    assert pg.locator('.mock-popup [data-act="prev"], .mock-popup [data-act="next"]').count() == 0, 'no ‹ › on the card (0.18.10)'
     pg.click('.mock-popup .sl-acts button:has-text("Log session")')
     pg.wait_for_selector('.mwrap.open .ratings', timeout=5000)
-    ok('phone: spot card on the map, next spot, Log session opens in the panel')
+    ok('phone: spot card on the map (no ‹ › to other spots), Log session opens in the panel')
     # Log session on a phone: date, start and end on one line; the header stays put; nothing scrolls sideways
     pg.wait_for_timeout(300)
     tops = pg.evaluate("[...document.querySelectorAll('.mwrap.open .when.one > input, .mwrap.open .when.one .field-btn')].map(e => Math.round(e.getBoundingClientRect().top))")
@@ -626,11 +624,6 @@ with sync_playwright() as p:
     pg.evaluate('(s) => W.map.centerMap({lat: s.lat, lon: s.lon, zoom: W.map.map.getZoom()})', first_spot)
     pg.locator('.spotlog-pin').filter(has_text=first_spot['name']).first.click()
     pg.wait_for_selector('.mock-popup .sl-x', timeout=5000)
-    z0 = pg.evaluate("W.map.map.getZoom()")
-    pg.click('.mock-popup .sl-nav button[data-act="next"]')
-    pg.wait_for_timeout(400)
-    z1 = pg.evaluate("W.map.map.getZoom()")
-    assert z1 == z0 or z0 < 7, (z0, z1)
     pg.click('.mock-popup .sl-x')
     pg.wait_for_timeout(300)
     assert pg.locator('.mock-popup').count() == 0, 'card closes with ✕'

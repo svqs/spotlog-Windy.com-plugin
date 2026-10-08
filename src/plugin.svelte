@@ -298,10 +298,10 @@
         waves={ spotNow?.waves ?? null }
         loading={ !spotNow }
         u={ S }
-        badge={ spotGuess ? guessLbl(spotGuess.level, spotGuess.sport) : '' }
-        badgeNote={ guessNote(spotGuess) }
-        badgeBg={ guessCol(spotGuess?.level ?? 0)[0] }
-        badgeFg={ guessCol(spotGuess?.level ?? 0)[1] }
+        badge={ spotBest ? guessLbl(spotBest.level, spotBest.sport) : spotGuess ? guessLbl(spotGuess.level, spotGuess.sport) : '' }
+        badgeNote={ spotBest ? (spotBest.now ? guessNote(spotBest) : fill(W.from, { v: fmtTime(spotBest.start) })) : '' }
+        badgeBg={ guessCol(spotBest?.level ?? 0)[0] }
+        badgeFg={ guessCol(spotBest?.level ?? 0)[1] }
         tide={ spotOutlook?.tide?.day && (spotOutlook.tide.day.highs.length || spotOutlook.tide.day.lows.length) ? tideList(spotOutlook.tide.day) : '' }
         tidePremium={ spotOutlook?.tide?.needsPremium ? fill(W.tidePremium) : '' }
     />
@@ -395,7 +395,7 @@
                 {#each spotLearned as m (m.sport)}
                     <span data-spotlog class="ws-line"><b data-spotlog>{ sportLbl(m.sport) }</b><span data-spotlog class:muted={ !worksLine(m) }>{ worksLine(m) || W.worksUnknown }</span></span>
                 {/each}
-                <small data-spotlog class="muted">{ W.worksOpenHint }</small>
+                <small data-spotlog class="muted">{ spotLearned.some(m => worksLine(m)) ? W.worksOpenHint : W.worksAdjustHint }</small>
             </button>
         {:else}
             <div data-spotlog class="card works">
@@ -453,7 +453,7 @@
                 {#each spotGear as gh (gh.gearId)}
                     <small data-spotlog class="gear-hint">{ fill(W.gearHint, { gear: data.gear.find(g => g.id === gh.gearId)?.name || W.gear, range: `${fmtWind0(gh.lo, S.wind)}–${fmtWind0(gh.hi, S.wind)} ${windLabel(S.wind)}`, n: gh.sessions }) }</small>
                 {/each}
-                <small data-spotlog class="muted">{ W.worksLegend }</small>
+                {#if spotLearned.some(m => m.rows.length)}<small data-spotlog class="muted">{ W.worksLegend }</small>{/if}
             </div>
         {/if}
     </div>
@@ -1736,11 +1736,12 @@
         if (typeof L !== 'undefined' && map) {trackLayer.draw(track, S, fit);}
     }
     function popupHtml(sp: Spot, n: Now | null, loading = false, hover = false): string {
-        const guess = n ? rateBest(modelsOf(sp, modelMap), conditionsOf(n.wind, n.waves)) : null;
+        // the same rating as the spot's tile: the best stretch of today (from now on), else "Not sure yet"
         const best = bestOf(sp);
-        return renderPopup({ spot: sp, now: n, loading, mobile: isMobile, hover, many: data.spots.length > 1, settings: S,
-            badge: guess ? guessLbl(guess.level, guess.sport) : '', colours: guessCol(guess?.level || 0),
-            best: best && !best.now ? { label: guessLbl(best.level, best.sport), range: bestRange(best) } : null });
+        const guess = !best && n ? rateBest(modelsOf(sp, modelMap), conditionsOf(n.wind, n.waves)) : null;
+        return renderPopup({ spot: sp, now: n, loading, mobile: isMobile, hover, settings: S,
+            badge: best ? guessLbl(best.level, best.sport) : guess ? guessLbl(guess.level, guess.sport) : '', colours: guessCol(best?.level || 0),
+            when: best ? bestRange(best) : '' });
     }
     /** "Show on map" is a switch: the popup stays at the spot until you switch it off or leave the spot */
     async function toggleShowOnMap(sp: Spot) {
@@ -1818,14 +1819,6 @@
         else if (act === 'close') {
             clearPopup();
             drawSpotMarkers();
-        }
-        else if (act === 'prev' || act === 'next') {
-            const i = homeSpots.findIndex(x => x.id === sp.id);
-            const n = homeSpots[(i + (act === 'next' ? 1 : homeSpots.length - 1)) % homeSpots.length];
-            if (n) {
-                openSpot(n, false, !barMode);
-                showSpotCard(n);
-            }
         }
     }
     /** Phones: open a spot's card on the map (not a switch: tapping a spot always shows it) */

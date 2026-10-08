@@ -384,5 +384,35 @@ with sync_playwright() as p:
     note(swipe == p0 and held == [p0[1], p0[0]] + p0[2:] and pg.locator('.spotlog-popup').count() == 0,
          f'phone drag: a quick swipe leaves {swipe}, press-hold-move gives {held}, no card opened')
     ctx.close()
+
+    # 11. one tag everywhere (0.18.10): the forecast card and the map card show the same tag as the spot's tile
+    #     (the best stretch of today, "from 15:00" when it's later); What works for a spot nothing is known about yet:
+    #     "Tap to adjust your conditions", and no legend when it opens
+    ctx = b.new_context(viewport={'width': 1440, 'height': 900}); pg = ctx.new_page()
+    pg.goto(SANDBOX); pg.wait_for_selector('.tile .t-tag', timeout=10000); pg.wait_for_timeout(2500)
+    pg.evaluate(f"""() => {{ const d = JSON.parse(localStorage.getItem('{KEY}')); const s0 = d.spots[0];
+        d.spots.push({{ ...s0, id: 'blank', name: 'Blank spot', lat: s0.lat - 0.05, dirs: [], windUnknown: true, ranges: undefined }});
+        d.updatedAt = Date.now(); localStorage.setItem('{KEY}', JSON.stringify(d)); }}""")
+    pg.reload(); pg.wait_for_selector('.tile .t-tag'); pg.wait_for_timeout(2500)
+    same = []
+    for i in range(pg.locator('.tile').count()):
+        t = pg.locator('.tile').nth(i)
+        name, tag = t.locator('.t-name').inner_text(), t.locator('.t-tag .tag').inner_text()
+        t.click(); pg.wait_for_timeout(1500)
+        card = pg.locator('.snap .badge').first.inner_text() if pg.locator('.snap .badge').count() else ''
+        pop = pg.locator('.spotlog-popup:not(.sl-hover) .sl-b').first.inner_text() if pg.locator('.spotlog-popup:not(.sl-hover) .sl-b').count() else ''
+        why = pg.locator('.snap .badge-row small').first.inner_text() if pg.locator('.snap .badge-row small').count() else ''
+        same.append((name, tag, card, pop, why))
+        if name == 'Blank spot':
+            if pg.locator('.works').count(): pg.locator('.works-head').click(); pg.wait_for_timeout(300)
+            folded = pg.locator('.works-sum small.muted').last.inner_text()
+            pg.locator('.works-head').click(); pg.wait_for_timeout(300)
+            legend = pg.locator('.works small.muted:has-text("Your range")').count()
+        pg.locator('button[aria-label="Back"]').first.click(); pg.wait_for_timeout(500)
+    agree = all(tag == card == pop for _, tag, card, pop, _ in same)
+    no_why = all(not (tag == 'Not sure yet' and why) for _, tag, _, _, why in same)
+    note(agree and no_why and folded == 'Tap to adjust your conditions' and legend == 0,
+         f'one tag everywhere {same}; nothing known: "{folded}", legend shown: {legend}')
+    ctx.close()
     b.close()
 print('FINDINGS:', json.dumps(findings, indent=1))

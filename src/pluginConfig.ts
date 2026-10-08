@@ -2,7 +2,7 @@ import type { ExternalPluginConfig } from '@windy/interfaces';
 
 const config: ExternalPluginConfig = {
     name: 'windy-plugin-spotlog',
-    version: '0.18.9',
+    version: '0.18.10',
     icon: '🌊',
     title: 'spotlog ✦', // Windy needs more than 7 characters; the sparkle stands in for the pixel star
     // the welcome text (copy.ts → welcomeText), shown in Windy's plugin gallery
